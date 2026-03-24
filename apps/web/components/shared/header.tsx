@@ -1,0 +1,63 @@
+'use client'
+
+import { createBrowserClient } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
+import type { Database } from '@/lib/database.types'
+
+type Profile = Database['public']['Tables']['profiles']['Row']
+
+export function Header() {
+  const supabase = createBrowserClient()
+  const [profile, setProfile] = useState<Profile | null>(null)
+
+  useEffect(() => {
+    async function loadProfile() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      setProfile(data)
+    }
+    loadProfile()
+  }, [supabase])
+
+  return (
+    <header className="h-16 bg-navy-900 border-b border-border flex items-center justify-between px-6">
+      <div className="md:hidden">
+        <span className="font-display text-xl font-bold text-gradient-primary">CLYRO</span>
+      </div>
+
+      <div className="ml-auto flex items-center gap-4">
+        {profile && (
+          <>
+            {/* Credits badge */}
+            <div className="hidden sm:flex items-center gap-2 bg-navy-800 border border-border rounded-full px-4 py-1.5">
+              <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+                Crédits
+              </span>
+              <span className="font-display font-bold text-clyro-blue text-sm">
+                {profile.credits}
+              </span>
+            </div>
+
+            {/* Plan badge */}
+            <div className="hidden sm:block bg-navy-800 border border-border rounded-full px-4 py-1.5">
+              <span className="font-mono text-xs uppercase tracking-widest text-clyro-purple capitalize">
+                {profile.plan}
+              </span>
+            </div>
+
+            {/* Avatar */}
+            <div className="w-9 h-9 rounded-full bg-grad-primary flex items-center justify-center">
+              <span className="font-display font-bold text-white text-sm">
+                {(profile.full_name ?? 'U').charAt(0).toUpperCase()}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+    </header>
+  )
+}

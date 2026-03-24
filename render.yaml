@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: clyro-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: starter          # starter = 512 MB RAM / 0.5 CPU — upgrade to standard for prod
+    region: frankfurt      # EU pour la latence Afrique/Europe
+    healthCheckPath: /health
+    autoDeploy: true
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+
+      # — Supabase —
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      # — AI services —
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_DEFAULT_VOICE_ID
+        sync: false
+      - key: FAL_KEY
+        sync: false
+
+      # — Stripe —
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_STARTER
+        sync: false
+      - key: STRIPE_PRICE_STUDIO
+        sync: false
+
+      # — Moneroo Mobile Money —
+      - key: MONEROO_API_KEY
+        sync: false
+      - key: MONEROO_WEBHOOK_SECRET
+        sync: false
+
+      # — Resend emails —
+      - key: RESEND_API_KEY
+        sync: false
+
+      # — URLs (remplir après déploiement Vercel) —
+      - key: FRONTEND_URL
+        sync: false        # ex: https://app.clyro.app
+      - key: BACKEND_URL
+        sync: false        # ex: https://api.clyro.app (URL Render)

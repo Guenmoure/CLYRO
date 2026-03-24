@@ -1,0 +1,13 @@
+node_modules
+.git
+.env
+.env.*
+!.env.example
+apps/web
+apps/*/dist
+packages/*/dist
+**/*.test.ts
+**/*.spec.ts
+landing/
+*.md
+.next
