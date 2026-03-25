@@ -124,7 +124,6 @@ export interface Database {
           created_at?: string
         }
       }
-    }
       voice_favorites: {
         Row: {
           user_id: string
