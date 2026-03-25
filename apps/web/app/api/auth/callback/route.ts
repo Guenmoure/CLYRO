@@ -1,7 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createServerClient } from '@/lib/supabase'
 import { NextRequest, NextResponse } from 'next/server'
-import type { Database } from '@/lib/database.types'
 
 /**
  * OAuth callback handler pour Google / Apple / SSO
@@ -13,9 +11,7 @@ export async function GET(request: NextRequest) {
   const redirectTo = requestUrl.searchParams.get('redirectTo') ?? '/dashboard'
 
   if (code) {
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
-
+    const supabase = createServerClient()
     try {
       await supabase.auth.exchangeCodeForSession(code)
     } catch {

@@ -242,7 +242,7 @@ async function runFacelessPipeline(params: PipelineParams): Promise<void> {
 
       if (audioResults.length > 0) {
         // Combiner tous les buffers audio en séquence
-        combinedAudioBuffer = Buffer.concat(audioResults.map((r) => r.audio))
+        combinedAudioBuffer = Buffer.concat(audioResults.map((r) => r.audioBuffer))
       }
     }
 
@@ -305,9 +305,9 @@ async function runFacelessPipeline(params: PipelineParams): Promise<void> {
         metadata: { error_message: errorMessage, progress: 0 },
       })
       .eq('id', videoId)
-      .catch(() => null)
+      .then(() => null, () => null)
 
     // Rembourser le crédit en cas d'erreur
-    await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).catch(() => null)
+    await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
   }
 }

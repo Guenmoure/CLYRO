@@ -66,7 +66,7 @@ export async function startFacelessGeneration(payload: CreateFacelessVideoPayloa
 }
 
 export async function regenerateFacelessScene(payload: RegenerateScenePayload) {
-  return apiFetch<{ scene: unknown }>('/api/v1/pipeline/faceless/scene', {
+  return apiFetch<{ data: { scene_id: string; image_url: string; prompt_used: string } }>('/api/v1/pipeline/faceless/scene', {
     method: 'POST',
     body: JSON.stringify(payload),
   })

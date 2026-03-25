@@ -28,13 +28,15 @@ export async function authMiddleware(
   next: NextFunction
 ): Promise<void> {
   const authHeader = req.headers.authorization
+  // SSE clients (EventSource) cannot set headers — accept token via query param as fallback
+  const queryToken = typeof req.query.token === 'string' ? req.query.token : null
 
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ') && !queryToken) {
     res.status(401).json({ error: 'No authentication token provided', code: 'UNAUTHORIZED' })
     return
   }
 
-  const token = authHeader.slice(7) // Remove 'Bearer '
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : queryToken!
 
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     logger.error('Missing Supabase environment variables in auth middleware')

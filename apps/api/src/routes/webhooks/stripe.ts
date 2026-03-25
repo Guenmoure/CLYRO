@@ -40,8 +40,8 @@ stripeWebhookRouter.post('/stripe', async (req, res) => {
       return
     }
 
-    // TODO Phase 3 : retourner 200 pour éviter les retentatives Stripe sur erreurs métier
+    // Retourner 200 pour éviter les retentatives Stripe sur erreurs métier
     logger.error({ err }, 'Stripe webhook: processing error')
-    res.status(500).json({ error: 'Webhook processing error', code: 'WEBHOOK_ERROR' })
+    res.status(200).json({ received: true, warning: 'Processing error logged' })
   }
 })

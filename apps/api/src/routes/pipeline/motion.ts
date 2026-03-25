@@ -226,7 +226,7 @@ async function runMotionPipeline(params: MotionPipelineParams): Promise<void> {
     if (voiceId && storyboard.scenes.some((s) => s.texte_voix?.trim())) {
       const audioResults = await generateVoiceoverScenes(storyboard.scenes, voiceId)
       if (audioResults.length > 0) {
-        combinedAudioBuffer = Buffer.concat(audioResults.map((r) => r.audio))
+        combinedAudioBuffer = Buffer.concat(audioResults.map((r) => r.audioBuffer))
       }
     }
 
@@ -275,8 +275,8 @@ async function runMotionPipeline(params: MotionPipelineParams): Promise<void> {
       .from('videos')
       .update({ status: 'error', metadata: { error_message: errorMessage, progress: 0 } })
       .eq('id', videoId)
-      .catch(() => null)
+      .then(() => null, () => null)
 
-    await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).catch(() => null)
+    await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
   }
 }
