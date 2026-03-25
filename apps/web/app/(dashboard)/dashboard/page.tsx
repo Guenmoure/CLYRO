@@ -5,6 +5,8 @@ import type { Database } from '@/lib/database.types'
 
 export const metadata = { title: 'Dashboard — CLYRO' }
 
+type Profile = Database['public']['Tables']['profiles']['Row']
+
 export default async function DashboardPage() {
   const supabase = createServerComponentClient<Database>({ cookies })
   const {
@@ -15,7 +17,7 @@ export default async function DashboardPage() {
     .from('profiles')
     .select('*')
     .eq('id', user?.id ?? '')
-    .single()
+    .single() as { data: Profile | null; error: unknown }
 
   const { count: videoCount } = await supabase
     .from('videos')

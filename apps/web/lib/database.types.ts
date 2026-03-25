@@ -125,6 +125,24 @@ export interface Database {
         }
       }
     }
+      voice_favorites: {
+        Row: {
+          user_id: string
+          voice_id: string
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          voice_id: string
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          voice_id?: string
+          created_at?: string
+        }
+      }
+    }
     Views: Record<string, never>
     Functions: Record<string, never>
     Enums: Record<string, never>
