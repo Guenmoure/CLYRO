@@ -1,4 +1,3 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
@@ -7,7 +6,9 @@ import type { Database } from './database.types'
  * Utilise la session de l'utilisateur courant via cookies
  */
 export function createBrowserClient() {
-  return createClientComponentClient<Database>()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  return createClient<Database>(supabaseUrl, supabaseAnonKey)
 }
 
 /**
