@@ -93,6 +93,20 @@ async function activateSubscription(session: Stripe.Checkout.Session): Promise<v
     return
   }
 
+  // Idempotency: skip if already processed
+  const { data: existing } = await supabaseAdmin
+    .from('payments')
+    .select('id')
+    .eq('provider', 'stripe')
+    .eq('status', 'success')
+    .filter('metadata->>session_id', 'eq', session.id)
+    .maybeSingle()
+
+  if (existing) {
+    logger.info({ sessionId: session.id }, 'Stripe: webhook already processed — skipping')
+    return
+  }
+
   const credits = PLAN_CREDITS[plan] === -1 ? 999999 : PLAN_CREDITS[plan]
 
   const { error } = await supabaseAdmin

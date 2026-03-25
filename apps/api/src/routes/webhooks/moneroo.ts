@@ -24,10 +24,13 @@ monerooWebhookRouter.post('/moneroo', async (req, res) => {
     return
   }
 
-  // req.body est un Buffer (raw body)
-  const rawBody = Buffer.isBuffer(req.body)
-    ? req.body.toString('utf-8')
-    : JSON.stringify(req.body)
+  if (!Buffer.isBuffer(req.body)) {
+    logger.error('Moneroo webhook: body is not a raw buffer — check middleware order')
+    res.status(400).json({ error: 'Invalid request body', code: 'INVALID_BODY' })
+    return
+  }
+
+  const rawBody = req.body.toString('utf-8')
 
   try {
     await handleMonerooWebhook(rawBody, signature)
@@ -43,6 +46,6 @@ monerooWebhookRouter.post('/moneroo', async (req, res) => {
     }
 
     logger.error({ err }, 'Moneroo webhook: processing error')
-    res.status(500).json({ error: 'Webhook processing error', code: 'WEBHOOK_ERROR' })
+    res.status(200).json({ received: true, warning: 'Processing error logged' })
   }
 })

@@ -1,13 +1,18 @@
 'use client'
 
 import { useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import { useUser } from '@/hooks/use-user'
-import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
+import type { Database } from '@/lib/database.types'
+
+const supabase = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export function ProfileForm() {
   const { profile, email, loading, refetch } = useUser()
-  const supabase = createBrowserClient()
   const [fullName, setFullName] = useState('')
   const [saving, setSaving] = useState(false)
 

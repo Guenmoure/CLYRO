@@ -7,9 +7,18 @@ import { logger } from '../lib/logger'
 
 export const voicesRouter = Router()
 
+const SUPABASE_HOST = new URL(process.env.SUPABASE_URL ?? 'https://placeholder.supabase.co').hostname
+
 const cloneVoiceSchema = z.object({
   name: z.string().min(1).max(100),
-  sample_url: z.string().url(),
+  sample_url: z.string().url().refine((url) => {
+    try {
+      const { hostname } = new URL(url)
+      return hostname === SUPABASE_HOST || hostname.endsWith('.supabase.co')
+    } catch {
+      return false
+    }
+  }, 'sample_url must point to Supabase storage'),
 })
 
 /**
@@ -119,14 +128,22 @@ voicesRouter.post('/voices/clone', authMiddleware, async (req, res) => {
 
 // ── GET /api/v1/voices/public (avec filtres) ──────────────────────────────
 
+const voiceFiltersSchema = z.object({
+  gender:  z.string().max(50).optional(),
+  accent:  z.string().max(50).optional(),
+  useCase: z.string().max(50).optional(),
+  search:  z.string().max(100).optional(),
+})
+
 voicesRouter.get('/voices/public', authMiddleware, async (req, res) => {
+  const parsed = voiceFiltersSchema.safeParse(req.query)
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
+    return
+  }
+
   try {
-    const filters = {
-      gender:  req.query.gender  as string | undefined,
-      accent:  req.query.accent  as string | undefined,
-      useCase: req.query.useCase as string | undefined,
-      search:  req.query.search  as string | undefined,
-    }
+    const filters = parsed.data
 
     const { data: favData } = await supabaseAdmin
       .from('voice_favorites')

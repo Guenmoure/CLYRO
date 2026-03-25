@@ -26,5 +26,3 @@ export function createServerClient(): SupabaseClient<Database> {
   return createClient<Database>(supabaseUrl, supabaseAnonKey)
 }
 
-// Instance singleton pour usage dans les composants
-export const supabase = createBrowserClient()

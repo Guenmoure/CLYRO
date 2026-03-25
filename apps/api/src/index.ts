@@ -48,11 +48,14 @@ const ALLOWED_ORIGINS = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Autoriser les requêtes sans origin (Postman, curl dev)
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      // Autoriser les requêtes sans origin uniquement en dev (Postman, curl)
+      const isDev = process.env.NODE_ENV !== 'production'
+      if (!origin && isDev) {
+        callback(null, true)
+      } else if (origin && ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true)
       } else {
-        callback(new Error(`CORS policy: origin ${origin} not allowed`))
+        callback(new Error(`CORS policy: origin ${origin ?? 'null'} not allowed`))
       }
     },
     credentials: true,
@@ -76,6 +79,14 @@ const pipelineLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Pipeline rate limit exceeded', code: 'PIPELINE_RATE_LIMIT' },
+})
+
+const voiceCloneLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 heure
+  max: 5, // max 5 clonages par heure
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Voice clone rate limit exceeded', code: 'VOICE_CLONE_RATE_LIMIT' },
 })
 
 // ── Body parsers ───────────────────────────────────────────────────────────
@@ -105,6 +116,7 @@ app.use('/api/v1', apiLimiter)
 app.use('/api/v1/pipeline', pipelineLimiter, pipelineFacelessRouter)
 app.use('/api/v1/pipeline', pipelineLimiter, pipelineMotionRouter)
 app.use('/api/v1', videosRouter)
+app.use('/api/v1/voices/clone', voiceCloneLimiter)
 app.use('/api/v1', voicesRouter)
 app.use('/api/v1', checkoutRouter)
 
