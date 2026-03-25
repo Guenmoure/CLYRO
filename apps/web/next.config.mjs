@@ -1,8 +1,7 @@
-import type { NextConfig } from 'next'
-
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // Transpile workspace packages
   transpilePackages: ['@clyro/shared'],
 
@@ -40,7 +39,7 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-eval needed for Next.js dev
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://fal.media",
