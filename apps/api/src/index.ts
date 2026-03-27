@@ -15,6 +15,13 @@ import { monerooWebhookRouter } from './routes/webhooks/moneroo'
 const app = express()
 const PORT = process.env.PORT ?? 4000
 
+// ── Minimal health check (avant tout middleware) ───────────────────────────
+// Render (et autres proxies) ne envoient pas de header Origin → CORS bloquerait
+// Ce endpoint répond immédiatement sans passer par CORS/auth/rate-limit
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'clyro-api' })
+})
+
 // ── Security headers (Helmet) ──────────────────────────────────────────────
 app.use(
   helmet({
