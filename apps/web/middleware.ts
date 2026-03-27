@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -13,25 +13,13 @@ const PROTECTED_ROUTES = [
 ]
 
 // Routes accessibles uniquement en non-authentifié (redirigent vers /dashboard si connecté)
-const AUTH_ROUTES = ['/', '/login', '/signup']
+const AUTH_ROUTES = ['/login', '/signup']
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-    },
-    global: {
-      headers: {
-        cookie: req.headers.get('cookie') ?? '',
-      },
-    },
-  })
+  // createMiddlewareClient lit et écrit les cookies de session correctement
+  const supabase = createMiddlewareClient({ req, res })
 
   const {
     data: { session },

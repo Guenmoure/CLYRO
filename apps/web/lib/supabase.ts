@@ -1,14 +1,15 @@
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
 /**
  * Client Supabase pour les composants React (browser-side)
- * Utilise la session de l'utilisateur courant via cookies
+ * Utilise createClientComponentClient qui stocke la session dans les cookies
+ * → compatible avec createMiddlewareClient dans middleware.ts
  */
-export function createBrowserClient(): SupabaseClient<Database> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  return createClient<Database>(supabaseUrl, supabaseAnonKey)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createBrowserClient(): any {
+  return createClientComponentClient<Database>()
 }
 
 /**

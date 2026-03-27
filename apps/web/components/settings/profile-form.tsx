@@ -23,7 +23,6 @@ export function ProfileForm() {
     try {
       const { error } = await supabase
         .from('profiles')
-        // @ts-expect-error Supabase type inference issue with Database generic
         .update({ full_name: fullName || profile.full_name })
         .eq('id', profile.id)
 

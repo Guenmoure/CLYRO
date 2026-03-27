@@ -56,7 +56,8 @@ export function useCredits(): UseCreditsReturn {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles' },
-        (payload) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (payload: any) => {
           const updated = payload.new as { credits: number; plan: UserPlan }
           setCredits(updated.credits)
           setPlan(updated.plan)
