@@ -1,4 +1,5 @@
-import { createServerClient } from '@/lib/supabase'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import type { Database } from '@/lib/database.types'
 
@@ -7,7 +8,7 @@ export const metadata = { title: 'Dashboard — CLYRO' }
 type Profile = Database['public']['Tables']['profiles']['Row']
 
 export default async function DashboardPage() {
-  const supabase = createServerClient()
+  const supabase = createServerComponentClient<Database>({ cookies })
   const {
     data: { user },
   } = await supabase.auth.getUser()
