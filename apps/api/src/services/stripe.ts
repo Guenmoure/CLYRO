@@ -2,9 +2,16 @@ import Stripe from 'stripe'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
-  apiVersion: '2025-02-24.acacia',
-})
+// Lazy init — évite le crash au démarrage si STRIPE_SECRET_KEY n'est pas encore configurée
+let _stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) throw new Error('STRIPE_SECRET_KEY is not configured')
+    _stripe = new Stripe(key, { apiVersion: '2025-02-24.acacia' })
+  }
+  return _stripe
+}
 
 // Configure these in your Stripe dashboard and update here
 const PRICE_IDS: Record<string, string> = {
@@ -35,11 +42,7 @@ interface CheckoutSession {
 export async function createCheckoutSession(params: CreateCheckoutParams): Promise<CheckoutSession> {
   const { userId, email, plan } = params
 
-  if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error('STRIPE_SECRET_KEY is not configured')
-  }
-
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     customer_email: email,
     mode: 'subscription',
     line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
@@ -63,7 +66,7 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string): P
 
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
+    event = getStripe().webhooks.constructEvent(rawBody, signature, webhookSecret)
   } catch (err) {
     logger.error({ err }, 'Stripe: invalid webhook signature')
     throw new Error('Invalid Stripe webhook signature')
