@@ -190,7 +190,7 @@ export async function cloneVoice(
   const formData = new FormData()
   formData.append('name', name)
   if (description) formData.append('description', description)
-  formData.append('files', new Blob([audioBuffer], { type: 'audio/mpeg' }), `${name}.mp3`)
+  formData.append('files', new Blob([new Uint8Array(audioBuffer.buffer as ArrayBuffer)], { type: 'audio/mpeg' }), `${name}.mp3`)
 
   const res = await fetch(`${BASE_URL}/voices/add`, {
     method: 'POST',

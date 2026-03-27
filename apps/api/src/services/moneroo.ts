@@ -68,14 +68,15 @@ export async function createMonerooPayment(
   const data = await response.json() as { payment_url: string; id: string }
 
   // Pré-enregistrer le paiement en "pending"
-  await supabaseAdmin.from('payments').insert({
+  const { error: insertError } = await supabaseAdmin.from('payments').insert({
     user_id:  userId,
     provider: 'moneroo',
     amount:   PLAN_PRICES[plan],
     currency: 'XOF',
     status:   'pending',
     metadata: { payment_id: data.id, plan, phone },
-  }).catch((err) => logger.warn({ err }, 'Moneroo: failed to pre-record payment'))
+  })
+  if (insertError) logger.warn({ err: insertError }, 'Moneroo: failed to pre-record payment')
 
   logger.info({ userId, plan, paymentId: data.id }, 'Moneroo payment initialized')
   return { paymentUrl: data.payment_url, paymentId: data.id }
@@ -129,7 +130,7 @@ export async function handleMonerooWebhook(rawBody: string, signature: string): 
         .from('payments')
         .update({ status: 'failed' })
         .eq('metadata->>payment_id', event.id)
-        .catch((err) => logger.warn({ err }, 'Moneroo: failed to update payment status'))
+        .then(() => null, (err) => logger.warn({ err }, 'Moneroo: failed to update payment status'))
       logger.info({ paymentId: event.id, status: event.status }, 'Moneroo: payment not completed')
       break
   }
@@ -152,7 +153,7 @@ async function activateSubscription(userId: string, plan: string, paymentId: str
     .from('payments')
     .update({ status: 'success' })
     .eq('metadata->>payment_id', paymentId)
-    .catch((err) => logger.warn({ err }, 'Moneroo: failed to update payment record'))
+    .then(() => null, (err) => logger.warn({ err }, 'Moneroo: failed to update payment record'))
 
   logger.info({ userId, plan, paymentId }, 'Moneroo: subscription activated')
 }

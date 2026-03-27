@@ -1,8 +1,8 @@
-import * as falClient from '@fal-ai/client'
+import { createFalClient } from '@fal-ai/client'
 import { logger } from '../lib/logger'
 
-// Configurer fal.ai avec la clé API
-falClient.config({
+// Créer un client fal.ai typé avec la clé API
+const fal = createFalClient({
   credentials: process.env.FAL_KEY,
 })
 
@@ -106,7 +106,7 @@ export async function generateSceneImage(
       const startTime = Date.now()
 
       const result = await Promise.race([
-        falClient.subscribe(styleConfig.model, {
+        fal.subscribe(styleConfig.model, {
           input: {
             prompt: fullPrompt,
             image_size: styleConfig.image_size,
