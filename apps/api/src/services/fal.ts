@@ -56,7 +56,7 @@ const STYLE_CONFIGS: Record<string, StyleConfig> = {
   },
   // Motion Graphics styles
   corporate: {
-    model: 'fal-ai/flux/schnell',
+    model: 'fal-ai/flux/schnell'
     prompt_prefix: 'corporate business style, professional, clean,',
     prompt_suffix: 'modern business aesthetic',
     image_size: 'landscape_16_9',
@@ -122,7 +122,7 @@ export async function generateSceneImage(
       const duration = Date.now() - startTime
 
       // Extraire l'URL de l'image depuis la réponse fal.ai
-      const output = result as { images?: Array<{ url: string }> }
+      const output = ((result as any).data ?? result) as { images?: Array<{ url: string }> }
       const imageUrl = output.images?.[0]?.url
 
       if (!imageUrl) {
