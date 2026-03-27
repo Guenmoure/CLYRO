@@ -57,12 +57,36 @@
   }
 
   body {
-    @apply bg-navy-950 text-foreground font-body;
+    @apply bg-navy-950 text-foreground font-body text-base;
+    line-height: 1.6;                          /* lisibilité optimale */
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+  /* Titres — Syne Bold (équivalent Poppins/Inter Bold) */
+  h1 {
+    @apply font-display font-extrabold text-5xl;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    @apply font-display font-bold text-3xl;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+  }
+  h3 {
+    @apply font-display font-bold text-2xl;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  h4, h5, h6 {
+    @apply font-display font-semibold;
+    line-height: 1.4;
+  }
+
+  /* Code inline & blocs — JetBrains Mono */
+  code, kbd, pre, samp {
+    @apply font-mono text-sm;
+    font-feature-settings: 'liga' 1, 'calt' 1; /* ligatures de code */
   }
 }
 

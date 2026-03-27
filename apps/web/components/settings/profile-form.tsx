@@ -1,15 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@/lib/supabase'
 import { useUser } from '@/hooks/use-user'
 import { toast } from '@/components/ui/toast'
-import type { Database } from '@/lib/database.types'
 
-const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabase = createBrowserClient()
 
 export function ProfileForm() {
   const { profile, email, loading, refetch } = useUser()
@@ -27,6 +23,7 @@ export function ProfileForm() {
     try {
       const { error } = await supabase
         .from('profiles')
+        // @ts-expect-error Supabase type inference issue with Database generic
         .update({ full_name: fullName || profile.full_name })
         .eq('id', profile.id)
 

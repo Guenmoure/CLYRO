@@ -12,8 +12,8 @@ const PROTECTED_ROUTES = [
   '/settings',
 ]
 
-// Routes accessibles uniquement en non-authentifié
-const AUTH_ROUTES = ['/login', '/signup']
+// Routes accessibles uniquement en non-authentifié (redirigent vers /dashboard si connecté)
+const AUTH_ROUTES = ['/', '/login', '/signup']
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()

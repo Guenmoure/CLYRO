@@ -38,9 +38,10 @@ export function useCredits(): UseCreditsReturn {
       .eq('id', user.id)
       .single()
 
-    if (data) {
-      setCredits(data.credits)
-      setPlan(data.plan)
+    const profile = data as { credits: number; plan: UserPlan } | null
+    if (profile) {
+      setCredits(profile.credits)
+      setPlan(profile.plan)
     }
 
     setLoading(false)
