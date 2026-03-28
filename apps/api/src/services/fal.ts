@@ -56,7 +56,7 @@ const STYLE_CONFIGS: Record<string, StyleConfig> = {
   },
   // Motion Graphics styles
   corporate: {
-    model: 'fal-ai/flux/schnell'
+    model: 'fal-ai/flux/schnell',
     prompt_prefix: 'corporate business style, professional, clean,',
     prompt_suffix: 'modern business aesthetic',
     image_size: 'landscape_16_9',
