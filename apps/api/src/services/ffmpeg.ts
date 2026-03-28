@@ -53,9 +53,12 @@ export async function loopImageToClip(
       '-i', tempImagePath,
       '-t', String(durationSeconds),
       '-c:v', 'libx264',
+      '-preset', 'ultrafast',
+      '-crf', '28',
       '-pix_fmt', 'yuv420p',
-      '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
+      '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
       '-r', '24',
+      '-threads', '1',
       outputPath,
     ])
   } finally {
