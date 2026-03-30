@@ -59,9 +59,9 @@ const ALLOWED_ORIGINS = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Autoriser les requêtes sans origin uniquement en dev (Postman, curl)
-      const isDev = process.env.NODE_ENV !== 'production'
-      if (!origin && isDev) {
+      // Autoriser les requêtes sans origin (Postman, curl, iframes about:blank)
+      // Les endpoints nécessitent tous un JWT valide → pas de risque CSRF
+      if (!origin) {
         callback(null, true)
       } else if (origin && ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true)
