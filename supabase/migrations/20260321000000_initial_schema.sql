@@ -167,11 +167,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, email, credits)
+  INSERT INTO public.profiles (id, full_name, credits)
   VALUES (
     NEW.id,
     NEW.raw_user_meta_data->>'full_name',
-    NEW.email,
     3
   )
   ON CONFLICT (id) DO NOTHING;
