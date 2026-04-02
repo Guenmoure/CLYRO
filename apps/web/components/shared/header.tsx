@@ -24,27 +24,23 @@ export function Header() {
   }, [supabase])
 
   return (
-    <header className="h-16 bg-navy-900 border-b border-border flex items-center justify-between px-6">
-      <div className="md:hidden">
-        <span className="font-display text-xl font-bold text-gradient-primary">CLYRO</span>
-      </div>
-
-      <div className="ml-auto flex items-center gap-4">
+    <header className="h-14 bg-brand-surface border-b border-brand-border flex items-center justify-end px-6">
+      <div className="flex items-center gap-3">
         {profile && (
           <>
             {/* Credits badge */}
-            <div className="hidden sm:flex items-center gap-2 bg-navy-800 border border-border rounded-full px-4 py-1.5">
-              <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+            <div className="hidden sm:flex items-center gap-2 bg-brand-bg border border-brand-border rounded-full px-4 py-1.5">
+              <span className="font-mono text-xs text-brand-muted uppercase tracking-widest">
                 Crédits
               </span>
-              <span className="font-display font-bold text-clyro-blue text-sm">
+              <span className="font-display font-bold text-brand-primary text-sm">
                 {profile.credits}
               </span>
             </div>
 
             {/* Plan badge */}
-            <div className="hidden sm:block bg-navy-800 border border-border rounded-full px-4 py-1.5">
-              <span className="font-mono text-xs uppercase tracking-widest text-clyro-purple capitalize">
+            <div className="hidden sm:block bg-brand-primary-light border border-brand-primary/20 rounded-full px-4 py-1.5">
+              <span className="font-mono text-xs uppercase tracking-widest text-brand-primary font-medium capitalize">
                 {profile.plan}
               </span>
             </div>
@@ -59,5 +55,6 @@ export function Header() {
         )}
       </div>
     </header>
+
   )
 }

@@ -7,18 +7,51 @@
    ============================================================ */
 
 @layer base {
+  /* ── Light mode — Charte graphique v2 ──────────────────────────────────── */
   :root {
-    /* CLYRO Color Palette */
-    --navy-950: 228 43% 4%;      /* #060810 */
-    --navy-900: 228 43% 7%;      /* #0A0D1A */
-    --navy-800: 228 40% 11%;     /* #0F1427 */
-    --navy-700: 228 42% 15%;     /* #151C38 */
+    /* shadcn/ui semantic tokens → Brand v2 light */
+    --background: 220 14% 96%;    /* #f8f9fa */
+    --foreground: 210 29% 24%;    /* #2c3e50 */
 
-    --blue-500: 214 85% 59%;     /* #3B8EF0 */
-    --purple-500: 265 87% 64%;   /* #9B5CF6 */
-    --cyan-400: 188 100% 61%;    /* #38E8FF */
+    --card: 0 0% 100%;            /* #ffffff */
+    --card-foreground: 210 29% 24%;
 
-    /* shadcn/ui semantic mapping → CLYRO palette */
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 29% 24%;
+
+    --primary: 231 77% 70%;       /* #667eea */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 271 37% 55%;     /* #764ba2 */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%; /* #6b7280 */
+
+    --accent: 44 91% 63%;         /* #f7c744 */
+    --accent-foreground: 210 29% 24%;
+
+    --destructive: 4 76% 55%;     /* #e74c3c */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;        /* #e5e7eb */
+    --input: 220 13% 91%;
+    --ring: 231 77% 70%;
+
+    --radius: 0.75rem;
+  }
+
+  /* ── Dark mode — Thème sombre CLYRO (actif par défaut via className="dark") */
+  .dark {
+    --navy-950: 228 43% 4%;       /* #060810 */
+    --navy-900: 228 43% 7%;       /* #0A0D1A */
+    --navy-800: 228 40% 11%;      /* #0F1427 */
+    --navy-700: 228 42% 15%;      /* #151C38 */
+
+    --blue-500: 214 85% 59%;      /* #3B8EF0 */
+    --purple-500: 265 87% 64%;    /* #9B5CF6 */
+    --cyan-400: 188 100% 61%;     /* #38E8FF */
+
     --background: var(--navy-950);
     --foreground: 0 0% 95%;
 
@@ -57,12 +90,12 @@
   }
 
   body {
-    @apply bg-navy-950 text-foreground font-body text-base;
+    @apply bg-brand-bg text-brand-text font-body text-base;
     line-height: 1.6;                          /* lisibilité optimale */
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 
-  /* Titres — Syne Bold (équivalent Poppins/Inter Bold) */
+  /* Titres — Plus Jakarta Sans Bold (charte v2) */
   h1 {
     @apply font-display font-extrabold text-5xl;
     line-height: 1.1;
@@ -157,7 +190,7 @@
    Gradient Text
    ============================================================ */
 .text-gradient-primary {
-  background: linear-gradient(135deg, #3B8EF0, #9B5CF6);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

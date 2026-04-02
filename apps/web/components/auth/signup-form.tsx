@@ -65,9 +65,9 @@ export function SignupForm() {
         <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-emerald-400 text-2xl">✓</span>
         </div>
-        <h3 className="font-display font-semibold text-foreground mb-2">Vérifie ta boîte mail</h3>
-        <p className="text-muted-foreground text-sm font-body">
-          Un lien de confirmation a été envoyé à <strong className="text-foreground">{email}</strong>.
+        <h3 className="font-display font-semibold text-brand-text mb-2">Vérifie ta boîte mail</h3>
+        <p className="text-brand-muted text-sm font-body">
+          Un lien de confirmation a été envoyé à <strong className="text-brand-text">{email}</strong>.
           Clique dessus pour activer ton compte.
         </p>
       </div>
@@ -80,7 +80,7 @@ export function SignupForm() {
       <button
         onClick={handleGoogleSignup}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-3 bg-navy-800 hover:bg-navy-700 border border-border text-foreground font-body font-medium py-3 px-4 rounded-xl transition-colors disabled:opacity-50"
+        className="w-full flex items-center justify-center gap-3 bg-brand-bg hover:bg-brand-surface border border-brand-border text-brand-text font-body font-medium py-3 px-4 rounded-xl transition-colors disabled:opacity-50"
       >
         <GoogleIcon />
         Continuer avec Google
@@ -92,7 +92,7 @@ export function SignupForm() {
           <span className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-navy-900 px-3 font-mono text-muted-foreground tracking-widest">
+          <span className="bg-brand-surface px-3 font-mono text-brand-muted tracking-widest">
             ou
           </span>
         </div>
@@ -108,7 +108,7 @@ export function SignupForm() {
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Jean Dupont"
             required
-            className="w-full bg-navy-800 border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-blue focus:ring-1 focus:ring-clyro-blue transition-colors"
+            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-3 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary transition-colors"
           />
         </div>
         <div>
@@ -119,7 +119,7 @@ export function SignupForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ton@email.com"
             required
-            className="w-full bg-navy-800 border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-blue focus:ring-1 focus:ring-clyro-blue transition-colors"
+            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-3 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary transition-colors"
           />
         </div>
         <div>
@@ -131,7 +131,7 @@ export function SignupForm() {
             placeholder="8 caractères minimum"
             required
             minLength={8}
-            className="w-full bg-navy-800 border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-blue focus:ring-1 focus:ring-clyro-blue transition-colors"
+            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-3 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary transition-colors"
           />
         </div>
 

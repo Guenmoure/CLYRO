@@ -1,25 +1,21 @@
-import Link from 'next/link'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import type { Database } from '@/lib/database.types'
+import { MotionHub } from '@/components/motion/motion-hub'
 
-export const metadata = { title: 'Motion Graphics — CLYRO' }
+export const metadata = { title: 'Motion Design — CLYRO' }
 
-export default function MotionPage() {
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="label-mono mb-1">Module</p>
-          <h1 className="font-display text-2xl font-bold text-foreground">Motion Graphics</h1>
-        </div>
-        <Link
-          href="/motion/new"
-          className="bg-grad-primary text-white font-display font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
-        >
-          + Nouvelle vidéo
-        </Link>
-      </div>
-      <p className="text-muted-foreground font-body">
-        Vos projets Motion Graphics apparaîtront ici.
-      </p>
-    </div>
-  )
+export default async function MotionPage() {
+  const supabase = createServerComponentClient<Database>({ cookies })
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: videos } = await supabase
+    .from('videos')
+    .select('id, title, status, created_at')
+    .eq('user_id', user?.id ?? '')
+    .eq('type', 'motion')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  return <MotionHub initialVideos={videos ?? []} />
 }

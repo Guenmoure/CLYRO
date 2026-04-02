@@ -182,7 +182,7 @@ function Modal({
 
         {/* Footer optionnel */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-0 border-t border-border mt-0 pt-4">
+          <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-4 border-t border-border">
             {footer}
           </div>
         )}

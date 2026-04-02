@@ -15,14 +15,16 @@ const spinnerVariants = cva(
         lg: 'h-10 w-10', // 40px — page entière ou modals
       },
       color: {
-        /** Bleu CLYRO — par défaut */
-        blue:   'text-clyro-blue',
+        /** Bleu-violet brand v2 — charte graphique officielle */
+        primary: 'text-brand-primary',
+        /** Bleu CLYRO — dark mode */
+        blue:    'text-clyro-blue',
         /** Violet — module Motion */
-        purple: 'text-clyro-purple',
+        purple:  'text-clyro-purple',
         /** Cyan — effets électriques */
-        cyan:   'text-clyro-cyan',
+        cyan:    'text-clyro-cyan',
         /** Blanc — sur fonds sombres colorés */
-        white:  'text-white',
+        white:   'text-white',
         /** Hérité du parent — s'adapte au contexte */
         current: 'text-current',
       },

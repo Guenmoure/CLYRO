@@ -17,14 +17,14 @@ export default function SignupPage() {
       </div>
 
       {/* Card */}
-      <div className="bg-navy-900 border border-border rounded-2xl p-8 shadow-lg">
+      <div className="bg-brand-surface border border-brand-border rounded-2xl p-8 shadow-brand-md">
         <div className="mb-6">
-          <h2 className="font-display text-xl font-semibold text-foreground">
+          <h2 className="font-display text-xl font-semibold text-brand-text">
             Créer un compte gratuit
           </h2>
-          <p className="text-muted-foreground text-sm mt-1 font-body">
+          <p className="text-brand-muted text-sm mt-1 font-body">
             Déjà inscrit ?{' '}
-            <Link href="/login" className="text-clyro-blue hover:underline">
+            <Link href="/login" className="text-brand-primary hover:underline font-medium">
               Se connecter
             </Link>
           </p>

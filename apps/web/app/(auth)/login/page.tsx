@@ -17,12 +17,12 @@ export default function LoginPage() {
       </div>
 
       {/* Card */}
-      <div className="bg-navy-900 border border-border rounded-2xl p-8 shadow-lg">
+      <div className="bg-brand-surface border border-brand-border rounded-2xl p-8 shadow-brand-md">
         <div className="mb-6">
-          <h2 className="font-display text-xl font-semibold text-foreground">Connexion</h2>
-          <p className="text-muted-foreground text-sm mt-1 font-body">
+          <h2 className="font-display text-xl font-semibold text-brand-text">Connexion</h2>
+          <p className="text-brand-muted text-sm mt-1 font-body">
             Pas encore de compte ?{' '}
-            <Link href="/signup" className="text-clyro-blue hover:underline">
+            <Link href="/signup" className="text-brand-primary hover:underline font-medium">
               S&apos;inscrire
             </Link>
           </p>

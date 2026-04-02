@@ -106,6 +106,8 @@ export interface ClyroVoice {
   category: string
   gender: string
   accent: string
+  language?: string
+  languageFlag?: string
   age: string
   useCase: string
   description: string
@@ -115,6 +117,7 @@ export interface ClyroVoice {
 export interface VoiceFilters {
   gender?: string
   accent?: string
+  language?: string
   useCase?: string
   search?: string
 }
@@ -125,16 +128,21 @@ export async function getVoices() {
 
 export async function getPublicVoices(filters?: VoiceFilters) {
   const params = new URLSearchParams()
-  if (filters?.gender)  params.set('gender',  filters.gender)
-  if (filters?.accent)  params.set('accent',  filters.accent)
-  if (filters?.useCase) params.set('useCase', filters.useCase)
-  if (filters?.search)  params.set('search',  filters.search)
+  if (filters?.gender)   params.set('gender',   filters.gender)
+  if (filters?.accent)   params.set('accent',   filters.accent)
+  if (filters?.language) params.set('language', filters.language)
+  if (filters?.useCase)  params.set('useCase',  filters.useCase)
+  if (filters?.search)   params.set('search',   filters.search)
   const query = params.toString() ? `?${params.toString()}` : ''
   return apiFetch<{ voices: ClyroVoice[] }>(`/api/v1/voices/public${query}`)
 }
 
 export async function getVoiceFilters() {
-  return apiFetch<{ genders: string[]; accents: string[]; useCases: string[] }>('/api/v1/voices/filters')
+  return apiFetch<{
+    genders: string[]
+    languages: Array<{ value: string; label: string; flag: string }>
+    useCases: string[]
+  }>('/api/v1/voices/filters')
 }
 
 export async function toggleVoiceFavorite(voiceId: string, action: 'add' | 'remove') {

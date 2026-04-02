@@ -2,7 +2,8 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   // Dark mode contrôlé via la classe `.dark` sur <html>
-  // (layout.tsx applique `className="dark"` par défaut)
+  // layout.tsx applique `className="dark"` par défaut → thème sombre actif
+  // Pour passer en clair : retirer la classe `dark` de <html>
   darkMode: ['class'],
 
   content: [
@@ -16,22 +17,37 @@ const config: Config = {
     extend: {
       // ── Couleurs ──────────────────────────────────────────────────────────
       colors: {
-        // CLYRO Navy — fonds & surfaces
+        // ── Brand v2 — Charte graphique officielle ────────────────────────
+        'brand-primary':       '#667eea',   // bleu-violet — CTA, liens actifs
+        'brand-primary-dark':  '#5a67d8',   // hover bouton primaire
+        'brand-primary-light': '#eef0fd',   // backgrounds, soft badges
+        'brand-secondary':     '#764ba2',   // violet — fin de gradient
+        'brand-accent':        '#f7c744',   // or — highlights, CTA secondaire
+        'brand-accent-light':  '#fef9e7',   // fond badge accent
+        'brand-text':          '#2c3e50',   // texte principal (light mode)
+        'brand-muted':         '#6b7280',   // texte secondaire / placeholders
+        'brand-surface':       '#ffffff',   // cards, panels (light mode)
+        'brand-bg':            '#f8f9fa',   // fond général (light mode)
+        'brand-border':        '#e5e7eb',   // bordures
+        'brand-border-light':  '#f3f4f6',   // séparateurs subtils
+
+        // ── Legacy — Thème sombre (dark mode, actif par défaut) ──────────
         'navy-950': '#060810',   // fond racine (body)
         'navy-900': '#0A0D1A',   // cards, panels
-        'navy-800': '#0F1427',   // inputs, hover léger
+        'navy-800': '#0F1427',   // inputs, hover
         'navy-700': '#151C38',   // bordures & surbrillances
-
-        // CLYRO Accents — couleurs principales de la marque
         'clyro-blue':      '#3B8EF0',   // primary — CTA, liens actifs
         'clyro-blue-dark': '#2d7de0',   // primary hover
-        'clyro-purple':    '#9B5CF6',   // secondary — accents Motion module
+        'clyro-purple':    '#9B5CF6',   // secondary — module Motion
         'clyro-cyan':      '#38E8FF',   // tertiary — effets électriques
 
-        // Couleurs sémantiques — feedback & états
-        success: '#27ae60',   // confirmations, succès
-        warning: '#f39c12',   // alertes, avertissements
-        error:   '#e74c3c',   // erreurs, destructif
+        // ── Sémantique — états feedback ───────────────────────────────────
+        success:         '#27ae60',
+        'success-light': '#eafaf1',
+        warning:         '#f39c12',
+        'warning-light': '#fef5e7',
+        error:           '#e74c3c',
+        'error-light':   '#fdedec',
 
         // shadcn/ui tokens (mappés sur la palette CLYRO via CSS vars)
         background: 'hsl(var(--background))',
@@ -71,12 +87,12 @@ const config: Config = {
 
       // ── Typographie ───────────────────────────────────────────────────────
       // Polices chargées via next/font dans layout.tsx :
-      //   Syne          → display  (titres h1/h2/h3, équivalent Poppins Bold)
-      //   DM Sans       → body     (corps de texte, équivalent Inter Regular)
-      //   JetBrains Mono → mono    (code, données, badges)
+      //   Plus Jakarta Sans → display  (titres, marque, UI bold — charte v2)
+      //   Inter             → body     (corps de texte — charte v2)
+      //   JetBrains Mono    → mono     (code, tags, labels techniques)
       fontFamily: {
-        display: ['var(--font-syne)', 'sans-serif'],
-        body:    ['var(--font-dm-sans)', 'sans-serif'],
+        display: ['var(--font-plus-jakarta)', 'sans-serif'],
+        body:    ['var(--font-inter)', 'sans-serif'],
         mono:    ['var(--font-jetbrains-mono)', 'monospace'],
       },
 
@@ -115,7 +131,12 @@ const config: Config = {
 
       // ── Dégradés ──────────────────────────────────────────────────────────
       backgroundImage: {
-        'grad-primary':  'linear-gradient(135deg, #3B8EF0, #9B5CF6)',
+        // Brand v2 — gradients charte graphique officielle
+        'grad-primary':  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'grad-hero':     'linear-gradient(135deg, #667eea 0%, #764ba2 60%, #f7c744 100%)',
+        'grad-soft':     'linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%)',
+        'grad-accent':   'linear-gradient(135deg, #f7c744 0%, #f39c12 100%)',
+        // Legacy dark mode
         'grad-electric': 'linear-gradient(135deg, #38E8FF, #3B8EF0, #9B5CF6)',
         'grad-navy':     'linear-gradient(180deg, #060810, #0A0D1A)',
         'grad-success':  'linear-gradient(135deg, #27ae60, #2ecc71)',
@@ -123,14 +144,24 @@ const config: Config = {
       },
 
       // ── Rayons ────────────────────────────────────────────────────────────
+      // 2xl      : rayon brand v2 pour les cartes et panels (20px)
+      // lg/md/sm : var(--radius) — compatibilité shadcn/ui
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        '2xl': '20px',
+        lg:    'var(--radius)',
+        md:    'calc(var(--radius) - 2px)',
+        sm:    'calc(var(--radius) - 4px)',
       },
 
-      // ── Ombres lumineuses ─────────────────────────────────────────────────
+      // ── Ombres ────────────────────────────────────────────────────────────
       boxShadow: {
+        // Brand v2 — ombres douces (light mode)
+        'brand-sm':      '0 1px 3px rgba(44,62,80,0.08), 0 1px 2px rgba(44,62,80,0.04)',
+        'brand-md':      '0 4px 16px rgba(44,62,80,0.10), 0 2px 6px rgba(44,62,80,0.06)',
+        'brand-lg':      '0 12px 40px rgba(44,62,80,0.12), 0 4px 12px rgba(44,62,80,0.06)',
+        'brand-xl':      '0 24px 64px rgba(102,126,234,0.18)',
+        'brand-primary': '0 8px 32px rgba(102,126,234,0.32)',
+        // Legacy dark mode — glows
         'glow-blue':    '0 0 40px rgba(59, 142, 240, 0.3)',
         'glow-purple':  '0 0 40px rgba(155, 92, 246, 0.3)',
         'glow-cyan':    '0 0 40px rgba(56, 232, 255, 0.3)',

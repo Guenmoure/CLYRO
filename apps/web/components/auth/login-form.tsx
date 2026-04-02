@@ -60,7 +60,7 @@ export function LoginForm() {
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-3 bg-navy-800 hover:bg-navy-700 border border-border text-foreground font-body font-medium py-3 px-4 rounded-xl transition-colors disabled:opacity-50"
+        className="w-full flex items-center justify-center gap-3 bg-brand-bg hover:bg-brand-surface border border-brand-border text-brand-text font-body font-medium py-3 px-4 rounded-xl transition-colors disabled:opacity-50"
       >
         <GoogleIcon />
         Continuer avec Google
@@ -72,7 +72,7 @@ export function LoginForm() {
           <span className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-navy-900 px-3 font-mono text-muted-foreground tracking-widest">
+          <span className="bg-brand-surface px-3 font-mono text-brand-muted tracking-widest">
             ou
           </span>
         </div>
@@ -88,7 +88,7 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ton@email.com"
             required
-            className="w-full bg-navy-800 border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-blue focus:ring-1 focus:ring-clyro-blue transition-colors"
+            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-3 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary transition-colors"
           />
         </div>
         <div>
@@ -99,7 +99,7 @@ export function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            className="w-full bg-navy-800 border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-blue focus:ring-1 focus:ring-clyro-blue transition-colors"
+            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-3 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary transition-colors"
           />
         </div>
 

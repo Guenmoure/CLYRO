@@ -21,14 +21,14 @@ interface VideoCardProps {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  done: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  error: 'bg-red-500/10 text-red-400 border-red-500/20',
-  pending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  processing: 'bg-clyro-blue/10 text-clyro-blue border-clyro-blue/20',
-  storyboard: 'bg-clyro-blue/10 text-clyro-blue border-clyro-blue/20',
-  visuals: 'bg-clyro-purple/10 text-clyro-purple border-clyro-purple/20',
-  audio: 'bg-clyro-purple/10 text-clyro-purple border-clyro-purple/20',
-  assembly: 'bg-clyro-cyan/10 text-clyro-cyan border-clyro-cyan/20',
+  done: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  error: 'bg-red-500/10 text-red-500 border-red-500/20',
+  pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+  processing: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
+  storyboard: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
+  visuals: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20',
+  audio: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20',
+  assembly: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -69,19 +69,19 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
   }
 
   return (
-    <div className="bg-navy-900 border border-border rounded-xl p-4 hover:border-clyro-blue/30 transition-colors">
+    <div className="bg-brand-surface border border-brand-border rounded-xl p-4 hover:border-brand-primary/30 transition-colors">
       <div className="flex items-center gap-4">
         {/* Thumbnail / icon */}
-        <div className="w-14 h-14 bg-navy-800 rounded-lg flex items-center justify-center shrink-0 text-2xl">
+        <div className="w-14 h-14 bg-brand-bg rounded-lg flex items-center justify-center shrink-0 text-2xl">
           {icon}
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <p className="font-display font-semibold text-foreground truncate">
+          <p className="font-display font-semibold text-brand-text truncate">
             {video.title ?? 'Vidéo sans titre'}
           </p>
-          <p className="font-mono text-xs text-muted-foreground mt-0.5">
+          <p className="font-mono text-xs text-brand-muted mt-0.5">
             {video.module ?? '—'} · {video.style ?? '—'} · {formatDateTime(video.created_at)}
           </p>
         </div>
@@ -99,7 +99,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
               download
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-xs text-clyro-blue hover:underline px-3 py-1.5 bg-clyro-blue/10 border border-clyro-blue/20 rounded-lg transition-colors hover:bg-clyro-blue/20"
+              className="font-mono text-xs text-brand-primary hover:underline px-3 py-1.5 bg-brand-primary/10 border border-brand-primary/20 rounded-lg transition-colors hover:bg-brand-primary/20"
             >
               Télécharger
             </a>
@@ -109,7 +109,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
             <button
               onClick={() => setShowConfirm(true)}
               disabled={deleting}
-              className="font-mono text-xs text-red-400 hover:underline px-3 py-1.5 bg-red-500/10 border border-red-500/20 rounded-lg transition-colors hover:bg-red-500/20 disabled:opacity-50"
+              className="font-mono text-xs text-red-500 hover:underline px-3 py-1.5 bg-red-500/10 border border-red-500/20 rounded-lg transition-colors hover:bg-red-500/20 disabled:opacity-50"
             >
               Supprimer
             </button>
@@ -125,7 +125,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
               <button
                 onClick={() => setShowConfirm(false)}
                 disabled={deleting}
-                className="font-mono text-xs text-muted-foreground px-3 py-1.5 bg-navy-800 border border-border rounded-lg hover:bg-navy-700 transition-colors"
+                className="font-mono text-xs text-brand-muted px-3 py-1.5 bg-brand-bg border border-brand-border rounded-lg hover:bg-brand-surface transition-colors"
               >
                 Annuler
               </button>
