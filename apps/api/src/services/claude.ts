@@ -19,6 +19,20 @@ const SCENE_COUNT_MAP: Record<string, number> = {
   default: 6,
 }
 
+// Instructions visuelles par style — transmises à Claude pour générer description_visuelle cohérente avec fal.ai
+const STYLE_VISUAL_GUIDE: Record<string, string> = {
+  'animation-2d':  'flat vector cartoon illustration, bold outlines, vibrant saturated colors — absolutely NO photorealism, no 3D',
+  'stock-vo':      'editorial stock photography, natural lighting, real-world scene — fully photorealistic, no illustration',
+  'minimaliste':   'extreme minimalism, pure white background, single centered element, large negative space — NO clutter, NO shadows',
+  'infographie':   'flat icon infographic, data visualization chart, color-coded sections, isometric view — informational design only',
+  'whiteboard':    'black marker hand-drawn sketch on plain white — NO color fills, NO shading, rough strokes only',
+  'cinematique':   'anamorphic cinematic wide shot, dramatic chiaroscuro, 35mm film grain, moody atmosphere — movie still quality',
+  'corporate':     'clean corporate business illustration, navy blue / white palette, minimal geometric shapes — professional B2B',
+  'dynamique':     'high-energy composition, motion blur, neon accents on dark background, diagonal lines — sports / action',
+  'luxe':          'luxury brand photography, gold and black palette, bokeh, marble surfaces — high-fashion editorial',
+  'fun':           'playful cartoon, candy-colored palette, bubbly rounded shapes, confetti — kawaii cheerful style',
+}
+
 interface StoryboardResult {
   scenes: Scene[]
   total_duration: number
@@ -43,19 +57,23 @@ export async function generateStoryboard(
 Tu génères des storyboards précis et professionnels pour des vidéos sans présentateur.
 Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
 
+  const styleGuide = STYLE_VISUAL_GUIDE[style] ?? 'professional visual composition'
+
   const userPrompt = `Découpe ce script en exactement ${sceneCount} scènes visuelles pour une vidéo de style "${style}".
+
+STYLE VISUEL OBLIGATOIRE pour description_visuelle : ${styleGuide}
 
 Pour chaque scène, génère :
 - "id": identifiant unique ("scene_001", "scene_002", etc.)
 - "index": numéro de scène (commence à 0)
-- "description_visuelle": description visuelle en ANGLAIS (prompt optimisé pour fal.ai/Flux, max 150 caractères)
-- "texte_voix": texte lu pendant cette scène (en français)
-- "duree_estimee": durée en secondes (nombre entier)
+- "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). DOIT respecter le style visuel ci-dessus. Ne jamais mentionner de personnes identifiables.
+- "texte_voix": OBLIGATOIRE — texte narré en français pendant cette scène. Toujours rempli, jamais vide. Correspond exactement au contenu du script pour cette partie.
+- "duree_estimee": durée en secondes (nombre entier, entre 3 et 10)
 
-Contraintes pour description_visuelle :
-- En anglais, style photo/cinéma professionnel
-- Ne pas mentionner de personnes identifiables
-- Adapter au style : ${style}
+RÈGLES CRITIQUES :
+1. description_visuelle DOIT visuellement correspondre au style "${style}" — applique strictement : ${styleGuide}
+2. texte_voix est OBLIGATOIRE sur chaque scène — distribue le script complet sur toutes les scènes
+3. La somme des duree_estimee doit être cohérente avec la longueur du script
 
 Script :
 """

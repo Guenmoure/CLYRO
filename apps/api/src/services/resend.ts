@@ -7,7 +7,12 @@ function getResendClient(): Resend {
   return new Resend(apiKey)
 }
 
-const FROM_EMAIL = 'CLYRO <noreply@clyro.app>'
+// En prod : 'CLYRO <noreply@clyro.app>' (domaine vérifié dans Resend)
+// En dev : onboarding@resend.dev (domaine Resend par défaut, pas de vérification requise)
+const FROM_EMAIL =
+  process.env.NODE_ENV === 'production'
+    ? 'CLYRO <noreply@clyro.app>'
+    : 'CLYRO <onboarding@resend.dev>'
 const FRONTEND_URL = process.env.FRONTEND_URL ?? 'https://app.clyro.app'
 
 // ── Email Templates ────────────────────────────────────────────────────────

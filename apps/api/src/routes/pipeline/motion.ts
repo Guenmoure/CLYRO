@@ -5,7 +5,7 @@ import { supabaseAdmin } from '../../lib/supabase'
 import { generateStoryboard } from '../../services/claude'
 import { generateSceneImages } from '../../services/fal'
 import { generateVoiceoverScenes } from '../../services/elevenlabs'
-import { assembleVideo } from '../../services/ffmpeg'
+import { renderMotionVideo } from '../../services/remotion'
 import { sendVideoReadyEmail } from '../../services/resend'
 import { logger } from '../../lib/logger'
 
@@ -232,12 +232,13 @@ async function runMotionPipeline(params: MotionPipelineParams): Promise<void> {
 
     await updateStatus('audio', 72)
 
-    // ÉTAPE 4 : Assemblage FFmpeg
-    // Note : Remotion BrandOverlay sera intégré ici en Phase 4b
+    // ÉTAPE 4 : Rendu Remotion (Motion Graphics + brand overlays)
     await updateStatus('assembly', 75)
-    const mp4Buffer = await assembleVideo({
+    const mp4Buffer = await renderMotionVideo({
       scenes:          scenesWithImages,
-      sceneImages,
+      brandConfig:     { ...params.brandConfig, style: params.style },
+      format:          params.format as '9:16' | '1:1' | '16:9',
+      duration:        params.duration,
       voiceoverBuffer: combinedAudioBuffer,
     })
 

@@ -129,10 +129,11 @@ voicesRouter.post('/voices/clone', authMiddleware, async (req, res) => {
 // ── GET /api/v1/voices/public (avec filtres) ──────────────────────────────
 
 const voiceFiltersSchema = z.object({
-  gender:  z.string().max(50).optional(),
-  accent:  z.string().max(50).optional(),
-  useCase: z.string().max(50).optional(),
-  search:  z.string().max(100).optional(),
+  gender:   z.string().max(50).optional(),
+  accent:   z.string().max(50).optional(),
+  language: z.string().max(50).optional(),
+  useCase:  z.string().max(50).optional(),
+  search:   z.string().max(100).optional(),
 })
 
 voicesRouter.get('/voices/public', authMiddleware, async (req, res) => {

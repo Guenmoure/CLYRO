@@ -32,6 +32,8 @@ export interface ClyroVoice {
   category: 'public' | 'cloned'
   gender?: string
   accent?: string
+  language?: string
+  languageFlag?: string
   age?: string
   useCase?: string
   description?: string
@@ -40,8 +42,37 @@ export interface ClyroVoice {
 export interface VoiceFilters {
   gender?: string
   accent?: string
+  language?: string
   useCase?: string
   search?: string
+}
+
+// Mapping langue → accents ElevenLabs (labels.accent)
+const LANGUAGE_ACCENT_MAP: Record<string, string[]> = {
+  'français':    ['french'],
+  'english':     ['american', 'british', 'australian', 'irish', 'english'],
+  'español':     ['spanish'],
+  'português':   ['portuguese', 'brazilian'],
+  'deutsch':     ['german'],
+  'italiano':    ['italian'],
+  'arabic':      ['arabic'],
+  'hindi':       ['hindi'],
+}
+
+const ACCENT_TO_LANGUAGE: Record<string, { label: string; flag: string }> = {
+  french:     { label: 'Français',   flag: '🇫🇷' },
+  american:   { label: 'English',    flag: '🇺🇸' },
+  british:    { label: 'English',    flag: '🇬🇧' },
+  australian: { label: 'English',    flag: '🇦🇺' },
+  irish:      { label: 'English',    flag: '🇮🇪' },
+  english:    { label: 'English',    flag: '🇬🇧' },
+  spanish:    { label: 'Español',    flag: '🇪🇸' },
+  portuguese: { label: 'Português',  flag: '🇵🇹' },
+  brazilian:  { label: 'Português',  flag: '🇧🇷' },
+  german:     { label: 'Deutsch',    flag: '🇩🇪' },
+  italian:    { label: 'Italiano',   flag: '🇮🇹' },
+  arabic:     { label: 'Arabic',     flag: '🇸🇦' },
+  hindi:      { label: 'Hindi',      flag: '🇮🇳' },
 }
 
 // ── 1. Voix publiques (bibliothèque premade) ───────────────────────────────
@@ -65,6 +96,13 @@ export async function listPublicVoices(filters?: VoiceFilters): Promise<ClyroVoi
       voices = voices.filter((v) =>
         v.labels.accent?.toLowerCase().includes(filters.accent!.toLowerCase())
       )
+    if (filters?.language) {
+      const targetAccents = LANGUAGE_ACCENT_MAP[filters.language.toLowerCase()] ?? [filters.language.toLowerCase()]
+      voices = voices.filter((v) => {
+        const accent = v.labels.accent?.toLowerCase() ?? ''
+        return targetAccents.some((a) => accent.includes(a))
+      })
+    }
     if (filters?.useCase)
       voices = voices.filter(
         (v) => v.labels.use_case?.toLowerCase() === filters.useCase!.toLowerCase()
@@ -76,6 +114,15 @@ export async function listPublicVoices(filters?: VoiceFilters): Promise<ClyroVoi
           v.name.toLowerCase().includes(q) ||
           v.labels.description?.toLowerCase().includes(q)
       )
+    }
+
+    // Trier : voix françaises en premier si pas de filtre langue spécifique
+    if (!filters?.language) {
+      voices.sort((a, b) => {
+        const aFr = a.labels.accent?.toLowerCase() === 'french' ? -1 : 0
+        const bFr = b.labels.accent?.toLowerCase() === 'french' ? -1 : 0
+        return aFr - bFr
+      })
     }
 
     return voices.map(normalizeVoice)
@@ -105,7 +152,7 @@ export async function listClonedVoices(elevenlabsVoiceIds: string[]): Promise<Cl
 
 export async function getVoiceFilters(): Promise<{
   genders: string[]
-  accents: string[]
+  languages: Array<{ value: string; label: string; flag: string }>
   useCases: string[]
 }> {
   const res = await fetch(`${BASE_URL}/voices`, {
@@ -116,9 +163,26 @@ export async function getVoiceFilters(): Promise<{
   const data = (await res.json()) as { voices: ElevenLabsVoice[] }
   const voices = (data.voices ?? []).filter((v) => v.category === 'premade')
 
+  // Construire la liste des langues disponibles à partir des accents présents
+  const availableAccents = new Set(voices.map((v) => v.labels.accent?.toLowerCase()).filter(Boolean))
+  const languagesMap = new Map<string, { value: string; label: string; flag: string }>()
+
+  for (const [langKey, accents] of Object.entries(LANGUAGE_ACCENT_MAP)) {
+    if (accents.some((a) => availableAccents.has(a))) {
+      const info = ACCENT_TO_LANGUAGE[accents[0]] ?? { label: langKey, flag: '🌐' }
+      languagesMap.set(langKey, { value: langKey, label: info.label, flag: info.flag })
+    }
+  }
+
+  // Toujours inclure Français en premier
+  const languagesOrdered = [
+    ...(languagesMap.has('français') ? [languagesMap.get('français')!] : [{ value: 'français', label: 'Français', flag: '🇫🇷' }]),
+    ...[...languagesMap.values()].filter((l) => l.value !== 'français'),
+  ]
+
   return {
     genders: [...new Set(voices.map((v) => v.labels.gender).filter(Boolean))] as string[],
-    accents: [...new Set(voices.map((v) => v.labels.accent).filter(Boolean))] as string[],
+    languages: languagesOrdered,
     useCases: [...new Set(voices.map((v) => v.labels.use_case).filter(Boolean))] as string[],
   }
 }
@@ -222,6 +286,8 @@ export async function deleteClonedVoice(voiceId: string): Promise<void> {
 // ── Helper ────────────────────────────────────────────────────────────────
 
 function normalizeVoice(v: ElevenLabsVoice): ClyroVoice {
+  const accentKey = v.labels.accent?.toLowerCase() ?? ''
+  const langInfo = ACCENT_TO_LANGUAGE[accentKey]
   return {
     id: v.voice_id,
     name: v.name,
@@ -229,6 +295,8 @@ function normalizeVoice(v: ElevenLabsVoice): ClyroVoice {
     category: v.category === 'premade' ? 'public' : 'cloned',
     gender: v.labels.gender,
     accent: v.labels.accent,
+    language: langInfo?.label,
+    languageFlag: langInfo?.flag,
     age: v.labels.age,
     useCase: v.labels.use_case,
     description: v.labels.description,
