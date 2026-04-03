@@ -4,6 +4,7 @@ import { generateStoryboard } from '../services/claude'
 import { generateSceneImages } from '../services/fal'
 import { generateVoiceoverScenes } from '../services/elevenlabs'
 import { renderMotionVideo } from '../services/remotion'
+import { renderMotionVideoLambda, isLambdaEnabled } from '../services/remotionLambda'
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
 
@@ -67,31 +68,43 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
 
     await updateStatus('audio', 72)
 
-    // ÉTAPE 4 : Rendu Remotion
+    // ÉTAPE 4 : Rendu vidéo (Lambda si activé, sinon local Remotion)
     await updateStatus('assembly', 75)
-    const mp4Buffer = await renderMotionVideo({
+
+    const renderOptions = {
       scenes:          scenesWithImages,
       brandConfig:     { ...params.brandConfig, style: params.style },
       format:          params.format as '9:16' | '1:1' | '16:9',
       duration:        params.duration,
       voiceoverBuffer: combinedAudioBuffer,
-    })
+    }
 
-    // ÉTAPE 5 : Upload Supabase Storage
-    await updateStatus('assembly', 88)
-    const storagePath = `${userId}/${videoId}/output.mp4`
+    let outputUrl: string
 
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from('videos')
-      .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
+    if (isLambdaEnabled()) {
+      // Lambda : render sur AWS, fichier écrit directement dans S3
+      logger.info({ videoId }, 'Using Remotion Lambda renderer')
+      outputUrl = await renderMotionVideoLambda(renderOptions)
+    } else {
+      // Local : render Remotion → buffer → upload Supabase Storage
+      logger.info({ videoId }, 'Using local Remotion renderer')
+      const mp4Buffer = await renderMotionVideo(renderOptions)
 
-    if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
+      await updateStatus('assembly', 88)
+      const storagePath = `${userId}/${videoId}/output.mp4`
 
-    const { data: signedUrl } = await supabaseAdmin.storage
-      .from('videos')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from('videos')
+        .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
 
-    const outputUrl = signedUrl?.signedUrl ?? ''
+      if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
+
+      const { data: signedUrl } = await supabaseAdmin.storage
+        .from('videos')
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+
+      outputUrl = signedUrl?.signedUrl ?? ''
+    }
 
     await supabaseAdmin
       .from('videos')
