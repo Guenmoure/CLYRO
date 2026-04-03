@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { Video, Wand2, Mic2, Play, Clock } from 'lucide-react'
 import type { Database } from '@/lib/database.types'
+import { Reveal } from '@/components/ui/reveal'
 
 export const metadata = { title: 'Dashboard — CLYRO' }
 
@@ -43,10 +44,12 @@ export default async function DashboardPage() {
 
         {/* Create New Video */}
         <div>
-          <h2 className="font-display text-xl font-bold text-white mb-5">
-            Create New Video
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Reveal>
+            <h2 className="font-display text-xl font-bold text-white mb-5">
+              Create New Video
+            </h2>
+          </Reveal>
+          <Reveal stagger className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <CreationCard
               href="/faceless/new"
               icon={<Video size={36} strokeWidth={1.2} className="text-clyro-cyan" />}
@@ -72,28 +75,28 @@ export default async function DashboardPage() {
               title="AI Voiceover"
               description="Public voice library + your cloned voices for any generation."
             />
-          </div>
+          </Reveal>
         </div>
 
         {/* Recent Projects */}
         {recentVideos && recentVideos.length > 0 && (
           <div>
-            <div className="flex items-center justify-between mb-5">
+            <Reveal className="flex items-center justify-between mb-5">
               <h2 className="font-display text-xl font-bold text-white">
                 Recent Projects
               </h2>
               <Link
                 href="/projects"
-                className="text-sm font-medium text-clyro-blue hover:text-clyro-cyan transition-colors"
+                className="text-sm font-medium text-clyro-blue hover:text-clyro-cyan transition-colors duration-200"
               >
                 See all →
               </Link>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            </Reveal>
+            <Reveal stagger className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {recentVideos.map((video) => (
                 <ProjectCard key={video.id} video={video} />
               ))}
-            </div>
+            </Reveal>
           </div>
         )}
 
@@ -140,13 +143,13 @@ function CreationCard({
   return (
     <Link
       href={href}
-      className={`group relative flex flex-col items-center text-center bg-navy-900 border ${s.border} ${s.glow} rounded-2xl p-6 transition-all duration-200 hover:scale-[1.02] overflow-hidden`}
+      className={`group relative flex flex-col items-center text-center bg-navy-900 border ${s.border} ${s.glow} rounded-2xl p-6 card-hover overflow-hidden ${featured ? 'shimmer' : ''}`}
     >
       {/* Bottom accent line */}
       <span className={`absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r ${s.bar} opacity-70`} />
 
       {/* Icon */}
-      <div className={`w-20 h-20 rounded-2xl ${iconBg} flex items-center justify-center mb-5`}>
+      <div className={`w-20 h-20 rounded-2xl ${iconBg} flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110`}>
         {icon}
       </div>
 
@@ -175,7 +178,7 @@ function ProjectCard({ video }: { video: VideoRow }) {
   })
 
   return (
-    <div className="group relative bg-navy-900 border border-navy-700 rounded-2xl overflow-hidden hover:border-navy-600 transition-all duration-200">
+    <div className="group relative bg-navy-900 border border-navy-700 rounded-2xl overflow-hidden hover:border-navy-600 card-hover">
       {/* Thumbnail */}
       <div className={`relative h-36 bg-gradient-to-br ${bg} flex items-center justify-center`}>
         {video.module === 'motion'
