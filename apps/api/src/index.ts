@@ -2,6 +2,7 @@ import path from 'path'
 import dotenv from 'dotenv'
 dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') }) // fallback racine monorepo
+import * as Sentry from '@sentry/node'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -15,6 +16,16 @@ import { voicesRouter } from './routes/voices'
 import { checkoutRouter } from './routes/checkout'
 import { stripeWebhookRouter } from './routes/webhooks/stripe'
 import { monerooWebhookRouter } from './routes/webhooks/moneroo'
+
+// ── Sentry — Error monitoring (init before anything else) ─────────────────
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV ?? 'development',
+    tracesSampleRate: 0.2,
+  })
+  logger.info('Sentry initialized')
+}
 
 const app = express()
 const PORT = process.env.PORT ?? 4000
@@ -143,6 +154,7 @@ app.use(
     res: express.Response,
     _next: express.NextFunction
   ) => {
+    Sentry.captureException(err)
     logger.error({ err }, 'Unhandled error')
     res.status(500).json({ error: 'Internal server error', code: 'INTERNAL_ERROR' })
   }

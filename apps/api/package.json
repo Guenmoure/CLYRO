@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "nodemon",
+    "worker": "ts-node --project tsconfig.json src/workers/renderWorker.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:worker": "node dist/workers/renderWorker.js",
     "test": "jest"
   },
   "dependencies": {
@@ -14,12 +16,15 @@
     "@fal-ai/client": "^1.2.3",
     "@remotion/bundler": "4.0.443",
     "@remotion/renderer": "4.0.443",
+    "@sentry/node": "^10.47.0",
     "@supabase/supabase-js": "^2.45.4",
+    "bullmq": "^5.72.1",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
     "helmet": "^8.0.0",
+    "ioredis": "^5.10.1",
     "pino": "^9.5.0",
     "pino-pretty": "^13.0.0",
     "react": "^18.3.1",

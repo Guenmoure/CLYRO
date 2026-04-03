@@ -2,12 +2,9 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { authMiddleware } from '../../middleware/auth'
 import { supabaseAdmin } from '../../lib/supabase'
-import { generateStoryboard } from '../../services/claude'
-import { generateSceneImages } from '../../services/fal'
-import { generateVoiceoverScenes } from '../../services/elevenlabs'
-import { assembleVideo } from '../../services/ffmpeg'
-import { sendVideoReadyEmail } from '../../services/resend'
 import { logger } from '../../lib/logger'
+import { renderQueue } from '../../queues/renderQueue'
+import { runFacelessPipeline } from '../../pipelines/faceless'
 
 export const pipelineFacelessRouter = Router()
 
@@ -111,18 +108,25 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
     // Retourner immédiatement — la génération tourne en arrière-plan
     res.status(202).json({ video_id: video.id, status: 'pending' })
 
-    // Lancer le pipeline en arrière-plan (non bloquant)
-    runFacelessPipeline({
-      videoId: video.id,
-      userId: req.userId,
+    const jobData = {
+      type: 'faceless' as const,
+      videoId:   video.id,
+      userId:    req.userId,
       userEmail: req.userEmail,
       title,
       style,
-      script: script ?? '',
+      script:  script ?? '',
       voiceId: voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
-    }).catch((err) => {
-      logger.error({ err, videoId: video.id }, 'Faceless pipeline failed')
-    })
+    }
+
+    if (renderQueue) {
+      await renderQueue.add('faceless', jobData).catch((err) => {
+        logger.warn({ err, videoId: video.id }, 'Queue unavailable, falling back to inline execution')
+        runFacelessPipeline(jobData).catch((e) => logger.error({ e, videoId: video.id }, 'Faceless pipeline failed'))
+      })
+    } else {
+      runFacelessPipeline(jobData).catch((err) => logger.error({ err, videoId: video.id }, 'Faceless pipeline failed'))
+    }
   } catch (err) {
     logger.error({ err, userId: req.userId }, 'pipeline.faceless error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
@@ -189,125 +193,3 @@ pipelineFacelessRouter.post('/faceless/scene', authMiddleware, async (req, res) 
   }
 })
 
-// ── Pipeline background job ───────────────────────────────────────────────
-
-interface PipelineParams {
-  videoId: string
-  userId: string
-  userEmail: string
-  title: string
-  style: string
-  script: string
-  voiceId: string
-}
-
-async function runFacelessPipeline(params: PipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, style, script, voiceId } = params
-
-  const updateStatus = async (status: string, progress: number, extra?: object) => {
-    await supabaseAdmin
-      .from('videos')
-      .update({ status, metadata: { progress, ...extra } })
-      .eq('id', videoId)
-    logger.info({ videoId, status, progress }, 'Pipeline status update')
-  }
-
-  try {
-    // ÉTAPE 1 : Storyboard (Claude AI)
-    await updateStatus('storyboard', 10)
-    const storyboard = await generateStoryboard(script, style, '30s')
-
-    await updateStatus('storyboard', 25, { scenes: storyboard.scenes })
-    logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Storyboard generated')
-
-    // ÉTAPE 2 : Génération visuels (fal.ai)
-    await updateStatus('visuals', 30)
-    const sceneImages = await generateSceneImages(storyboard.scenes, style)
-
-    // Mettre à jour les scenes avec les URLs d'images
-    const scenesWithImages = storyboard.scenes.map((scene) => ({
-      ...scene,
-      image_url: sceneImages.find((img) => img.sceneId === scene.id)?.imageUrl,
-    }))
-
-    await updateStatus('visuals', 60, { scenes: scenesWithImages })
-    logger.info({ videoId, imageCount: sceneImages.length }, 'Scene images generated')
-
-    // ÉTAPE 3 : Voix off (ElevenLabs)
-    await updateStatus('audio', 65)
-    let combinedAudioBuffer: Buffer | null = null
-
-    if (voiceId && storyboard.scenes.some((s) => s.texte_voix?.trim())) {
-      const audioResults = await generateVoiceoverScenes(storyboard.scenes, voiceId)
-
-      if (audioResults.length > 0) {
-        // Combiner tous les buffers audio en séquence
-        combinedAudioBuffer = Buffer.concat(audioResults.map((r) => r.audioBuffer))
-      }
-    }
-
-    await updateStatus('audio', 75)
-    logger.info({ videoId, hasAudio: !!combinedAudioBuffer }, 'Voiceover generated')
-
-    // ÉTAPE 4 : Assemblage FFmpeg
-    await updateStatus('assembly', 80)
-    const mp4Buffer = await assembleVideo({
-      scenes: scenesWithImages,
-      sceneImages,
-      voiceoverBuffer: combinedAudioBuffer,
-    })
-
-    // ÉTAPE 5 : Upload vers Supabase Storage
-    await updateStatus('assembly', 90)
-    const storagePath = `${userId}/${videoId}/output.mp4`
-
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from('videos')
-      .upload(storagePath, mp4Buffer, {
-        contentType: 'video/mp4',
-        upsert: true,
-      })
-
-    if (uploadError) {
-      throw new Error(`Storage upload failed: ${uploadError.message}`)
-    }
-
-    const { data: signedUrl } = await supabaseAdmin.storage
-      .from('videos')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7) // 7 jours
-
-    const outputUrl = signedUrl?.signedUrl ?? ''
-
-    // ÉTAPE 6 : Finalisation
-    await supabaseAdmin
-      .from('videos')
-      .update({
-        status: 'done',
-        output_url: outputUrl,
-        metadata: { progress: 100, scenes: scenesWithImages },
-      })
-      .eq('id', videoId)
-
-    logger.info({ videoId, outputUrl }, 'Faceless pipeline completed')
-
-    // Envoyer l'email de notification
-    await sendVideoReadyEmail(userEmail, title, outputUrl).catch((err) => {
-      logger.warn({ err }, 'Failed to send video ready email (non-blocking)')
-    })
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err)
-    logger.error({ err, videoId }, 'Faceless pipeline error')
-
-    await supabaseAdmin
-      .from('videos')
-      .update({
-        status: 'error',
-        metadata: { error_message: errorMessage, progress: 0 },
-      })
-      .eq('id', videoId)
-      .then(() => null, () => null)
-
-    // Rembourser le crédit en cas d'erreur
-    await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
-  }
-}

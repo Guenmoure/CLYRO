@@ -1,0 +1,76 @@
+import { Queue } from 'bullmq'
+import IORedis from 'ioredis'
+import { logger } from '../lib/logger'
+
+export const RENDER_QUEUE_NAME = 'render'
+
+// ── Redis connection ──────────────────────────────────────────────────────
+// En local, Redis doit tourner sur 127.0.0.1:6379
+// Sur Render, utiliser REDIS_URL (ex: redis://red-xxxxx.onrender.com:6379)
+function createRedisConnection(): IORedis | null {
+  const url = process.env.REDIS_URL ?? 'redis://127.0.0.1:6379'
+  try {
+    const conn = new IORedis(url, {
+      maxRetriesPerRequest: null, // requis par BullMQ
+      enableReadyCheck: false,
+    })
+    conn.on('error', (err) => {
+      logger.warn({ err }, 'Redis connection error — queue disabled, falling back to inline execution')
+    })
+    return conn
+  } catch {
+    return null
+  }
+}
+
+export const redisConnection = createRedisConnection()
+
+// ── Job payloads ──────────────────────────────────────────────────────────
+
+export interface MotionJobData {
+  type: 'motion'
+  videoId: string
+  userId: string
+  userEmail: string
+  title: string
+  brief: string
+  style: string
+  format: string
+  duration: string
+  brandConfig: {
+    primary_color: string
+    secondary_color?: string
+    font_family?: string
+    logo_url?: string
+  }
+  voiceId: string
+}
+
+export interface FacelessJobData {
+  type: 'faceless'
+  videoId: string
+  userId: string
+  userEmail: string
+  title: string
+  style: string
+  script: string
+  voiceId: string
+}
+
+export type RenderJobData = MotionJobData | FacelessJobData
+
+// ── Queue instance (null si Redis indisponible) ───────────────────────────
+export let renderQueue: Queue<RenderJobData> | null = null
+
+if (redisConnection) {
+  renderQueue = new Queue<RenderJobData>(RENDER_QUEUE_NAME, {
+    connection: redisConnection,
+    defaultJobOptions: {
+      attempts: 2,
+      backoff: { type: 'exponential', delay: 5000 },
+      removeOnComplete: { count: 100 },
+      removeOnFail: { count: 50 },
+    },
+  })
+  logger.info('BullMQ render queue initialized')
+}
