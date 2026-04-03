@@ -3,7 +3,7 @@ import { Header } from '@/components/shared/header'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-brand-bg overflow-hidden">
+    <div className="flex h-screen bg-navy-950 overflow-hidden">
       {/* Sidebar — cachée sur mobile, visible desktop */}
       <Sidebar />
 

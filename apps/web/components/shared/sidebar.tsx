@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
+  Home,
   Video,
   Wand2,
   Mic2,
-  PenTool,
   FolderOpen,
+  Settings,
   LogOut,
 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
@@ -15,11 +16,12 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { href: '/faceless',  label: 'Faceless',      icon: Video    },
-  { href: '/motion',    label: 'Motion',         icon: Wand2    },
-  { href: '/voices',    label: 'Voices',         icon: Mic2     },
-  { href: '/design',    label: 'Design',         icon: PenTool, soon: true },
-  { href: '/projects',  label: 'Projects',       icon: FolderOpen },
+  { href: '/dashboard', label: 'Home',          icon: Home       },
+  { href: '/projects',  label: 'My Projects',   icon: FolderOpen },
+  { href: '/faceless',  label: 'Faceless Video', icon: Video      },
+  { href: '/motion',    label: 'Motion Design',  icon: Wand2      },
+  { href: '/voices',    label: 'AI Voiceover',   icon: Mic2       },
+  { href: '/settings',  label: 'Settings',       icon: Settings   },
 ]
 
 export function Sidebar() {
@@ -33,42 +35,39 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:flex w-20 bg-brand-surface border-r border-brand-border flex-col items-center py-4">
+    <aside className="hidden md:flex w-60 bg-navy-900 border-r border-navy-700 flex-col py-5 shrink-0">
       {/* Logo */}
-      <Link
-        href="/dashboard"
-        className="w-10 h-10 rounded-xl bg-grad-primary flex items-center justify-center mb-6 shrink-0"
-      >
-        <span className="font-display font-extrabold text-white text-sm tracking-tight">CL</span>
+      <Link href="/dashboard" className="px-5 mb-8 block">
+        <span className="font-display font-extrabold text-xl tracking-tight">
+          <span className="text-clyro-cyan">C</span>
+          <span className="text-white">LYRO</span>
+        </span>
       </Link>
 
       {/* Navigation */}
-      <nav className="flex-1 flex flex-col items-center gap-1 w-full px-2">
+      <nav className="flex-1 flex flex-col gap-0.5 px-3">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
           const isActive =
-            pathname === item.href || pathname.startsWith(item.href + '/')
+            item.href === '/dashboard'
+              ? pathname === '/dashboard'
+              : pathname === item.href || pathname.startsWith(item.href + '/')
 
           return (
             <Link
               key={item.href}
-              href={item.soon ? '#' : item.href}
-              aria-disabled={item.soon}
+              href={item.href}
               className={cn(
-                'relative flex flex-col items-center gap-1 w-full py-2.5 rounded-xl transition-all duration-200 group',
-                item.soon
-                  ? 'opacity-40 cursor-not-allowed pointer-events-none'
-                  : isActive
-                    ? 'bg-brand-primary-light text-brand-primary'
-                    : 'text-brand-muted hover:text-brand-text hover:bg-brand-bg'
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150',
+                isActive
+                  ? 'bg-navy-700 text-white'
+                  : 'text-white/40 hover:text-white/80 hover:bg-navy-800'
               )}
             >
-              <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
-              <span className="font-body text-[10px] font-medium leading-none">{item.label}</span>
-              {item.soon && (
-                <span className="absolute -top-1 -right-1 text-[8px] font-mono font-bold bg-brand-accent text-white px-1 rounded-full leading-tight">
-                  Soon
-                </span>
+              <Icon size={19} strokeWidth={isActive ? 2 : 1.5} />
+              <span className="font-body text-sm font-medium leading-none">{item.label}</span>
+              {isActive && (
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-clyro-cyan shrink-0" />
               )}
             </Link>
           )
@@ -76,13 +75,16 @@ export function Sidebar() {
       </nav>
 
       {/* Sign out */}
-      <button
-        onClick={handleSignOut}
-        className="flex flex-col items-center gap-1 w-full px-2 py-2.5 rounded-xl text-brand-muted hover:text-brand-text hover:bg-brand-bg transition-all"
-      >
-        <LogOut size={20} strokeWidth={1.5} />
-        <span className="font-body text-[10px] font-medium leading-none">Quitter</span>
-      </button>
+      <div className="px-3 pt-2 border-t border-navy-700 mt-2">
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-white/30 hover:text-white/70 hover:bg-navy-800 transition-all"
+        >
+          <LogOut size={19} strokeWidth={1.5} />
+          <span className="font-body text-sm font-medium leading-none">Sign out</span>
+        </button>
+      </div>
     </aside>
   )
 }
