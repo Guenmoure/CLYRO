@@ -13,6 +13,8 @@ export interface FacelessPipelineParams {
   userEmail: string
   title: string
   style: string
+  format: string
+  duration: string
   script: string
   voiceId: string
 }

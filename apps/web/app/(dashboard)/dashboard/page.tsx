@@ -20,12 +20,13 @@ export default async function DashboardPage() {
     .eq('id', user?.id ?? '')
     .single() as { data: Profile | null; error: unknown }
 
+  type VideoRow = Database['public']['Tables']['videos']['Row']
   const { data: recentVideos } = await supabase
     .from('videos')
-    .select('id, title, status, created_at, type')
+    .select('*')
     .eq('user_id', user?.id ?? '')
     .order('created_at', { ascending: false })
-    .limit(4)
+    .limit(4) as { data: VideoRow[] | null; error: unknown }
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-8">

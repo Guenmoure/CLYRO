@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Progress bar — width driven by --progress-width CSS variable (set via JS) */
+.progress-bar { width: var(--progress-width, 0%); }
+
 /* ============================================================
    CLYRO Design System — CSS Variables
    ============================================================ */

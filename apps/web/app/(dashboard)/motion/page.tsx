@@ -11,9 +11,9 @@ export default async function MotionPage() {
 
   const { data: videos } = await supabase
     .from('videos')
-    .select('id, title, status, created_at')
+    .select('id, title, status, output_url, created_at')
     .eq('user_id', user?.id ?? '')
-    .eq('type', 'motion')
+    .eq('module', 'motion')
     .order('created_at', { ascending: false })
     .limit(20)
 

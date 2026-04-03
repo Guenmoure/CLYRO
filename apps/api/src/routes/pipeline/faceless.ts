@@ -17,13 +17,18 @@ const FACELESS_STYLES = [
   'cinematique',
 ] as const
 
+const VIDEO_FORMATS  = ['9:16', '1:1', '16:9'] as const
+const VIDEO_DURATIONS = ['15s', '30s', '60s'] as const
+
 const createFacelessSchema = z.object({
-  title: z.string().min(1).max(200),
-  style: z.enum(FACELESS_STYLES),
+  title:      z.string().min(1).max(200),
+  style:      z.enum(FACELESS_STYLES),
   input_type: z.enum(['script', 'audio']),
-  script: z.string().min(50).max(5000).optional(),
-  audio_url: z.string().url().optional(),
-  voice_id: z.string().optional(),
+  format:     z.enum(VIDEO_FORMATS).default('16:9'),
+  duration:   z.enum(VIDEO_DURATIONS).default('30s'),
+  script:     z.string().min(20).max(5000).optional(),
+  audio_url:  z.string().url().optional(),
+  voice_id:   z.string().optional(),
 })
 
 const regenerateSceneSchema = z.object({
@@ -44,7 +49,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
     return
   }
 
-  const { title, style, input_type, script, audio_url, voice_id } = parsed.data
+  const { title, style, input_type, format, duration, script, audio_url, voice_id } = parsed.data
 
   if (input_type === 'script' && !script) {
     res.status(400).json({ error: 'Script is required when input_type is script', code: 'VALIDATION_ERROR' })
@@ -86,7 +91,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
         style,
         title,
         status: 'pending',
-        metadata: { voice_id, input_type },
+        metadata: { voice_id, input_type, format, duration },
       })
       .select()
       .single()
@@ -115,6 +120,8 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
       userEmail: req.userEmail,
       title,
       style,
+      format,
+      duration,
       script:  script ?? '',
       voiceId: voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
     }
