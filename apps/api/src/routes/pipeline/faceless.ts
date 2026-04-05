@@ -9,26 +9,33 @@ import { runFacelessPipeline } from '../../pipelines/faceless'
 export const pipelineFacelessRouter = Router()
 
 const FACELESS_STYLES = [
-  'animation-2d',
+  'cinematique',
   'stock-vo',
+  // PDF canonical 4 styles
+  'whiteboard',
+  'stickman',
+  'flat-design',
+  '3d-pixar',
+  // Legacy / extended styles
   'minimaliste',
   'infographie',
-  'whiteboard',
-  'cinematique',
+  'motion-graphics',
+  'animation-2d',
 ] as const
 
 const VIDEO_FORMATS  = ['9:16', '1:1', '16:9'] as const
 const VIDEO_DURATIONS = ['15s', '30s', '60s'] as const
 
 const createFacelessSchema = z.object({
-  title:      z.string().min(1).max(200),
-  style:      z.enum(FACELESS_STYLES),
-  input_type: z.enum(['script', 'audio']),
-  format:     z.enum(VIDEO_FORMATS).default('16:9'),
-  duration:   z.enum(VIDEO_DURATIONS).default('30s'),
-  script:     z.string().min(20).max(5000).optional(),
-  audio_url:  z.string().url().optional(),
-  voice_id:   z.string().optional(),
+  title:        z.string().min(1).max(200),
+  style:        z.enum(FACELESS_STYLES),
+  input_type:   z.enum(['script', 'audio']),
+  format:       z.enum(VIDEO_FORMATS).default('16:9'),
+  duration:     z.enum(VIDEO_DURATIONS).default('30s'),
+  script:       z.string().min(20).max(5000).optional(),
+  audio_url:    z.string().url().optional(),
+  voice_id:     z.string().optional(),
+  brand_kit_id: z.string().uuid().optional(),
 })
 
 const regenerateSceneSchema = z.object({
@@ -49,7 +56,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
     return
   }
 
-  const { title, style, input_type, format, duration, script, audio_url, voice_id } = parsed.data
+  const { title, style, input_type, format, duration, script, audio_url, voice_id, brand_kit_id } = parsed.data
 
   if (input_type === 'script' && !script) {
     res.status(400).json({ error: 'Script is required when input_type is script', code: 'VALIDATION_ERROR' })
@@ -82,6 +89,18 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
       return
     }
 
+    // Charger le brand kit si fourni
+    let brandKit: { primary_color: string; secondary_color: string | null; font_family: string | null; logo_url: string | null; name: string } | null = null
+    if (brand_kit_id) {
+      const { data: kit } = await supabaseAdmin
+        .from('brand_kits')
+        .select('primary_color, secondary_color, font_family, logo_url, name')
+        .eq('id', brand_kit_id)
+        .eq('user_id', req.userId)
+        .single()
+      brandKit = kit ?? null
+    }
+
     // Créer l'entrée vidéo en DB (status: pending)
     const { data: video, error: dbError } = await supabaseAdmin
       .from('videos')
@@ -91,7 +110,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
         style,
         title,
         status: 'pending',
-        metadata: { voice_id, input_type, format, duration },
+        metadata: { voice_id, input_type, format, duration, brand_kit_id: brand_kit_id ?? null },
       })
       .select()
       .single()
@@ -102,17 +121,6 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
       return
     }
 
-    // Décrémenter les crédits (sauf plan studio)
-    if (profile.plan !== 'studio') {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ credits: profile.credits - 1 })
-        .eq('id', req.userId)
-    }
-
-    // Retourner immédiatement — la génération tourne en arrière-plan
-    res.status(202).json({ video_id: video.id, status: 'pending' })
-
     const jobData = {
       type: 'faceless' as const,
       videoId:   video.id,
@@ -122,10 +130,12 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
       style,
       format,
       duration,
-      script:  script ?? '',
-      voiceId: voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
+      script:   script ?? '',
+      voiceId:  voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
+      brandKit: brandKit ?? undefined,
     }
 
+    // Enqueue d'abord — on ne débite qu'une fois le job accepté
     if (renderQueue) {
       await renderQueue.add('faceless', jobData).catch((err) => {
         logger.warn({ err, videoId: video.id }, 'Queue unavailable, falling back to inline execution')
@@ -134,6 +144,17 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
     } else {
       runFacelessPipeline(jobData).catch((err) => logger.error({ err, videoId: video.id }, 'Faceless pipeline failed'))
     }
+
+    // Décrémenter les crédits après enqueue réussi (sauf plan studio)
+    if (profile.plan !== 'studio') {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ credits: profile.credits - 1 })
+        .eq('id', req.userId)
+    }
+
+    // Retourner immédiatement
+    res.status(202).json({ video_id: video.id, status: 'pending' })
   } catch (err) {
     logger.error({ err, userId: req.userId }, 'pipeline.faceless error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })

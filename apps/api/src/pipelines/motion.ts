@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node'
 import { supabaseAdmin } from '../lib/supabase'
-import { generateStoryboard } from '../services/claude'
+import { generateMotionStoryboard } from '../services/claude'
 import { generateSceneImages } from '../services/fal'
 import { generateVoiceoverScenes } from '../services/elevenlabs'
 import { renderMotionVideo } from '../services/remotion'
@@ -35,38 +35,39 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
   try {
     // ÉTAPE 1 : Storyboard (Claude AI)
     await updateStatus('storyboard', 10)
-    const storyboard = await generateStoryboard(brief, style, params.duration as '6s' | '15s' | '30s' | '60s')
+    const storyboard = await generateMotionStoryboard(brief, style, params.format, params.duration)
     await updateStatus('storyboard', 20, { scenes: storyboard.scenes })
     logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Motion storyboard generated')
 
-    // ÉTAPE 2 : Visuels avec brand colors injectées dans les prompts
+    // ÉTAPES 2 + 3 en parallèle : Visuels (fal.ai) + Voix off (ElevenLabs)
     await updateStatus('visuals', 25)
+
     const brandedScenes = storyboard.scenes.map((scene) => ({
       ...scene,
       description_visuelle: `${scene.description_visuelle}, brand color ${params.brandConfig.primary_color}, ${style} style`,
     }))
 
-    const sceneImages = await generateSceneImages(brandedScenes, style)
+    const hasVoice = !!(voiceId && storyboard.scenes.some((s) => s.texte_voix?.trim()))
+
+    const [sceneImages, audioResults] = await Promise.all([
+      generateSceneImages(brandedScenes, style),
+      hasVoice
+        ? generateVoiceoverScenes(storyboard.scenes, voiceId)
+        : Promise.resolve([]),
+    ])
+
     const scenesWithImages = storyboard.scenes.map((scene) => ({
       ...scene,
       image_url: sceneImages.find((img) => img.sceneId === scene.id)?.imageUrl,
     }))
 
-    await updateStatus('visuals', 55, { scenes: scenesWithImages })
-    logger.info({ videoId, imageCount: sceneImages.length }, 'Motion scene images generated')
+    const combinedAudioBuffer: Buffer | null =
+      audioResults.length > 0
+        ? Buffer.concat(audioResults.map((r) => r.audioBuffer))
+        : null
 
-    // ÉTAPE 3 : Voix off (ElevenLabs)
-    await updateStatus('audio', 60)
-    let combinedAudioBuffer: Buffer | null = null
-
-    if (voiceId && storyboard.scenes.some((s) => s.texte_voix?.trim())) {
-      const audioResults = await generateVoiceoverScenes(storyboard.scenes, voiceId)
-      if (audioResults.length > 0) {
-        combinedAudioBuffer = Buffer.concat(audioResults.map((r) => r.audioBuffer))
-      }
-    }
-
-    await updateStatus('audio', 72)
+    await updateStatus('audio', 72, { scenes: scenesWithImages })
+    logger.info({ videoId, imageCount: sceneImages.length, hasAudio: !!combinedAudioBuffer }, 'Motion visuals + voiceover generated')
 
     // ÉTAPE 4 : Rendu vidéo (Lambda si activé, sinon local Remotion)
     await updateStatus('assembly', 75)
@@ -99,16 +100,17 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
 
       if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
 
+      // Signed URL 1 an — storagePath conservé en metadata pour renouvellement futur
       const { data: signedUrl } = await supabaseAdmin.storage
         .from('videos')
-        .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
 
       outputUrl = signedUrl?.signedUrl ?? ''
     }
 
     await supabaseAdmin
       .from('videos')
-      .update({ status: 'done', output_url: outputUrl, metadata: { progress: 100, scenes: scenesWithImages } })
+      .update({ status: 'done', output_url: outputUrl, metadata: { progress: 100, scenes: scenesWithImages, storage_path: `${params.userId}/${videoId}/output.mp4` } })
       .eq('id', videoId)
 
     logger.info({ videoId, outputUrl }, 'Motion pipeline completed')

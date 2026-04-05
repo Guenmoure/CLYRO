@@ -221,23 +221,41 @@ export async function assembleVideo(options: AssembleVideoOptions): Promise<Buff
   const tempFiles: string[] = []
 
   try {
-    // Étape 1 : Créer les clips pour chaque scène
-    for (const scene of scenes) {
-      const sceneImage = sceneImages.find((img) => img.sceneId === scene.id)
-      if (!sceneImage) continue
+    // Étape 1 : Téléchargement des images en parallèle, puis création des clips en parallèle
+    // (vs. séquentiel précédent: download1 → clip1 → download2 → clip2 → …)
+    const scenesToProcess = scenes.filter((s) => sceneImages.some((img) => img.sceneId === s.id))
 
-      // Télécharger l'image depuis l'URL
-      const imageResponse = await fetch(sceneImage.imageUrl)
-      if (!imageResponse.ok) {
-        throw new Error(`Failed to download scene image: ${imageResponse.status}`)
-      }
-      const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
+    // Télécharger toutes les images simultanément
+    const downloadedImages = await Promise.all(
+      scenesToProcess.map(async (scene) => {
+        const sceneImage = sceneImages.find((img) => img.sceneId === scene.id)!
+        const imageResponse = await fetch(sceneImage.imageUrl)
+        if (!imageResponse.ok) {
+          throw new Error(`Failed to download scene image ${scene.id}: ${imageResponse.status}`)
+        }
+        const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
+        return { scene, imageBuffer }
+      })
+    )
 
-      const clipPath = join(workDir, `clip_${scene.id}.mp4`)
-      await loopImageToClip(imageBuffer, scene.duree_estimee, clipPath)
-      clipPaths.push(clipPath)
-      tempFiles.push(clipPath)
+    // Créer tous les clips en parallèle (max 4 simultanés pour ne pas saturer le CPU)
+    const CLIP_CONCURRENCY = 4
+    const orderedClipPaths: string[] = []
+
+    for (let i = 0; i < downloadedImages.length; i += CLIP_CONCURRENCY) {
+      const batch = downloadedImages.slice(i, i + CLIP_CONCURRENCY)
+      const batchPaths = await Promise.all(
+        batch.map(async ({ scene, imageBuffer }) => {
+          const clipPath = join(workDir, `clip_${scene.id}.mp4`)
+          await loopImageToClip(imageBuffer, scene.duree_estimee, clipPath)
+          tempFiles.push(clipPath)
+          return clipPath
+        })
+      )
+      orderedClipPaths.push(...batchPaths)
     }
+
+    clipPaths.push(...orderedClipPaths)
 
     if (clipPaths.length === 0) {
       throw new Error('No clips generated — check scene images')

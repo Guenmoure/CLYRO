@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Wand2, Loader2, ChevronRight, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -117,14 +117,23 @@ function StatusBadge({ status }: { status: string }) {
 
 // ── Generating view ────────────────────────────────────────────────────────────
 
-function GeneratingView({ videoId, title, onReset, onDone }: {
+function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
   videoId: string
   title: string
   onReset: () => void
   onDone: (id: string, url: string | null) => void
+  onStatusChange?: (status: string) => void
 }) {
   const router = useRouter()
   const { status, progress, outputUrl, errorMessage, isDone, isError } = useVideoStatus(videoId)
+  const prevStatusRef = useRef<string>('')
+
+  useEffect(() => {
+    if (status && status !== prevStatusRef.current) {
+      prevStatusRef.current = status
+      onStatusChange?.(status)
+    }
+  }, [status, onStatusChange])
 
   useEffect(() => {
     if (isDone) {
@@ -146,8 +155,8 @@ function GeneratingView({ videoId, title, onReset, onDone }: {
 
         <div className="h-1.5 bg-brand-bg rounded-full mb-6 overflow-hidden">
           <div
-            className="h-full bg-grad-primary rounded-full transition-all duration-700 progress-bar"
-            style={{ '--progress-width': `${Math.max(progress, 5)}%` } as React.CSSProperties}
+            className="h-full bg-grad-primary rounded-full transition-all duration-700"
+            style={{ width: `${Math.max(progress, 5)}%` } as React.CSSProperties}
           />
         </div>
 
@@ -411,44 +420,45 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
   )
 }
 
+// Statuts "actifs"
+const ACTIVE_STATUSES = new Set(['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly'])
+function isActive(status: string) { return ACTIVE_STATUSES.has(status) }
+
 // ── Main Hub ───────────────────────────────────────────────────────────────────
 
 export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) {
-  const [sessions, setSessions]         = useState<VideoSession[]>(initialVideos)
-  const [generatingId, setGeneratingId] = useState<string | null>(null)
-  const [generatingTitle, setGeneratingTitle] = useState('')
-  const [activeSession, setActiveSession] = useState<VideoSession | null>(null)
+  const [sessions, setSessions] = useState<VideoSession[]>(initialVideos)
+  const [viewId,   setViewId]   = useState<string | null>(() =>
+    initialVideos.find((v) => isActive(v.status))?.id ?? null
+  )
+
+  const viewSession      = sessions.find((s) => s.id === viewId) ?? null
+  const isViewGenerating = viewSession ? isActive(viewSession.status) : false
+
+  const updateSessionStatus = useCallback((videoId: string, status: string, outputUrl?: string | null) => {
+    setSessions((prev) =>
+      prev.map((s) => s.id === videoId
+        ? { ...s, status, ...(outputUrl !== undefined ? { output_url: outputUrl ?? undefined } : {}) }
+        : s
+      )
+    )
+  }, [])
 
   function handleGenerated(videoId: string, title: string) {
-    setGeneratingId(videoId)
-    setGeneratingTitle(title)
-    setActiveSession(null)
-    const newSession: VideoSession = {
-      id: videoId,
-      title,
-      status: 'processing',
-      created_at: new Date().toISOString(),
-    }
-    setSessions((prev) => [newSession, ...prev])
+    setSessions((prev) => [
+      { id: videoId, title, status: 'pending', created_at: new Date().toISOString() },
+      ...prev,
+    ])
+    setViewId(videoId)
   }
 
   function handleDone(videoId: string, outputUrl: string | null) {
-    setSessions((prev) =>
-      prev.map((s) => s.id === videoId ? { ...s, status: 'done', output_url: outputUrl ?? undefined } : s)
-    )
+    updateSessionStatus(videoId, 'done', outputUrl)
   }
 
-  function handleReset() {
-    setGeneratingId(null)
-    setGeneratingTitle('')
-    setActiveSession(null)
-  }
+  function handleReset() { setViewId(null) }
 
-  function handleSessionClick(session: VideoSession) {
-    if (generatingId === session.id) return // déjà en vue generating
-    setActiveSession(session)
-    setGeneratingId(null)
-  }
+  function handleSessionClick(session: VideoSession) { setViewId(session.id) }
 
   return (
     <div className="flex flex-1 h-full overflow-hidden">
@@ -474,15 +484,19 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
           ) : (
             <div className="space-y-1">
               {sessions.map((s) => {
-                const isActive = activeSession?.id === s.id || generatingId === s.id
+                const isCurrent   = viewId === s.id
+                const inProgress  = isActive(s.status)
                 return (
                   <button key={s.id}
                     type="button"
                     onClick={() => handleSessionClick(s)}
-                    className={cn('w-full text-left px-3 py-2.5 rounded-xl transition-all group',
-                      isActive ? 'bg-purple-50' : 'hover:bg-brand-bg'
+                    className={cn('w-full text-left px-3 py-2.5 rounded-xl transition-all',
+                      isCurrent ? 'bg-purple-50' : 'hover:bg-brand-bg'
                     )}>
-                    <p className="font-body text-sm text-brand-text truncate">{s.title ?? 'Sans titre'}</p>
+                    <div className="flex items-center gap-1.5">
+                      {inProgress && <Loader2 size={10} className="shrink-0 text-brand-secondary animate-spin" />}
+                      <p className="font-body text-sm text-brand-text truncate">{s.title ?? 'Sans titre'}</p>
+                    </div>
                     <div className="flex items-center justify-between mt-0.5">
                       <StatusBadge status={s.status} />
                       <span className="font-mono text-[10px] text-brand-muted">
@@ -499,10 +513,17 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
 
       {/* Panel principal */}
       <div className="flex-1 overflow-hidden">
-        {generatingId
-          ? <GeneratingView videoId={generatingId} title={generatingTitle} onReset={handleReset} onDone={handleDone} />
-          : activeSession?.status === 'done'
-            ? <DoneView session={activeSession} onNew={handleReset} />
+        {viewId && isViewGenerating
+          ? <GeneratingView
+              key={viewId}
+              videoId={viewId}
+              title={viewSession?.title ?? ''}
+              onReset={handleReset}
+              onDone={handleDone}
+              onStatusChange={(status) => updateSessionStatus(viewId, status)}
+            />
+          : viewId && viewSession?.status === 'done'
+            ? <DoneView session={viewSession} onNew={handleReset} />
             : <CreationForm onGenerated={handleGenerated} />
         }
       </div>

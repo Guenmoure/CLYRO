@@ -15,7 +15,7 @@
   50%       { background-position: 100% 50%; }
 }
 .text-gradient-animated {
-  background: linear-gradient(270deg, #38E8FF, #3B8EF0, #9B5CF6, #3B8EF0, #38E8FF);
+  background: linear-gradient(270deg, #4D9FFF, #8A57EA, #6D39D1, #8A57EA, #4D9FFF);
   background-size: 300% 300%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -64,7 +64,7 @@
   position: absolute;
   inset: -2px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(59,142,240,0.4), rgba(155,92,246,0.4));
+  background: linear-gradient(135deg, rgba(138,87,234,0.5), rgba(77,159,255,0.4));
   filter: blur(12px);
   opacity: 0.5;
   animation: glow-pulse-opacity 3s ease-in-out infinite;
@@ -121,6 +121,40 @@
   }
 }
 
+/* ── Entrée navbar — slide depuis le haut ───────────────────── */
+@keyframes nav-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.nav-slide-in {
+  animation: nav-slide-in 0.55s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* ── Entrée latérale (dashboard header) ─────────────────────── */
+@keyframes header-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-header-in {
+  animation: header-fade-in 0.45s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* ── Reveal delay utilities ─────────────────────────────────── */
+.reveal-delay-200 { --reveal-delay: 200ms; }
+.reveal-delay-400 { --reveal-delay: 400ms; }
+
 /* ── Hover lift (cartes interactives) ──────────────────────── */
 .card-hover {
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
@@ -132,82 +166,249 @@
 }
 
 /* ============================================================
+   CLYRO Liquid Glass — iOS 26 style
+   Thème adaptatif : dark (défaut) / light
+   ============================================================ */
+
+/* ── Dark mode glass (défaut) ───────────────────────────────── */
+.glass {
+  background:
+    linear-gradient(150deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.01) 40%, transparent 65%),
+    rgba(255, 255, 255, 0.04);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 4px 32px rgba(0, 0, 0, 0.22);
+}
+
+.glass-heavy {
+  background:
+    linear-gradient(150deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 40%, transparent 65%),
+    rgba(6, 8, 16, 0.55);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 0 0 0.5px rgba(255, 255, 255, 0.04);
+}
+
+/* ── Light mode glass overrides ─────────────────────────────── */
+:root:not(.dark) .glass {
+  background:
+    linear-gradient(150deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.60) 40%, rgba(255,255,255,0.40) 100%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+:root:not(.dark) .glass-heavy {
+  background: rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 2px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Tinted glass — charte CLYRO officielle ─────────────────── */
+
+/* glass-blue = Accent #4D9FFF */
+.glass-blue {
+  background:
+    linear-gradient(150deg, rgba(77,159,255,0.18) 0%, rgba(77,159,255,0.05) 45%, transparent 70%),
+    rgba(77, 159, 255, 0.07);
+  border-color: rgba(77, 159, 255, 0.20);
+  box-shadow:
+    inset 0 1px 0 rgba(77, 159, 255, 0.28),
+    0 4px 32px rgba(77, 159, 255, 0.08);
+}
+
+:root:not(.dark) .glass-blue {
+  background:
+    linear-gradient(150deg, rgba(77,159,255,0.10) 0%, rgba(77,159,255,0.03) 45%, transparent 70%),
+    rgba(77, 159, 255, 0.05);
+  border-color: rgba(77, 159, 255, 0.16);
+  box-shadow: 0 4px 24px rgba(77, 159, 255, 0.10);
+}
+
+/* glass-purple = Primary #8A57EA */
+.glass-purple {
+  background:
+    linear-gradient(150deg, rgba(138,87,234,0.20) 0%, rgba(138,87,234,0.05) 45%, transparent 70%),
+    rgba(138, 87, 234, 0.08);
+  border-color: rgba(138, 87, 234, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(138, 87, 234, 0.30),
+    0 4px 32px rgba(138, 87, 234, 0.10);
+}
+
+:root:not(.dark) .glass-purple {
+  background:
+    linear-gradient(150deg, rgba(138,87,234,0.10) 0%, rgba(138,87,234,0.03) 45%, transparent 70%),
+    rgba(138, 87, 234, 0.05);
+  border-color: rgba(138, 87, 234, 0.18);
+  box-shadow: 0 4px 24px rgba(138, 87, 234, 0.10);
+}
+
+/* glass-cyan — conservé pour accents électriques */
+.glass-cyan {
+  background:
+    linear-gradient(150deg, rgba(56,232,255,0.16) 0%, rgba(56,232,255,0.04) 45%, transparent 70%),
+    rgba(56, 232, 255, 0.06);
+  border-color: rgba(56, 232, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(56, 232, 255, 0.25),
+    0 4px 32px rgba(56, 232, 255, 0.07);
+}
+
+/* ── Glass pill — nav active, badges ─────────────────────────── */
+.glass-pill {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 50%, transparent 100%),
+    rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+:root:not(.dark) .glass-pill {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: none;
+}
+
+/* ── Glass structural borders ───────────────────────────────── */
+.glass-border-r  { border-right:  1px solid rgba(255,255,255,0.06); }
+.glass-border-b  { border-bottom: 1px solid rgba(255,255,255,0.06); }
+.glass-border-t  { border-top:    1px solid rgba(255,255,255,0.06); }
+
+:root:not(.dark) .glass-border-r  { border-right:  1px solid rgba(0,0,0,0.07); }
+:root:not(.dark) .glass-border-b  { border-bottom: 1px solid rgba(0,0,0,0.07); }
+:root:not(.dark) .glass-border-t  { border-top:    1px solid rgba(0,0,0,0.07); }
+
+/* ── Glass on hover ─────────────────────────────────────────── */
+.glass-hover {
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.glass-hover:hover {
+  background:
+    linear-gradient(150deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 40%, transparent 65%),
+    rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+:root:not(.dark) .glass-hover:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+/* ── Grid background — adaptatif ───────────────────────────── */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+:root:not(.dark) .grid-bg {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ============================================================
    CLYRO Design System — CSS Variables
+   Charte officielle : Primary #8A57EA · Accent #4D9FFF · BG #0A0A0A
    ============================================================ */
 
 @layer base {
-  /* ── Light mode — Charte graphique v2 ──────────────────────────────────── */
+  /* ── Light mode ─────────────────────────────────────────────────────────── */
   :root {
-    /* shadcn/ui semantic tokens → Brand v2 light */
-    --background: 220 14% 96%;    /* #f8f9fa */
-    --foreground: 210 29% 24%;    /* #2c3e50 */
+    --background: 0 0% 96%;       /* #F5F5F7 */
+    --foreground: 0 0% 7%;        /* #111111 */
 
-    --card: 0 0% 100%;            /* #ffffff */
-    --card-foreground: 210 29% 24%;
+    --card: 0 0% 100%;            /* #FFFFFF */
+    --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 29% 24%;
+    --popover-foreground: 0 0% 7%;
 
-    --primary: 231 77% 70%;       /* #667eea */
+    --primary: 263 77% 63%;       /* #8A57EA — Violet Royal */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 271 37% 55%;     /* #764ba2 */
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 0 0% 94%;        /* #F0F0F0 */
+    --secondary-foreground: 0 0% 7%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%; /* #6b7280 */
+    --muted: 0 0% 94%;
+    --muted-foreground: 240 2% 63%; /* #A1A1A6 — Gris Acier */
 
-    --accent: 44 91% 63%;         /* #f7c744 */
-    --accent-foreground: 210 29% 24%;
+    --accent: 211 100% 65%;       /* #4D9FFF — Bleu Électrique */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 4 76% 55%;     /* #e74c3c */
+    --destructive: 0 100% 65%;    /* #FF4D4D — Rouge Corail */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;        /* #e5e7eb */
-    --input: 220 13% 91%;
-    --ring: 231 77% 70%;
+    --border: 0 0% 90%;           /* #E5E5EA */
+    --input:  0 0% 90%;
+    --ring:   263 77% 63%;        /* #8A57EA */
 
     --radius: 0.75rem;
   }
 
-  /* ── Dark mode — Thème sombre CLYRO (actif par défaut via className="dark") */
+  /* ── Dark mode — Charte officielle CLYRO ───────────────────────────────── */
   .dark {
-    --navy-950: 228 43% 4%;       /* #060810 */
-    --navy-900: 228 43% 7%;       /* #0A0D1A */
-    --navy-800: 228 40% 11%;      /* #0F1427 */
-    --navy-700: 228 42% 15%;      /* #151C38 */
+    /* Surfaces */
+    --bg-950:  0 0% 4%;           /* #0A0A0A — Noir Profond */
+    --bg-900:  0 0% 7%;           /* #111111 */
+    --bg-800:  0 0% 10%;          /* #1A1A1A */
+    --bg-700:  0 0% 14%;          /* #242424 */
 
-    --blue-500: 214 85% 59%;      /* #3B8EF0 */
-    --purple-500: 265 87% 64%;    /* #9B5CF6 */
-    --cyan-400: 188 100% 61%;     /* #38E8FF */
+    /* Brand */
+    --primary-h: 263;
+    --primary-s: 77%;
+    --primary-l: 63%;             /* #8A57EA — Violet Royal */
 
-    --background: var(--navy-950);
-    --foreground: 0 0% 95%;
+    --accent-h:  211;
+    --accent-s:  100%;
+    --accent-l:  65%;             /* #4D9FFF — Bleu Électrique */
 
-    --card: var(--navy-900);
+    --background: var(--bg-950);
+    --foreground: 0 0% 95%;       /* #F2F2F2 */
+
+    --card: var(--bg-900);
     --card-foreground: 0 0% 95%;
 
-    --popover: var(--navy-800);
+    --popover: var(--bg-800);
     --popover-foreground: 0 0% 95%;
 
-    --primary: var(--blue-500);
+    --primary: 263 77% 63%;       /* #8A57EA */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: var(--navy-700);
+    --secondary: 0 0% 14%;        /* #242424 — Anthracite */
     --secondary-foreground: 0 0% 90%;
 
-    --muted: var(--navy-800);
-    --muted-foreground: 0 0% 55%;
+    --muted: 0 0% 10%;            /* #1A1A1A */
+    --muted-foreground: 240 2% 63%; /* #A1A1A6 — Gris Acier */
 
-    --accent: var(--purple-500);
+    --accent: 211 100% 65%;       /* #4D9FFF */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 100% 65%;    /* #FF4D4D */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 228 35% 18%;
-    --input: var(--navy-800);
-    --ring: var(--blue-500);
+    --border: 0 0% 16%;           /* ~#282828 */
+    --input:  0 0% 10%;
+    --ring:   263 77% 63%;        /* #8A57EA */
 
     --radius: 0.75rem;
   }
@@ -219,7 +420,7 @@
   }
 
   body {
-    @apply bg-brand-bg text-brand-text font-body text-base;
+    @apply bg-background text-foreground font-body text-base;
     line-height: 1.6;                          /* lisibilité optimale */
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
@@ -269,15 +470,7 @@
   z-index: 0;
 }
 
-/* ============================================================
-   CLYRO Grid Background
-   ============================================================ */
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(59, 142, 240, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 142, 240, 0.05) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
+/* .grid-bg is defined above in the glass section (theme-adaptive) */
 
 /* ============================================================
    CLYRO Glow Effects

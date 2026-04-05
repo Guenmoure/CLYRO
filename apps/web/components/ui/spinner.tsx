@@ -16,7 +16,7 @@ const spinnerVariants = cva(
       },
       color: {
         /** Bleu-violet brand v2 — charte graphique officielle */
-        primary: 'text-brand-primary',
+        primary: 'text-clyro-primary',
         /** Bleu CLYRO — dark mode */
         blue:    'text-clyro-blue',
         /** Violet — module Motion */

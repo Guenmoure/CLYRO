@@ -21,21 +21,45 @@ const SCENE_COUNT_MAP: Record<string, number> = {
 
 // Instructions visuelles par style — transmises à Claude pour générer description_visuelle cohérente avec fal.ai
 const STYLE_VISUAL_GUIDE: Record<string, string> = {
-  'animation-2d':  'flat vector cartoon illustration, bold outlines, vibrant saturated colors — absolutely NO photorealism, no 3D',
-  'stock-vo':      'editorial stock photography, natural lighting, real-world scene — fully photorealistic, no illustration',
-  'minimaliste':   'extreme minimalism, pure white background, single centered element, large negative space — NO clutter, NO shadows',
-  'infographie':   'flat icon infographic, data visualization chart, color-coded sections, isometric view — informational design only',
-  'whiteboard':    'black marker hand-drawn sketch on plain white — NO color fills, NO shading, rough strokes only',
-  'cinematique':   'anamorphic cinematic wide shot, dramatic chiaroscuro, 35mm film grain, moody atmosphere — movie still quality',
-  'corporate':     'clean corporate business illustration, navy blue / white palette, minimal geometric shapes — professional B2B',
-  'dynamique':     'high-energy composition, motion blur, neon accents on dark background, diagonal lines — sports / action',
-  'luxe':          'luxury brand photography, gold and black palette, bokeh, marble surfaces — high-fashion editorial',
-  'fun':           'playful cartoon, candy-colored palette, bubbly rounded shapes, confetti — kawaii cheerful style',
+  // Faceless — Catégorie 1 : Narratif & Immersif
+  'cinematique':      'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain — movie still quality, NO illustration',
+  'stock-vo':         'National Geographic style, natural light, realistic textures, real-world documentary scene — fully photorealistic, no illustration, no cartoon',
+  // Faceless — Catégorie 2 : Explicatif & Didactique (PDF 4-style canonical)
+  'whiteboard':       'hand-drawn sketch on whiteboard, black marker on plain white — NO color fills, NO shading, rough strokes only, RSA Animate educational style',
+  'stickman':         'black stick figures and geometric shapes on white background, RSA animate bonhommes style — NO fills, NO gradients, bold expressive line drawing, symbolic minimal storytelling',
+  'minimaliste':      'simple black line art on white background, minimalist stickman/stick-figure illustration — NO fills, NO gradients, ultra clean linework only',
+  'flat-design':      'flat vector illustration, bold solid colors, no shadows, no gradients, Dribbble-quality SVG aesthetic — modern digital design, geometric shapes, vibrant palette',
+  'infographie':      'flat icon infographic, animated data visualization chart, color-coded sections, isometric perspective — informational design, professional B2B',
+  '3d-pixar':         'Pixar-style 3D CGI render, claymation texture, rounded adorable characters, soft studio lighting, rich vibrant colors — Disney Pixar movie quality, no photorealism',
+  // Faceless — Catégorie 3 : Design & Rythme
+  'motion-graphics':  'flat design motion graphics, geometric shapes, vibrant vector colors, bold animated typography, kinetic composition — tech brand, high-end ad quality',
+  'animation-2d':     'flat vector 2D cartoon illustration, bold outlines, vibrant saturated colors — absolutely NO photorealism, no 3D, traditional animation frame',
+  // Motion styles
+  'corporate':        'clean corporate business illustration, navy blue / white palette, minimal geometric shapes — professional B2B',
+  'dynamique':        'high-energy composition, motion blur, neon accents on dark background, diagonal lines — sports / action',
+  'luxe':             'luxury brand photography, gold and black palette, bokeh, marble surfaces — high-fashion editorial',
+  'fun':              'playful cartoon, candy-colored palette, bubbly rounded shapes, confetti — kawaii cheerful style',
 }
 
 interface StoryboardResult {
   scenes: Scene[]
   total_duration: number
+  master_seed?: number
+}
+
+/**
+ * Génère un seed déterministe basé sur le script pour character consistency
+ * Même script = même seed = même apparence de personnages entre scènes (PDF cref pattern)
+ */
+export function generateMasterSeed(script: string): number {
+  let hash = 0
+  for (let i = 0; i < script.length; i++) {
+    const char = script.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  // Ensure positive seed in valid fal.ai range
+  return Math.abs(hash) % 2_147_483_647
 }
 
 /**
@@ -46,12 +70,21 @@ interface StoryboardResult {
  * @param style - Le style visuel (animation-2d, stock-vo, etc.)
  * @param targetDuration - Durée cible ('15s', '30s', '60s', etc.)
  */
+export interface BrandKitContext {
+  name: string
+  primary_color: string
+  secondary_color?: string | null
+  font_family?: string | null
+}
+
 export async function generateStoryboard(
   script: string,
   style: string,
-  targetDuration = '30s'
+  targetDuration = '30s',
+  brandKit?: BrandKitContext
 ): Promise<StoryboardResult> {
   const sceneCount = SCENE_COUNT_MAP[targetDuration] ?? SCENE_COUNT_MAP.default
+  const masterSeed = generateMasterSeed(script)
 
   const systemPrompt = `Tu es un expert en production vidéo et en storytelling visuel.
 Tu génères des storyboards précis et professionnels pour des vidéos sans présentateur.
@@ -59,9 +92,14 @@ Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
 
   const styleGuide = STYLE_VISUAL_GUIDE[style] ?? 'professional visual composition'
 
+  // Injection Brand Kit dans le contexte visuel
+  const brandContext = brandKit
+    ? `\nBRAND KIT "${brandKit.name}" : utilise la palette de couleurs ${brandKit.primary_color}${brandKit.secondary_color ? ` / ${brandKit.secondary_color}` : ''} dans les descriptions visuelles quand pertinent.`
+    : ''
+
   const userPrompt = `Découpe ce script en exactement ${sceneCount} scènes visuelles pour une vidéo de style "${style}".
 
-STYLE VISUEL OBLIGATOIRE pour description_visuelle : ${styleGuide}
+STYLE VISUEL OBLIGATOIRE pour description_visuelle : ${styleGuide}${brandContext}
 
 Pour chaque scène, génère :
 - "id": identifiant unique ("scene_001", "scene_002", etc.)
@@ -126,6 +164,7 @@ Réponds UNIQUEMENT avec ce JSON valide :
         throw new Error('Invalid storyboard response: missing scenes array')
       }
 
+      result.master_seed = masterSeed
       return result
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
@@ -145,7 +184,8 @@ Réponds UNIQUEMENT avec ce JSON valide :
 }
 
 /**
- * Génère un storyboard pour Motion Graphics (avec timing précis)
+ * Génère un storyboard optimisé pour Motion Graphics / publicités animées
+ * Utilise un prompt spécialisé publicité (différent du storyboard Faceless)
  */
 export async function generateMotionStoryboard(
   brief: string,
@@ -154,48 +194,87 @@ export async function generateMotionStoryboard(
   duration: string
 ): Promise<StoryboardResult> {
   const sceneCount = SCENE_COUNT_MAP[duration] ?? 4
+  const styleGuide = STYLE_VISUAL_GUIDE[style] ?? 'professional motion design, clean vector art'
 
-  const systemPrompt = `Tu es un expert en motion design et publicité vidéo.
-Tu génères des storyboards de haute qualité pour des publicités animées.
+  const systemPrompt = `Tu es un expert en motion design et publicité vidéo animée.
+Tu génères des storyboards de haute qualité pour des spots publicitaires.
 Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
 
-  const userPrompt = `Crée un storyboard pour une publicité en ${sceneCount} scènes.
+  const userPrompt = `Crée un storyboard publicitaire en exactement ${sceneCount} scènes visuelles.
 
-Brief :
+Brief client :
 """
 ${brief}
 """
 
 Paramètres :
-- Style : ${style}
+- Style visuel : ${style} — ${styleGuide}
 - Format : ${format}
 - Durée totale : ${duration}
-- Nombre de scènes : ${sceneCount}
 
 Pour chaque scène, génère :
-- "id": "scene_001", etc.
-- "index": numéro (commence à 0)
-- "description_visuelle": prompt visuel en ANGLAIS pour fal.ai (max 150 chars)
-- "texte_voix": texte voix off optionnel (peut être vide)
-- "duree_estimee": durée en secondes
+- "id": "scene_001", "scene_002", etc.
+- "index": numéro de scène (commence à 0)
+- "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). Doit respecter STRICTEMENT le style "${style}" : ${styleGuide}. Aucune personne identifiable.
+- "texte_voix": accroche ou voix off publicitaire en français (peut être vide si scène muette)
+- "duree_estimee": durée en secondes (entre 2 et 8)
 
-Réponds UNIQUEMENT avec ce JSON :
+RÈGLES PUBLICITÉ :
+1. Structure narrative : Problème → Solution → Bénéfice → Call to action
+2. Chaque scène doit avoir un impact visuel fort et immédiat
+3. La description_visuelle DOIT coller au style "${style}"
+
+Réponds UNIQUEMENT avec ce JSON valide :
 {
   "scenes": [...],
-  "total_duration": <total>
+  "total_duration": <somme des durées>
 }`
 
-  return generateStoryboard(brief, style, duration).catch(() => {
-    // Fallback sur la génération standard avec le brief
-    return {
-      scenes: [],
-      total_duration: parseInt(duration.replace('s', ''), 10),
-    }
-  })
+  let lastError: Error | null = null
 
-  // Note: la logique réelle utilise le prompt motion spécifique
-  void systemPrompt
-  void userPrompt
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const startTime = Date.now()
+
+      const message = await client.messages.create({
+        model: MODEL,
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: userPrompt }],
+        system: systemPrompt,
+      })
+
+      const durationMs = Date.now() - startTime
+      logger.info(
+        { model: MODEL, inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens, durationMs, attempt },
+        'Claude motion storyboard generated'
+      )
+
+      const content = message.content[0]
+      if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
+
+      const jsonText = content.text
+        .replace(/^```json\s*/m, '')
+        .replace(/^```\s*/m, '')
+        .replace(/\s*```$/m, '')
+        .trim()
+
+      const result = JSON.parse(jsonText) as StoryboardResult
+
+      if (!result.scenes || !Array.isArray(result.scenes)) {
+        throw new Error('Invalid storyboard response: missing scenes array')
+      }
+
+      return result
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err))
+      logger.warn({ attempt, maxRetries: MAX_RETRIES, error: lastError.message }, 'Claude motion storyboard attempt failed, retrying')
+
+      if (attempt < MAX_RETRIES) await sleep(RETRY_DELAY_MS * attempt)
+    }
+  }
+
+  logger.error({ error: lastError }, 'Claude motion storyboard failed after all retries')
+  throw new Error(`Motion storyboard generation failed: ${lastError?.message ?? 'Unknown error'}`)
 }
 
 function sleep(ms: number): Promise<void> {

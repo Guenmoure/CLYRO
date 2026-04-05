@@ -2,12 +2,18 @@ export type VideoModule = 'faceless' | 'motion'
 export type VideoStatus = 'pending' | 'processing' | 'storyboard' | 'visuals' | 'audio' | 'assembly' | 'done' | 'error'
 
 export type FacelessStyle =
-  | 'animation-2d'
+  | 'cinematique'
   | 'stock-vo'
+  // PDF canonical 4 styles
+  | 'whiteboard'
+  | 'stickman'
+  | 'flat-design'
+  | '3d-pixar'
+  // Legacy / extended styles
   | 'minimaliste'
   | 'infographie'
-  | 'whiteboard'
-  | 'cinematique'
+  | 'motion-graphics'
+  | 'animation-2d'
 
 export type MotionStyle = 'corporate' | 'dynamique' | 'luxe' | 'fun'
 export type VideoFormat = '9:16' | '1:1' | '16:9'
@@ -41,6 +47,33 @@ export interface BrandConfig {
   style: MotionStyle
 }
 
+// Identité visuelle persistante (Brand Kit)
+export interface BrandKit {
+  id: string
+  user_id: string
+  name: string
+  logo_url: string | null
+  primary_color: string
+  secondary_color: string | null
+  font_family: string | null
+  is_default: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateBrandKitPayload {
+  name: string
+  primary_color: string
+  secondary_color?: string
+  font_family?: string
+  logo_url?: string
+  is_default?: boolean
+}
+
+export interface UpdateBrandKitPayload extends Partial<CreateBrandKitPayload> {
+  id: string
+}
+
 export interface Video {
   id: string
   user_id: string
@@ -60,6 +93,7 @@ export interface CreateFacelessVideoPayload {
   script?: string
   audio_url?: string
   voice_id?: string
+  brand_kit_id?: string
 }
 
 export interface CreateMotionVideoPayload {

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans, Inter, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from '@/components/ui/toast'
+import { ThemeProvider } from '@/components/providers/theme-provider'
 import './globals.css'
 
 // Display — titres, marque, UI bold (charte v2)
@@ -43,12 +44,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr" className="dark">
+    <html lang="fr" suppressHydrationWarning>
       <body
         className={`${plusJakarta.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        {children}
-        <Toaster />
+        <ThemeProvider>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   )

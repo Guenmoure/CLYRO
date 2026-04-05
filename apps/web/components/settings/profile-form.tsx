@@ -34,10 +34,10 @@ export function ProfileForm() {
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
-        <div className="h-4 bg-brand-bg rounded w-1/3" />
-        <div className="h-11 bg-brand-bg rounded-xl" />
-        <div className="h-4 bg-brand-bg rounded w-1/2" />
-        <div className="h-11 bg-brand-bg rounded-xl" />
+        <div className="h-4 bg-gray-100 dark:bg-white/5 rounded w-1/3" />
+        <div className="h-11 bg-gray-100 dark:bg-white/5 rounded-xl" />
+        <div className="h-4 bg-gray-100 dark:bg-white/5 rounded w-1/2" />
+        <div className="h-11 bg-gray-100 dark:bg-white/5 rounded-xl" />
       </div>
     )
   }
@@ -45,25 +45,25 @@ export function ProfileForm() {
   return (
     <form onSubmit={handleSave} className="space-y-5">
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">Nom complet</label>
+        <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Nom complet</label>
         <input
           type="text"
           value={displayName}
           onChange={(e) => setFullName(e.target.value)}
           placeholder="Jean Dupont"
-          className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-3 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary transition-colors"
+          className="w-full glass rounded-xl px-4 py-3 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
         />
       </div>
 
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">Email</label>
+        <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Email</label>
         <input
           type="email"
           value={email ?? ''}
           disabled
-          className="w-full bg-brand-bg/50 border border-brand-border rounded-xl px-4 py-3 text-brand-muted font-body text-sm cursor-not-allowed"
+          className="w-full bg-gray-100 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.04] rounded-xl px-4 py-3 text-gray-400 dark:text-white/30 font-body text-sm cursor-not-allowed"
         />
-        <p className="text-xs text-brand-muted mt-1 font-body">L&apos;email ne peut pas être modifié ici.</p>
+        <p className="text-xs text-gray-400 dark:text-white/30 mt-1 font-body">L&apos;email ne peut pas être modifié ici.</p>
       </div>
 
       <div className="flex items-center gap-4 pt-1">
@@ -72,8 +72,8 @@ export function ProfileForm() {
           {saving ? 'Sauvegarde…' : 'Sauvegarder'}
         </button>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs text-brand-muted uppercase tracking-widest">Plan</span>
-          <span className="font-mono text-xs text-brand-secondary uppercase tracking-widest bg-brand-secondary/10 border border-brand-secondary/20 px-2 py-1 rounded-full">
+          <span className="font-mono text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest">Plan</span>
+          <span className="font-mono text-xs text-clyro-accent uppercase tracking-widest bg-clyro-accent/10 border border-clyro-accent/20 px-2 py-1 rounded-full">
             {profile?.plan ?? 'free'}
           </span>
         </div>

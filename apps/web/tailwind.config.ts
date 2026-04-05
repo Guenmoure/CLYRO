@@ -1,9 +1,6 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
-  // Dark mode contrôlé via la classe `.dark` sur <html>
-  // layout.tsx applique `className="dark"` par défaut → thème sombre actif
-  // Pour passer en clair : retirer la classe `dark` de <html>
   darkMode: ['class'],
 
   content: [
@@ -17,39 +14,53 @@ const config: Config = {
     extend: {
       // ── Couleurs ──────────────────────────────────────────────────────────
       colors: {
-        // ── Brand v2 — Charte graphique officielle ────────────────────────
-        'brand-primary':       '#667eea',   // bleu-violet — CTA, liens actifs
-        'brand-primary-dark':  '#5a67d8',   // hover bouton primaire
-        'brand-primary-light': '#eef0fd',   // backgrounds, soft badges
-        'brand-secondary':     '#764ba2',   // violet — fin de gradient
-        'brand-accent':        '#f7c744',   // or — highlights, CTA secondaire
-        'brand-accent-light':  '#fef9e7',   // fond badge accent
-        'brand-text':          '#2c3e50',   // texte principal (light mode)
-        'brand-muted':         '#6b7280',   // texte secondaire / placeholders
-        'brand-surface':       '#ffffff',   // cards, panels (light mode)
-        'brand-bg':            '#f8f9fa',   // fond général (light mode)
-        'brand-border':        '#e5e7eb',   // bordures
-        'brand-border-light':  '#f3f4f6',   // séparateurs subtils
+        // ── Charte graphique officielle CLYRO ────────────────────────────
+        'clyro-primary':      '#8A57EA',   // Violet Royal     — boutons, barres
+        'clyro-primary-dark': '#6D39D1',   // Violet Profond   — hover, actifs
+        'clyro-secondary':    '#2C2C2E',   // Anthracite       — cartes, conteneurs
+        'clyro-accent':       '#4D9FFF',   // Bleu Électrique  — liens, sélections
+        'clyro-muted':        '#A1A1A6',   // Gris Acier       — texte secondaire
+        'clyro-bg':           '#0A0A0A',   // Noir Profond     — fond principal
 
-        // ── Legacy — Thème sombre (dark mode, actif par défaut) ──────────
-        'navy-950': '#060810',   // fond racine (body)
-        'navy-900': '#0A0D1A',   // cards, panels
-        'navy-800': '#0F1427',   // inputs, hover
-        'navy-700': '#151C38',   // bordures & surbrillances
-        'clyro-blue':      '#3B8EF0',   // primary — CTA, liens actifs
-        'clyro-blue-dark': '#2d7de0',   // primary hover
-        'clyro-purple':    '#9B5CF6',   // secondary — module Motion
-        'clyro-cyan':      '#38E8FF',   // tertiary — effets électriques
+        // ── Alias utiles (rétro-compat glass/animations) ─────────────────
+        // clyro-blue  → accent bleu
+        // clyro-purple → primary violet
+        'clyro-blue':   '#4D9FFF',   // = clyro-accent
+        'clyro-purple': '#8A57EA',   // = clyro-primary
+        'clyro-cyan':   '#38E8FF',   // conservé pour effets glass/glow
 
-        // ── Sémantique — états feedback ───────────────────────────────────
-        success:         '#27ae60',
-        'success-light': '#eafaf1',
-        warning:         '#f39c12',
-        'warning-light': '#fef5e7',
-        error:           '#e74c3c',
-        'error-light':   '#fdedec',
+        // ── Fonds sombres (dark mode surfaces) ───────────────────────────
+        'navy-950': '#0A0A0A',   // fond racine
+        'navy-900': '#111111',   // cartes, panels
+        'navy-800': '#1A1A1A',   // inputs, hover
+        'navy-700': '#242424',   // bordures & surbrillances
 
-        // shadcn/ui tokens (mappés sur la palette CLYRO via CSS vars)
+        // ── États sémantiques ─────────────────────────────────────────────
+        success: '#00D084',   // Vert Menthe  — validation
+        warning: '#FFAB00',   // Ambre        — quota, traitement
+        error:   '#FF4D4D',   // Rouge Corail — erreurs
+
+        // ── Light mode surfaces ───────────────────────────────────────────
+        'surface-light': '#FFFFFF',
+        'bg-light':      '#F5F5F7',
+        'border-light':  '#E5E5EA',
+        'muted-light':   '#6B7280',
+
+        // ── Brand aliases (compat composants existants) ───────────────────
+        'brand-primary':       '#8A57EA',
+        'brand-primary-dark':  '#6D39D1',
+        'brand-primary-light': '#f0ebfd',
+        'brand-secondary':     '#2C2C2E',
+        'brand-accent':        '#4D9FFF',
+        'brand-accent-light':  '#e8f3ff',
+        'brand-text':          '#111111',
+        'brand-muted':         '#A1A1A6',
+        'brand-surface':       '#FFFFFF',
+        'brand-bg':            '#F5F5F7',
+        'brand-border':        '#E5E5EA',
+        'brand-border-light':  '#F0F0F0',
+
+        // ── shadcn/ui tokens (CSS vars) ────────────────────────────────────
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
@@ -86,40 +97,33 @@ const config: Config = {
       },
 
       // ── Typographie ───────────────────────────────────────────────────────
-      // Polices chargées via next/font dans layout.tsx :
-      //   Plus Jakarta Sans → display  (titres, marque, UI bold — charte v2)
-      //   Inter             → body     (corps de texte — charte v2)
-      //   JetBrains Mono    → mono     (code, tags, labels techniques)
       fontFamily: {
         display: ['var(--font-plus-jakarta)', 'sans-serif'],
         body:    ['var(--font-inter)', 'sans-serif'],
         mono:    ['var(--font-jetbrains-mono)', 'monospace'],
       },
 
-      // Échelle de tailles — base 16px (1rem), line-height 1.6 pour le corps
       fontSize: {
         'xs':   ['0.75rem',  { lineHeight: '1rem' }],
         'sm':   ['0.875rem', { lineHeight: '1.25rem' }],
-        'base': ['1rem',     { lineHeight: '1.6' }],    // 16px — corps principal
+        'base': ['1rem',     { lineHeight: '1.6' }],
         'lg':   ['1.125rem', { lineHeight: '1.6' }],
         'xl':   ['1.25rem',  { lineHeight: '1.4' }],
-        '2xl':  ['1.5rem',   { lineHeight: '1.3' }],    // h3
-        '3xl':  ['1.875rem', { lineHeight: '1.25' }],   // h2
-        '4xl':  ['2.25rem',  { lineHeight: '1.2' }],    // h1 mobile
-        '5xl':  ['3rem',     { lineHeight: '1.1' }],    // h1 desktop
-        '6xl':  ['3.75rem',  { lineHeight: '1.05' }],   // hero
-        '7xl':  ['4.5rem',   { lineHeight: '1' }],      // hero xl
+        '2xl':  ['1.5rem',   { lineHeight: '1.3' }],
+        '3xl':  ['1.875rem', { lineHeight: '1.25' }],
+        '4xl':  ['2.25rem',  { lineHeight: '1.2' }],
+        '5xl':  ['3rem',     { lineHeight: '1.1' }],
+        '6xl':  ['3.75rem',  { lineHeight: '1.05' }],
+        '7xl':  ['4.5rem',   { lineHeight: '1' }],
       },
 
-      // Hauteurs de ligne nommées
       lineHeight: {
-        'body':    '1.6',   // corps de texte — facilite la lecture
-        'heading': '1.2',   // titres compacts
-        'tight':   '1.1',   // gros display
-        'relaxed': '1.75',  // longues descriptions
+        'body':    '1.6',
+        'heading': '1.2',
+        'tight':   '1.1',
+        'relaxed': '1.75',
       },
 
-      // Graisses nommées (utilisables comme font-bold, font-semibold, etc.)
       fontWeight: {
         light:     '300',
         regular:   '400',
@@ -131,21 +135,22 @@ const config: Config = {
 
       // ── Dégradés ──────────────────────────────────────────────────────────
       backgroundImage: {
-        // Brand v2 — gradients charte graphique officielle
-        'grad-primary':  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'grad-hero':     'linear-gradient(135deg, #667eea 0%, #764ba2 60%, #f7c744 100%)',
-        'grad-soft':     'linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%)',
-        'grad-accent':   'linear-gradient(135deg, #f7c744 0%, #f39c12 100%)',
-        // Legacy dark mode
-        'grad-electric': 'linear-gradient(135deg, #38E8FF, #3B8EF0, #9B5CF6)',
-        'grad-navy':     'linear-gradient(180deg, #060810, #0A0D1A)',
-        'grad-success':  'linear-gradient(135deg, #27ae60, #2ecc71)',
-        'grad-warning':  'linear-gradient(135deg, #f39c12, #f1c40f)',
+        // Charte CLYRO officielle
+        'grad-primary':  'linear-gradient(135deg, #8A57EA 0%, #6D39D1 100%)',
+        'grad-cta':      'linear-gradient(135deg, #8A57EA 0%, #4D9FFF 100%)',
+        'grad-hero':     'linear-gradient(135deg, #8A57EA 0%, #6D39D1 50%, #4D9FFF 100%)',
+        'grad-soft':     'linear-gradient(135deg, rgba(138,87,234,0.08) 0%, rgba(77,159,255,0.08) 100%)',
+        // États
+        'grad-success':  'linear-gradient(135deg, #00D084, #00B87A)',
+        'grad-warning':  'linear-gradient(135deg, #FFAB00, #FF8C00)',
+        'grad-error':    'linear-gradient(135deg, #FF4D4D, #E53535)',
+        // Fond sombre
+        'grad-dark':     'linear-gradient(180deg, #0A0A0A, #111111)',
+        // Effet électrique (glass hero)
+        'grad-electric': 'linear-gradient(135deg, #38E8FF, #4D9FFF, #8A57EA)',
       },
 
       // ── Rayons ────────────────────────────────────────────────────────────
-      // 2xl      : rayon brand v2 pour les cartes et panels (20px)
-      // lg/md/sm : var(--radius) — compatibilité shadcn/ui
       borderRadius: {
         '2xl': '20px',
         lg:    'var(--radius)',
@@ -153,20 +158,20 @@ const config: Config = {
         sm:    'calc(var(--radius) - 4px)',
       },
 
-      // ── Ombres ────────────────────────────────────────────────────────────
+      // ── Ombres & Glows ────────────────────────────────────────────────────
       boxShadow: {
-        // Brand v2 — ombres douces (light mode)
-        'brand-sm':      '0 1px 3px rgba(44,62,80,0.08), 0 1px 2px rgba(44,62,80,0.04)',
-        'brand-md':      '0 4px 16px rgba(44,62,80,0.10), 0 2px 6px rgba(44,62,80,0.06)',
-        'brand-lg':      '0 12px 40px rgba(44,62,80,0.12), 0 4px 12px rgba(44,62,80,0.06)',
-        'brand-xl':      '0 24px 64px rgba(102,126,234,0.18)',
-        'brand-primary': '0 8px 32px rgba(102,126,234,0.32)',
-        // Legacy dark mode — glows
-        'glow-blue':    '0 0 40px rgba(59, 142, 240, 0.3)',
-        'glow-purple':  '0 0 40px rgba(155, 92, 246, 0.3)',
-        'glow-cyan':    '0 0 40px rgba(56, 232, 255, 0.3)',
-        'glow-success': '0 0 24px rgba(39, 174, 96, 0.3)',
-        'glow-error':   '0 0 24px rgba(231, 76, 60, 0.3)',
+        // Glows — charte officielle
+        'glow-primary': '0 0 40px rgba(138, 87, 234, 0.35)',
+        'glow-accent':  '0 0 40px rgba(77, 159, 255, 0.30)',
+        'glow-cyan':    '0 0 40px rgba(56, 232, 255, 0.30)',
+        'glow-success': '0 0 24px rgba(0, 208, 132, 0.30)',
+        'glow-warning': '0 0 24px rgba(255, 171, 0, 0.30)',
+        'glow-error':   '0 0 24px rgba(255, 77, 77, 0.30)',
+        // Ombres douces (light mode)
+        'soft-sm':  '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+        'soft-md':  '0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)',
+        'soft-lg':  '0 12px 40px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.04)',
+        'soft-xl':  '0 24px 64px rgba(138,87,234,0.15)',
       },
 
       // ── Animations ────────────────────────────────────────────────────────
@@ -193,11 +198,11 @@ const config: Config = {
         },
       },
       animation: {
-        'accordion-down':   'accordion-down 0.2s ease-out',
-        'accordion-up':     'accordion-up 0.2s ease-out',
-        'pulse-glow':       'pulse-glow 2s ease-in-out infinite',
-        'fade-in':          'fade-in 0.3s ease-out',
-        'slide-in-right':   'slide-in-right 0.3s ease-out',
+        'accordion-down':  'accordion-down 0.2s ease-out',
+        'accordion-up':    'accordion-up 0.2s ease-out',
+        'pulse-glow':      'pulse-glow 2s ease-in-out infinite',
+        'fade-in':         'fade-in 0.3s ease-out',
+        'slide-in-right':  'slide-in-right 0.3s ease-out',
       },
     },
   },

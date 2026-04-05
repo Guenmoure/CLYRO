@@ -77,15 +77,6 @@ pipelineMotionRouter.post('/motion', authMiddleware, async (req, res) => {
       return
     }
 
-    if (profile.plan !== 'studio') {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ credits: profile.credits - 1 })
-        .eq('id', req.userId)
-    }
-
-    res.status(202).json({ video_id: video.id, status: 'pending' })
-
     const jobData = {
       type: 'motion' as const,
       videoId:     video.id,
@@ -100,16 +91,25 @@ pipelineMotionRouter.post('/motion', authMiddleware, async (req, res) => {
       voiceId:     voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
     }
 
+    // Enqueue d'abord — on ne débite qu'une fois le job accepté
     if (renderQueue) {
-      // Redis disponible → enqueue dans BullMQ (worker séparé)
       await renderQueue.add('motion', jobData).catch((err) => {
         logger.warn({ err, videoId: video.id }, 'Queue unavailable, falling back to inline execution')
         runMotionPipeline(jobData).catch((e) => logger.error({ e, videoId: video.id }, 'Motion pipeline failed'))
       })
     } else {
-      // Fallback : exécution inline (dev sans Redis)
       runMotionPipeline(jobData).catch((err) => logger.error({ err, videoId: video.id }, 'Motion pipeline failed'))
     }
+
+    // Décrémenter les crédits après enqueue réussi (sauf plan studio)
+    if (profile.plan !== 'studio') {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ credits: profile.credits - 1 })
+        .eq('id', req.userId)
+    }
+
+    res.status(202).json({ video_id: video.id, status: 'pending' })
   } catch (err) {
     logger.error({ err, userId: req.userId }, 'pipeline.motion error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })

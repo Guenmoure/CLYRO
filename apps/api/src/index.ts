@@ -14,6 +14,8 @@ import { pipelineMotionRouter } from './routes/pipeline/motion'
 import { videosRouter } from './routes/videos'
 import { voicesRouter } from './routes/voices'
 import { checkoutRouter } from './routes/checkout'
+import { brandKitsRouter } from './routes/brand-kits'
+import { brandGenerateRouter } from './routes/brand-generate'
 import { stripeWebhookRouter } from './routes/webhooks/stripe'
 import { monerooWebhookRouter } from './routes/webhooks/moneroo'
 
@@ -145,6 +147,8 @@ app.use('/api/v1', videosRouter)
 app.use('/api/v1/voices/clone', voiceCloneLimiter)
 app.use('/api/v1', voicesRouter)
 app.use('/api/v1', checkoutRouter)
+app.use('/api/v1', brandKitsRouter)
+app.use('/api/v1', brandGenerateRouter)
 
 // ── Global error handler ───────────────────────────────────────────────────
 app.use(

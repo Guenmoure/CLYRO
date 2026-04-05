@@ -6,6 +6,9 @@ import type {
   CheckoutPayload,
   MonerooCheckoutPayload,
   CloneVoicePayload,
+  BrandKit,
+  CreateBrandKitPayload,
+  UpdateBrandKitPayload,
 } from '@clyro/shared'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
@@ -179,6 +182,91 @@ export async function createMonerooCheckout(payload: MonerooCheckoutPayload) {
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+// ---- Brand Kits ----
+
+export async function getBrandKits() {
+  return apiFetch<{ data: BrandKit[] }>('/api/v1/brand-kits')
+}
+
+export async function createBrandKit(payload: CreateBrandKitPayload) {
+  return apiFetch<{ data: BrandKit }>('/api/v1/brand-kits', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateBrandKit({ id, ...payload }: UpdateBrandKitPayload) {
+  return apiFetch<{ data: BrandKit }>(`/api/v1/brand-kits/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandKit(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand-kits/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+// ---- Brand Asset Generation ----
+
+export interface BrandAsset {
+  id: string
+  brand_kit_id: string
+  user_id: string
+  type: 'logo' | 'social_post' | 'banner' | 'thumbnail'
+  platform: string | null
+  prompt: string
+  image_url: string
+  created_at: string
+}
+
+export type BrandAssetType = 'logo' | 'social_post'
+export type SocialPlatform = 'instagram_post' | 'instagram_story' | 'linkedin' | 'twitter' | 'youtube_thumb' | 'tiktok'
+
+export async function generateBrandAsset(payload: {
+  brand_kit_id: string
+  type: BrandAssetType
+  prompt: string
+  platform?: SocialPlatform
+}) {
+  return apiFetch<{ data: BrandAsset }>('/api/v1/brand/generate', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getBrandAssets(brandKitId: string, type?: BrandAssetType) {
+  const query = type ? `?type=${type}` : ''
+  return apiFetch<{ data: BrandAsset[] }>(`/api/v1/brand/${brandKitId}/assets${query}`)
+}
+
+export async function deleteBrandAsset(assetId: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/assets/${assetId}`, { method: 'DELETE' })
+}
+
+// ---- Brand Asset Upload ----
+
+export async function uploadBrandLogo(file: File, userId: string): Promise<string> {
+  const { createBrowserClient } = await import('./supabase')
+  const supabase = createBrowserClient()
+  const ext = file.name.split('.').pop() ?? 'png'
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`
+
+  const { error } = await supabase.storage.from('brand-assets').upload(path, file, {
+    contentType: file.type,
+    upsert: true,
+  })
+  if (error) throw new Error(error.message)
+
+  const { data: signed } = await supabase.storage
+    .from('brand-assets')
+    .createSignedUrl(path, 60 * 60 * 24 * 365)
+
+  if (!signed?.signedUrl) throw new Error('Failed to get logo URL')
+  return signed.signedUrl
 }
 
 // ---- SSE Video Status ----

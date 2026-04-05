@@ -141,6 +141,76 @@ export interface Database {
           created_at?: string
         }
       }
+      brand_kits: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          logo_url: string | null
+          primary_color: string
+          secondary_color: string | null
+          font_family: string | null
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          logo_url?: string | null
+          primary_color?: string
+          secondary_color?: string | null
+          font_family?: string | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          logo_url?: string | null
+          primary_color?: string
+          secondary_color?: string | null
+          font_family?: string | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      brand_assets: {
+        Row: {
+          id: string
+          brand_kit_id: string
+          user_id: string
+          type: 'logo' | 'social_post' | 'banner' | 'thumbnail'
+          platform: string | null
+          prompt: string
+          image_url: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_kit_id: string
+          user_id: string
+          type: 'logo' | 'social_post' | 'banner' | 'thumbnail'
+          platform?: string | null
+          prompt: string
+          image_url: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          brand_kit_id?: string
+          user_id?: string
+          type?: 'logo' | 'social_post' | 'banner' | 'thumbnail'
+          platform?: string | null
+          prompt?: string
+          image_url?: string
+          created_at?: string
+        }
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

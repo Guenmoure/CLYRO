@@ -7,22 +7,24 @@ export const metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Logo */}
       <div className="text-center">
-        <h1 className="font-display text-3xl font-bold text-gradient-primary">CLYRO</h1>
-        <p className="text-muted-foreground mt-2 font-body text-sm">
+        <h1 className="font-display text-3xl font-extrabold text-white">
+          <span className="text-gradient-animated">C</span>LYRO
+        </h1>
+        <p className="text-white/40 mt-2 font-body text-sm">
           Content to video in minutes
         </p>
       </div>
 
       {/* Card */}
-      <div className="bg-brand-surface border border-brand-border rounded-2xl p-8 shadow-brand-md">
+      <div className="glass glass-heavy rounded-2xl p-8">
         <div className="mb-6">
-          <h2 className="font-display text-xl font-semibold text-brand-text">Connexion</h2>
-          <p className="text-brand-muted text-sm mt-1 font-body">
+          <h2 className="font-display text-xl font-semibold text-white">Connexion</h2>
+          <p className="text-white/50 text-sm mt-1 font-body">
             Pas encore de compte ?{' '}
-            <Link href="/signup" className="text-brand-primary hover:underline font-medium">
+            <Link href="/signup" className="text-clyro-primary hover:text-white transition-colors duration-200 font-medium">
               S&apos;inscrire
             </Link>
           </p>

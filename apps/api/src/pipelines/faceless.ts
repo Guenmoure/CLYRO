@@ -7,6 +7,14 @@ import { assembleVideo } from '../services/ffmpeg'
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
 
+export interface BrandKitRef {
+  name: string
+  primary_color: string
+  secondary_color: string | null
+  font_family: string | null
+  logo_url: string | null
+}
+
 export interface FacelessPipelineParams {
   videoId: string
   userId: string
@@ -17,10 +25,11 @@ export interface FacelessPipelineParams {
   duration: string
   script: string
   voiceId: string
+  brandKit?: BrandKitRef
 }
 
 export async function runFacelessPipeline(params: FacelessPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, style, script, voiceId } = params
+  const { videoId, userId, userEmail, title, style, script, voiceId, brandKit } = params
 
   const updateStatus = async (status: string, progress: number, extra?: object) => {
     await supabaseAdmin
@@ -33,33 +42,35 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
   try {
     // ÉTAPE 1 : Storyboard (Claude AI)
     await updateStatus('storyboard', 10)
-    const storyboard = await generateStoryboard(script, style, '30s')
+    const storyboard = await generateStoryboard(script, style, '30s', brandKit)
     await updateStatus('storyboard', 25, { scenes: storyboard.scenes })
     logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Storyboard generated')
 
-    // ÉTAPE 2 : Visuels (fal.ai)
+    // ÉTAPES 2 + 3 en parallèle : Visuels (fal.ai) + Voix off (ElevenLabs)
+    // Les deux sont indépendants → gain de ~15-20s sur des vidéos courtes
     await updateStatus('visuals', 30)
-    const sceneImages = await generateSceneImages(storyboard.scenes, style)
+
+    const hasVoice = !!(voiceId && storyboard.scenes.some((s) => s.texte_voix?.trim()))
+
+    const [sceneImages, audioResults] = await Promise.all([
+      generateSceneImages(storyboard.scenes, style, storyboard.master_seed, brandKit ?? undefined),
+      hasVoice
+        ? generateVoiceoverScenes(storyboard.scenes, voiceId)
+        : Promise.resolve([]),
+    ])
+
     const scenesWithImages = storyboard.scenes.map((scene) => ({
       ...scene,
       image_url: sceneImages.find((img) => img.sceneId === scene.id)?.imageUrl,
     }))
-    await updateStatus('visuals', 60, { scenes: scenesWithImages })
-    logger.info({ videoId, imageCount: sceneImages.length }, 'Scene images generated')
 
-    // ÉTAPE 3 : Voix off (ElevenLabs)
-    await updateStatus('audio', 65)
-    let combinedAudioBuffer: Buffer | null = null
+    const combinedAudioBuffer: Buffer | null =
+      audioResults.length > 0
+        ? Buffer.concat(audioResults.map((r) => r.audioBuffer))
+        : null
 
-    if (voiceId && storyboard.scenes.some((s) => s.texte_voix?.trim())) {
-      const audioResults = await generateVoiceoverScenes(storyboard.scenes, voiceId)
-      if (audioResults.length > 0) {
-        combinedAudioBuffer = Buffer.concat(audioResults.map((r) => r.audioBuffer))
-      }
-    }
-
-    await updateStatus('audio', 75)
-    logger.info({ videoId, hasAudio: !!combinedAudioBuffer }, 'Voiceover generated')
+    await updateStatus('audio', 75, { scenes: scenesWithImages })
+    logger.info({ videoId, imageCount: sceneImages.length, hasAudio: !!combinedAudioBuffer }, 'Visuals + voiceover generated')
 
     // ÉTAPE 4 : Assemblage FFmpeg
     await updateStatus('assembly', 80)
@@ -79,15 +90,16 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
 
     if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
 
+    // Signed URL 1 an — storagePath conservé en metadata pour renouvellement futur
     const { data: signedUrl } = await supabaseAdmin.storage
       .from('videos')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
 
     const outputUrl = signedUrl?.signedUrl ?? ''
 
     await supabaseAdmin
       .from('videos')
-      .update({ status: 'done', output_url: outputUrl, metadata: { progress: 100, scenes: scenesWithImages } })
+      .update({ status: 'done', output_url: outputUrl, metadata: { progress: 100, scenes: scenesWithImages, storage_path: storagePath } })
       .eq('id', videoId)
 
     logger.info({ videoId, outputUrl }, 'Faceless pipeline completed')

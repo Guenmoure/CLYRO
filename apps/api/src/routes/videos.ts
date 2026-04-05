@@ -105,7 +105,7 @@ videosRouter.get('/videos/:id/status', authMiddleware, async (req, res) => {
   // Vérifier que la vidéo appartient à l'utilisateur
   const { data: video } = await supabaseAdmin
     .from('videos')
-    .select('id, status, metadata')
+    .select('id, status, output_url, metadata')
     .eq('id', id)
     .eq('user_id', req.userId)
     .single()
@@ -126,9 +126,12 @@ videosRouter.get('/videos/:id/status', authMiddleware, async (req, res) => {
   }
 
   // Envoyer le statut initial
+  const initialMeta = video.metadata as { progress?: number; error_message?: string } | null
   sendEvent({
     status: video.status,
-    progress: (video.metadata as { progress?: number })?.progress ?? 0,
+    progress: initialMeta?.progress ?? 0,
+    output_url: (video as { output_url?: string }).output_url ?? null,
+    error_message: initialMeta?.error_message ?? null,
   })
 
   // Si déjà terminé, fermer immédiatement
@@ -142,14 +145,17 @@ videosRouter.get('/videos/:id/status', authMiddleware, async (req, res) => {
     try {
       const { data: updated } = await supabaseAdmin
         .from('videos')
-        .select('status, metadata')
+        .select('status, output_url, metadata')
         .eq('id', id)
         .single()
 
       if (updated) {
+        const meta = updated.metadata as { progress?: number; error_message?: string } | null
         sendEvent({
           status: updated.status,
-          progress: (updated.metadata as { progress?: number })?.progress ?? 0,
+          progress: meta?.progress ?? 0,
+          output_url: (updated as { output_url?: string }).output_url ?? null,
+          error_message: meta?.error_message ?? null,
         })
 
         if (updated.status === 'done' || updated.status === 'error') {

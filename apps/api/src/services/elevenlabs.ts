@@ -1,7 +1,9 @@
 import { logger } from '../lib/logger'
 
 const BASE_URL = 'https://api.elevenlabs.io/v1'
-const DEFAULT_MODEL = 'eleven_multilingual_v2'
+// eleven_turbo_v2_5 : 3× plus rapide que multilingual_v2, latence ~2s/scène vs ~6s
+// Garde la qualité voix off pour de courtes durées (30-60s max)
+const DEFAULT_MODEL = 'eleven_turbo_v2_5'
 
 function getApiKey(): string {
   const key = process.env.ELEVENLABS_API_KEY
