@@ -33,9 +33,15 @@ Thumbs.db
 
 # IDE
 .idea/
-.vscode/settings.json
+.vscode/
+.claude/
 *.swp
 *.swo
+
+# Prototypes / demos (not part of monorepo)
+clyro/
+demo-clyro.html
+preview-parcours.html
 
 # Testing
 coverage/

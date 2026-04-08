@@ -2,8 +2,8 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Transpile workspace packages
-  transpilePackages: ['@clyro/shared'],
+  // Transpile workspace packages (including Remotion which ships as ESM)
+  transpilePackages: ['@clyro/shared', '@clyro/video', 'remotion', '@remotion/player'],
 
   // Security headers
   async headers() {

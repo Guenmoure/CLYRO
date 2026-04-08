@@ -90,6 +90,8 @@ export interface CreateFacelessVideoPayload {
   title: string
   style: FacelessStyle
   input_type: 'script' | 'audio'
+  format?: VideoFormat
+  duration?: VideoDuration
   script?: string
   audio_url?: string
   voice_id?: string

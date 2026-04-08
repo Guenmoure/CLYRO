@@ -7,16 +7,21 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "concurrently --names \"API,WEB\" --prefix-colors \"yellow,cyan\" \"npm run dev:api\" \"npm run dev:web\"",
     "dev:web": "npm run dev --workspace=apps/web",
-    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:api": "node apps/api/dist/index.js",
+    "dev:api:watch": "npm run dev --workspace=apps/api",
     "build:web": "npm run build --workspace=apps/web",
     "build:api": "npm run build --workspace=apps/api",
-    "build": "npm run build --workspaces",
+    "build": "npm run build:api && npm run build:web",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Composition, registerRoot } from 'remotion'
-import { BrandOverlay, BrandOverlayProps } from '@clyro/video'
+import { BrandOverlay, BrandOverlayProps } from './compositions/BrandOverlay'
 import type { ComponentType } from 'react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

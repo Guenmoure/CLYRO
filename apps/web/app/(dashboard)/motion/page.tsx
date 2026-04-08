@@ -1,7 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import type { Database } from '@/lib/database.types'
-import { MotionHub } from '@/components/motion/motion-hub'
+import { MotionStudio } from '@/components/motion/motion-studio'
 
 export const metadata = { title: 'Motion Design — CLYRO' }
 
@@ -17,5 +17,5 @@ export default async function MotionPage() {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  return <MotionHub initialVideos={videos ?? []} />
+  return <MotionStudio initialVideos={videos ?? []} />
 }

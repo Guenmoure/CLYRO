@@ -1,0 +1,27 @@
+{
+  "name": "@clyro/video",
+  "version": "1.0.0",
+  "description": "Shared Remotion compositions for CLYRO — used by apps/web (preview) and apps/api (rendering)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "require": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "studio": "npx remotion studio src/Root.tsx"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "remotion": ">=4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "typescript": "^5.3.3"
+  }
+}

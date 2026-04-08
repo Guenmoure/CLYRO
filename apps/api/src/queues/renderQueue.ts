@@ -13,10 +13,20 @@ function createRedisConnection(): IORedis | null {
     const conn = new IORedis(url, {
       maxRetriesPerRequest: null, // requis par BullMQ
       enableReadyCheck: false,
+      lazyConnect: true,
+      retryStrategy: (times) => {
+        if (times >= 3) return null  // Stop retrying after 3 attempts
+        return Math.min(times * 500, 2000)
+      },
     })
-    conn.on('error', (err) => {
-      logger.warn({ err }, 'Redis connection error — queue disabled, falling back to inline execution')
+    let warnedOnce = false
+    conn.on('error', () => {
+      if (!warnedOnce) {
+        warnedOnce = true
+        logger.warn('Redis unavailable — queue disabled, falling back to inline execution')
+      }
     })
+    conn.connect().catch(() => { /* handled by error event */ })
     return conn
   } catch {
     return null

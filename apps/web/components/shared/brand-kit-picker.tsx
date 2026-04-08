@@ -18,17 +18,22 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getBrandKits()
-      .then(({ data }) => {
+    async function loadKits() {
+      try {
+        const { data } = await getBrandKits()
         setKits(data)
         // Auto-sélectionner le kit par défaut si rien n'est sélectionné
         if (!value) {
           const def = data.find((k) => k.is_default)
           if (def) onChange(def.id)
         }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+      } catch {
+        // Backend unavailable — brand kits optional
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadKits()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

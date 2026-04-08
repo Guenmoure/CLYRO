@@ -3,7 +3,7 @@ import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
 import { unlink } from 'fs/promises'
 import { logger } from '../lib/logger'
-import type { BrandOverlayProps } from '../remotion/BrandOverlay'
+import type { BrandOverlayProps } from '@clyro/video'
 
 const FPS = 30
 
