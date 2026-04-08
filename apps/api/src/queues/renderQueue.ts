@@ -74,6 +74,10 @@ export type RenderJobData = MotionJobData | FacelessJobData
 // ── Queue instance (null si Redis indisponible) ───────────────────────────
 export let renderQueue: Queue<RenderJobData> | null = null
 
+export function isRedisReady(): boolean {
+  return redisConnection?.status === 'ready'
+}
+
 if (redisConnection) {
   renderQueue = new Queue<RenderJobData>(RENDER_QUEUE_NAME, {
     connection: redisConnection,

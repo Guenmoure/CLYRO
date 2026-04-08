@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { authMiddleware } from '../../middleware/auth'
 import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
-import { renderQueue } from '../../queues/renderQueue'
+import { renderQueue, isRedisReady } from '../../queues/renderQueue'
 import { runFacelessPipeline } from '../../pipelines/faceless'
 
 export const pipelineFacelessRouter = Router()
@@ -135,13 +135,14 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
       brandKit: brandKit ?? undefined,
     }
 
-    // Enqueue d'abord — on ne débite qu'une fois le job accepté
-    if (renderQueue) {
+    // Enqueue si Redis est dispo, sinon exécution inline directe
+    if (renderQueue && isRedisReady()) {
       await renderQueue.add('faceless', jobData).catch((err) => {
-        logger.warn({ err, videoId: video.id }, 'Queue unavailable, falling back to inline execution')
+        logger.warn({ err, videoId: video.id }, 'Queue add failed, falling back to inline execution')
         runFacelessPipeline(jobData).catch((e) => logger.error({ e, videoId: video.id }, 'Faceless pipeline failed'))
       })
     } else {
+      logger.info({ videoId: video.id }, 'Redis not ready — running pipeline inline')
       runFacelessPipeline(jobData).catch((err) => logger.error({ err, videoId: video.id }, 'Faceless pipeline failed'))
     }
 

@@ -7,9 +7,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently --names \"API,WEB\" --prefix-colors \"yellow,cyan\" \"npm run dev:api\" \"npm run dev:web\"",
+    "dev": "concurrently --names \"API,WORKER,WEB\" --prefix-colors \"yellow,green,cyan\" \"npm run dev:api\" \"npm run dev:worker\" \"npm run dev:web\"",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "node apps/api/dist/index.js",
+    "dev:worker": "node apps/api/dist/workers/renderWorker.js",
     "dev:api:watch": "npm run dev --workspace=apps/api",
     "build:web": "npm run build --workspace=apps/web",
     "build:api": "npm run build --workspace=apps/api",

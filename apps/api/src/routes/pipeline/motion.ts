@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { authMiddleware } from '../../middleware/auth'
 import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
-import { renderQueue } from '../../queues/renderQueue'
+import { renderQueue, isRedisReady } from '../../queues/renderQueue'
 import { runMotionPipeline } from '../../pipelines/motion'
 
 export const pipelineMotionRouter = Router()
@@ -91,13 +91,14 @@ pipelineMotionRouter.post('/motion', authMiddleware, async (req, res) => {
       voiceId:     voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
     }
 
-    // Enqueue d'abord — on ne débite qu'une fois le job accepté
-    if (renderQueue) {
+    // Enqueue si Redis est dispo, sinon exécution inline directe
+    if (renderQueue && isRedisReady()) {
       await renderQueue.add('motion', jobData).catch((err) => {
-        logger.warn({ err, videoId: video.id }, 'Queue unavailable, falling back to inline execution')
+        logger.warn({ err, videoId: video.id }, 'Queue add failed, falling back to inline execution')
         runMotionPipeline(jobData).catch((e) => logger.error({ e, videoId: video.id }, 'Motion pipeline failed'))
       })
     } else {
+      logger.info({ videoId: video.id }, 'Redis not ready — running pipeline inline')
       runMotionPipeline(jobData).catch((err) => logger.error({ err, videoId: video.id }, 'Motion pipeline failed'))
     }
 
