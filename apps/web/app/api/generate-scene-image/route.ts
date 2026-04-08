@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
         num_images: 1,
         enable_safety_checker: true,
       },
-    }) as unknown as { images: Array<{ url: string }> }
+    }) as unknown as { data?: { images: Array<{ url: string }> }; images?: Array<{ url: string }> }
 
-    const imageUrl = result.images?.[0]?.url
+    const imageUrl = (result.data ?? result).images?.[0]?.url
     if (!imageUrl) {
       return NextResponse.json({ error: 'No image returned from FAL' }, { status: 500 })
     }
