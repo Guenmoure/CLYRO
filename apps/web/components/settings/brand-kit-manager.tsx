@@ -45,7 +45,23 @@ function BrandKitForm({
 
       let logoUrl = initial?.logo_url ?? undefined
       if (logoFile) {
-        logoUrl = await uploadBrandLogo(logoFile, user.id)
+        const rawLogoUrl = await uploadBrandLogo(logoFile, user.id)
+        // Remove background automatically (fal-ai/birefnet) — fallback to raw if it fails
+        try {
+          const rembgRes = await fetch('/api/rembg', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrl: rawLogoUrl }),
+          })
+          if (rembgRes.ok) {
+            const { url } = await rembgRes.json() as { url?: string }
+            logoUrl = url ?? rawLogoUrl
+          } else {
+            logoUrl = rawLogoUrl
+          }
+        } catch {
+          logoUrl = rawLogoUrl
+        }
       }
 
       const payload = {

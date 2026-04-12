@@ -19,12 +19,25 @@ import { logger } from '../lib/logger'
 import type { RenderMotionVideoOptions } from './remotion'
 
 export function isLambdaEnabled(): boolean {
-  return (
+  const enabled =
     process.env.USE_REMOTION_LAMBDA === 'true' &&
     !!process.env.REMOTION_LAMBDA_FUNCTION_NAME &&
     !!process.env.REMOTION_LAMBDA_SERVE_URL &&
     !!process.env.AWS_REGION
-  )
+
+  if (!enabled && process.env.USE_REMOTION_LAMBDA === 'true') {
+    // Opted-in but missing variables — warn once so it's visible in logs
+    logger.warn(
+      {
+        hasFunction: !!process.env.REMOTION_LAMBDA_FUNCTION_NAME,
+        hasServeUrl: !!process.env.REMOTION_LAMBDA_SERVE_URL,
+        hasRegion:   !!process.env.AWS_REGION,
+      },
+      'Remotion Lambda: USE_REMOTION_LAMBDA=true but missing credentials — falling back to local renderer'
+    )
+  }
+
+  return enabled
 }
 
 const FORMAT_MAP: Record<string, { compositionId: string; width: number; height: number }> = {
@@ -95,7 +108,7 @@ export async function renderMotionVideoLambda(
       audioSrc,
     },
     codec: 'h264',
-    framesPerLambda: 20,
+    framesPerLambda: 999,  // single chunk — AWS new account concurrency limit is 10
     concurrencyPerLambda: 1,
     // Override composition dimensions + duration
     forceWidth: width,

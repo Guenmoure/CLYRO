@@ -21,7 +21,7 @@ function notify() {
   listeners.forEach((l) => l([...toasts]))
 }
 
-export function toast(message: string, type: ToastType = 'info') {
+export function toast(message: string, type: ToastType = 'info', duration: number = 4000) {
   const id = Math.random().toString(36).slice(2)
   toasts = [...toasts, { id, message, type }]
   notify()
@@ -29,12 +29,12 @@ export function toast(message: string, type: ToastType = 'info') {
   setTimeout(() => {
     toasts = toasts.filter((t) => t.id !== id)
     notify()
-  }, 4000)
+  }, duration)
 }
 
-toast.success = (msg: string) => toast(msg, 'success')
-toast.error   = (msg: string) => toast(msg, 'error')
-toast.info    = (msg: string) => toast(msg, 'info')
+toast.success = (msg: string, opts?: { duration?: number }) => toast(msg, 'success', opts?.duration ?? 4000)
+toast.error   = (msg: string, opts?: { duration?: number }) => toast(msg, 'error', opts?.duration ?? 4000)
+toast.info    = (msg: string, opts?: { duration?: number }) => toast(msg, 'info', opts?.duration ?? 4000)
 
 // ── Composant Toaster ────────────────────────────────────────────────────────
 

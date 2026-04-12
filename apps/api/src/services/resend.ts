@@ -126,6 +126,46 @@ export async function sendVideoReadyEmail(
 }
 
 /**
+ * Email de notification — brand kit prêt
+ */
+export async function sendBrandKitReadyEmail(
+  to: string,
+  brandName: string,
+  downloadUrl: string
+): Promise<void> {
+  const resend = getResendClient()
+
+  const html = baseTemplate(`
+    <h1>Ton brand kit est prêt ! 🎨</h1>
+    <p>Bonne nouvelle — le kit d'identité visuelle pour <span class="highlight">"${brandName}"</span> a été généré avec succès.</p>
+    <p>Il contient tes logos, ta palette couleurs, tes mockups et ta charte graphique complète.</p>
+    <a href="${downloadUrl}" class="btn">Télécharger mon brand kit →</a>
+    <p style="margin-top: 24px; font-size: 14px; color: #4A5568;">
+      Le lien de téléchargement est valide 1 an. Tu peux aussi retrouver ton kit dans ton dashboard.
+    </p>
+  `)
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `🎨 Ton brand kit "${brandName}" est prêt !`,
+      html,
+    })
+
+    if (error) {
+      logger.error({ error, to }, 'Resend: failed to send brand kit ready email')
+      throw new Error(`Failed to send brand kit ready email: ${error.message}`)
+    }
+
+    logger.info({ to, brandName }, 'Resend: brand kit ready email sent')
+  } catch (err) {
+    logger.error({ err, to }, 'Resend: brand kit ready email error')
+    throw err
+  }
+}
+
+/**
  * Email de confirmation de paiement
  */
 export async function sendPaymentConfirmationEmail(

@@ -526,21 +526,46 @@
 }
 
 /* ============================================================
-   Scrollbar Custom
+   Scrollbar Custom — light mode (HeyGen style)
    ============================================================ */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #060810;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #151C38;
-  border-radius: 3px;
+  background: #D1D5DB;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3B8EF0;
+  background: #9CA3AF;
+}
+
+/* ============================================================
+   Dashboard default — light mode surface overrides
+   Ensures the app renders in light mode by default on all
+   HeyGen-style pages without requiring a .dark class toggle.
+   ============================================================ */
+.dashboard-surface {
+  background-color: #F7F8FA;
+  color: #111827;
+}
+
+.hg-card {
+  background: #FFFFFF;
+  border: 1px solid #EAEAEC;
+  border-radius: 16px;
+}
+
+.hg-card-hover {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.hg-card-hover:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-color: #D1D5DB;
 }

@@ -96,6 +96,51 @@ videosRouter.delete('/videos/:id', authMiddleware, async (req, res) => {
 })
 
 /**
+ * PATCH /api/v1/videos/:id
+ * Met à jour les métadonnées d'une vidéo (auto-save storyboard, scènes éditées)
+ * N'autorise que la mise à jour de `metadata` — pas de status, output_url, etc.
+ */
+videosRouter.patch('/videos/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params
+  const { metadata } = req.body as { metadata?: Record<string, unknown> }
+
+  if (!metadata || typeof metadata !== 'object') {
+    res.status(400).json({ error: 'metadata object required', code: 'VALIDATION_ERROR' })
+    return
+  }
+
+  try {
+    const { data: existing } = await supabaseAdmin
+      .from('videos')
+      .select('id, metadata')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .single()
+
+    if (!existing) {
+      res.status(404).json({ error: 'Video not found', code: 'NOT_FOUND' })
+      return
+    }
+
+    // Merge incoming metadata with existing metadata (shallow — caller controls keys)
+    const merged = { ...(existing.metadata as Record<string, unknown> ?? {}), ...metadata }
+
+    const { error } = await supabaseAdmin
+      .from('videos')
+      .update({ metadata: merged })
+      .eq('id', id)
+
+    if (error) throw new Error(error.message)
+
+    logger.info({ videoId: id, userId: req.userId, keys: Object.keys(metadata) }, 'Video metadata updated')
+    res.json({ success: true })
+  } catch (err) {
+    logger.error({ err, videoId: id, userId: req.userId }, 'videos.patch error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
  * GET /api/v1/videos/:id/status — SSE stream
  * Suivi temps réel du statut de génération
  */
@@ -140,38 +185,37 @@ videosRouter.get('/videos/:id/status', authMiddleware, async (req, res) => {
     return
   }
 
-  // Polling Supabase toutes les 2s (SSE via polling simple)
-  const interval = setInterval(async () => {
-    try {
-      const { data: updated } = await supabaseAdmin
-        .from('videos')
-        .select('status, output_url, metadata')
-        .eq('id', id)
-        .single()
-
-      if (updated) {
+  // Supabase Realtime — postgres_changes sur la row vidéo
+  // Zéro requête DB supplémentaire pendant le rendu (vs 30+ avec le polling 2s)
+  const channel = supabaseAdmin
+    .channel(`video-status-${id}-${Date.now()}`)
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'videos', filter: `id=eq.${id}` },
+      (payload) => {
+        const updated = payload.new as { status: string; output_url?: string; metadata?: Record<string, unknown> }
         const meta = updated.metadata as { progress?: number; error_message?: string } | null
         sendEvent({
           status: updated.status,
           progress: meta?.progress ?? 0,
-          output_url: (updated as { output_url?: string }).output_url ?? null,
+          output_url: updated.output_url ?? null,
           error_message: meta?.error_message ?? null,
         })
-
         if (updated.status === 'done' || updated.status === 'error') {
-          clearInterval(interval)
+          channel.unsubscribe().catch(() => null)
           res.end()
         }
       }
-    } catch (err) {
-      logger.error({ err, videoId: id }, 'SSE polling error')
-      clearInterval(interval)
-      res.end()
-    }
-  }, 2000)
+    )
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR') {
+        logger.error({ videoId: id }, 'Supabase Realtime channel error — closing SSE')
+        res.end()
+      }
+    })
 
   // Cleanup si le client se déconnecte
   req.on('close', () => {
-    clearInterval(interval)
+    channel.unsubscribe().catch(() => null)
   })
 })

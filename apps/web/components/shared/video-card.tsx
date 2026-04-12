@@ -50,6 +50,28 @@ const MODULE_ICONS: Record<string, string> = {
 export function VideoCard({ video, onDeleted }: VideoCardProps) {
   const [deleting, setDeleting] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+
+  async function handleDownload() {
+    setDownloading(true)
+    try {
+      const res = await fetch(`/api/download-video?id=${video.id}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${video.title ?? 'video'}.mp4`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error('Erreur lors du téléchargement')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const statusStyle = STATUS_STYLES[video.status] ?? STATUS_STYLES['processing']
   const statusLabel = STATUS_LABELS[video.status] ?? video.status
@@ -94,19 +116,19 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
         {/* Actions */}
         <div className="flex items-center gap-2 shrink-0">
           {video.status === 'done' && video.output_url && (
-            <a
-              href={video.output_url}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-xs text-brand-primary hover:underline px-3 py-1.5 bg-brand-primary/10 border border-brand-primary/20 rounded-lg transition-colors hover:bg-brand-primary/20"
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={downloading}
+              className="font-mono text-xs text-brand-primary hover:underline px-3 py-1.5 bg-brand-primary/10 border border-brand-primary/20 rounded-lg transition-colors hover:bg-brand-primary/20 disabled:opacity-50"
             >
-              Télécharger
-            </a>
+              {downloading ? '...' : 'Télécharger'}
+            </button>
           )}
 
           {!showConfirm ? (
             <button
+              type="button"
               onClick={() => setShowConfirm(true)}
               disabled={deleting}
               className="font-mono text-xs text-red-500 hover:underline px-3 py-1.5 bg-red-500/10 border border-red-500/20 rounded-lg transition-colors hover:bg-red-500/20 disabled:opacity-50"
@@ -116,6 +138,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
           ) : (
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={handleDelete}
                 disabled={deleting}
                 className="font-mono text-xs text-white px-3 py-1.5 bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
@@ -123,6 +146,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
                 {deleting ? '...' : 'Confirmer'}
               </button>
               <button
+                type="button"
                 onClick={() => setShowConfirm(false)}
                 disabled={deleting}
                 className="font-mono text-xs text-brand-muted px-3 py-1.5 bg-brand-bg border border-brand-border rounded-lg hover:bg-brand-surface transition-colors"

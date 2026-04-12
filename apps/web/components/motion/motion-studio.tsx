@@ -14,15 +14,14 @@ import { useRouter } from 'next/navigation'
 import {
   Sparkles, Loader2, RefreshCw, ChevronRight, AlertCircle,
   CheckCircle2, Mic2, Volume2, Play, Pause, Video,
-  Plus, ArrowLeft, Wand2,
+  Plus, ArrowLeft, Wand2, Upload, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { startMotionGeneration, getVoices } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import { toast } from '@/components/ui/toast'
 import { VideoPlayer } from '@/components/ui/video-player'
-import type { VideoFormat, VideoDuration } from '@clyro/shared'
-import type { MotionScene } from '@/app/api/generate-motion-storyboard/route'
+import type { VideoFormat, VideoDuration, MotionScene } from '@clyro/shared'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -46,6 +45,15 @@ const STYLE_LABELS: Record<string, { label: string; color: string }> = {
   stats:       { label: 'Stats',     color: '#00C896' },
   'text-focus': { label: 'Citation', color: '#FFB347' },
   outro:       { label: 'Outro',     color: '#FF6B6B' },
+}
+
+const SCENE_TYPE_LABELS: Record<string, string> = {
+  text_hero:         'Texte Hero',
+  split_text_image:  'Image + Texte',
+  product_showcase:  'Produit',
+  stats_counter:     'Statistiques',
+  cta_end:           'CTA / Outro',
+  image_full:        'Image Plein',
 }
 
 const PIPELINE_STEPS = [
@@ -107,7 +115,7 @@ function ScenePreview({ scene }: { scene: MotionScene }) {
 
       {/* Main text with highlight */}
       <p className="font-bold text-sm leading-tight mb-1" style={{ color: '#fff' }}>
-        {parts.map((part, i) =>
+        {parts.map((part: string, i: number) =>
           part.toLowerCase() === scene.highlight?.toLowerCase() ? (
             <span key={i} style={{
               background: `linear-gradient(90deg, ${accent}, #9B59FF)`,
@@ -130,7 +138,7 @@ function ScenePreview({ scene }: { scene: MotionScene }) {
       {/* Stats */}
       {scene.style === 'stats' && scene.stats && (
         <div className="flex gap-3 mt-2">
-          {scene.stats.slice(0, 3).map((s, i) => (
+          {scene.stats.slice(0, 3).map((s: { value: string; label: string }, i: number) => (
             <div key={i} className="text-center">
               <p className="text-xs font-bold" style={{ color: accent }}>{s.value}</p>
               <p className="text-[9px] text-white/40">{s.label}</p>
@@ -288,6 +296,19 @@ function SceneCard({
                 ))}
               </select>
             </div>
+            {/* Scene Type (Remotion composition) */}
+            <div>
+              <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">Type de scène</label>
+              <select
+                value={scene.scene_type ?? 'text_hero'}
+                onChange={(e) => onChange({ scene_type: e.target.value as any })}
+                className="w-full text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition-colors"
+              >
+                {Object.entries(SCENE_TYPE_LABELS).map(([id, label]) => (
+                  <option key={id} value={id}>{label}</option>
+                ))}
+              </select>
+            </div>
             {/* Accent color */}
             <div>
               <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">Couleur accent</label>
@@ -325,7 +346,7 @@ function SceneCard({
             <div>
               <label className="block text-[11px] font-body font-medium text-brand-muted mb-2">Statistiques</label>
               <div className="space-y-2">
-                {(scene.stats ?? []).map((stat, i) => (
+                {(scene.stats ?? []).map((stat: { value: string; label: string }, i: number) => (
                   <div key={i} className="flex gap-2">
                     <input
                       type="text"
@@ -554,6 +575,11 @@ export function MotionStudio({
   const [format, setFormat] = useState<VideoFormat>('9:16')
   const [duration, setDuration] = useState<VideoDuration>('30s')
 
+  // ── Logo
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
   // ── Storyboard
   const [scenes, setScenes] = useState<MotionScene[]>([])
   const [genLoading, setGenLoading] = useState(false)
@@ -563,6 +589,30 @@ export function MotionStudio({
   const [videoId, setVideoId] = useState<string | null>(null)
   const [videoTitle, setVideoTitle] = useState('')
   const [launching, setLaunching] = useState(false)
+
+  // ── Logo upload ────────────────────────────────────────────────────────────
+
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Le fichier doit être une image (PNG, SVG, JPG)')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Le fichier ne doit pas dépasser 5 Mo')
+      return
+    }
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  function clearLogo() {
+    setLogoFile(null)
+    if (logoPreview) URL.revokeObjectURL(logoPreview)
+    setLogoPreview(null)
+    if (logoInputRef.current) logoInputRef.current.value = ''
+  }
 
   // ── Storyboard generation ──────────────────────────────────────────────────
 
@@ -623,6 +673,20 @@ export function MotionStudio({
     setLaunching(true)
     const title = scenes[0]?.text ?? 'Motion Design'
     try {
+      // Upload logo to Supabase if provided
+      let logoUrl: string | undefined
+      if (logoFile) {
+        const formData = new FormData()
+        formData.append('file', logoFile)
+        const uploadRes = await fetch('/api/upload-logo', { method: 'POST', body: formData })
+        const uploadData = await uploadRes.json() as { url?: string; error?: string }
+        if (!uploadRes.ok || uploadData.error) {
+          toast.error(uploadData.error ?? 'Erreur upload logo')
+        } else {
+          logoUrl = uploadData.url
+        }
+      }
+
       const res = await startMotionGeneration({
         title,
         brief,
@@ -632,6 +696,7 @@ export function MotionStudio({
         brand_config: {
           primary_color: scenes[0]?.accent_color ?? '#00CFFF',
           style: 'dynamique',
+          ...(logoUrl && { logo_url: logoUrl }),
         },
         voice_id: voiceId || undefined,
       })
@@ -813,6 +878,45 @@ export function MotionStudio({
 
               {/* Voice */}
               <VoicePicker voiceId={voiceId} onSelect={(id) => setVoiceId(id)} />
+
+              {/* Logo upload */}
+              <div>
+                <label className="block text-sm font-body font-semibold text-brand-text mb-1.5">
+                  Logo <span className="text-brand-muted font-normal">(optionnel)</span>
+                </label>
+                <p className="text-xs text-brand-muted mb-2">
+                  Votre logo sera incrusté dans la vidéo si fourni. PNG ou SVG transparent recommandé.
+                </p>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/svg+xml,image/jpeg,image/webp"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                {logoPreview ? (
+                  <div className="flex items-center gap-3 border border-brand-border rounded-xl px-4 py-3 bg-brand-surface">
+                    <img src={logoPreview} alt="Logo preview" className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-brand-border" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-body text-brand-text truncate">{logoFile?.name}</p>
+                      <p className="text-xs text-brand-muted">{logoFile ? `${(logoFile.size / 1024).toFixed(0)} Ko` : ''}</p>
+                    </div>
+                    <button type="button" onClick={clearLogo}
+                      className="shrink-0 p-1.5 rounded-lg text-brand-muted hover:text-red-500 hover:bg-red-50 transition-colors">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-brand-border rounded-xl px-4 py-4 text-sm font-body text-brand-muted hover:border-brand-primary/40 hover:text-brand-primary transition-colors"
+                  >
+                    <Upload size={16} />
+                    Importer un logo
+                  </button>
+                )}
+              </div>
 
               {/* Error */}
               {genError && (

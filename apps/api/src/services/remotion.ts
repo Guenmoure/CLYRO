@@ -21,6 +21,11 @@ interface Scene {
   texte_voix: string
   duree_estimee: number
   image_url?: string
+  display_text?: string
+  animation_type?: 'slide-in' | 'zoom' | 'fade' | 'particle-burst' | 'typewriter'
+  scene_type?: 'text_hero' | 'split_text_image' | 'product_showcase' | 'stats_counter' | 'cta_end' | 'image_full'
+  needs_background?: boolean
+  cta_text?: string
 }
 
 export interface RenderMotionVideoOptions {
@@ -29,13 +34,15 @@ export interface RenderMotionVideoOptions {
   format: '9:16' | '1:1' | '16:9'
   duration: string
   voiceoverBuffer?: Buffer | null
+  musicBuffer?: Buffer | null
 }
 
 // Format → composition ID + dimensions
+// DynamicMotion uses the scene_type-aware router (DynamicComposition)
 const FORMAT_MAP: Record<string, { compositionId: string; width: number; height: number }> = {
-  '16:9': { compositionId: 'BrandOverlay-16-9', width: 1920, height: 1080 },
-  '9:16': { compositionId: 'BrandOverlay-9-16', width: 1080, height: 1920 },
-  '1:1':  { compositionId: 'BrandOverlay-1-1',  width: 1080, height: 1080 },
+  '16:9': { compositionId: 'DynamicMotion-16-9', width: 1920, height: 1080 },
+  '9:16': { compositionId: 'DynamicMotion-9-16', width: 1080, height: 1920 },
+  '1:1':  { compositionId: 'DynamicMotion-1-1',  width: 1080, height: 1080 },
 }
 
 // Cache the webpack bundle path across requests (built once per process)
@@ -67,12 +74,17 @@ async function getBundle(): Promise<string> {
   return bundlePath
 }
 
+export interface RenderMotionVideoResult {
+  mp4: Buffer
+  thumbnail: Buffer | null  // PNG frame at 3 s, null if renderStill failed
+}
+
 /**
  * Renders a Motion Design video using Remotion.
- * Returns an MP4 Buffer.
+ * Also captures a thumbnail PNG at the 3-second mark via renderStill.
  */
-export async function renderMotionVideo(options: RenderMotionVideoOptions): Promise<Buffer> {
-  const { scenes, brandConfig, format, voiceoverBuffer } = options
+export async function renderMotionVideo(options: RenderMotionVideoOptions): Promise<RenderMotionVideoResult> {
+  const { scenes, brandConfig, format, voiceoverBuffer, musicBuffer } = options
 
   const { selectComposition, renderMedia } = await import('@remotion/renderer')
 
@@ -87,11 +99,16 @@ export async function renderMotionVideo(options: RenderMotionVideoOptions): Prom
     scenes.reduce((sum, s) => sum + Math.max(1, Math.round(s.duree_estimee * FPS)), 0)
   )
 
-  // Convert voiceover to a base64 data URL — Chrome headless blocks file:// URLs
+  // Convert voiceover + music to base64 data URLs — Chrome headless blocks file:// URLs
   let audioSrc: string | undefined
   if (voiceoverBuffer && voiceoverBuffer.length > 0) {
     audioSrc = `data:audio/mpeg;base64,${voiceoverBuffer.toString('base64')}`
     logger.info({ bytes: voiceoverBuffer.length }, 'Remotion: audio converted to data URL')
+  }
+  let musicSrc: string | undefined
+  if (musicBuffer && musicBuffer.length > 0) {
+    musicSrc = `data:audio/mpeg;base64,${musicBuffer.toString('base64')}`
+    logger.info({ bytes: musicBuffer.length }, 'Remotion: music converted to data URL')
   }
 
   const tempFiles: string[] = []
@@ -128,6 +145,7 @@ export async function renderMotionVideo(options: RenderMotionVideoOptions): Prom
       brandConfig,
       format: formatKey,
       audioSrc,
+      musicSrc,
     }
 
     const composition = await selectComposition({
@@ -154,12 +172,33 @@ export async function renderMotionVideo(options: RenderMotionVideoOptions): Prom
       },
     })
 
-    const buffer = await readFile(outputPath)
+    const mp4 = await readFile(outputPath)
     logger.info(
-      { outputSize: buffer.length, compositionId, sceneCount: scenes.length },
+      { outputSize: mp4.length, compositionId, sceneCount: scenes.length },
       'Remotion: render complete'
     )
-    return buffer
+
+    // ── Thumbnail at 3 s ────────────────────────────────────────────────────
+    let thumbnail: Buffer | null = null
+    try {
+      const { renderStill } = await import('@remotion/renderer')
+      const thumbFrame = Math.min(3 * FPS, durationInFrames - 1)
+      const thumbPath = path.join(tmpdir(), `remotion-thumb-${randomUUID()}.png`)
+      tempFiles.push(thumbPath)
+      await renderStill({
+        composition: { ...composition, durationInFrames, width, height },
+        serveUrl: bundlePath,
+        output: thumbPath,
+        frame: thumbFrame,
+        inputProps: inputProps as unknown as Record<string, unknown>,
+      })
+      thumbnail = await readFile(thumbPath)
+      logger.info({ thumbSize: thumbnail.length, frame: thumbFrame }, 'Remotion: thumbnail captured')
+    } catch (thumbErr) {
+      logger.warn({ thumbErr }, 'Remotion: thumbnail capture failed — continuing without')
+    }
+
+    return { mp4, thumbnail }
   } finally {
     await Promise.all(tempFiles.map((f) => unlink(f).catch(() => null)))
   }

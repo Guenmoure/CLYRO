@@ -1,5 +1,5 @@
 export type VideoModule = 'faceless' | 'motion'
-export type VideoStatus = 'pending' | 'processing' | 'storyboard' | 'visuals' | 'audio' | 'assembly' | 'done' | 'error'
+export type VideoStatus = 'pending' | 'processing' | 'storyboard' | 'visuals' | 'audio' | 'animation' | 'assembly' | 'done' | 'error'
 
 export type FacelessStyle =
   | 'cinematique'
@@ -19,13 +19,26 @@ export type MotionStyle = 'corporate' | 'dynamique' | 'luxe' | 'fun'
 export type VideoFormat = '9:16' | '1:1' | '16:9'
 export type VideoDuration = '6s' | '15s' | '30s' | '60s'
 
+export type AnimationType = 'slide-in' | 'zoom' | 'fade' | 'particle-burst' | 'typewriter'
+export type SceneType = 'text_hero' | 'split_text_image' | 'product_showcase' | 'stats_counter' | 'cta_end' | 'image_full'
+
 export interface Scene {
   id: string
   index: number
   description_visuelle: string
+  animation_prompt?: string
   texte_voix: string
   duree_estimee: number
   image_url?: string
+  // Multi-character dialogue support
+  speaker?: string                // nom du personnage parlant (ex: "Alice", "Bob")
+  voice_id?: string               // voice_id ElevenLabs pour ce personnage (si dialogue_mode actif)
+  // Motion Design fields (optionnel — ignoré par le pipeline Faceless)
+  display_text?: string           // texte affiché à l'écran (peut différer de la narration)
+  animation_type?: AnimationType  // type d'animation Remotion pour cette scène
+  scene_type?: SceneType          // type de composant Remotion (router DynamicComposition)
+  needs_background?: boolean      // false = scène texte pur, pas de fal.ai
+  cta_text?: string               // texte CTA pour la dernière scène
 }
 
 export interface VideoMetadata {
@@ -86,6 +99,15 @@ export interface Video {
   created_at: string
 }
 
+export interface PreGeneratedScene {
+  id: string
+  script_text?: string
+  image_url?: string
+  clip_url?: string
+  image_prompt?: string
+  animation_prompt?: string
+}
+
 export interface CreateFacelessVideoPayload {
   title: string
   style: FacelessStyle
@@ -96,6 +118,32 @@ export interface CreateFacelessVideoPayload {
   audio_url?: string
   voice_id?: string
   brand_kit_id?: string
+  pre_generated_scenes?: PreGeneratedScene[]
+  dialogue_mode?: boolean                // true = auto-detect & enable multi-character voices
+  speaker_voices?: Record<string, string> // map speaker name → voice_id (optional override)
+}
+
+export interface MotionScene {
+  index: number
+  texte_voix: string
+  duree_estimee: number
+  // Legacy UI fields (motion-studio.tsx SceneCard/ScenePreview)
+  text: string
+  subtext: string
+  highlight: string
+  icon: string
+  style: 'hero' | 'feature' | 'stats' | 'outro' | 'text-focus'
+  accent_color: string
+  stats?: Array<{ value: string; label: string }>
+  // New pipeline fields (BrandScene / DynamicComposition)
+  id?: string
+  display_text?: string
+  scene_type?: 'text_hero' | 'split_text_image' | 'product_showcase' | 'stats_counter' | 'cta_end' | 'image_full'
+  animation_type?: 'slide-in' | 'zoom' | 'fade' | 'particle-burst' | 'typewriter'
+  needs_background?: boolean
+  cta_text?: string | null
+  description_visuelle?: string
+  image_url?: string
 }
 
 export interface CreateMotionVideoPayload {
@@ -106,4 +154,5 @@ export interface CreateMotionVideoPayload {
   style: MotionStyle
   brand_config: BrandConfig
   voice_id?: string
+  music_track_id?: string
 }

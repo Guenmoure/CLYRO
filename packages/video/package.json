@@ -18,10 +18,13 @@
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "remotion": ">=4.0.0"
+    "remotion": "4.0.448"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "zod": "4.3.6"
   }
 }

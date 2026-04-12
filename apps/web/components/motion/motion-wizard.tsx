@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { startMotionGeneration, getVoices } from '@/lib/api'
+import { startMotionGeneration, getVoices, uploadBrandLogo } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
+import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
 import type { MotionStyle, VideoFormat, VideoDuration } from '@clyro/shared'
 
@@ -117,6 +118,26 @@ function StepBrief({
   )
 }
 
+// ── WCAG helpers ───────────────────────────────────────────────────────────
+
+function hexToLuminance(hex: string): number {
+  const clean = hex.replace('#', '')
+  if (clean.length !== 6) return 0
+  const r = parseInt(clean.slice(0, 2), 16) / 255
+  const g = parseInt(clean.slice(2, 4), 16) / 255
+  const b = parseInt(clean.slice(4, 6), 16) / 255
+  const lin = (c: number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+}
+
+function wcagContrastRatio(hex1: string, hex2 = '#ffffff'): number {
+  const l1 = hexToLuminance(hex1)
+  const l2 = hexToLuminance(hex2)
+  const lighter = Math.max(l1, l2)
+  const darker  = Math.min(l1, l2)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
 // ── Step 2 — Brand ─────────────────────────────────────────────────────────
 
 function StepBrand({
@@ -127,10 +148,80 @@ function StepBrand({
   onNext: () => void
   onBack: () => void
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const contrastRatio = wcagContrastRatio(brand.primary_color)
+  const wcagOk = contrastRatio >= 4.5
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Session expirée')
+      const logoUrl = await uploadBrandLogo(file, session.user.id)
+      onUpdate({ ...brand, logo_url: logoUrl })
+      toast.success('Logo uploadé')
+    } catch {
+      toast.error('Erreur lors de l\'upload du logo')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <div>
       <h2 className="font-display text-lg font-semibold text-foreground mb-4">Identité de marque</h2>
       <div className="space-y-4 mb-6">
+        {/* Logo upload */}
+        <div>
+          <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2 block">
+            Logo (optionnel)
+          </label>
+          <div className="flex items-center gap-3">
+            {brand.logo_url ? (
+              <div className="relative w-16 h-16 rounded-xl border border-border bg-navy-800 overflow-hidden flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={brand.logo_url} alt="Logo" className="max-w-full max-h-full object-contain p-1" />
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-xl border-2 border-dashed border-border bg-navy-800 flex items-center justify-center text-muted-foreground text-xs">
+                PNG/SVG
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/svg+xml,image/jpeg,image/webp"
+              onChange={handleLogoUpload}
+              className="hidden"
+            />
+            <div className="flex flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="font-display font-semibold px-4 py-2 rounded-xl border border-border text-sm text-foreground hover:bg-navy-800 disabled:opacity-40"
+              >
+                {uploading ? 'Upload…' : brand.logo_url ? 'Changer' : 'Choisir un fichier'}
+              </button>
+              {brand.logo_url && (
+                <button
+                  type="button"
+                  onClick={() => onUpdate({ ...brand, logo_url: undefined })}
+                  className="text-xs text-muted-foreground hover:text-red-400 text-left"
+                >
+                  Supprimer
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Primary color + WCAG */}
         <div>
           <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2 block">
             Couleur principale *
@@ -151,8 +242,12 @@ function StepBrand({
               }}
               className="w-32 bg-navy-800 border border-border rounded-xl px-3 py-2 text-foreground font-mono text-sm focus:outline-none focus:border-clyro-purple"
             />
+            <span className={`text-xs font-mono px-2 py-1 rounded-lg ${wcagOk ? 'bg-green-900/40 text-green-400' : 'bg-amber-900/40 text-amber-400'}`}>
+              {wcagOk ? `✓ WCAG AA (${contrastRatio.toFixed(1)}:1)` : `⚠ Contraste faible (${contrastRatio.toFixed(1)}:1 — min 4.5)`}
+            </span>
           </div>
         </div>
+
         <div>
           <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2 block">
             Couleur secondaire (optionnel)

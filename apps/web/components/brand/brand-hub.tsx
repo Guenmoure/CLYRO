@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Plus, Palette, Trash2, Star, Loader2, Upload, Wand2, Instagram, Download, X } from 'lucide-react'
+import { Plus, Palette, Trash2, Loader2, Upload, Wand2, Download, X, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   createBrandKit, updateBrandKit, deleteBrandKit, uploadBrandLogo,
@@ -11,6 +11,7 @@ import type { BrandAsset, SocialPlatform } from '@/lib/api'
 import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
 import type { BrandKit, CreateBrandKitPayload } from '@clyro/shared'
+import { BrandStudio } from '@/components/branding/brand-studio'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -382,7 +383,10 @@ function KitPanel({ kit, onUpdate, onDelete }: {
 
 // ── Main Hub ───────────────────────────────────────────────────────────────────
 
+type SidebarTab = 'kits' | 'studio'
+
 export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>('kits')
   const [kits,       setKits]       = useState<BrandKit[]>(initialKits)
   const [activeId,   setActiveId]   = useState<string | null>(initialKits[0]?.id ?? null)
   const [showCreate, setShowCreate] = useState(false)
@@ -417,89 +421,152 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
   return (
     <div className="flex flex-1 h-full overflow-hidden">
 
-      {/* Sidebar — liste des brand kits */}
+      {/* Sidebar */}
       <aside className="w-56 glass-heavy glass-border-r flex flex-col shrink-0">
         <div className="p-4 glass-border-b">
           <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-0.5">Module</p>
           <h1 className="font-display text-sm font-bold text-gray-900 dark:text-white">Brand Kit</h1>
         </div>
 
-        <div className="p-3 glass-border-b">
-          <button type="button" onClick={() => { setActiveId(null); setShowCreate(true) }}
-            className="flex items-center gap-2 w-full glass glass-hover rounded-xl px-3 py-2.5 text-sm font-body text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-all">
-            <Plus size={15} className="text-clyro-accent" />
-            Nouveau brand kit
-          </button>
+        {/* Tab switcher */}
+        <div className="p-2 glass-border-b">
+          <div className="flex gap-1 p-1 glass rounded-xl">
+            <button
+              type="button"
+              onClick={() => { setSidebarTab('kits'); setShowCreate(false) }}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-mono transition-all',
+                sidebarTab === 'kits'
+                  ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-400 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70'
+              )}
+            >
+              <Palette size={11} /> Kits
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarTab('studio')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-mono transition-all',
+                sidebarTab === 'studio'
+                  ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-400 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70'
+              )}
+            >
+              <Sparkles size={11} /> Studio
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {kits.length === 0 && !showCreate && (
-            <div className="px-3 py-8 text-center">
-              <Palette size={24} className="mx-auto mb-2 text-gray-300 dark:text-white/15" />
-              <p className="font-body text-xs text-gray-400 dark:text-white/30">Crée ton premier brand kit</p>
+        {sidebarTab === 'kits' && (
+          <>
+            <div className="p-3 glass-border-b">
+              <button type="button" onClick={() => { setActiveId(null); setShowCreate(true) }}
+                className="flex items-center gap-2 w-full glass glass-hover rounded-xl px-3 py-2.5 text-sm font-body text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-all">
+                <Plus size={15} className="text-clyro-accent" />
+                Nouveau brand kit
+              </button>
             </div>
-          )}
-          {kits.map((kit) => (
-            <button key={kit.id} type="button" onClick={() => { setActiveId(kit.id); setShowCreate(false) }}
-              className={cn(
-                'w-full text-left px-3 py-2.5 rounded-xl transition-all group',
-                activeId === kit.id ? 'glass-pill' : 'glass-hover'
-              )}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-5 h-5 rounded-md shrink-0" style={{ background: kit.primary_color }} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm font-medium text-gray-800 dark:text-white/80 truncate">{kit.name}</p>
-                  {kit.is_default && (
-                    <p className="font-mono text-[9px] text-clyro-primary uppercase tracking-wider">★ Défaut</p>
-                  )}
+
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {kits.length === 0 && !showCreate && (
+                <div className="px-3 py-8 text-center">
+                  <Palette size={24} className="mx-auto mb-2 text-gray-300 dark:text-white/15" />
+                  <p className="font-body text-xs text-gray-400 dark:text-white/30">Crée ton premier brand kit</p>
                 </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              )}
+              {kits.map((kit) => (
+                <button key={kit.id} type="button" onClick={() => { setActiveId(kit.id); setShowCreate(false) }}
+                  className={cn(
+                    'w-full text-left px-3 py-2.5 rounded-xl transition-all group',
+                    activeId === kit.id ? 'glass-pill' : 'glass-hover'
+                  )}>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded-md shrink-0" style={{ background: kit.primary_color }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-sm font-medium text-gray-800 dark:text-white/80 truncate">{kit.name}</p>
+                      {kit.is_default && (
+                        <p className="font-mono text-[9px] text-clyro-primary uppercase tracking-wider">★ Défaut</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {sidebarTab === 'studio' && (
+          <div className="flex-1 p-3 flex flex-col gap-2">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mt-1 px-1">Identity Studio</p>
+            <p className="font-body text-xs text-gray-400 dark:text-white/30 px-1 leading-relaxed">
+              Brief → 3 directions → Visuels IA → Charte graphique → Export
+            </p>
+            <div className="mt-2 space-y-1 text-xs font-mono text-gray-400 dark:text-white/30 px-1">
+              {['1 · Brief de marque', '2 · Directions créatives', '3 · Visuels fal.ai', '4 · Charte graphique', '5 · Export brand kit'].map((s) => (
+                <p key={s}>{s}</p>
+              ))}
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Panel principal */}
       <div className="flex-1 overflow-hidden">
-        {showCreate && (
-          <div className="flex flex-col h-full overflow-y-auto px-8 py-8">
-            <div className="max-w-lg">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">Nouveau brand kit</p>
-              <div className="glass glass-heavy rounded-2xl p-6">
-                <BrandKitForm
-                  onSave={handleSaved}
-                  onCancel={() => { setShowCreate(false); setActiveId(kits[0]?.id ?? null) }}
-                />
+
+        {/* Brand Identity Studio */}
+        {sidebarTab === 'studio' && <BrandStudio />}
+
+        {/* Brand Kit manager */}
+        {sidebarTab === 'kits' && (
+          <>
+            {showCreate && (
+              <div className="flex flex-col h-full overflow-y-auto px-8 py-8">
+                <div className="max-w-lg">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">Nouveau brand kit</p>
+                  <div className="glass glass-heavy rounded-2xl p-6">
+                    <BrandKitForm
+                      onSave={handleSaved}
+                      onCancel={() => { setShowCreate(false); setActiveId(kits[0]?.id ?? null) }}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {activeKit && !showCreate && (
-          <KitPanel
-            key={activeKit.id}
-            kit={activeKit}
-            onUpdate={handleSaved}
-            onDelete={handleDeleted}
-          />
-        )}
+            {activeKit && !showCreate && (
+              <KitPanel
+                key={activeKit.id}
+                kit={activeKit}
+                onUpdate={handleSaved}
+                onDelete={handleDeleted}
+              />
+            )}
 
-        {!activeKit && !showCreate && (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
-            <div className="w-16 h-16 rounded-2xl bg-clyro-accent/10 border border-clyro-accent/20 flex items-center justify-center">
-              <Palette size={28} className="text-clyro-accent" />
-            </div>
-            <div>
-              <h2 className="font-display font-bold text-gray-900 dark:text-white mb-1">Crée ton Brand Kit</h2>
-              <p className="font-body text-sm text-gray-500 dark:text-white/40 max-w-xs">
-                Définis ta charte graphique et génère des logos, posts réseaux sociaux et autres assets visuels avec l'IA.
-              </p>
-            </div>
-            <button type="button" onClick={() => setShowCreate(true)}
-              className="bg-grad-primary text-white font-display font-semibold px-6 py-2.5 rounded-xl text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
-              <Plus size={15} /> Créer mon premier brand kit
-            </button>
-          </div>
+            {!activeKit && !showCreate && (
+              <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
+                <div className="w-16 h-16 rounded-2xl bg-clyro-accent/10 border border-clyro-accent/20 flex items-center justify-center">
+                  <Palette size={28} className="text-clyro-accent" />
+                </div>
+                <div>
+                  <h2 className="font-display font-bold text-gray-900 dark:text-white mb-1">Crée ton Brand Kit</h2>
+                  <p className="font-body text-sm text-gray-500 dark:text-white/40 max-w-xs">
+                    Définis ta charte graphique et génère des logos, posts réseaux sociaux et autres assets visuels avec l'IA.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setShowCreate(true)}
+                    className="bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
+                    <Plus size={15} /> Créer un kit
+                  </button>
+                  <button type="button" onClick={() => setSidebarTab('studio')}
+                    className="glass glass-hover text-gray-700 dark:text-white/70 font-display font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                    <Sparkles size={15} /> Identity Studio
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

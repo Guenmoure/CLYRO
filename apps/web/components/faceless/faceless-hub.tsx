@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Plus, Video, Mic2, Loader2, ChevronDown, X, Upload, Check, Wand2,
-  RefreshCw, Download, Edit3, ArrowLeft, ArrowRight, Sparkles,
-  Settings2, Film, Volume2, Play,
+  RefreshCw, RotateCcw, Download, Edit3, ArrowLeft, ArrowRight, Sparkles,
+  Settings2, Film, Volume2, Play, AlertTriangle, Trash2, Merge, GripVertical,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, checkScriptDuration } from '@/lib/utils'
 import { toast } from '@/components/ui/toast'
 import { VideoPlayer } from '@/components/ui/video-player'
-import { startFacelessGeneration } from '@/lib/api'
+import { ProgressBar } from '@/components/ui/progress-bar'
+import { startFacelessGeneration, getPublicVoices, updateVideoMetadata, regenerateFacelessScene, regenerateFacelessClip, reassembleFacelessVideo } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import type { FacelessStyle, VideoFormat, VideoDuration } from '@clyro/shared'
 
@@ -188,8 +189,13 @@ interface SceneData {
   animationPrompt: string
   imageUrl?: string
   imageStatus: 'idle' | 'generating' | 'done' | 'error'
+  qualityHint?: 'draft' | 'hd'   // draft = schnell preview, hd = flux/dev full quality
+  streamLog?: string              // live log message from fal.ai SSE stream
+  imageHistory?: string[]         // previous imageUrls, max 3
   clipUrl?: string
   clipStatus: 'idle' | 'generating' | 'done' | 'error'
+  duree_estimee?: number          // estimated duration in seconds
+  audioDuration?: number          // actual audio duration in seconds from ElevenLabs
 }
 
 interface ProjectState {
@@ -206,6 +212,8 @@ interface ProjectState {
   step: PipelineStep
   videoId?: string       // set after submitting to backend pipeline
   finalVideoUrl?: string
+  masterSeed?: number    // deterministic seed for visual consistency across scenes
+  styleReference?: string // URL of first HD image for style consistency injection
 }
 
 // ── Mock helpers ───────────────────────────────────────────────────────────────
@@ -235,6 +243,32 @@ function splitScriptToScenes(script: string): SceneData[] {
   })
 }
 
+// ── Example script catalogue ────────────────────────────────────────────────────
+
+const EXAMPLE_SCRIPTS: Array<{ label: string; style: FacelessStyle; duration: VideoDuration; script: string; description: string }> = [
+  {
+    label: 'Science & espace',
+    style: 'cinematique',
+    duration: '30s',
+    description: 'Vidéo éducative sur les trous noirs, narration scientifique, animations spatiales épiques.',
+    script: `Les trous noirs sont les objets les plus mystérieux de l'univers. Là où la gravité devient si intense que même la lumière ne peut s'échapper. Ils se forment quand une étoile géante s'effondre sur elle-même à la fin de sa vie. À l'horizon des événements, le temps lui-même se fige. Les scientifiques estiment qu'au cœur de chaque galaxie se trouve un trou noir supermassif. Celui au centre de notre Voie Lactée fait 4 millions de fois la masse du Soleil. En 2019, l'humanité a capturé pour la première fois une image réelle d'un trou noir — à 55 millions d'années-lumière. Une fenêtre ouverte sur les confins de la physique moderne.`,
+  },
+  {
+    label: 'Motivation & mindset',
+    style: 'motion-graphics',
+    duration: '30s',
+    description: 'Contenu motivationnel avec un message fort sur la discipline et le succès.',
+    script: `La réussite ne vient pas du talent. Elle vient de la constance. Chaque matin où tu te lèves avant les autres, tu creuses l'écart. Chaque fois que tu choisis le travail plutôt que le confort, tu construis ton avenir. Les gens qui réussissent ne sont pas plus intelligents. Ils sont plus réguliers. Ils font ce que les autres évitent. La discipline, c'est choisir entre ce que tu veux maintenant et ce que tu veux le plus. Commence aujourd'hui. Pas demain. Maintenant.`,
+  },
+  {
+    label: 'Tutoriel produit',
+    style: 'flat-design',
+    duration: '15s',
+    description: 'Présentation produit SaaS claire et concise, style explicatif moderne.',
+    script: `Vous perdez des heures chaque semaine à gérer vos tâches manuellement. Notre solution automatise tout en 3 clics. Connectez vos outils existants en quelques secondes. Visualisez l'avancement de votre équipe en temps réel. Recevez des rapports automatiques chaque vendredi. Plus de 10 000 équipes ont déjà gagné 5 heures par semaine. Essayez gratuitement pendant 14 jours.`,
+  },
+]
+
 const FORMATS: Array<{ id: VideoFormat; label: string; desc: string }> = [
   { id: '9:16', label: '9:16', desc: 'TikTok / Reels' },
   { id: '1:1',  label: '1:1',  desc: 'Instagram'      },
@@ -247,7 +281,35 @@ const DURATIONS: Array<{ id: VideoDuration; label: string }> = [
   { id: '60s', label: '60s' },
 ]
 
-interface VoiceItem { id: string; name: string; gender?: string; accent?: string }
+interface VoiceItem { id: string; name: string; gender?: string; accent?: string; previewUrl?: string }
+
+// ── Dialogue detection ─────────────────────────────────────────────────────────
+
+function detectDialogueInScript(script: string): { hasDialogue: boolean; speakers: Set<string> } {
+  const lines = script.split('\n')
+  const speakers = new Set<string>()
+
+  const patterns = [
+    /^—\s*([A-ZÀ-Ü][a-zà-ü]+)/,           // — Alice
+    /^([A-ZÀ-Ü][a-zà-ü]+)\s*:/,           // Alice:
+    /^–\s*([A-ZÀ-Ü][a-zà-ü]+)/,           // – Alice
+  ]
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    for (const pattern of patterns) {
+      const match = trimmed.match(pattern)
+      if (match) {
+        speakers.add(match[1])
+      }
+    }
+  }
+
+  return {
+    hasDialogue: speakers.size > 1,
+    speakers,
+  }
+}
 
 // ── Step indicator ─────────────────────────────────────────────────────────────
 
@@ -259,7 +321,7 @@ const PIPELINE_STEPS: Array<{ id: PipelineStep; label: string }> = [
   { id: 'final',      label: 'Vidéo'       },
 ]
 
-function StepIndicator({ current }: { current: PipelineStep }) {
+function StepIndicator({ current, savedState }: { current: PipelineStep; savedState?: 'saving' | 'saved' | null }) {
   const currentIdx = PIPELINE_STEPS.findIndex((s) => s.id === current)
   return (
     <div className="flex items-center gap-1 px-6 py-3 border-b border-brand-border bg-brand-surface shrink-0">
@@ -286,6 +348,18 @@ function StepIndicator({ current }: { current: PipelineStep }) {
           </div>
         )
       })}
+      {/* Auto-save indicator */}
+      {savedState && (
+        <div className={cn(
+          'ml-auto flex items-center gap-1 text-[10px] font-mono transition-all',
+          savedState === 'saving' ? 'text-brand-muted' : 'text-emerald-600'
+        )}>
+          {savedState === 'saving'
+            ? <><Loader2 size={10} className="animate-spin" /> Sauvegarde…</>
+            : <><Check size={10} /> Sauvegardé</>
+          }
+        </div>
+      )}
     </div>
   )
 }
@@ -329,24 +403,56 @@ function StylePickerDropdown({ value, onChange, onClose }: {
 function VoicePickerDropdown({ value, voices, onChange, onClose }: {
   value: string; voices: VoiceItem[]; onChange: (id: string) => void; onClose: () => void
 }) {
+  const [playingId, setPlayingId] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  function playPreview(e: React.MouseEvent, voice: VoiceItem) {
+    e.stopPropagation()
+    if (!voice.previewUrl) return
+    if (playingId === voice.id) {
+      audioRef.current?.pause()
+      setPlayingId(null)
+      return
+    }
+    if (audioRef.current) audioRef.current.pause()
+    const audio = new Audio(voice.previewUrl)
+    audioRef.current = audio
+    audio.play().catch(() => null)
+    setPlayingId(voice.id)
+    audio.onended = () => setPlayingId(null)
+  }
+
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-64 bg-white border border-brand-border rounded-2xl shadow-xl p-3 animate-fade-in">
+    <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-white border border-brand-border rounded-2xl shadow-xl p-3 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <p className="font-display text-sm font-semibold text-brand-text">Voix off</p>
         <button type="button" onClick={onClose} aria-label="Fermer" className="text-brand-muted hover:text-brand-text transition-colors"><X size={14} /></button>
       </div>
-      <div className="space-y-1 max-h-56 overflow-y-auto">
+      {voices.length === 0 && (
+        <p className="text-xs text-brand-muted text-center py-3">Chargement des voix…</p>
+      )}
+      <div className="space-y-1 max-h-64 overflow-y-auto">
         <button type="button" onClick={() => { onChange(''); onClose() }}
           className={cn('w-full text-left px-3 py-2 rounded-xl text-sm font-body transition-colors',
             !value ? 'bg-brand-primary-light text-brand-primary' : 'hover:bg-brand-bg text-brand-muted')}>
           Aucune voix
         </button>
         {voices.map((v) => (
-          <button key={v.id} type="button" onClick={() => { onChange(v.id); onClose() }}
-            className={cn('w-full text-left px-3 py-2 rounded-xl transition-colors', value === v.id ? 'bg-brand-primary-light text-brand-primary' : 'hover:bg-brand-bg text-brand-text')}>
-            <p className="text-sm font-body font-medium">{v.name}</p>
-            {(v.gender || v.accent) && <p className="text-[11px] text-brand-muted">{[v.gender, v.accent].filter(Boolean).join(' · ')}</p>}
-          </button>
+          <div key={v.id} className={cn('flex items-center gap-2 rounded-xl transition-colors', value === v.id ? 'bg-brand-primary-light' : 'hover:bg-brand-bg')}>
+            <button type="button" onClick={() => { onChange(v.id); onClose() }} className="flex-1 text-left px-3 py-2">
+              <p className={cn('text-sm font-body font-medium', value === v.id ? 'text-brand-primary' : 'text-brand-text')}>{v.name}</p>
+              {(v.gender || v.accent) && <p className="text-[11px] text-brand-muted">{[v.gender, v.accent].filter(Boolean).join(' · ')}</p>}
+            </button>
+            {v.previewUrl && (
+              <button type="button" onClick={(e) => playPreview(e, v)} aria-label="Prévisualiser la voix"
+                className={cn('w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center mr-2 transition-all',
+                  playingId === v.id ? 'bg-brand-primary text-white' : 'bg-brand-bg border border-brand-border text-brand-muted hover:text-brand-primary')}>
+                {playingId === v.id
+                  ? <div className="w-2.5 h-2.5 flex gap-0.5 items-center"><div className="w-0.5 h-2.5 bg-white rounded" /><div className="w-0.5 h-2.5 bg-white rounded" /></div>
+                  : <Play size={9} className="fill-current translate-x-px" />}
+              </button>
+            )}
+          </div>
         ))}
       </div>
     </div>
@@ -400,18 +506,30 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
 
 // ── Step 1 — Setup ─────────────────────────────────────────────────────────────
 
-function SetupStep({ project, onChange, onNext }: {
+function SetupStep({ project, onChange, onNext, loading = false }: {
   project: ProjectState
   onChange: (patch: Partial<ProjectState>) => void
   onNext: () => void
+  loading?: boolean
 }) {
-  const [voices] = useState<VoiceItem[]>([])
+  const [voices, setVoices] = useState<VoiceItem[]>([])
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [showVoicePicker, setShowVoicePicker] = useState(false)
-  const [showSettings,    setShowSettings]    = useState(false)
   const styleRef = useRef<HTMLDivElement>(null)
   const voiceRef = useRef<HTMLDivElement>(null)
   const fileRef  = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    getPublicVoices().then(({ voices: v }) => {
+      setVoices(v.map((voice) => ({
+        id: voice.id,
+        name: voice.name,
+        gender: voice.gender,
+        accent: voice.accent,
+        previewUrl: voice.previewUrl ?? undefined,
+      })))
+    }).catch(() => null)
+  }, [])
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -497,11 +615,52 @@ function SetupStep({ project, onChange, onNext }: {
             )}
 
             {project.inputType === 'script' && (
-              <div className="px-4 pb-2">
-                <span className={cn('font-mono text-[10px]', project.script.length < 20 ? 'text-red-400' : 'text-brand-muted')}>
-                  {project.script.length}/8000{project.script.length < 20 && ` · encore ${20 - project.script.length} car.`}
-                </span>
-              </div>
+              <>
+                <div className="px-4 pb-3 flex items-center justify-between gap-2">
+                  {(() => {
+                    const words = project.script.trim() ? project.script.trim().split(/\s+/).length : 0
+                    const estSec = Math.round(words / 2.5) // ~150 wpm voiceover
+                    return (
+                      <span className={cn('font-mono text-[10px]', project.script.length < 20 ? 'text-amber-500' : 'text-brand-muted')}>
+                        {words} mots · ~{estSec}s estimé
+                        {project.script.length < 20 && ` · encore ${20 - project.script.length} car.`}
+                      </span>
+                    )
+                  })()}
+                  {project.script.trim().length === 0 && (
+                    <div className="flex items-center gap-1">
+                      {EXAMPLE_SCRIPTS.map((ex) => (
+                        <button
+                          key={ex.label}
+                          type="button"
+                          onClick={() => onChange({ script: ex.script, description: ex.description, style: ex.style, duration: ex.duration })}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg border border-brand-border text-[10px] font-mono text-brand-muted hover:border-brand-primary/40 hover:text-brand-primary transition-all"
+                        >
+                          <Sparkles size={9} /> {ex.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Dialogue detection banner */}
+                {(() => {
+                  const dialogue = detectDialogueInScript(project.script)
+                  return dialogue.hasDialogue ? (
+                    <div className="px-4 pb-2">
+                      <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5 flex items-start gap-2">
+                        <Volume2 size={14} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="font-body text-xs font-medium text-blue-900">Dialogue détecté</p>
+                          <p className="font-body text-[11px] text-blue-700 mt-0.5">
+                            {dialogue.speakers.size} personnages trouvés ({Array.from(dialogue.speakers).join(', ')}). Les voix alterneront automatiquement.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null
+                })()}
+              </>
             )}
           </div>
 
@@ -530,59 +689,43 @@ function SetupStep({ project, onChange, onNext }: {
               {showVoicePicker && <VoicePickerDropdown value={project.voiceId} voices={voices} onChange={(id) => onChange({ voiceId: id })} onClose={() => setShowVoicePicker(false)} />}
             </div>
 
-            {/* Settings */}
-            <button type="button" aria-label="Paramètres" onClick={() => setShowSettings((v) => !v)}
-              className={cn('w-9 h-9 rounded-xl flex items-center justify-center border transition-all',
-                showSettings ? 'bg-brand-primary-light border-brand-primary text-brand-primary' : 'bg-brand-bg border-brand-border text-brand-muted hover:text-brand-text')}>
-              <Settings2 size={14} />
-            </button>
+            {/* Format */}
+            <div className="flex items-center gap-1 rounded-xl border border-brand-border bg-brand-bg px-1.5 py-1">
+              {FORMATS.map((f) => (
+                <button key={f.id} type="button" title={f.desc} onClick={() => onChange({ format: f.id })}
+                  className={cn('px-2.5 py-1 rounded-lg text-xs font-display font-semibold transition-all',
+                    project.format === f.id ? 'bg-brand-primary-light border border-brand-primary text-brand-primary' : 'text-brand-muted hover:text-brand-text')}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
 
-            {/* Spacer + Title */}
+            {/* Title */}
             <input type="text" value={project.title} onChange={(e) => onChange({ title: e.target.value })}
               placeholder="Titre (auto si vide)"
               className="ml-auto hidden sm:block flex-1 max-w-xs bg-brand-surface border border-brand-border rounded-xl px-3 py-2 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary transition-colors" />
+          </div>
 
-            {/* Generate storyboard */}
-            <button type="button" onClick={onNext} disabled={!canNext}
-              className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all ml-auto',
-                canNext ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-brand-bg border border-brand-border text-brand-muted cursor-not-allowed')}>
-              <Sparkles size={14} />
+          {/* Generate row — separate from dropdowns to avoid click interception (P0 fix) */}
+          <div className="relative z-10 flex items-center justify-between gap-3 pt-1">
+            {(() => {
+              const durationCheck = checkScriptDuration(project.script, project.duration)
+              return !durationCheck.ok && durationCheck.wordCount > 0 ? (
+                <span className="flex items-center gap-1.5 font-body text-xs text-amber-600">
+                  <AlertTriangle size={12} />
+                  Script ~{durationCheck.estimatedSeconds}s — cible {durationCheck.targetSeconds}s. L'IA condensera automatiquement.
+                </span>
+              ) : <span />
+            })()}
+            <button type="button" onClick={onNext} disabled={!canNext || loading}
+              className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all shrink-0',
+                canNext && !loading ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-brand-bg border border-brand-border text-brand-muted cursor-not-allowed')}>
+              {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               Générer le storyboard
-              <ArrowRight size={13} />
+              {!loading && <ArrowRight size={13} />}
             </button>
           </div>
 
-          {/* Settings panel */}
-          {showSettings && (
-            <div className="rounded-2xl border border-brand-border bg-brand-bg/60 p-4 space-y-4">
-              <div className="flex gap-6 flex-wrap">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-brand-muted mb-2">Format</p>
-                  <div className="flex gap-1.5">
-                    {FORMATS.map((f) => (
-                      <button key={f.id} type="button" title={f.desc} onClick={() => onChange({ format: f.id })}
-                        className={cn('px-3 py-1.5 rounded-lg border text-xs font-display font-semibold transition-all',
-                          project.format === f.id ? 'bg-brand-primary-light border-brand-primary text-brand-primary' : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-primary/40')}>
-                        {f.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-brand-muted mb-2">Durée</p>
-                  <div className="flex gap-1.5">
-                    {DURATIONS.map((d) => (
-                      <button key={d.id} type="button" onClick={() => onChange({ duration: d.id })}
-                        className={cn('px-3 py-1.5 rounded-lg border text-xs font-display font-semibold transition-all',
-                          project.duration === d.id ? 'bg-brand-primary-light border-brand-primary text-brand-primary' : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-primary/40')}>
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -594,30 +737,100 @@ function SetupStep({ project, onChange, onNext }: {
 
 // ── Step 2 — Storyboard ────────────────────────────────────────────────────────
 
+// Helper: calculate duration from script text (words / 2.5 = seconds at 150wpm)
+function calculateSceneDuration(scriptText: string): number {
+  const wordCount = scriptText.trim().split(/\s+/).length
+  return Math.round(wordCount / 2.5 * 10) / 10 // round to 1 decimal place
+}
+
 function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
   scenes: SceneData[]
-  onScenesChange: (scenes: SceneData[]) => void
+  onScenesChange: (scenes: SceneData[] | ((prev: SceneData[]) => SceneData[])) => void
   onBack: () => void
   onNext: () => void
 }) {
-  const [generating, setGenerating] = useState(false)
-  const [editingId,  setEditingId]  = useState<string | null>(null)
+  const [generating,    setGenerating]    = useState(false)
+  const [editingId,     setEditingId]     = useState<string | null>(null)
+  const [dragIndex,     setDragIndex]     = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   function updateScene(id: string, patch: Partial<SceneData>) {
-    onScenesChange(scenes.map((s) => s.id === id ? { ...s, ...patch } : s))
+    onScenesChange((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s))
+  }
+
+  function deleteScene(id: string) {
+    onScenesChange((prev) => prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, index: i })))
+    if (editingId === id) setEditingId(null)
+    toast.success('Scène supprimée')
+  }
+
+  function mergeWithNext(id: string) {
+    const idx = scenes.findIndex((s) => s.id === id)
+    if (idx < 0 || idx >= scenes.length - 1) return
+    const a = scenes[idx], b = scenes[idx + 1]
+    const merged: SceneData = {
+      ...a,
+      scriptText: [a.scriptText, b.scriptText].filter(Boolean).join(' '),
+      imagePrompt:     a.imagePrompt     || b.imagePrompt,
+      animationPrompt: a.animationPrompt || b.animationPrompt,
+    }
+    onScenesChange(
+      [...scenes.slice(0, idx), merged, ...scenes.slice(idx + 2)].map((s, i) => ({ ...s, index: i }))
+    )
+    toast.success('Scènes fusionnées')
+  }
+
+  function handleDragStart(i: number) { setDragIndex(i) }
+  function handleDragOver(e: React.DragEvent, i: number) { e.preventDefault(); setDragOverIndex(i) }
+  function handleDragEnd() { setDragIndex(null); setDragOverIndex(null) }
+  function handleDrop(targetIndex: number) {
+    if (dragIndex === null || dragIndex === targetIndex) { handleDragEnd(); return }
+    const next = [...scenes]
+    const [moved] = next.splice(dragIndex, 1)
+    next.splice(targetIndex, 0, moved)
+    onScenesChange(next.map((s, i) => ({ ...s, index: i })))
+    handleDragEnd()
   }
 
   async function regenScene(id: string) {
+    const scene = scenes.find((s) => s.id === id)
+    if (!scene) return
     updateScene(id, { imageStatus: 'generating' })
-    await new Promise((r) => setTimeout(r, 1200))
-    updateScene(id, { imageStatus: 'idle', imagePrompt: scenes.find((s) => s.id === id)!.imagePrompt + ' [régénéré]' })
+    try {
+      const res = await fetch('/api/regen-scene-prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scriptText: scene.scriptText, style: 'cinematique' }),
+      })
+      if (!res.ok) throw new Error('Prompt regen failed')
+      const data = await res.json() as { imagePrompt: string; animationPrompt: string }
+      updateScene(id, { imageStatus: 'idle', imagePrompt: data.imagePrompt, animationPrompt: data.animationPrompt })
+      toast.success('Prompts régénérés')
+    } catch {
+      updateScene(id, { imageStatus: 'idle' })
+      toast.error('Erreur lors de la régénération des prompts')
+    }
   }
 
   async function regenAll() {
     setGenerating(true)
-    await new Promise((r) => setTimeout(r, 2000))
+    await Promise.all(scenes.map((s) => regenScene(s.id)))
     setGenerating(false)
     toast.success('Storyboard régénéré')
+  }
+
+  function addScene() {
+    const newScene: SceneData = {
+      id: `scene-${Date.now()}`,
+      index: scenes.length,
+      scriptText: '',
+      imagePrompt: '',
+      animationPrompt: '',
+      imageStatus: 'idle',
+      clipStatus: 'idle',
+    }
+    onScenesChange((prev) => [...prev, newScene])
+    toast.success('Nouvelle scène ajoutée')
   }
 
   return (
@@ -638,12 +851,31 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
       {/* Scenes list */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
         {scenes.map((scene, i) => (
-          <div key={scene.id} className="rounded-2xl border border-brand-border bg-brand-surface overflow-hidden">
+          <div
+            key={scene.id}
+            draggable
+            onDragStart={() => handleDragStart(i)}
+            onDragOver={(e) => handleDragOver(e, i)}
+            onDrop={() => handleDrop(i)}
+            onDragEnd={handleDragEnd}
+            className={cn(
+              'rounded-2xl border bg-brand-surface overflow-hidden transition-all',
+              dragOverIndex === i && dragIndex !== i ? 'border-brand-primary/60 ring-2 ring-brand-primary/20' : 'border-brand-border',
+              dragIndex === i ? 'opacity-50' : '',
+            )}
+          >
             {/* Scene header */}
-            <div className="flex items-center gap-3 px-4 py-2.5 border-b border-brand-border/60 bg-brand-bg/40">
-              <span className="font-mono text-[10px] font-bold text-brand-primary bg-brand-primary-light px-2 py-0.5 rounded-full">
-                Scène {i + 1}
-              </span>
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-brand-border/60 bg-brand-bg/40">
+              {/* Drag handle */}
+              <GripVertical size={14} className="text-brand-muted/40 cursor-grab active:cursor-grabbing shrink-0" />
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-[10px] font-bold text-brand-primary bg-brand-primary-light px-2 py-0.5 rounded-full">
+                  Scène {i + 1}
+                </span>
+                <span className="font-mono text-[10px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+                  ~{calculateSceneDuration(scene.scriptText)}s
+                </span>
+              </div>
               <div className="flex-1" />
               <button type="button" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
                 className={cn('flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all', editingId === scene.id ? 'bg-brand-primary-light text-brand-primary' : 'text-brand-muted hover:text-brand-text')}>
@@ -656,6 +888,22 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                 {scene.imageStatus === 'generating' ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
                 Régénérer
               </button>
+              {/* Merge with next */}
+              {i < scenes.length - 1 && (
+                <button type="button" onClick={() => mergeWithNext(scene.id)}
+                  title="Fusionner avec la scène suivante"
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-brand-muted hover:text-amber-600 transition-all">
+                  <Merge size={11} />
+                </button>
+              )}
+              {/* Delete */}
+              {scenes.length > 1 && (
+                <button type="button" onClick={() => deleteScene(scene.id)}
+                  title="Supprimer cette scène"
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-brand-muted hover:text-red-500 transition-all">
+                  <Trash2 size={11} />
+                </button>
+              )}
             </div>
 
             <div className="p-4 space-y-3">
@@ -707,6 +955,13 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
             </div>
           </div>
         ))}
+
+        {/* Add scene button */}
+        <button type="button" onClick={addScene}
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-dashed border-brand-border/60 text-xs font-body text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all hover:bg-brand-primary-light/20">
+          <Plus size={14} />
+          Ajouter une scène
+        </button>
       </div>
 
       {/* Footer navigation */}
@@ -716,6 +971,54 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
         </button>
         <button type="button" onClick={onNext} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all">
           Générer les images <ArrowRight size={13} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Comparison Slider ──────────────────────────────────────────────────────────
+
+function ComparisonSlider({ before, after, onClose }: { before: string; after: string; onClose: () => void }) {
+  const [pct, setPct] = useState(50)
+  const ref = useRef<HTMLDivElement>(null)
+
+  function onMove(clientX: number) {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    setPct(Math.max(5, Math.min(95, ((clientX - rect.left) / rect.width) * 100)))
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-8"
+      onClick={onClose}>
+      <div className="relative max-w-3xl w-full rounded-2xl overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}>
+        <div ref={ref}
+          className="relative aspect-video cursor-ew-resize select-none"
+          onMouseMove={(e) => onMove(e.clientX)}
+          onTouchMove={(e) => onMove(e.touches[0].clientX)}>
+          {/* Before */}
+          <img src={before} alt="Version précédente" className="absolute inset-0 w-full h-full object-cover" />
+          {/* After — clipped */}
+          <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 0 0 ${pct}%)` }}>
+            <img src={after} alt="Nouvelle version" className="absolute inset-0 w-full h-full object-cover" />
+          </div>
+          {/* Divider */}
+          <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none"
+            style={{ left: `${pct}%` }}>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white shadow-xl flex items-center justify-center">
+              <span className="text-brand-muted font-mono text-xs">↔</span>
+            </div>
+          </div>
+          {/* Labels */}
+          <span className="absolute top-3 left-3 font-mono text-[9px] uppercase tracking-wider text-white bg-black/60 px-2 py-0.5 rounded-full">Avant</span>
+          <span className="absolute top-3 right-3 font-mono text-[9px] uppercase tracking-wider text-white bg-black/60 px-2 py-0.5 rounded-full">Après</span>
+        </div>
+        {/* Close */}
+        <button type="button" onClick={onClose}
+          className="absolute top-3 left-1/2 -translate-x-1/2 translate-y-[calc(var(--aspect-h)+12px)] flex items-center gap-1.5 bg-black/70 text-white px-3 py-1.5 rounded-full text-xs font-body hover:bg-black/90 transition-all">
+          <X size={11} /> Fermer
         </button>
       </div>
     </div>
@@ -734,45 +1037,277 @@ const SCENE_COLORS = [
   'from-rose-900 via-pink-800 to-rose-900',
 ]
 
-function ImagesStep({ scenes, style, onScenesChange, onBack, onNext }: {
+function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange, onBack, onNext }: {
   scenes: SceneData[]
   style: FacelessStyle
-  onScenesChange: (scenes: SceneData[]) => void
+  masterSeed?: number
+  styleReference?: string
+  onScenesChange: (scenes: SceneData[] | ((prev: SceneData[]) => SceneData[])) => void
   onBack: () => void
   onNext: () => void
 }) {
-  const [generatingAll, setGeneratingAll] = useState(false)
-  const [editingId,     setEditingId]     = useState<string | null>(null)
+  const [generatingAll, setGeneratingAll]   = useState(false)
+  const [editingId,     setEditingId]       = useState<string | null>(null)
+  const [improvingId,   setImprovingId]     = useState<string | null>(null)
+  const [improveResult, setImproveResult]   = useState<{
+    improvedPrompt: string; explanation: string; keyChanges: string[]
+  } | null>(null)
+  // Comparison slider state
+  const [comparing, setComparing] = useState<{ sceneId: string; before: string; after: string } | null>(null)
+  // Batch selection state
+  const [batchMode,  setBatchMode]  = useState(false)
+  const [selected,   setSelected]   = useState<Set<string>>(new Set())
+  // Style reference tracking
+  const [localStyleRef, setLocalStyleRef] = useState<string | undefined>(styleReference)
+  // Scene 0 validation gate
+  const [scene0Phase, setScene0Phase] = useState<'idle' | 'generating' | 'pending_validation' | 'validated'>(
+    styleReference ? 'validated' : 'idle'
+  )
+  // Extracted style tokens from scene 0 (used to enrich scene 1..N prompts)
+  const [styleTokens, setStyleTokens] = useState<{
+    dominant_colors?: string[]
+    lighting?: string
+    texture?: string
+    mood?: string
+    style_prompt_suffix?: string
+  } | null>(null)
+
+  async function improvePrompt(id: string) {
+    const scene = scenes.find((s) => s.id === id)
+    if (!scene) return
+    setImprovingId(id)
+    setImproveResult(null)
+    try {
+      const res = await fetch('/api/improve-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: scene.imagePrompt,
+          imageUrl: scene.imageUrl,
+          style,
+        }),
+      })
+      if (!res.ok) throw new Error('Improve failed')
+      const data = await res.json() as { improvedPrompt: string; explanation: string; keyChanges: string[] }
+      setImproveResult(data)
+    } catch {
+      toast.error('Erreur amélioration prompt')
+    } finally {
+      setImprovingId(null)
+    }
+  }
 
   function updateScene(id: string, patch: Partial<SceneData>) {
-    onScenesChange(scenes.map((s) => s.id === id ? { ...s, ...patch } : s))
+    onScenesChange((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s))
   }
 
   async function generateImage(id: string) {
     const scene = scenes.find((s) => s.id === id)
     if (!scene) return
-    updateScene(id, { imageStatus: 'generating' })
+
+    // Archive current image in history (max 3 versions) before overwriting
+    const history = scene.imageUrl
+      ? [...(scene.imageHistory ?? []).slice(-2), scene.imageUrl]
+      : scene.imageHistory ?? []
+
+    updateScene(id, { imageStatus: 'generating', streamLog: 'Génération du draft…', imageHistory: history, qualityHint: undefined })
+
     try {
-      const res = await fetch('/api/generate-scene-image', {
+      // Calculate deterministic seed: masterSeed + sceneIndex for visual consistency
+      const seed = masterSeed ? masterSeed + scene.index : undefined
+
+      // Inject style reference + extracted tokens into prompt for scenes 1..N
+      let finalPrompt = scene.imagePrompt
+      if (scene.index > 0) {
+        if (styleTokens?.style_prompt_suffix) {
+          // Use extracted style tokens from Claude Vision analysis of scene 0
+          finalPrompt = `${finalPrompt}. ${styleTokens.style_prompt_suffix}`
+          if (styleTokens.lighting) finalPrompt += `, ${styleTokens.lighting} lighting`
+          if (styleTokens.texture) finalPrompt += `, ${styleTokens.texture} texture`
+        } else if (localStyleRef) {
+          // Fallback: generic style reference if tokens not yet extracted
+          finalPrompt = `${finalPrompt}\nStyle reference: consistent with first scene image. Maintain same lighting, color palette, composition, and visual treatment.`
+        }
+      }
+
+      // ── Phase 1 : flux/schnell draft preview (~3-4s) ──────────────────────
+      const previewRes = await fetch('/api/preview-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: scene.imagePrompt, style }),
+        body: JSON.stringify({
+          prompt: finalPrompt,
+          style,
+          seed,
+          styleReferenceUrl: scene.index > 0 ? localStyleRef : undefined,
+        }),
       })
-      if (!res.ok) throw new Error('Image generation failed')
-      const data = await res.json() as { imageUrl: string }
-      updateScene(id, { imageStatus: 'done', imageUrl: data.imageUrl })
+      if (previewRes.ok) {
+        const previewData = await previewRes.json() as { imageUrl: string }
+        if (previewData.imageUrl) {
+          // Show draft immediately — HD will replace silently
+          updateScene(id, {
+            imageStatus: 'done',
+            imageUrl: previewData.imageUrl,
+            qualityHint: 'draft',
+            streamLog: 'Draft prêt — amélioration HD en cours…',
+          })
+        }
+      }
+
+      // ── Phase 2 : flux/dev HD via SSE stream (20-40s) ──────────────────────
+      const res = await fetch('/api/stream-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: finalPrompt,
+          style,
+          seed,
+          styleReferenceUrl: scene.index > 0 ? localStyleRef : undefined,
+        }),
+      })
+      if (!res.ok || !res.body) throw new Error('Stream request failed')
+
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+
+        const parts = buf.split('\n\n')
+        buf = parts.pop() ?? ''
+
+        for (const part of parts) {
+          if (!part.startsWith('data: ')) continue
+          try {
+            const evt = JSON.parse(part.slice(6)) as {
+              type: 'log' | 'progress' | 'done' | 'error'
+              message?: string
+              imageUrl?: string
+            }
+            if (evt.type === 'log' && evt.message) {
+              updateScene(id, { streamLog: evt.message })
+            } else if (evt.type === 'done' && evt.imageUrl) {
+              // Silent HD replacement — already showing draft
+              updateScene(id, { imageStatus: 'done', imageUrl: evt.imageUrl, qualityHint: 'hd', streamLog: undefined })
+              // Capture style reference from first HD image (scene 0)
+              if (scene.index === 0 && !localStyleRef) {
+                setLocalStyleRef(evt.imageUrl)
+              }
+            } else if (evt.type === 'error') {
+              // HD failed — draft is still shown, don't mark as error
+              updateScene(id, { streamLog: undefined })
+            }
+          } catch {
+            // ignore malformed SSE frame
+          }
+        }
+      }
+
+      // If HD stream finished without 'done', mark as done with whatever we have
+      updateScene(id, { imageStatus: 'done', streamLog: undefined })
     } catch {
       toast.error(`Erreur image scène ${scene.index + 1}`)
-      updateScene(id, { imageStatus: 'error' })
+      updateScene(id, { imageStatus: 'error', streamLog: undefined, qualityHint: undefined })
     }
   }
 
-  async function generateAll() {
+  /**
+   * Scene 0 gate flow:
+   * 1. Generate scene 0 first (sets visual direction)
+   * 2. Wait for user validation → captures style reference
+   * 3. Generate scenes 1..N with style reference from scene 0
+   */
+  async function generateScene0() {
+    const scene0 = scenes.find((s) => s.index === 0)
+    if (!scene0) return
+    setScene0Phase('generating')
     setGeneratingAll(true)
-    const pending = scenes.filter((s) => s.imageStatus !== 'done')
-    await Promise.all(pending.map((s) => generateImage(s.id)))
+    await generateImage(scene0.id)
+    setGeneratingAll(false)
+    setScene0Phase('pending_validation')
+  }
+
+  async function validateScene0() {
+    const scene0 = scenes.find((s) => s.index === 0)
+    if (!scene0?.imageUrl) {
+      toast.error('Scène 0 pas encore générée')
+      return
+    }
+    // Capture style reference from scene 0 HD image
+    if (!localStyleRef && scene0.imageUrl) {
+      setLocalStyleRef(scene0.imageUrl)
+    }
+
+    // Extract style tokens via Claude Vision (non-blocking — don't hold up validation)
+    fetch('/api/extract-style-tokens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_url: scene0.imageUrl, style }),
+    })
+      .then((res) => res.ok ? res.json() : null)
+      .then((tokens) => {
+        if (tokens?.style_prompt_suffix) {
+          setStyleTokens(tokens)
+          toast.success('Tokens visuels extraits — cohérence renforcée')
+        }
+      })
+      .catch(() => {
+        // Non-critical — style reference URL is the primary mechanism
+      })
+
+    setScene0Phase('validated')
+    toast.success('Scène 0 validée — style de référence capturé')
+  }
+
+  async function generateRemaining() {
+    setGeneratingAll(true)
+    const remaining = scenes.filter((s) => s.index > 0 && s.imageStatus !== 'done')
+    // Stagger requests by 300ms to avoid fal.ai rate limits
+    await Promise.all(remaining.map((s, i) =>
+      new Promise<void>((resolve) => setTimeout(() => generateImage(s.id).then(resolve).catch(resolve), i * 300))
+    ))
     setGeneratingAll(false)
     toast.success('Toutes les images générées !')
+  }
+
+  async function generateAll() {
+    if (scene0Phase === 'idle') {
+      // Start with scene 0 gate
+      await generateScene0()
+      return
+    }
+    if (scene0Phase === 'validated') {
+      // Scene 0 already validated — generate remaining
+      await generateRemaining()
+      return
+    }
+    // Fallback: generate all without gate (e.g., re-run)
+    setGeneratingAll(true)
+    const pending = scenes.filter((s) => s.imageStatus !== 'done')
+    await Promise.all(pending.map((s, i) =>
+      new Promise<void>((resolve) => setTimeout(() => generateImage(s.id).then(resolve).catch(resolve), i * 300))
+    ))
+    setGeneratingAll(false)
+    toast.success('Toutes les images générées !')
+  }
+
+  async function regenerateSelected() {
+    const ids = Array.from(selected)
+    setSelected(new Set())
+    setBatchMode(false)
+    await Promise.all(ids.map((id) => generateImage(id)))
+    toast.success(`${ids.length} scène${ids.length > 1 ? 's' : ''} régénérée${ids.length > 1 ? 's' : ''}`)
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
   }
 
   const allDone = scenes.every((s) => s.imageStatus === 'done')
@@ -780,6 +1315,11 @@ function ImagesStep({ scenes, style, onScenesChange, onBack, onNext }: {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Comparison slider overlay */}
+      {comparing && (
+        <ComparisonSlider before={comparing.before} after={comparing.after} onClose={() => setComparing(null)} />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-brand-border shrink-0">
         <div>
@@ -787,13 +1327,90 @@ function ImagesStep({ scenes, style, onScenesChange, onBack, onNext }: {
           <p className="font-body text-xs text-brand-muted">{doneCnt}/{scenes.length} images générées</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={generateAll} disabled={generatingAll || allDone}
+          <button
+            type="button"
+            onClick={() => { setBatchMode((v) => !v); setSelected(new Set()) }}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-body transition-all',
+              batchMode
+                ? 'bg-brand-primary-light border-brand-primary text-brand-primary'
+                : 'border-brand-border text-brand-muted hover:text-brand-text hover:border-brand-primary/40'
+            )}>
+            {batchMode ? <Check size={12} /> : <Settings2 size={12} />}
+            {batchMode ? 'Sélection active' : 'Sélection multiple'}
+          </button>
+          <button type="button" onClick={generateAll} disabled={generatingAll || allDone || scene0Phase === 'pending_validation'}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand-border text-xs font-body text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all disabled:opacity-40">
             {generatingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            {allDone ? 'Toutes générées' : generatingAll ? 'Génération…' : 'Générer toutes'}
+            {allDone ? 'Toutes générées'
+              : scene0Phase === 'idle' ? 'Générer scène 0'
+              : scene0Phase === 'pending_validation' ? 'Validez scène 0 ↑'
+              : generatingAll ? 'Génération…'
+              : 'Générer restantes'}
           </button>
         </div>
       </div>
+
+      {/* Batch action bar */}
+      {batchMode && selected.size > 0 && (
+        <div className="px-6 py-2.5 bg-brand-primary-light border-b border-brand-primary/20 flex items-center gap-3 shrink-0">
+          <p className="font-mono text-xs text-brand-primary flex-1">
+            {selected.size} scène{selected.size > 1 ? 's' : ''} sélectionnée{selected.size > 1 ? 's' : ''}
+          </p>
+          <button type="button" onClick={() => setSelected(new Set())}
+            className="text-xs text-brand-muted hover:text-brand-text transition-colors">
+            Tout désélectionner
+          </button>
+          <button type="button" onClick={regenerateSelected}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-display font-semibold hover:bg-brand-primary/90 transition-all">
+            <RefreshCw size={11} /> Régénérer {selected.size} scène{selected.size > 1 ? 's' : ''}
+          </button>
+        </div>
+      )}
+
+      {/* Scene 0 validation gate banner */}
+      {scene0Phase === 'pending_validation' && (
+        <div className="px-6 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-4 shrink-0">
+          <div className="flex-1">
+            <p className="font-display font-semibold text-sm text-amber-800">Validez la direction visuelle</p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              La scène 0 définit le style de toute la vidéo. Validez-la ou régénérez-la avant de continuer.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => generateImage(scenes.find((s) => s.index === 0)?.id ?? '')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 text-xs font-body text-amber-700 hover:bg-amber-100 transition-all"
+          >
+            <RefreshCw size={11} /> Régénérer
+          </button>
+          <button
+            type="button"
+            onClick={validateScene0}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-display font-semibold hover:bg-emerald-700 transition-all"
+          >
+            <Check size={12} /> Valider et continuer
+          </button>
+        </div>
+      )}
+
+      {scene0Phase === 'validated' && scenes.some((s) => s.index > 0 && s.imageStatus !== 'done') && (
+        <div className="px-6 py-2.5 bg-emerald-50 border-b border-emerald-200 flex items-center gap-3 shrink-0">
+          <Check size={14} className="text-emerald-600" />
+          <p className="text-xs text-emerald-700 flex-1">
+            Scène 0 validée — style de référence capturé. {localStyleRef ? 'Les scènes suivantes utiliseront ce style.' : ''}
+          </p>
+          <button
+            type="button"
+            onClick={generateRemaining}
+            disabled={generatingAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-display font-semibold hover:bg-emerald-700 transition-all disabled:opacity-50"
+          >
+            {generatingAll ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+            Générer les {scenes.filter((s) => s.index > 0 && s.imageStatus !== 'done').length} scènes restantes
+          </button>
+        </div>
+      )}
 
       {/* Image grid */}
       <div className="flex-1 overflow-y-auto px-6 py-5">
@@ -803,9 +1420,14 @@ function ImagesStep({ scenes, style, onScenesChange, onBack, onNext }: {
               {/* Image preview */}
               <div className={cn('h-36 relative bg-gradient-to-br', SCENE_COLORS[i % SCENE_COLORS.length])}>
                 {scene.imageStatus === 'generating' ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
                     <Loader2 size={24} className="text-white/60 animate-spin" />
                     <p className="font-mono text-[9px] text-white/50 uppercase tracking-widest">Génération…</p>
+                    {scene.streamLog && (
+                      <p className="font-mono text-[8px] text-white/30 text-center truncate w-full px-2 mt-0.5">
+                        {scene.streamLog.slice(0, 48)}
+                      </p>
+                    )}
                   </div>
                 ) : scene.imageStatus === 'done' ? (
                   scene.imageUrl ? (
@@ -831,13 +1453,57 @@ function ImagesStep({ scenes, style, onScenesChange, onBack, onNext }: {
                   </button>
                 )}
 
+                {/* Batch checkbox */}
+                {batchMode && (
+                  <button
+                    type="button"
+                    onClick={() => toggleSelect(scene.id)}
+                    className={cn(
+                      'absolute top-2 left-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all z-10',
+                      selected.has(scene.id)
+                        ? 'bg-brand-primary border-brand-primary'
+                        : 'bg-black/40 border-white/40 hover:border-white'
+                    )}>
+                    {selected.has(scene.id) && <Check size={10} className="text-white" />}
+                  </button>
+                )}
+
                 {/* Scene badge */}
-                <span className="absolute top-2 left-2 font-mono text-[9px] uppercase tracking-wider bg-black/50 text-white px-2 py-0.5 rounded-full">
+                <span className={cn('absolute font-mono text-[9px] uppercase tracking-wider bg-black/50 text-white px-2 py-0.5 rounded-full transition-all', batchMode ? 'top-2 left-8' : 'top-2 left-2')}>
                   Scène {i + 1}
                 </span>
 
+                {/* Quality badge */}
+                {scene.imageStatus === 'done' && scene.qualityHint === 'draft' && (
+                  <span className="absolute bottom-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-amber-500/80 text-white px-1.5 py-0.5 rounded-full">
+                    Draft
+                  </span>
+                )}
+                {scene.imageStatus === 'done' && scene.qualityHint === 'hd' && (
+                  <span className="absolute bottom-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-emerald-500/80 text-white px-1.5 py-0.5 rounded-full">
+                    HD
+                  </span>
+                )}
+
                 {/* Edit / regen controls */}
                 <div className="absolute top-2 right-2 flex items-center gap-1">
+                  {/* Compare button — shown when there's a previous version */}
+                  {scene.imageUrl && scene.imageHistory && scene.imageHistory.length > 0 && (
+                    <button
+                      type="button"
+                      aria-label="Comparer avec la version précédente"
+                      onClick={() => setComparing({
+                        sceneId: scene.id,
+                        before: scene.imageHistory![scene.imageHistory!.length - 1],
+                        after: scene.imageUrl!,
+                      })}
+                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-brand-secondary/80 flex items-center justify-center transition-all"
+                      title="Comparer avant/après"
+                    >
+                      <ArrowLeft size={8} className="translate-x-px" />
+                      <ArrowRight size={8} className="-translate-x-px" />
+                    </button>
+                  )}
                   <button type="button" aria-label="Modifier le prompt" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
                     className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-brand-primary text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
                     <Edit3 size={10} />
@@ -857,10 +1523,39 @@ function ImagesStep({ scenes, style, onScenesChange, onBack, onNext }: {
                       onChange={(e) => updateScene(scene.id, { imagePrompt: e.target.value })}
                       placeholder="Prompt image…" rows={3}
                       className="w-full bg-brand-bg border border-brand-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-brand-text focus:outline-none focus:border-brand-primary resize-none" />
-                    <button type="button" onClick={() => { generateImage(scene.id); setEditingId(null) }}
-                      className="w-full py-1.5 rounded-lg bg-brand-primary text-white text-xs font-display font-semibold hover:bg-brand-primary/90 transition-all">
-                      Régénérer avec ce prompt
-                    </button>
+
+                    {/* Improve prompt panel */}
+                    {improveResult && improvingId === null && (
+                      <div className="bg-brand-primary-light border border-brand-primary/20 rounded-lg p-2.5 space-y-1.5">
+                        <p className="font-mono text-[9px] uppercase tracking-widest text-brand-primary">✨ Suggestion Claude</p>
+                        <p className="font-mono text-[10px] text-brand-text leading-relaxed">{improveResult.improvedPrompt}</p>
+                        <p className="text-[10px] text-brand-muted italic">{improveResult.explanation}</p>
+                        <button type="button"
+                          onClick={() => {
+                            updateScene(scene.id, { imagePrompt: improveResult.improvedPrompt })
+                            setImproveResult(null)
+                          }}
+                          className="w-full py-1 rounded-md bg-brand-primary text-white text-[10px] font-display font-semibold hover:bg-brand-primary/90 transition-all">
+                          Utiliser ce prompt
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex gap-1.5">
+                      <button type="button"
+                        onClick={() => improvePrompt(scene.id)}
+                        disabled={improvingId === scene.id}
+                        className="flex items-center gap-1 flex-1 py-1.5 rounded-lg border border-brand-secondary/30 text-brand-secondary bg-brand-secondary/5 text-xs font-body hover:bg-brand-secondary/10 transition-all disabled:opacity-50">
+                        {improvingId === scene.id
+                          ? <Loader2 size={10} className="animate-spin" />
+                          : <Sparkles size={10} />}
+                        Améliorer via IA
+                      </button>
+                      <button type="button" onClick={() => { generateImage(scene.id); setEditingId(null); setImproveResult(null) }}
+                        className="flex-1 py-1.5 rounded-lg bg-brand-primary text-white text-xs font-display font-semibold hover:bg-brand-primary/90 transition-all">
+                        Régénérer
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-[11px] font-body text-brand-muted leading-snug line-clamp-3">{scene.scriptText}</p>
@@ -893,38 +1588,120 @@ function ImagesStep({ scenes, style, onScenesChange, onBack, onNext }: {
 
 // ── Step 4 — Clips + Voice-over ────────────────────────────────────────────────
 
-function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext }: {
+function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, onReassembled }: {
   scenes: SceneData[]
-  onScenesChange: (scenes: SceneData[]) => void
+  onScenesChange: (scenes: SceneData[] | ((prev: SceneData[]) => SceneData[])) => void
   voiceId: string
   onBack: () => void
   onNext: () => void
+  videoId?: string
+  onReassembled?: (outputUrl: string) => void
 }) {
   const [generatingAll,  setGeneratingAll]  = useState(false)
   const [voiceStatus,    setVoiceStatus]    = useState<'idle' | 'generating' | 'done'>('idle')
   const [editingId,      setEditingId]      = useState<string | null>(null)
+  const [hasRegenerated, setHasRegenerated] = useState(false)
+  const [reassembling,   setReassembling]   = useState(false)
 
   function updateScene(id: string, patch: Partial<SceneData>) {
-    onScenesChange(scenes.map((s) => s.id === id ? { ...s, ...patch } : s))
+    onScenesChange((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s))
   }
 
   async function generateClip(id: string) {
-    // Clips + voice are handled server-side in the pipeline job
-    // Mark all as done optimistically when user submits
-    updateScene(id, { clipStatus: 'done' })
+    const scene = scenes.find((s) => s.id === id)
+    if (!scene) return
+    // Si l'image n'est pas encore générée, marquer simplement comme prêt (la génération réelle se fait en pipeline)
+    if (!scene.imageUrl) {
+      updateScene(id, { clipStatus: 'done' })
+      return
+    }
+    updateScene(id, { clipStatus: 'generating' })
+    try {
+      if (videoId) {
+        const data = await regenerateFacelessClip({
+          video_id: videoId,
+          scene_id: id,
+          image_url: scene.imageUrl,
+          animation_prompt: scene.animationPrompt || 'smooth cinematic camera movement, natural motion',
+          duration: '5',
+        })
+        updateScene(id, { clipStatus: 'done', clipUrl: data.clip_url })
+        setHasRegenerated(true)
+      } else {
+        // Fallback pour les clips générés en frontend avant soumission
+        const res = await fetch('/api/generate-scene-clip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageUrl: scene.imageUrl,
+            animationPrompt: scene.animationPrompt,
+            duration: '5',
+          }),
+        })
+        if (!res.ok) throw new Error('Clip generation failed')
+        const data = await res.json() as { videoUrl: string; model: string }
+        updateScene(id, { clipStatus: 'done', clipUrl: data.videoUrl })
+      }
+    } catch {
+      toast.error(`Erreur clip scène ${scene.index + 1}`)
+      updateScene(id, { clipStatus: 'error' })
+    }
   }
 
-  async function generateVoice() {
+  async function regenImageAndClip(id: string) {
+    if (!videoId) return
+    const scene = scenes.find((s) => s.id === id)
+    if (!scene) return
+    updateScene(id, { imageStatus: 'generating', clipStatus: 'generating' })
+    try {
+      // Step 1: regenerate image
+      const imgData = await regenerateFacelessScene({ video_id: videoId, scene_id: id })
+      const newImageUrl = imgData.data.image_url
+      updateScene(id, { imageStatus: 'done', imageUrl: newImageUrl })
+
+      // Step 2: regenerate clip from new image
+      const clipData = await regenerateFacelessClip({
+        video_id: videoId,
+        scene_id: id,
+        image_url: newImageUrl,
+        animation_prompt: scene.animationPrompt || 'smooth cinematic camera movement, natural motion',
+        duration: '5',
+      })
+      updateScene(id, { clipStatus: 'done', clipUrl: clipData.clip_url })
+      setHasRegenerated(true)
+      toast.success(`Scène ${scene.index + 1} régénérée`)
+    } catch {
+      toast.error(`Erreur régénération scène ${scene.index + 1}`)
+      updateScene(id, { imageStatus: 'error', clipStatus: 'error' })
+    }
+  }
+
+  async function handleReassemble() {
+    if (!videoId) return
+    setReassembling(true)
+    try {
+      const data = await reassembleFacelessVideo(videoId)
+      setHasRegenerated(false)
+      onReassembled?.(data.output_url)
+      toast.success('Vidéo réassemblée avec succès !')
+    } catch {
+      toast.error('Erreur lors de la réassemblage')
+    } finally {
+      setReassembling(false)
+    }
+  }
+
+  function generateVoice() {
     setVoiceStatus('done')
   }
 
   async function generateAll() {
     setGeneratingAll(true)
-    // Mark all clips as "ready" — real generation happens in the pipeline job
-    scenes.forEach((s) => updateScene(s.id, { clipStatus: 'done' }))
+    const pending = scenes.filter((s) => s.clipStatus !== 'done')
+    await Promise.all(pending.map((s) => generateClip(s.id)))
     if (voiceId) setVoiceStatus('done')
     setGeneratingAll(false)
-    toast.success('Configuration validée — la génération se lance à l\'étape suivante')
+    toast.success('Clips générés !')
   }
 
   const allClipsDone = scenes.every((s) => s.clipStatus === 'done')
@@ -950,12 +1727,15 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext }: {
         {scenes.map((scene, i) => (
           <div key={scene.id} className="rounded-2xl border border-brand-border bg-brand-surface overflow-hidden">
             <div className="flex items-start gap-4 p-4">
-              {/* Video thumbnail */}
+              {/* Video thumbnail / preview */}
               <div className={cn('w-28 h-16 rounded-xl flex-shrink-0 relative overflow-hidden bg-gradient-to-br', SCENE_COLORS[i % SCENE_COLORS.length])}>
                 {scene.clipStatus === 'generating' ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Loader2 size={16} className="text-white/60 animate-spin" />
                   </div>
+                ) : scene.clipStatus === 'done' && scene.clipUrl ? (
+                  // Show actual video preview when clip is ready
+                  <video src={scene.clipUrl} className="w-full h-full object-cover" muted autoPlay playsInline />
                 ) : scene.clipStatus === 'done' ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
@@ -982,6 +1762,12 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext }: {
                     'bg-brand-bg text-brand-muted border border-brand-border')}>
                     {scene.clipStatus === 'done' ? '✓ Prêt' : scene.clipStatus === 'generating' ? 'Génération…' : 'En attente'}
                   </span>
+                  {scene.audioDuration && scene.duree_estimee && scene.audioDuration > scene.duree_estimee * 1.2 && (
+                    <span className="font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 flex items-center gap-1">
+                      <AlertTriangle size={10} />
+                      Audio +{Math.round((scene.audioDuration - scene.duree_estimee))}s
+                    </span>
+                  )}
                   <div className="flex-1" />
                   <button type="button" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
                     className={cn('flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] transition-all', editingId === scene.id ? 'bg-brand-primary-light text-brand-primary' : 'text-brand-muted hover:text-brand-text')}>
@@ -989,8 +1775,14 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext }: {
                   </button>
                   <button type="button" onClick={() => generateClip(scene.id)} disabled={scene.clipStatus === 'generating'}
                     className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] text-brand-muted hover:text-brand-text transition-all disabled:opacity-40">
-                    <RefreshCw size={10} /> Régénérer
+                    <RefreshCw size={10} /> Clip
                   </button>
+                  {videoId && (
+                    <button type="button" onClick={() => regenImageAndClip(scene.id)} disabled={scene.clipStatus === 'generating' || scene.imageStatus === 'generating'}
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] text-brand-muted hover:text-brand-primary transition-all disabled:opacity-40">
+                      <Sparkles size={10} /> Image+Clip
+                    </button>
+                  )}
                 </div>
 
                 {editingId === scene.id ? (
@@ -1002,6 +1794,19 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext }: {
                 )}
               </div>
             </div>
+
+            {/* Full video player when clip is done */}
+            {scene.clipStatus === 'done' && scene.clipUrl && (
+              <div className="px-4 pb-4">
+                <video
+                  src={scene.clipUrl}
+                  controls
+                  muted
+                  className="w-full rounded-xl max-h-64 bg-black/40"
+                  style={{ maxWidth: '100%' }}
+                />
+              </div>
+            )}
           </div>
         ))}
 
@@ -1027,6 +1832,20 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext }: {
                 </button>
               )}
             </div>
+
+            {/* Audio player */}
+            {voiceStatus === 'done' && videoId && (
+              <div className="px-4 py-3 border-t border-brand-border/60">
+                <p className="font-mono text-[9px] uppercase tracking-widest text-brand-muted mb-2">Lecture de la voix off</p>
+                <audio
+                  controls
+                  className="w-full h-10 rounded-lg"
+                  src={`/api/v1/videos/${videoId}/audio`}
+                >
+                  Votre navigateur ne supporte pas la lecture audio.
+                </audio>
+              </div>
+            )}
 
             {/* Sync timeline */}
             {voiceStatus === 'done' && (
@@ -1056,11 +1875,20 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext }: {
         <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
-        <button type="button" onClick={onNext} disabled={!allClipsDone}
-          className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
-            allClipsDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-brand-bg border border-brand-border text-brand-muted cursor-not-allowed')}>
-          Assembler la vidéo <ArrowRight size={13} />
-        </button>
+        <div className="flex items-center gap-2">
+          {videoId && hasRegenerated && (
+            <button type="button" onClick={handleReassemble} disabled={reassembling}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-primary text-white font-display font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50">
+              {reassembling ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+              {reassembling ? 'Assemblage…' : 'Réassembler'}
+            </button>
+          )}
+          <button type="button" onClick={onNext} disabled={!allClipsDone}
+            className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
+              allClipsDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-brand-bg border border-brand-border text-brand-muted cursor-not-allowed')}>
+            Assembler la vidéo <ArrowRight size={13} />
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -1072,17 +1900,60 @@ const STATUS_LABELS: Record<string, string> = {
   pending:    'En attente…',
   processing: 'Traitement en cours…',
   storyboard: 'Génération du storyboard…',
-  visuals:    'Génération des images…',
+  visuals:    'Génération des images & clips…',
   audio:      'Génération de la voix off…',
   assembly:   'Assemblage de la vidéo…',
   done:       'Vidéo prête !',
   error:      'Erreur lors de la génération',
 }
 
-function FinalStep({ project, onNew }: { project: ProjectState; onNew: () => void }) {
+function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
+  project: ProjectState
+  onNew: () => void
+  onRetry?: () => void
+  onVideoReady?: (videoId: string, outputUrl: string) => void
+  onEditScenes?: () => void
+}) {
   const { status, progress, outputUrl, isError, isDone } = useVideoStatus(project.videoId ?? null)
+  const [downloading, setDownloading] = useState(false)
+  const notifiedRef = useRef(false)
 
   const videoUrl = outputUrl ?? project.finalVideoUrl
+
+  // Notifier le parent une seule fois quand la vidéo est prête
+  useEffect(() => {
+    if (isDone && outputUrl && project.videoId && !notifiedRef.current) {
+      notifiedRef.current = true
+      onVideoReady?.(project.videoId, outputUrl)
+    }
+  }, [isDone, outputUrl, project.videoId, onVideoReady])
+
+  async function handleDownload() {
+    const urlToFetch = videoUrl || null
+    if (!urlToFetch && !project.videoId) return
+    setDownloading(true)
+    try {
+      // Priorité 1 : fetch direct de la signed URL Supabase (pas de dépendance backend)
+      // Priorité 2 : route server /api/download-video (fallback si URL indisponible)
+      const res = urlToFetch
+        ? await fetch(urlToFetch)
+        : await fetch(`/api/download-video?id=${project.videoId}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = `${project.title ?? 'video'}.mp4`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      toast.error('Erreur lors du téléchargement')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 max-w-xl mx-auto gap-6">
@@ -1097,13 +1968,7 @@ function FinalStep({ project, onNew }: { project: ProjectState; onNew: () => voi
           <p className="font-body text-sm text-brand-muted">
             {project.title || 'Vidéo Faceless'} · {project.scenes.length} scènes · {project.duration}
           </p>
-          <div className="h-1.5 bg-brand-bg rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-brand-primary to-purple-500 rounded-full transition-all duration-500"
-              style={{ width: `${Math.max(progress, 5)}%` }}
-            />
-          </div>
-          <p className="font-mono text-xs text-brand-muted">{progress}%</p>
+          <ProgressBar value={progress} showLabel status={status} message={STATUS_LABELS[status] ?? 'En cours…'} />
         </div>
       ) : isError ? (
         <div className="text-center space-y-4">
@@ -1112,10 +1977,18 @@ function FinalStep({ project, onNew }: { project: ProjectState; onNew: () => voi
           </div>
           <h2 className="font-display text-xl font-bold text-brand-text">Erreur de génération</h2>
           <p className="font-body text-sm text-brand-muted">La génération a échoué. Vérifie les logs du serveur.</p>
-          <button type="button" onClick={onNew}
-            className="mx-auto flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text transition-all">
-            <Plus size={14} /> Recommencer
-          </button>
+          <div className="flex items-center gap-3 justify-center">
+            {onRetry && (
+              <button type="button" onClick={onRetry}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary text-white text-sm font-body hover:opacity-90 transition-all">
+                <RotateCcw size={14} /> Relancer la génération
+              </button>
+            )}
+            <button type="button" onClick={onNew}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text transition-all">
+              <Plus size={14} /> Nouvelle vidéo
+            </button>
+          </div>
         </div>
       ) : (
         <div className="w-full space-y-5 text-center">
@@ -1140,15 +2013,23 @@ function FinalStep({ project, onNew }: { project: ProjectState; onNew: () => voi
             )}
           </div>
 
-          <div className="flex items-center justify-center gap-3">
-            <a
-              href={videoUrl ?? '#'}
-              download={project.title || 'video'}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all"
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={downloading || !project.videoId}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download size={15} />
-              Télécharger
-            </a>
+              {downloading ? 'Téléchargement…' : 'Télécharger'}
+            </button>
+            {onEditScenes && (
+              <button type="button" onClick={onEditScenes}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all">
+                <Edit3 size={14} />
+                Modifier des scènes
+              </button>
+            )}
             <button type="button" onClick={onNew}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all">
               <Plus size={14} />
@@ -1177,13 +2058,53 @@ const DEFAULT_PROJECT: ProjectState = {
   step: 'setup',
 }
 
-function FacelessPipeline({ onGenerated }: { onGenerated: (title: string) => void }) {
-  const [project, setProject] = useState<ProjectState>(DEFAULT_PROJECT)
-  const [loading,  setLoading]  = useState(false)
+const DRAFT_KEY = 'clyro-faceless-draft'
+
+function FacelessPipeline({ onGenerated, onVideoReady }: {
+  onGenerated: (title: string, videoId: string) => void
+  onVideoReady?: (videoId: string, outputUrl: string) => void
+}) {
+  const [project,    setProject]   = useState<ProjectState>(DEFAULT_PROJECT)
+  const [loading,    setLoading]   = useState(false)
+  const [savedState, setSavedState] = useState<'saving' | 'saved' | null>(null)
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function patch(p: Partial<ProjectState>) {
     setProject((prev) => ({ ...prev, ...p }))
   }
+
+  /** Handles both direct scene arrays and functional updaters (for parallel-safe updates) */
+  function handleScenesChange(scenesOrFn: SceneData[] | ((prev: SceneData[]) => SceneData[])) {
+    if (typeof scenesOrFn === 'function') {
+      setProject((prev) => ({ ...prev, scenes: scenesOrFn(prev.scenes) }))
+    } else {
+      patch({ scenes: scenesOrFn })
+    }
+  }
+
+  // Auto-save: localStorage + Supabase PATCH (debounced 800ms) with saved indicator
+  useEffect(() => {
+    if (project.scenes.length === 0) return
+    setSavedState('saving')
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    if (savedTimer.current)    clearTimeout(savedTimer.current)
+    autoSaveTimer.current = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ scenes: project.scenes, savedAt: Date.now() }))
+      } catch { /* quota exceeded — non-blocking */ }
+      if (project.videoId) {
+        updateVideoMetadata(project.videoId, { scenes: project.scenes }).catch(() => null)
+      }
+      setSavedState('saved')
+      savedTimer.current = setTimeout(() => setSavedState(null), 2500)
+    }, 800)
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+      if (savedTimer.current)    clearTimeout(savedTimer.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.scenes, project.videoId])
 
   async function goToStoryboard() {
     setLoading(true)
@@ -1192,31 +2113,40 @@ function FacelessPipeline({ onGenerated }: { onGenerated: (title: string) => voi
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          niche: 'developpement_personnel',
-          style: project.style ?? 'cinematique',
-          title: project.title || 'Vidéo CLYRO',
           script: project.script || project.description || 'Introduction du sujet. Développement des idées principales. Conclusion et appel à l\'action.',
+          description: project.description || undefined,
+          style: project.style ?? 'cinematique',
+          duration: project.duration,
+          title: project.title || undefined,
         }),
       })
       if (!res.ok) throw new Error('Storyboard generation failed')
       const data = await res.json() as {
-        scenes: Array<{ index: number; texte_voix: string; description_visuelle: string; duree_estimee: number }>
+        scenes: Array<{
+          index: number
+          texte_voix: string
+          description_visuelle: string
+          animation_prompt?: string
+          duree_estimee: number
+        }>
       }
-      const scenes: SceneData[] = data.scenes.map((s) => ({
-        id: `scene-${s.index}-${Date.now()}`,
-        index: s.index - 1,
+      const scenes: SceneData[] = data.scenes.map((s, i) => ({
+        id: `scene-${i}-${Date.now()}`,
+        index: i,
         scriptText: s.texte_voix,
         imagePrompt: s.description_visuelle,
-        animationPrompt: 'Slow cinematic pan, atmospheric depth, smooth motion',
+        animationPrompt: s.animation_prompt ?? 'Slow cinematic pan, atmospheric depth, smooth motion',
         imageStatus: 'idle',
         clipStatus: 'idle',
       }))
-      patch({ scenes, step: 'storyboard' })
+      // Generate deterministic masterSeed for visual consistency across all scenes
+      const masterSeed = Math.floor(Math.random() * 2147483647)
+      patch({ scenes, step: 'storyboard', masterSeed })
     } catch {
       toast.error('Erreur lors de la génération du storyboard')
-      // Fallback to local split
       const scenes = splitScriptToScenes(project.script || project.description || 'Introduction. Développement. Conclusion.')
-      patch({ scenes, step: 'storyboard' })
+      const masterSeed = Math.floor(Math.random() * 2147483647)
+      patch({ scenes, step: 'storyboard', masterSeed })
     } finally {
       setLoading(false)
     }
@@ -1227,13 +2157,44 @@ function FacelessPipeline({ onGenerated }: { onGenerated: (title: string) => voi
   }
 
   async function goToClips() {
-    patch({ step: 'clips' })
+    // Persister le styleReference capturé dans ImagesStep pour cohérence visuelle
+    const firstDoneScene = project.scenes.find((s) => s.imageStatus === 'done' && s.imageUrl)
+    patch({ step: 'clips', styleReference: firstDoneScene?.imageUrl || project.styleReference })
   }
 
   async function goToFinal() {
     setLoading(true)
     try {
-      const { video_id } = await startFacelessGeneration({
+      // Inclure les scènes pré-générées pour éviter de re-générer images + clips en backend
+      const preGeneratedScenes = project.scenes.length > 0
+        ? project.scenes.map((s) => ({
+            id: s.id,
+            script_text: s.scriptText,
+            image_url: s.imageUrl,
+            clip_url: s.clipUrl,
+            image_prompt: s.imagePrompt,
+            animation_prompt: s.animationPrompt,
+          }))
+        : undefined
+
+      // Détecte les dialogues et assigne les voix
+      const dialogue = detectDialogueInScript(project.script)
+      let speakerVoices: Record<string, string> | undefined
+      if (dialogue.hasDialogue) {
+        // Assigner des voix alternées aux personnages
+        const speakers = Array.from(dialogue.speakers).sort()
+        speakerVoices = {}
+        // Utiliser la voix sélectionnée pour le premier personnage, et une voix alternée pour les autres
+        const defaultVoices = [
+          project.voiceId || 'Adam',
+          'Charlotte',
+        ]
+        for (let i = 0; i < speakers.length; i++) {
+          speakerVoices[speakers[i]] = defaultVoices[i % 2]
+        }
+      }
+
+      const { video_id, script_condensed } = await startFacelessGeneration({
         title: project.title || 'Vidéo Faceless',
         style: project.style ?? 'cinematique',
         input_type: project.inputType,
@@ -1241,9 +2202,21 @@ function FacelessPipeline({ onGenerated }: { onGenerated: (title: string) => voi
         duration: project.duration,
         script: project.script || project.description || project.scenes.map((s) => s.scriptText).join(' '),
         voice_id: project.voiceId || undefined,
+        pre_generated_scenes: preGeneratedScenes,
+        dialogue_mode: dialogue.hasDialogue,
+        speaker_voices: speakerVoices,
       })
+
+      // Display condensation warning if script was auto-condensed
+      if (script_condensed?.condensed) {
+        toast.info(
+          `Script condensé: ${script_condensed.originalWordCount ?? '?'} → ${script_condensed.condensedWordCount ?? '?'} mots (−${Math.abs((script_condensed.condensedWordCount ?? 0) - (script_condensed.originalWordCount ?? 0))} mots)`,
+          { duration: 5000 }
+        )
+      }
+
       patch({ videoId: video_id, step: 'final' })
-      onGenerated(project.title || project.script.slice(0, 60) || 'Nouvelle vidéo')
+      onGenerated(project.title || project.script.slice(0, 60) || 'Nouvelle vidéo', video_id)
     } catch {
       toast.error('Erreur lors du lancement de la génération')
     } finally {
@@ -1263,7 +2236,7 @@ function FacelessPipeline({ onGenerated }: { onGenerated: (title: string) => voi
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <StepIndicator current={project.step} />
+      <StepIndicator current={project.step} savedState={savedState} />
 
       <div className="flex-1 overflow-hidden">
         {project.step === 'setup' && (
@@ -1271,12 +2244,13 @@ function FacelessPipeline({ onGenerated }: { onGenerated: (title: string) => voi
             project={project}
             onChange={patch}
             onNext={goToStoryboard}
+            loading={loading}
           />
         )}
         {project.step === 'storyboard' && (
           <StoryboardStep
             scenes={project.scenes}
-            onScenesChange={(scenes) => patch({ scenes })}
+            onScenesChange={handleScenesChange}
             onBack={() => patch({ step: 'setup' })}
             onNext={goToImages}
           />
@@ -1285,7 +2259,9 @@ function FacelessPipeline({ onGenerated }: { onGenerated: (title: string) => voi
           <ImagesStep
             scenes={project.scenes}
             style={project.style ?? 'cinematique'}
-            onScenesChange={(scenes) => patch({ scenes })}
+            masterSeed={project.masterSeed}
+            styleReference={project.styleReference}
+            onScenesChange={handleScenesChange}
             onBack={() => patch({ step: 'storyboard' })}
             onNext={goToClips}
           />
@@ -1293,16 +2269,23 @@ function FacelessPipeline({ onGenerated }: { onGenerated: (title: string) => voi
         {project.step === 'clips' && (
           <ClipsStep
             scenes={project.scenes}
-            onScenesChange={(scenes) => patch({ scenes })}
+            onScenesChange={handleScenesChange}
             voiceId={project.voiceId}
+            videoId={project.videoId}
             onBack={() => patch({ step: 'images' })}
             onNext={goToFinal}
+            onReassembled={(outputUrl) => {
+              patch({ finalVideoUrl: outputUrl, step: 'final' })
+            }}
           />
         )}
         {project.step === 'final' && (
           <FinalStep
             project={project}
             onNew={() => setProject(DEFAULT_PROJECT)}
+            onRetry={goToFinal}
+            onVideoReady={onVideoReady}
+            onEditScenes={project.videoId ? () => patch({ step: 'clips' }) : undefined}
           />
         )}
       </div>
@@ -1325,16 +2308,51 @@ interface VideoSession {
 export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }) {
   const [sessions, setSessions] = useState<VideoSession[]>(initialVideos)
   const [viewId,   setViewId]   = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
 
   const viewSession = sessions.find((s) => s.id === viewId) ?? null
 
-  function handleGenerated(title: string) {
-    const id = `local-${Date.now()}`
+  async function handleSessionDownload(session: VideoSession) {
+    // IDs locaux (local-timestamp) = session pas encore en DB, pas de URL disponible
+    if (!session.output_url && session.id.startsWith('local-')) {
+      toast.error('Vidéo en cours de sauvegarde, réessaie dans quelques secondes')
+      return
+    }
+    setDownloading(true)
+    try {
+      // Toujours utiliser la route proxy (évite CORS sur Supabase CDN)
+      const res = await fetch(`/api/download-video?id=${session.id}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = `${session.title ?? 'video'}.mp4`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      toast.error('Erreur lors du téléchargement')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  function handleGenerated(title: string, videoId: string) {
+    // Ajoute la session dans la sidebar avec le vrai videoId
+    // Ne change PAS viewId : l'utilisateur reste dans FinalStep pour voir la progression
     setSessions((prev) => [
-      { id, title, status: 'done', created_at: new Date().toISOString() },
-      ...prev,
+      { id: videoId, title, status: 'processing', created_at: new Date().toISOString() },
+      ...prev.filter((s) => s.id !== videoId),
     ])
-    setViewId(id)
+  }
+
+  function handleVideoReady(videoId: string, outputUrl: string) {
+    // Met à jour la session avec l'URL de la vidéo une fois terminée
+    setSessions((prev) =>
+      prev.map((s) => s.id === videoId ? { ...s, status: 'done', output_url: outputUrl } : s)
+    )
   }
 
   return (
@@ -1401,14 +2419,18 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
                   </div>
                 )
               }
-              <a href={viewSession.output_url ?? '#'} download={viewSession.title || 'video'}
-                className="mt-4 flex items-center justify-center gap-2 w-full px-5 py-2.5 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all">
-                <Download size={15} /> Télécharger
-              </a>
+              <button
+                type="button"
+                onClick={() => handleSessionDownload(viewSession)}
+                disabled={downloading}
+                className="mt-4 flex items-center justify-center gap-2 w-full px-5 py-2.5 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download size={15} /> {downloading ? 'Téléchargement…' : 'Télécharger'}
+              </button>
             </div>
           </div>
         ) : (
-          <FacelessPipeline onGenerated={handleGenerated} />
+          <FacelessPipeline onGenerated={handleGenerated} onVideoReady={handleVideoReady} />
         )}
       </div>
     </div>

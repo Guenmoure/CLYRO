@@ -1,4 +1,5 @@
 export * from './types/user'
+export * from './types/brand-identity'
 export * from './types/video'
 export * from './types/voice'
 export * from './types/payment'

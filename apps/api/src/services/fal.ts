@@ -1,36 +1,35 @@
 import { createFalClient } from '@fal-ai/client'
 import { logger } from '../lib/logger'
+import { supabaseAdmin } from '../lib/supabase'
+import { selectFalModelForF1Style } from '../config/fal-models'
 
 // Créer un client fal.ai typé avec la clé API
 const fal = createFalClient({
   credentials: process.env.FAL_KEY,
 })
 
-const MAX_RETRIES = 1             // 1 retry max pour ne pas trop attendre
+const MAX_RETRIES = 2             // 2 retries avec backoff exponentiel avant fallback schnell
 const TIMEOUT_IMAGE_MS = 60_000   // flux/dev: 20-40s — timeout strict pour fail fast
-const TIMEOUT_VIDEO_MS = 180_000  // kling/lipsync: up to 3 min
+const TIMEOUT_VIDEO_MS = 90_000   // kling standard: ~30-60s — réduit de 180s pour fail-fast
 
 // Configuration par style
 interface StyleConfig {
-  model: string
   prompt_prefix: string
   prompt_suffix: string
   image_size: string
   num_inference_steps: number
 }
 
-// ── Style configs ── All scene styles upgraded to flux/dev (PDF recommendation: quality > schnell for production)
+// ── Style configs ── Model selection is handled by selectFalModelForF1Style() in fal-models.ts
 const STYLE_CONFIGS: Record<string, StyleConfig> = {
   // Catégorie 1 — Narratif & Immersif
   cinematique: {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain, deep shadows, golden hour, slow motion feel,',
     prompt_suffix: 'Hollywood production quality, color graded, epic composition, moody atmosphere',
     image_size: 'landscape_16_9',
     num_inference_steps: 28,
   },
   'stock-vo': {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'National Geographic style, realistic textures, natural light, professional editorial stock photography, shallow depth of field, real-world documentary scene,',
     prompt_suffix: 'authentic documentary feel, high resolution, sharp focus, journalistic composition',
     image_size: 'landscape_16_9',
@@ -38,45 +37,39 @@ const STYLE_CONFIGS: Record<string, StyleConfig> = {
   },
   // Catégorie 2 — Explicatif & Didactique
   whiteboard: {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'hand drawn sketch on whiteboard, black marker style, RSA Animate illustration, pure white background, no color fills, no textures,',
     prompt_suffix: 'educational explainer art, rough pen strokes, simple expressive shapes, whiteboard animation frame',
     image_size: 'landscape_16_9',
-    num_inference_steps: 25,
+    num_inference_steps: 20,
   },
   // PDF canonical style — Bonshommes & Formes
   stickman: {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'simple black line art on white background, minimalist stickman figures, bold geometric shapes, expressive stick characters, ultra clean linework, RSA animate style,',
     prompt_suffix: 'educational bonhommes illustration, no color fills, no gradients, pure line drawing, maximum legibility, symbolic storytelling',
     image_size: 'landscape_16_9',
-    num_inference_steps: 25,
+    num_inference_steps: 20,
   },
   minimaliste: {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'simple black line art, white background, minimalist stickman figures, stick figure illustration, ultra clean linework, no fills, no gradients,',
     prompt_suffix: 'educational diagram style, simple expressive stick characters, maximum legibility',
     image_size: 'landscape_16_9',
-    num_inference_steps: 25,
+    num_inference_steps: 20,
   },
   // PDF canonical style — Illustration Plat
   'flat-design': {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'flat design illustration, bold solid colors, clean geometric shapes, modern vector art, no shadows, no gradients, Dribbble-quality design, SVG-like aesthetic,',
     prompt_suffix: 'professional flat illustration, vibrant color palette, clear visual storytelling, modern digital design, no photorealism',
     image_size: 'landscape_16_9',
     num_inference_steps: 25,
   },
   infographie: {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'modern flat infographic illustration, animated data visualization, bold color-coded sections, clean icons, isometric perspective, sans-serif labels,',
     prompt_suffix: 'information design, clear hierarchy, professional B2B report style, data-driven visual',
     image_size: 'landscape_16_9',
-    num_inference_steps: 25,
+    num_inference_steps: 28,
   },
   // PDF canonical style — 3D Pixar / Claymation
   '3d-pixar': {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'Pixar-style 3D CGI animation, claymation texture, adorable rounded characters, soft studio lighting, rich vibrant colors, depth of field, Disney Pixar movie quality,',
     prompt_suffix: '3D render, smooth surfaces, expressive facial features, cinematic composition, family-friendly warmth, photoreal CGI',
     image_size: 'landscape_16_9',
@@ -84,14 +77,12 @@ const STYLE_CONFIGS: Record<string, StyleConfig> = {
   },
   // Catégorie 3 — Design & Rythme
   'motion-graphics': {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'flat design motion graphics, geometric shapes, vibrant vector colors, bold animated typography elements, kinetic composition, tech brand aesthetic,',
     prompt_suffix: 'high-end advertising quality, clean vector art, dynamic diagonal lines, modern UI feel',
     image_size: 'landscape_16_9',
     num_inference_steps: 25,
   },
   'animation-2d': {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'flat vector 2D cartoon illustration, bold outlines, vibrant saturated colors, no photorealism, no 3D, traditional animation style,',
     prompt_suffix: 'studio quality animation frame, warm expressive characters, graphic novel aesthetic',
     image_size: 'landscape_16_9',
@@ -99,32 +90,28 @@ const STYLE_CONFIGS: Record<string, StyleConfig> = {
   },
   // Motion Graphics styles
   corporate: {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'clean corporate business illustration, navy blue and white palette, professional office setting, minimal geometric shapes, modern UI elements,',
     prompt_suffix: 'B2B brand aesthetic, trustworthy, Fortune 500 style',
     image_size: 'landscape_16_9',
     num_inference_steps: 25,
   },
   dynamique: {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'high-energy dynamic composition, explosive motion blur, neon accent colors on dark background, diagonal lines, bold typography elements,',
     prompt_suffix: 'sports brand aesthetic, kinetic energy, powerful impact',
     image_size: 'landscape_16_9',
-    num_inference_steps: 25,
+    num_inference_steps: 20,
   },
   luxe: {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'ultra-luxury brand photography, gold and black palette, bokeh background, premium product on marble surface, elegant serif typography overlay,',
     prompt_suffix: 'high-fashion editorial, Vogue aesthetic, exclusive premium feel',
     image_size: 'landscape_16_9',
     num_inference_steps: 28,
   },
   fun: {
-    model: 'fal-ai/flux/dev',
     prompt_prefix: 'playful cartoon illustration, candy-colored palette, bubbly rounded shapes, confetti, stickers, kawaii-inspired characters,',
     prompt_suffix: 'joyful cheerful energy, kids-friendly, Instagram-ready pop art',
     image_size: 'landscape_16_9',
-    num_inference_steps: 25,
+    num_inference_steps: 20,
   },
 }
 
@@ -149,9 +136,11 @@ export async function generateSceneImage(
   prompt: string,
   style: string,
   seed?: number,
-  brand?: BrandColors
+  brand?: BrandColors,
+  modelOverride?: string
 ): Promise<GenerateImageResult> {
   const styleConfig = STYLE_CONFIGS[style] ?? DEFAULT_STYLE
+  const model = modelOverride ?? selectFalModelForF1Style(style)
   // Brand color injection: append palette hint so fal.ai respects the brand palette
   const brandSuffix = brand
     ? `, color palette ${brand.primary_color}${brand.secondary_color ? ` and ${brand.secondary_color}` : ''}`
@@ -167,7 +156,7 @@ export async function generateSceneImage(
       const input: Record<string, unknown> = {
         prompt: fullPrompt,
         image_size: styleConfig.image_size,
-        num_inference_steps: styleConfig.num_inference_steps,
+        num_inference_steps: modelOverride ? 28 : styleConfig.num_inference_steps,
         num_images: 1,
       }
 
@@ -177,7 +166,7 @@ export async function generateSceneImage(
       }
 
       const result = await Promise.race([
-        fal.subscribe(styleConfig.model, { input }),
+        fal.subscribe(model, { input } as any),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('fal.ai timeout')), TIMEOUT_IMAGE_MS)
         ),
@@ -190,7 +179,7 @@ export async function generateSceneImage(
       if (!imageUrl) throw new Error('No image URL in fal.ai response')
 
       logger.info(
-        { model: styleConfig.model, style, duration, attempt, hasSeed: seed !== undefined },
+        { model, style, duration, attempt, hasSeed: seed !== undefined },
         'fal.ai: image generated'
       )
 
@@ -208,35 +197,161 @@ export async function generateSceneImage(
     }
   }
 
-  logger.error({ error: lastError, style, prompt }, 'fal.ai: all attempts failed')
-  throw new Error(`Image generation failed: ${lastError?.message ?? 'Unknown error'}`)
+  // Fallback final : flux/schnell (4 steps, ~3s) si flux/dev échoue toutes les tentatives
+  logger.warn({ style, prompt: prompt.slice(0, 60) }, 'fal.ai: flux/dev failed — trying flux/schnell fallback')
+  try {
+    const input: Record<string, unknown> = {
+      prompt: fullPrompt,
+      image_size: styleConfig.image_size,
+      num_inference_steps: 4,
+      num_images: 1,
+    }
+    if (seed !== undefined) input.seed = seed
+
+    const result = await Promise.race([
+      fal.subscribe('fal-ai/flux/schnell', { input } as any),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('flux/schnell timeout')), TIMEOUT_IMAGE_MS)
+      ),
+    ])
+
+    const output = ((result as any).data ?? result) as { images?: Array<{ url: string }> }
+    const imageUrl = output.images?.[0]?.url
+    if (!imageUrl) throw new Error('No image URL in flux/schnell response')
+
+    logger.info({ style }, 'fal.ai: flux/schnell fallback succeeded')
+    return { imageUrl, promptUsed: fullPrompt }
+  } catch (schnellErr) {
+    logger.error({ error: lastError, schnellErr, style, prompt }, 'fal.ai: all attempts including schnell fallback failed')
+    throw new Error(`Image generation failed: ${lastError?.message ?? 'Unknown error'}`)
+  }
 }
 
 /**
- * Génère les images pour toutes les scènes d'un storyboard en parallèle total.
- * fal.ai gère son propre queuing GPU — on envoie tout d'un coup pour minimiser la latence.
- * masterSeed optionnel: même seed sur toutes les scènes = character consistency (PDF cref pattern)
+ * Génère les images pour toutes les scènes en parallèle.
+ * Cohérence visuelle assurée par le masterSeed déterministe (même seed = même atmosphère).
+ * Toutes les scènes sont soumises simultanément à fal.ai pour un temps total = 1 seule génération.
+ */
+/**
+ * Génère les images pour toutes les scènes.
+ * Cohérence visuelle : scène 0 générée en premier → son URL (persistée si possible)
+ * est utilisée comme référence de style (strength=0.72) pour les scènes 1..N en parallèle.
+ * Strength 0.72 = 72 % prompt (contenu libre) + 28 % ancre visuelle (même palette/lumière).
  */
 export async function generateSceneImages(
   scenes: Array<{ id: string; description_visuelle: string }>,
   style: string,
   masterSeed?: number,
-  brand?: BrandColors
+  brand?: BrandColors,
+  persist?: { userId: string; videoId: string }
 ): Promise<Array<{ sceneId: string; imageUrl: string; promptUsed: string }>> {
-  // Toutes les scènes en parallèle — fal.ai distribue sur son cluster GPU
-  const results = await Promise.all(
-    scenes.map(async (scene) => {
-      const { imageUrl, promptUsed } = await generateSceneImage(
+  if (scenes.length === 0) return []
+
+  // ── Scene 0 : text-to-image (référence de style) ──────────────────────────
+  const scene0 = scenes[0]
+  const { imageUrl: falUrl0, promptUsed: promptUsed0 } = await generateSceneImage(
+    scene0.description_visuelle,
+    style,
+    masterSeed,
+    brand
+  )
+
+  let styleRefUrl = falUrl0
+  if (persist) {
+    const path0 = `${persist.userId}/${persist.videoId}/scenes/scene-${scene0.id}.jpg`
+    styleRefUrl = await uploadFalUrlToStorage(falUrl0, path0, 'videos')
+  }
+
+  const scene0Result = { sceneId: scene0.id, imageUrl: styleRefUrl, promptUsed: promptUsed0 }
+
+  if (scenes.length === 1) return [scene0Result]
+
+  // ── Scènes 1..N : img2img avec style reference en parallèle ───────────────
+  const restResults = await Promise.all(
+    scenes.slice(1).map(async (scene, idx) => {
+      const seed = masterSeed !== undefined ? masterSeed + idx + 1 : undefined
+      const { imageUrl: falUrl, promptUsed } = await generateSceneImageWithReference(
         scene.description_visuelle,
         style,
-        masterSeed,
-        brand
+        styleRefUrl,
+        seed,
+        brand,
+        0.72  // style-only anchor: 72% prompt freedom, 28% visual reference
       )
+      let imageUrl = falUrl
+      if (persist) {
+        const storagePath = `${persist.userId}/${persist.videoId}/scenes/scene-${scene.id}.jpg`
+        imageUrl = await uploadFalUrlToStorage(falUrl, storagePath, 'videos')
+      }
       return { sceneId: scene.id, imageUrl, promptUsed }
     })
   )
 
-  return results
+  return [scene0Result, ...restResults]
+}
+
+/**
+ * Génère une image en utilisant une image de référence pour la cohérence visuelle.
+ * Utilise flux/dev/image-to-image.
+ *
+ * Convention fal.ai strength :
+ *   0.0 → sortie = copie exacte de la référence (0% prompt)
+ *   1.0 → sortie = génération libre par le prompt (100% prompt, ignore référence)
+ *
+ * Pour cohérence de style sans copier le contenu, utiliser 0.65–0.80.
+ * Pour fortes contraintes visuelles (cref / personnage), utiliser 0.15–0.30.
+ */
+async function generateSceneImageWithReference(
+  prompt: string,
+  style: string,
+  referenceImageUrl: string,
+  seed?: number,
+  brand?: BrandColors,
+  strength = 0.15  // override par l'appelant selon le cas d'usage
+): Promise<GenerateImageResult> {
+  const styleConfig = STYLE_CONFIGS[style] ?? DEFAULT_STYLE
+  const brandSuffix = brand
+    ? `, color palette ${brand.primary_color}${brand.secondary_color ? ` and ${brand.secondary_color}` : ''}`
+    : ''
+  const fullPrompt = `${styleConfig.prompt_prefix} ${prompt}, ${styleConfig.prompt_suffix}${brandSuffix}`
+
+  let lastError: Error | null = null
+
+  for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+    try {
+      const input: Record<string, unknown> = {
+        prompt: fullPrompt,
+        image_url: referenceImageUrl,
+        strength,
+        image_size: styleConfig.image_size,
+        num_inference_steps: styleConfig.num_inference_steps,
+        num_images: 1,
+      }
+      if (seed !== undefined) input.seed = seed
+
+      const result = await Promise.race([
+        fal.subscribe('fal-ai/flux/dev/image-to-image', { input } as any),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('fal.ai img2img timeout')), TIMEOUT_IMAGE_MS)
+        ),
+      ])
+
+      const output = ((result as any).data ?? result) as { images?: Array<{ url: string }> }
+      const imageUrl = output.images?.[0]?.url
+      if (!imageUrl) throw new Error('No image URL in img2img response')
+
+      logger.info({ style, attempt, referenceUsed: true }, 'fal.ai: img2img scene generated')
+      return { imageUrl, promptUsed: fullPrompt }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err))
+      logger.warn({ attempt, error: lastError.message }, 'fal.ai: img2img failed, retrying or falling back')
+      if (attempt <= MAX_RETRIES) await sleep(1000 * attempt)
+    }
+  }
+
+  // Fallback: génération pure sans référence
+  logger.warn({ style }, 'fal.ai: img2img failed, falling back to text-to-image')
+  return generateSceneImage(prompt, style, seed, brand)
 }
 
 // ── Logo & Brand Asset generation ─────────────────────────────────────────────
@@ -312,18 +427,54 @@ export async function generateSocialAsset(
   return { imageUrl }
 }
 
-// ── Image-to-Video / Lip-Sync ──────────────────────────────────────────────────
+// ── Image-to-Video ────────────────────────────────────────────────────────────
+
+// Styles qui justifient Kling v1.5 Pro (90-120 s, qualité photoréaliste)
+const HIGH_QUALITY_VIDEO_STYLES = new Set(['cinematique', 'stock-vo', 'luxe', '3d-pixar'])
 
 /**
- * Anime une image statique en vidéo courte via Kling v1.5 Pro (PDF recommendation)
- * image-to-video: donne du mouvement à chaque scène du storyboard
+ * Kling v1 Standard — modèle rapide (~30-60 s).
+ * Utilisé pour la majorité des styles (illustration, flat-design, motion, etc.)
  */
-export async function generateSceneVideo(
+async function generateSceneVideoKlingStandard(
   imageUrl: string,
   animationPrompt: string,
   duration: '5' | '10' = '5'
 ): Promise<{ videoUrl: string }> {
-  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling i2v')
+  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v1 Standard')
+
+  const result = await Promise.race([
+    fal.subscribe('fal-ai/kling-video/v1/standard/image-to-video', {
+      input: {
+        image_url: imageUrl,
+        prompt: animationPrompt,
+        duration,
+        cfg_scale: 0.5,
+      },
+    }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Kling Standard timeout')), TIMEOUT_VIDEO_MS)
+    ),
+  ])
+
+  const output = ((result as any).data ?? result) as { video?: { url: string } }
+  const videoUrl = output.video?.url
+  if (!videoUrl) throw new Error('No video URL in Kling Standard response')
+
+  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling Standard complete')
+  return { videoUrl }
+}
+
+/**
+ * Kling v1.5 Pro — modèle premium (~90-120 s).
+ * Réservé aux styles photoréalistes (cinematique, stock-vo, luxe, 3d-pixar).
+ */
+async function generateSceneVideoKlingPro(
+  imageUrl: string,
+  animationPrompt: string,
+  duration: '5' | '10' = '5'
+): Promise<{ videoUrl: string }> {
+  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v1.5 Pro')
 
   const result = await Promise.race([
     fal.subscribe('fal-ai/kling-video/v1.5/pro/image-to-video', {
@@ -335,17 +486,59 @@ export async function generateSceneVideo(
       },
     }),
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Kling video timeout')), TIMEOUT_VIDEO_MS)
+      setTimeout(() => reject(new Error('Kling Pro timeout')), TIMEOUT_VIDEO_MS * 2)
     ),
   ])
 
   const output = ((result as any).data ?? result) as { video?: { url: string } }
   const videoUrl = output.video?.url
+  if (!videoUrl) throw new Error('No video URL in Kling Pro response')
 
-  if (!videoUrl) throw new Error('No video URL in Kling response')
-
-  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling i2v complete')
+  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling Pro complete')
   return { videoUrl }
+}
+
+/**
+ * Anime une image statique en vidéo courte.
+ * Route vers Kling v1 Standard (rapide) ou v1.5 Pro (qualité) selon le style.
+ * Fallback automatique de Standard → Pro si le modèle rapide échoue.
+ */
+export async function generateSceneVideo(
+  imageUrl: string,
+  animationPrompt: string,
+  duration: '5' | '10' = '5'
+): Promise<{ videoUrl: string }> {
+  return generateSceneVideoKlingPro(imageUrl, animationPrompt, duration)
+}
+
+/**
+ * Routeur vidéo style-aware :
+ * - Styles illustration/flat → Kling v1 Standard (~30-60 s)
+ * - Styles photoréalistes    → Kling v1.5 Pro (~90-120 s)
+ * - Fallback Standard → Pro si le modèle rapide échoue
+ */
+export async function generateSceneVideoAuto(
+  imageUrl: string,
+  animationPrompt: string,
+  duration: '5' | '10' = '5',
+  style?: string
+): Promise<{ videoUrl: string; model: string }> {
+  const usePro = HIGH_QUALITY_VIDEO_STYLES.has(style ?? '')
+
+  if (usePro) {
+    const result = await generateSceneVideoKlingPro(imageUrl, animationPrompt, duration)
+    return { ...result, model: 'kling-pro' }
+  }
+
+  // Standard d'abord (rapide) — fallback Pro si Standard échoue
+  try {
+    const result = await generateSceneVideoKlingStandard(imageUrl, animationPrompt, duration)
+    return { ...result, model: 'kling-standard' }
+  } catch (err) {
+    logger.warn({ err, style }, 'Kling Standard failed — falling back to Pro')
+    const result = await generateSceneVideoKlingPro(imageUrl, animationPrompt, duration)
+    return { ...result, model: 'kling-pro-fallback' }
+  }
 }
 
 /**
@@ -383,4 +576,46 @@ export async function generateLipSync(
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// ── Supabase Storage upload ────────────────────────────────────────────────
+
+/**
+ * Télécharge une URL fal.ai CDN et uploade vers Supabase Storage.
+ * Retourne l'URL publique permanente Supabase.
+ * En cas d'échec d'upload, retourne l'URL fal.ai originale comme fallback.
+ *
+ * @param falUrl - URL CDN fal.ai (ex: https://fal.media/…)
+ * @param storagePath - chemin dans le bucket (ex: brand-assets/logo-abc.jpg)
+ * @param bucket - bucket Supabase (default: 'brand-assets')
+ */
+export async function uploadFalUrlToStorage(
+  falUrl: string,
+  storagePath: string,
+  bucket = 'brand-assets',
+  upsert = false
+): Promise<string> {
+  try {
+    const res = await fetch(falUrl)
+    if (!res.ok) throw new Error(`Failed to fetch fal.ai URL: ${res.status}`)
+
+    const buffer = Buffer.from(await res.arrayBuffer())
+    const contentType = res.headers.get('content-type') ?? 'image/jpeg'
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(bucket)
+      .upload(storagePath, buffer, { contentType, upsert })
+
+    if (uploadError) {
+      logger.warn({ uploadError, storagePath }, 'fal.ai: Supabase upload failed, using CDN URL')
+      return falUrl
+    }
+
+    const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(storagePath)
+    logger.info({ storagePath, bucket }, 'fal.ai: asset uploaded to Supabase Storage')
+    return data.publicUrl
+  } catch (err) {
+    logger.warn({ err, falUrl }, 'uploadFalUrlToStorage: error, returning original URL')
+    return falUrl
+  }
 }

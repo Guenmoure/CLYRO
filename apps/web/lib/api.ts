@@ -62,7 +62,16 @@ async function apiFetch<T>(
 // ---- Pipeline Faceless ----
 
 export async function startFacelessGeneration(payload: CreateFacelessVideoPayload) {
-  return apiFetch<{ video_id: string; status: string }>('/api/v1/pipeline/faceless', {
+  return apiFetch<{
+    video_id: string
+    status: string
+    script_condensed?: {
+      originalWordCount?: number
+      condensedWordCount?: number
+      overflowPct?: number
+      condensed?: boolean
+    }
+  }>('/api/v1/pipeline/faceless', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
@@ -72,6 +81,26 @@ export async function regenerateFacelessScene(payload: RegenerateScenePayload) {
   return apiFetch<{ data: { scene_id: string; image_url: string; prompt_used: string } }>('/api/v1/pipeline/faceless/scene', {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+}
+
+export async function regenerateFacelessClip(payload: {
+  video_id: string
+  scene_id: string
+  image_url: string
+  animation_prompt?: string
+  duration?: '5' | '10'
+}) {
+  return apiFetch<{ scene_id: string; clip_url: string; model: string }>('/api/v1/pipeline/faceless/clip', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function reassembleFacelessVideo(videoId: string) {
+  return apiFetch<{ status: string; output_url: string }>('/api/v1/pipeline/faceless/reassemble', {
+    method: 'POST',
+    body: JSON.stringify({ video_id: videoId }),
   })
 }
 
@@ -97,6 +126,13 @@ export async function getVideo(id: string) {
 export async function deleteVideo(id: string) {
   return apiFetch<{ success: boolean }>(`/api/v1/videos/${id}`, {
     method: 'DELETE',
+  })
+}
+
+export async function updateVideoMetadata(id: string, metadata: Record<string, unknown>) {
+  return apiFetch<{ success: boolean }>(`/api/v1/videos/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ metadata }),
   })
 }
 

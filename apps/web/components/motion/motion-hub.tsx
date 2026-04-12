@@ -2,13 +2,37 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Wand2, Loader2, ChevronRight, ImageIcon } from 'lucide-react'
+import { Plus, Wand2, Loader2, ChevronRight, ImageIcon, Music, Upload, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { startMotionGeneration, getVoices } from '@/lib/api'
+import { startMotionGeneration, getVoices, getVideo, uploadBrandLogo } from '@/lib/api'
+import { createBrowserClient } from '@/lib/supabase'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import { toast } from '@/components/ui/toast'
 import { VideoPlayer } from '@/components/ui/video-player'
-import type { MotionStyle, VideoFormat, VideoDuration } from '@clyro/shared'
+import { ProgressBar } from '@/components/ui/progress-bar'
+import type { MotionStyle, VideoFormat, VideoDuration, Scene } from '@clyro/shared'
+
+// ── Scene type definitions ──────────────────────────────────────────────────────
+
+type SceneType = 'text_hero' | 'split_text_image' | 'product_showcase' | 'stats_counter' | 'cta_end' | 'image_full'
+
+const SCENE_TYPE_OPTIONS: Array<{ value: SceneType; label: string; desc: string }> = [
+  { value: 'text_hero',        label: 'Text Hero',        desc: 'Typographie plein écran' },
+  { value: 'split_text_image', label: 'Split Text/Image', desc: 'Texte gauche, image droite' },
+  { value: 'product_showcase', label: 'Product Showcase', desc: 'Image produit centrée' },
+  { value: 'stats_counter',    label: 'Stats Counter',    desc: 'Chiffre animé' },
+  { value: 'cta_end',          label: 'CTA Final',        desc: 'Appel à l\'action' },
+  { value: 'image_full',       label: 'Image Full',       desc: 'Image plein cadre' },
+]
+
+const SCENE_TYPE_COLORS: Record<SceneType, string> = {
+  text_hero:        'bg-purple-100 text-purple-700',
+  split_text_image: 'bg-blue-100 text-blue-700',
+  product_showcase: 'bg-amber-100 text-amber-700',
+  stats_counter:    'bg-green-100 text-green-700',
+  cta_end:          'bg-red-100 text-red-700',
+  image_full:       'bg-slate-100 text-slate-700',
+}
 
 // ── Data ───────────────────────────────────────────────────────────────────────
 
@@ -72,6 +96,14 @@ const DURATIONS: Array<{ id: VideoDuration; label: string }> = [
   { id: '60s', label: '60s' },
 ]
 
+const MUSIC_TRACKS: Array<{ id: string; label: string; mood: string }> = [
+  { id: 'ambient-calm',    label: 'Ambient Calm',    mood: 'calme · éducatif' },
+  { id: 'upbeat-corporate',label: 'Corporate Upbeat', mood: 'motivant · pro'   },
+  { id: 'epic-cinematic',  label: 'Epic Cinematic',  mood: 'dramatique · film' },
+  { id: 'playful-fun',     label: 'Playful & Fun',   mood: 'jovial · fun'     },
+  { id: 'lofi-chill',      label: 'Lo-Fi Chill',     mood: 'détendu · étude'  },
+]
+
 const PIPELINE = [
   { key: 'storyboard', label: 'Analyse du brief',  pct: 20  },
   { key: 'visuals',    label: 'Génération visuels', pct: 55  },
@@ -115,6 +147,100 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+// ── Scene type badge ───────────────────────────────────────────────────────────
+
+function SceneTypeBadge({ sceneType }: { sceneType?: string }) {
+  if (!sceneType) return null
+  const colorClass = SCENE_TYPE_COLORS[sceneType as SceneType] ?? 'bg-slate-100 text-slate-700'
+  const option = SCENE_TYPE_OPTIONS.find((o) => o.value === sceneType)
+  return (
+    <span className={cn('font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full', colorClass)}>
+      {option?.label ?? sceneType}
+    </span>
+  )
+}
+
+// ── Storyboard scene cards ──────────────────────────────────────────────────────
+
+interface StoryboardScene extends Scene {
+  scene_type?: SceneType
+}
+
+function StoryboardPanel({ scenes, onScenesChange }: {
+  scenes: StoryboardScene[]
+  onScenesChange: (scenes: StoryboardScene[]) => void
+}) {
+  function handleTypeChange(idx: number, value: SceneType) {
+    const updated = scenes.map((s, i) =>
+      i === idx ? { ...s, scene_type: value } : s
+    )
+    onScenesChange(updated)
+  }
+
+  return (
+    <div className="mt-6">
+      <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-3">
+        Storyboard — {scenes.length} scène{scenes.length > 1 ? 's' : ''}
+      </p>
+      <div className="space-y-2">
+        {scenes.map((scene, idx) => (
+          <div
+            key={scene.id}
+            className="bg-brand-bg border border-brand-border rounded-xl p-3 flex flex-col gap-2"
+          >
+            {/* Header row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-[11px] text-brand-muted shrink-0">#{idx + 1}</span>
+              <SceneTypeBadge sceneType={scene.scene_type} />
+              <span className="font-mono text-[10px] text-brand-muted ml-auto shrink-0">
+                {scene.duree_estimee}s
+              </span>
+            </div>
+
+            {/* display_text */}
+            {scene.display_text && (
+              <p className="font-display text-sm font-semibold text-brand-text leading-tight truncate">
+                {scene.display_text}
+              </p>
+            )}
+
+            {/* texte_voix */}
+            {scene.texte_voix && (
+              <p className="font-body text-xs text-brand-muted leading-snug line-clamp-2">
+                {scene.texte_voix}
+              </p>
+            )}
+
+            {/* scene_type selector */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor={`scene-type-${idx}`}
+                className="font-mono text-[10px] uppercase tracking-wider text-brand-muted shrink-0"
+              >
+                Type
+              </label>
+              <select
+                id={`scene-type-${idx}`}
+                value={scene.scene_type ?? ''}
+                onChange={(e) => handleTypeChange(idx, e.target.value as SceneType)}
+                aria-label={`Type de scène ${idx + 1}`}
+                className="flex-1 bg-brand-surface border border-brand-border rounded-lg px-2 py-1 text-brand-text font-body text-xs focus:outline-none focus:border-brand-primary appearance-none cursor-pointer"
+              >
+                <option value="">— Choisir —</option>
+                {SCENE_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label} · {opt.desc}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Generating view ────────────────────────────────────────────────────────────
 
 function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
@@ -127,13 +253,28 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
   const router = useRouter()
   const { status, progress, outputUrl, errorMessage, isDone, isError } = useVideoStatus(videoId)
   const prevStatusRef = useRef<string>('')
+  const [storyboardScenes, setStoryboardScenes] = useState<StoryboardScene[]>([])
 
   useEffect(() => {
     if (status && status !== prevStatusRef.current) {
       prevStatusRef.current = status
       onStatusChange?.(status)
+
+      // Fetch storyboard scenes once they're available (after 'storyboard' step)
+      const SCENE_STATUSES = new Set(['visuals', 'audio', 'assembly', 'done'])
+      if (SCENE_STATUSES.has(status) && storyboardScenes.length === 0) {
+        getVideo(videoId)
+          .then((res) => {
+            const video = res.data as { metadata?: { scenes?: StoryboardScene[] } }
+            const scenes = video?.metadata?.scenes
+            if (Array.isArray(scenes) && scenes.length > 0) {
+              setStoryboardScenes(scenes)
+            }
+          })
+          .catch(() => { /* non-critical */ })
+      }
     }
-  }, [status, onStatusChange])
+  }, [status, onStatusChange, videoId, storyboardScenes.length])
 
   useEffect(() => {
     if (isDone) {
@@ -144,7 +285,7 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
   }, [isDone, videoId, outputUrl, onDone, router])
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 px-8 max-w-lg mx-auto">
+    <div className="flex flex-col items-center justify-center h-full gap-6 px-8 max-w-lg mx-auto overflow-y-auto py-8">
       <div className="w-full">
         <h2 className="font-display text-xl font-bold text-brand-text mb-1 text-center">
           {isError ? 'Erreur de génération' : isDone ? 'Publicité prête !' : 'Génération en cours…'}
@@ -153,12 +294,7 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
           {!isDone && !isError && 'Environ 2–5 minutes. Tu peux fermer cet onglet.'}
         </p>
 
-        <div className="h-1.5 bg-brand-bg rounded-full mb-6 overflow-hidden">
-          <div
-            className="h-full bg-grad-primary rounded-full transition-all duration-700"
-            style={{ width: `${Math.max(progress, 5)}%` } as React.CSSProperties}
-          />
-        </div>
+        <ProgressBar value={progress} className="mb-6" />
 
         <div className="space-y-3 mb-6">
           {PIPELINE.map((p) => {
@@ -179,6 +315,14 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
             )
           })}
         </div>
+
+        {/* Storyboard scene cards (shown once scenes are available) */}
+        {storyboardScenes.length > 0 && (
+          <StoryboardPanel
+            scenes={storyboardScenes}
+            onScenesChange={setStoryboardScenes}
+          />
+        )}
 
         {isError && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm mb-4">
@@ -231,16 +375,38 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
   const [voiceId,  setVoiceId]  = useState('')
   const [title,    setTitle]    = useState('')
   const [brief,    setBrief]    = useState('')
-  const [color,    setColor]    = useState('#667eea')
-  const [logoUrl,  setLogoUrl]  = useState('')
-  const [voices,   setVoices]   = useState<VoiceItem[]>([])
-  const [launching, setLaunching] = useState(false)
+  const [color,        setColor]        = useState('#667eea')
+  const [logoUrl,      setLogoUrl]      = useState('')
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [musicTrackId, setMusicTrackId] = useState('')
+  const [voices,       setVoices]       = useState<VoiceItem[]>([])
+  const [launching,    setLaunching]    = useState(false)
+  const logoFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getVoices().then(({ public: pub }) => setVoices(pub as VoiceItem[])).catch(() => {})
   }, [])
 
   const canSubmit = !!style && title.trim().length > 0 && brief.trim().length >= 20
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLogoUploading(true)
+    try {
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Session expirée')
+      const url = await uploadBrandLogo(file, session.user.id)
+      setLogoUrl(url)
+      toast.success('Logo importé')
+    } catch {
+      toast.error('Erreur lors de l\'import du logo')
+    } finally {
+      setLogoUploading(false)
+      if (logoFileRef.current) logoFileRef.current.value = ''
+    }
+  }
 
   async function handleGenerate() {
     if (!style) return
@@ -257,7 +423,8 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
           style,
           ...(logoUrl.trim() ? { logo_url: logoUrl.trim() } : {}),
         },
-        voice_id: voiceId || undefined,
+        voice_id:       voiceId || undefined,
+        music_track_id: musicTrackId || undefined,
       })
       onGenerated(video_id, title)
     } catch (err) {
@@ -355,6 +522,40 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
           </div>
         </div>
 
+        {/* SECTION 2b — Musique de fond */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Music size={12} className="text-brand-muted" />
+            <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted">Musique de fond</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setMusicTrackId('')}
+              className={cn(
+                'px-3 py-2 rounded-xl border text-xs font-body transition-all',
+                musicTrackId === '' ? 'bg-brand-primary-light border-brand-primary text-brand-primary' : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-primary/40'
+              )}
+            >
+              Aucune
+            </button>
+            {MUSIC_TRACKS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setMusicTrackId(t.id)}
+                className={cn(
+                  'px-3 py-2 rounded-xl border text-left transition-all',
+                  musicTrackId === t.id ? 'bg-brand-primary-light border-brand-primary' : 'bg-brand-bg border-brand-border hover:border-brand-primary/40'
+                )}
+              >
+                <p className={cn('text-xs font-display font-semibold', musicTrackId === t.id ? 'text-brand-primary' : 'text-brand-text')}>{t.label}</p>
+                <p className="text-[10px] font-body text-brand-muted mt-0.5">{t.mood}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* SECTION 3 — Identité de marque */}
         <div>
           <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-3">Identité de marque</p>
@@ -370,18 +571,45 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 <span className="font-mono text-xs text-brand-muted">{color.toUpperCase()}</span>
               </div>
             </div>
-            {/* Logo URL */}
-            <div className="flex-1 min-w-48">
-              <label className="font-mono text-[11px] text-brand-muted mb-1.5 block">URL du logo (optionnel)</label>
-              <div className="flex items-center gap-2 bg-brand-bg border border-brand-border rounded-xl px-3 py-2 focus-within:border-brand-primary transition-colors">
-                <ImageIcon size={14} className="text-brand-muted shrink-0" />
+            {/* Logo upload */}
+            <div>
+              <label className="font-mono text-[11px] text-brand-muted mb-1.5 block">Logo (optionnel)</label>
+              <div className="flex items-center gap-2">
+                {logoUrl ? (
+                  <div className="relative w-10 h-10 rounded-xl border border-brand-border bg-brand-bg overflow-hidden flex items-center justify-center shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain p-1" />
+                    <button
+                      type="button"
+                      onClick={() => setLogoUrl('')}
+                      className="absolute top-0 right-0 w-4 h-4 bg-black/60 rounded-bl-lg flex items-center justify-center"
+                      title="Supprimer le logo"
+                    >
+                      <X size={8} className="text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-xl border-2 border-dashed border-brand-border bg-brand-bg flex items-center justify-center shrink-0">
+                    <ImageIcon size={14} className="text-brand-muted" />
+                  </div>
+                )}
                 <input
-                  type="url"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  placeholder="https://exemple.com/logo.png"
-                  className="flex-1 bg-transparent text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none"
+                  ref={logoFileRef}
+                  type="file"
+                  accept="image/png,image/svg+xml,image/jpeg,image/webp"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                  aria-label="Importer un logo"
                 />
+                <button
+                  type="button"
+                  onClick={() => logoFileRef.current?.click()}
+                  disabled={logoUploading}
+                  className="flex items-center gap-1.5 bg-brand-bg border border-brand-border rounded-xl px-3 py-2 text-xs text-brand-muted hover:text-brand-text hover:border-brand-primary transition-colors disabled:opacity-40"
+                >
+                  {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                  {logoUploading ? 'Import…' : logoUrl ? 'Changer' : 'Importer'}
+                </button>
               </div>
             </div>
           </div>
