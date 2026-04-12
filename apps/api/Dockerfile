@@ -9,6 +9,7 @@ WORKDIR /app
 # Copy monorepo manifests first (better layer caching)
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/video/package.json  ./packages/video/
 COPY apps/api/package.json         ./apps/api/
 
 # Install all workspace dependencies from monorepo root
@@ -16,9 +17,10 @@ RUN npm ci --frozen-lockfile
 
 # Copy source
 COPY packages/shared/ ./packages/shared/
+COPY packages/video/  ./packages/video/
 COPY apps/api/        ./apps/api/
 
-# Build shared types first, then API
+# Build shared packages first, then API
 RUN npm run build --workspace=packages/shared
 RUN npm run build --workspace=apps/api
 
