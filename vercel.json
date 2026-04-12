@@ -1,8 +1,8 @@
 {
   "framework": "nextjs",
   "installCommand": "npm install --workspace=packages/shared --workspace=packages/video --workspace=apps/web --include-workspace-root",
-  "buildCommand": "next build",
-  "outputDirectory": ".next",
+  "buildCommand": "cd apps/web && npx next build",
+  "outputDirectory": "apps/web/.next",
   "regions": ["cdg1"],
   "headers": [
     {
