@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createFalClient } from '@fal-ai/client'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -25,19 +24,17 @@ const STYLE_PREFIXES: Record<string, string> = {
  * POST /api/preview-image
  *
  * Fast draft preview using flux/schnell (4 inference steps, ~3-4s).
- * Used as the first pass before the full HD stream-image call.
- *
- * Body: { prompt: string; style: string; seed?: number; styleReferenceUrl?: string }
- * Response: { imageUrl: string; quality: 'draft' }
+ * Uses direct fetch to fal.ai REST API (no SDK dependency).
  */
 export async function POST(request: NextRequest) {
   const falKey = process.env.FAL_KEY
   if (!falKey) {
     return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
   }
-  console.log(`[preview-image] FAL_KEY loaded: ${falKey.slice(0, 6)}...${falKey.slice(-4)} (${falKey.length} chars)`)
 
-  const body = await request.json() as { prompt: string; style: string; seed?: number; styleReferenceUrl?: string }
+  const body = await request.json() as {
+    prompt: string; style: string; seed?: number; styleReferenceUrl?: string
+  }
   const { prompt, style, seed, styleReferenceUrl } = body
 
   if (!prompt || !style) {
@@ -45,67 +42,59 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Create client inline to ensure fresh env var is used
-    const falClient = createFalClient({ credentials: falKey })
     const prefix = STYLE_PREFIXES[style] ?? ''
     const fullPrompt = `${prefix} ${prompt}`
 
-    // Use style reference image for consistent styling (image-to-image).
-    // fal.ai: strength=0 → copy reference, strength=1 → free generation from prompt.
-    // 0.72 = 72% prompt freedom + 28% visual anchor.
-    if (styleReferenceUrl) {
-      const input: Record<string, unknown> = {
-        prompt: fullPrompt,
-        image_url: styleReferenceUrl,
-        strength: 0.72,
-        image_size: 'landscape_16_9',
-        num_inference_steps: 4,
-        num_images: 1,
-      }
-
-      // Add deterministic seed for visual consistency
-      if (seed !== undefined) {
-        input.seed = seed
-      }
-
-      const result = await falClient.run('fal-ai/flux/schnell/image-to-image', {
-        input,
-      }) as unknown as { data?: { images: Array<{ url: string }> }; images?: Array<{ url: string }> }
-
-      const imageUrl = (result.data ?? result).images?.[0]?.url
-      if (!imageUrl) throw new Error('No image returned from flux/schnell img2img')
-
-      return NextResponse.json({ imageUrl, quality: 'draft' })
-    } else {
-      const input: Record<string, unknown> = {
-        prompt: fullPrompt,
-        image_size: 'landscape_16_9',
-        num_inference_steps: 4,
-        num_images: 1,
-      }
-
-      // Add deterministic seed for visual consistency
-      if (seed !== undefined) {
-        input.seed = seed
-      }
-
-      const result = await falClient.run('fal-ai/flux/schnell', {
-        input: input as any,
-      }) as unknown as { data?: { images: Array<{ url: string }> }; images?: Array<{ url: string }> }
-
-      const imageUrl = (result.data ?? result).images?.[0]?.url
-      if (!imageUrl) throw new Error('No image returned from flux/schnell')
-
-      return NextResponse.json({ imageUrl, quality: 'draft' })
+    const input: Record<string, unknown> = {
+      prompt: fullPrompt,
+      image_size: 'landscape_16_9',
+      num_inference_steps: 4,
+      num_images: 1,
     }
-  } catch (err: any) {
-    const status = err?.status ?? err?.response?.status ?? 500
-    const body = err?.body ?? err?.response?.data ?? null
+
+    if (seed !== undefined) input.seed = seed
+
+    let endpoint = 'fal-ai/flux/schnell'
+
+    if (styleReferenceUrl) {
+      input.image_url = styleReferenceUrl
+      input.strength = 0.72
+      endpoint = 'fal-ai/flux/schnell/image-to-image'
+    }
+
+    console.log(`[preview-image] Calling https://fal.run/${endpoint}, key=${falKey.slice(0, 6)}...${falKey.slice(-4)}`)
+
+    const falRes = await fetch(`https://fal.run/${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${falKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    })
+
+    const responseText = await falRes.text()
+    console.log(`[preview-image] fal.ai status=${falRes.status}, body=${responseText.slice(0, 300)}`)
+
+    if (!falRes.ok) {
+      return NextResponse.json(
+        { error: `fal.ai ${falRes.status}: ${responseText.slice(0, 200)}` },
+        { status: 500 }
+      )
+    }
+
+    const data = JSON.parse(responseText)
+    const imageUrl = data?.images?.[0]?.url
+
+    if (!imageUrl) {
+      console.error('[preview-image] No image URL in response:', responseText.slice(0, 500))
+      return NextResponse.json({ error: 'No image returned from fal.ai' }, { status: 500 })
+    }
+
+    return NextResponse.json({ imageUrl, quality: 'draft' })
+  } catch (err) {
     const message = err instanceof Error ? err.message : 'Preview generation failed'
-    console.error('[preview-image]', { status, message, body: JSON.stringify(body)?.slice(0, 300) })
-    return NextResponse.json(
-      { error: `fal.ai ${status}: ${message}`, detail: body },
-      { status: 500 }
-    )
+    console.error('[preview-image] Exception:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

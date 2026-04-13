@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createFalClient } from '@fal-ai/client'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -19,8 +18,8 @@ const STYLE_CONFIGS: Record<string, { model: string; prefix: string }> = {
 
 /**
  * POST /api/stream-image
- * HD image generation using fal.run() (blocking, reliable on Vercel serverless).
- * Replaces the previous SSE streaming approach which was unreliable on serverless.
+ * HD image generation using direct fetch to fal.ai REST API.
+ * No SDK dependency — full control over request/response.
  *
  * Body: { prompt: string; style: string; seed?: number; styleReferenceUrl?: string }
  * Response: { imageUrl: string } or { error: string }
@@ -30,16 +29,16 @@ export async function POST(request: NextRequest) {
   if (!falKey) {
     return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
   }
-  console.log(`[stream-image] FAL_KEY loaded: ${falKey.slice(0, 6)}...${falKey.slice(-4)} (${falKey.length} chars)`)
 
-  const body = await request.json() as { prompt: string; style: string; seed?: number; styleReferenceUrl?: string }
+  const body = await request.json() as {
+    prompt: string; style: string; seed?: number; styleReferenceUrl?: string
+  }
   const { prompt, style, seed, styleReferenceUrl } = body
 
   if (!prompt || !style) {
     return NextResponse.json({ error: 'prompt and style are required' }, { status: 400 })
   }
 
-  const falClient = createFalClient({ credentials: falKey })
   const config = STYLE_CONFIGS[style] ?? STYLE_CONFIGS['cinematique']
   const fullPrompt = `${config.prefix} ${prompt}`
 
@@ -52,38 +51,49 @@ export async function POST(request: NextRequest) {
       enable_safety_checker: true,
     }
 
-    if (seed !== undefined) {
-      input.seed = seed
-    }
+    if (seed !== undefined) input.seed = seed
 
-    // Use style reference for scenes 1..N (image-to-image)
-    let model = config.model
+    let endpoint = config.model
     if (styleReferenceUrl) {
       input.image_url = styleReferenceUrl
       input.strength = 0.72
-      model = 'fal-ai/flux/dev/image-to-image'
+      endpoint = 'fal-ai/flux/dev/image-to-image'
     }
 
-    console.log(`[stream-image] Generating with model=${model}, style=${style}, seed=${seed}, hasRef=${!!styleReferenceUrl}`)
+    console.log(`[stream-image] Calling https://fal.run/${endpoint}, style=${style}, seed=${seed}, hasRef=${!!styleReferenceUrl}, key=${falKey.slice(0, 6)}...${falKey.slice(-4)}`)
 
-    const result = await falClient.run(model, {
-      input,
-    }) as unknown as { data?: { images: Array<{ url: string }> }; images?: Array<{ url: string }> }
+    const falRes = await fetch(`https://fal.run/${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${falKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    })
 
-    const imageUrl = (result.data ?? result).images?.[0]?.url
+    const responseText = await falRes.text()
+    console.log(`[stream-image] fal.ai status=${falRes.status}, body=${responseText.slice(0, 300)}`)
+
+    if (!falRes.ok) {
+      return NextResponse.json(
+        { error: `fal.ai ${falRes.status}: ${responseText.slice(0, 200)}` },
+        { status: 500 }
+      )
+    }
+
+    const data = JSON.parse(responseText)
+    const imageUrl = data?.images?.[0]?.url
 
     if (!imageUrl) {
-      console.error('[stream-image] No image in fal.ai response:', JSON.stringify(result).slice(0, 500))
+      console.error('[stream-image] No image URL in response:', responseText.slice(0, 500))
       return NextResponse.json({ error: 'No image returned from fal.ai' }, { status: 500 })
     }
 
     console.log(`[stream-image] Success: ${imageUrl.slice(0, 80)}...`)
     return NextResponse.json({ imageUrl })
-  } catch (err: any) {
-    const status = err?.status ?? err?.response?.status ?? 500
-    const body = err?.body ?? err?.response?.data ?? null
+  } catch (err) {
     const message = err instanceof Error ? err.message : 'HD generation failed'
-    console.error('[stream-image] Error:', { status, message, body: JSON.stringify(body)?.slice(0, 300) })
-    return NextResponse.json({ error: `fal.ai ${status}: ${message}`, detail: body }, { status: 500 })
+    console.error('[stream-image] Exception:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
