@@ -246,15 +246,8 @@ export async function generateSceneImage(
 }
 
 /**
- * Génère les images pour toutes les scènes en parallèle.
+ * Génère les images pour toutes les scènes en parallèle via text-to-image.
  * Cohérence visuelle assurée par le masterSeed déterministe (même seed = même atmosphère).
- * Toutes les scènes sont soumises simultanément à fal.ai pour un temps total = 1 seule génération.
- */
-/**
- * Génère les images pour toutes les scènes.
- * Cohérence visuelle : scène 0 générée en premier → son URL (persistée si possible)
- * est utilisée comme référence de style (strength=0.72) pour les scènes 1..N en parallèle.
- * Strength 0.72 = 72 % prompt (contenu libre) + 28 % ancre visuelle (même palette/lumière).
  */
 export async function generateSceneImages(
   scenes: Array<{ id: string; description_visuelle: string }>,
@@ -265,36 +258,14 @@ export async function generateSceneImages(
 ): Promise<Array<{ sceneId: string; imageUrl: string; promptUsed: string }>> {
   if (scenes.length === 0) return []
 
-  // ── Scene 0 : text-to-image (référence de style) ──────────────────────────
-  const scene0 = scenes[0]
-  const { imageUrl: falUrl0, promptUsed: promptUsed0 } = await generateSceneImage(
-    scene0.description_visuelle,
-    style,
-    masterSeed,
-    brand
-  )
-
-  let styleRefUrl = falUrl0
-  if (persist) {
-    const path0 = `${persist.userId}/${persist.videoId}/scenes/scene-${scene0.id}.jpg`
-    styleRefUrl = await uploadFalUrlToStorage(falUrl0, path0, 'videos')
-  }
-
-  const scene0Result = { sceneId: scene0.id, imageUrl: styleRefUrl, promptUsed: promptUsed0 }
-
-  if (scenes.length === 1) return [scene0Result]
-
-  // ── Scènes 1..N : img2img avec style reference en parallèle ───────────────
-  const restResults = await Promise.all(
-    scenes.slice(1).map(async (scene, idx) => {
-      const seed = masterSeed !== undefined ? masterSeed + idx + 1 : undefined
-      const { imageUrl: falUrl, promptUsed } = await generateSceneImageWithReference(
+  const results = await Promise.all(
+    scenes.map(async (scene, idx) => {
+      const seed = masterSeed !== undefined ? masterSeed + idx : undefined
+      const { imageUrl: falUrl, promptUsed } = await generateSceneImage(
         scene.description_visuelle,
         style,
-        styleRefUrl,
         seed,
-        brand,
-        0.72  // style-only anchor: 72% prompt freedom, 28% visual reference
+        brand
       )
       let imageUrl = falUrl
       if (persist) {
@@ -305,7 +276,7 @@ export async function generateSceneImages(
     })
   )
 
-  return [scene0Result, ...restResults]
+  return results
 }
 
 /**
