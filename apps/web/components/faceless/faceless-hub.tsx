@@ -708,15 +708,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
 
           {/* Generate row — separate from dropdowns to avoid click interception (P0 fix) */}
           <div className="relative z-10 flex items-center justify-between gap-3 pt-1">
-            {(() => {
-              const durationCheck = checkScriptDuration(project.script, project.duration)
-              return !durationCheck.ok && durationCheck.wordCount > 0 ? (
-                <span className="flex items-center gap-1.5 font-body text-xs text-amber-600">
-                  <AlertTriangle size={12} />
-                  Script ~{durationCheck.estimatedSeconds}s — cible {durationCheck.targetSeconds}s. L'IA condensera automatiquement.
-                </span>
-              ) : <span />
-            })()}
+            <span />
             <button type="button" onClick={onNext} disabled={!canNext || loading}
               className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all shrink-0',
                 canNext && !loading ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-brand-bg border border-brand-border text-brand-muted cursor-not-allowed')}>
