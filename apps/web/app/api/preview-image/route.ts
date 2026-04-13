@@ -4,8 +4,6 @@ import { createFalClient } from '@fal-ai/client'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const fal = createFalClient({ credentials: process.env.FAL_KEY })
-
 const STYLE_PREFIXES: Record<string, string> = {
   'cinematique':      'cinematic lighting, dramatic composition, film grain,',
   'stock-vo':         'realistic photograph, natural light, documentary style,',
@@ -33,9 +31,11 @@ const STYLE_PREFIXES: Record<string, string> = {
  * Response: { imageUrl: string; quality: 'draft' }
  */
 export async function POST(request: NextRequest) {
-  if (!process.env.FAL_KEY) {
+  const falKey = process.env.FAL_KEY
+  if (!falKey) {
     return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
   }
+  console.log(`[preview-image] FAL_KEY loaded: ${falKey.slice(0, 6)}...${falKey.slice(-4)} (${falKey.length} chars)`)
 
   const body = await request.json() as { prompt: string; style: string; seed?: number; styleReferenceUrl?: string }
   const { prompt, style, seed, styleReferenceUrl } = body
@@ -45,6 +45,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Create client inline to ensure fresh env var is used
+    const falClient = createFalClient({ credentials: falKey })
     const prefix = STYLE_PREFIXES[style] ?? ''
     const fullPrompt = `${prefix} ${prompt}`
 
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
         input.seed = seed
       }
 
-      const result = await fal.run('fal-ai/flux/schnell/image-to-image', {
+      const result = await falClient.run('fal-ai/flux/schnell/image-to-image', {
         input,
       }) as unknown as { data?: { images: Array<{ url: string }> }; images?: Array<{ url: string }> }
 
@@ -87,7 +89,7 @@ export async function POST(request: NextRequest) {
         input.seed = seed
       }
 
-      const result = await fal.run('fal-ai/flux/schnell', {
+      const result = await falClient.run('fal-ai/flux/schnell', {
         input: input as any,
       }) as unknown as { data?: { images: Array<{ url: string }> }; images?: Array<{ url: string }> }
 
@@ -96,10 +98,13 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ imageUrl, quality: 'draft' })
     }
-  } catch (err) {
-    console.error('[preview-image]', err)
+  } catch (err: any) {
+    const status = err?.status ?? err?.response?.status ?? 500
+    const body = err?.body ?? err?.response?.data ?? null
+    const message = err instanceof Error ? err.message : 'Preview generation failed'
+    console.error('[preview-image]', { status, message, body: JSON.stringify(body)?.slice(0, 300) })
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Preview generation failed' },
+      { error: `fal.ai ${status}: ${message}`, detail: body },
       { status: 500 }
     )
   }

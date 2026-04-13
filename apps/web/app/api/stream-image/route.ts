@@ -4,8 +4,6 @@ import { createFalClient } from '@fal-ai/client'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
 
-const fal = createFalClient({ credentials: process.env.FAL_KEY })
-
 const STYLE_CONFIGS: Record<string, { model: string; prefix: string }> = {
   'cinematique':     { model: 'fal-ai/flux/dev', prefix: 'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain,' },
   'stock-vo':        { model: 'fal-ai/flux/dev', prefix: 'realistic cinematic photograph, professional lighting, Canon 5D, 4K ultra-detailed,' },
@@ -28,9 +26,11 @@ const STYLE_CONFIGS: Record<string, { model: string; prefix: string }> = {
  * Response: { imageUrl: string } or { error: string }
  */
 export async function POST(request: NextRequest) {
-  if (!process.env.FAL_KEY) {
+  const falKey = process.env.FAL_KEY
+  if (!falKey) {
     return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
   }
+  console.log(`[stream-image] FAL_KEY loaded: ${falKey.slice(0, 6)}...${falKey.slice(-4)} (${falKey.length} chars)`)
 
   const body = await request.json() as { prompt: string; style: string; seed?: number; styleReferenceUrl?: string }
   const { prompt, style, seed, styleReferenceUrl } = body
@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'prompt and style are required' }, { status: 400 })
   }
 
+  const falClient = createFalClient({ credentials: falKey })
   const config = STYLE_CONFIGS[style] ?? STYLE_CONFIGS['cinematique']
   const fullPrompt = `${config.prefix} ${prompt}`
 
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`[stream-image] Generating with model=${model}, style=${style}, seed=${seed}, hasRef=${!!styleReferenceUrl}`)
 
-    const result = await fal.run(model, {
+    const result = await falClient.run(model, {
       input,
     }) as unknown as { data?: { images: Array<{ url: string }> }; images?: Array<{ url: string }> }
 
@@ -78,9 +79,11 @@ export async function POST(request: NextRequest) {
 
     console.log(`[stream-image] Success: ${imageUrl.slice(0, 80)}...`)
     return NextResponse.json({ imageUrl })
-  } catch (err) {
+  } catch (err: any) {
+    const status = err?.status ?? err?.response?.status ?? 500
+    const body = err?.body ?? err?.response?.data ?? null
     const message = err instanceof Error ? err.message : 'HD generation failed'
-    console.error('[stream-image] Error:', message)
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[stream-image] Error:', { status, message, body: JSON.stringify(body)?.slice(0, 300) })
+    return NextResponse.json({ error: `fal.ai ${status}: ${message}`, detail: body }, { status: 500 })
   }
 }
