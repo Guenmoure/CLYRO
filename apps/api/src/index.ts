@@ -74,7 +74,10 @@ const ALLOWED_ORIGINS = [
     .map((u) => u.trim())
     .filter(Boolean),
   'https://app.clyro.app',
+  'https://clyro-web-six.vercel.app',
 ]
+
+console.log('[CORS] Allowed origins:', ALLOWED_ORIGINS)
 
 app.use(
   cors({
@@ -86,6 +89,7 @@ app.use(
       } else if (origin && ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true)
       } else {
+        console.warn(`[CORS] Blocked origin: ${origin}`)
         callback(new Error(`CORS policy: origin ${origin ?? 'null'} not allowed`))
       }
     },
