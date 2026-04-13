@@ -5,8 +5,6 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
 import { cn } from '@/lib/utils'
 
-export const dynamic = 'force-dynamic'
-
 const STORAGE_KEY = 'clyro_sidebar_collapsed'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
