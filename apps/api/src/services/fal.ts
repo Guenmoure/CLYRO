@@ -506,22 +506,24 @@ async function generateSceneVideoKlingPro(
 
 /**
  * Anime une image statique en vidéo courte.
- * Route vers Kling v1 Standard (rapide) ou v1.5 Pro (qualité) selon le style.
- * Fallback automatique de Standard → Pro si le modèle rapide échoue.
+ * Alias de generateSceneVideoAuto() — utilise toujours le routeur style-aware.
  */
 export async function generateSceneVideo(
   imageUrl: string,
   animationPrompt: string,
-  duration: '5' | '10' = '5'
+  duration: '5' | '10' = '5',
+  style?: string
 ): Promise<{ videoUrl: string }> {
-  return generateSceneVideoKlingPro(imageUrl, animationPrompt, duration)
+  const { videoUrl } = await generateSceneVideoAuto(imageUrl, animationPrompt, duration, style)
+  return { videoUrl }
 }
 
 /**
  * Routeur vidéo style-aware :
- * - Styles illustration/flat → Kling v1 Standard (~30-60 s)
- * - Styles photoréalistes    → Kling v1.5 Pro (~90-120 s)
- * - Fallback Standard → Pro si le modèle rapide échoue
+ * - Styles photoréalistes (cinematique, stock-vo, luxe, 3d-pixar) → Kling v1.5 Pro
+ * - Tous les autres styles → Kling v1 Standard (6× moins cher)
+ * - PAS de fallback Standard→Pro : si Standard échoue, on laisse le pipeline
+ *   utiliser l'image statique (assembleVideo fallback) plutôt que payer Pro.
  */
 export async function generateSceneVideoAuto(
   imageUrl: string,
@@ -532,19 +534,15 @@ export async function generateSceneVideoAuto(
   const usePro = HIGH_QUALITY_VIDEO_STYLES.has(style ?? '')
 
   if (usePro) {
+    logger.info({ style, duration }, 'Kling router → Pro (premium style)')
     const result = await generateSceneVideoKlingPro(imageUrl, animationPrompt, duration)
     return { ...result, model: 'kling-pro' }
   }
 
-  // Standard d'abord (rapide) — fallback Pro si Standard échoue
-  try {
-    const result = await generateSceneVideoKlingStandard(imageUrl, animationPrompt, duration)
-    return { ...result, model: 'kling-standard' }
-  } catch (err) {
-    logger.warn({ err, style }, 'Kling Standard failed — falling back to Pro')
-    const result = await generateSceneVideoKlingPro(imageUrl, animationPrompt, duration)
-    return { ...result, model: 'kling-pro-fallback' }
-  }
+  // Standard uniquement — pas de fallback Pro (économie de crédits)
+  logger.info({ style, duration }, 'Kling router → Standard (default)')
+  const result = await generateSceneVideoKlingStandard(imageUrl, animationPrompt, duration)
+  return { ...result, model: 'kling-standard' }
 }
 
 /**
