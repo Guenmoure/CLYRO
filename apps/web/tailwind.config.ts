@@ -4,102 +4,87 @@ const config: Config = {
   darkMode: ['class'],
 
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
   ],
+
+  // Classes générées dynamiquement (composants de génération, spinners, etc.)
+  safelist: ['animate-shimmer', 'animate-glow-pulse', 'animate-fade-up'],
 
   theme: {
     extend: {
-      // ── Couleurs ──────────────────────────────────────────────────────────
+      // ── Couleurs CLYRO ────────────────────────────────────────────────────
       colors: {
-        // ── Charte graphique officielle CLYRO ────────────────────────────
-        'clyro-primary':      '#8A57EA',   // Violet Royal     — boutons, barres
-        'clyro-primary-dark': '#6D39D1',   // Violet Profond   — hover, actifs
-        'clyro-secondary':    '#2C2C2E',   // Anthracite       — cartes, conteneurs
-        'clyro-accent':       '#4D9FFF',   // Bleu Électrique  — liens, sélections
-        'clyro-muted':        '#A1A1A6',   // Gris Acier       — texte secondaire
-        'clyro-bg':           '#0A0A0A',   // Noir Profond     — fond principal
+        // Backgrounds dark-first (inspiré HeyGen)
+        navy: {
+          950: '#060810',   // fond principal — le plus sombre
+          900: '#0A0D1A',   // cards, panels, sidebar
+          800: '#0F1427',   // inputs, éléments interactifs
+          700: '#151C38',   // hover states, borders
+          600: '#1E2A4A',   // dividers, séparateurs
+        },
 
-        // ── Alias utiles (rétro-compat glass/animations) ─────────────────
-        // clyro-blue  → accent bleu
-        // clyro-purple → primary violet
-        'clyro-blue':   '#4D9FFF',   // = clyro-accent
-        'clyro-purple': '#8A57EA',   // = clyro-primary
-        'clyro-cyan':   '#38E8FF',   // conservé pour effets glass/glow
+        // Accents IA — signature CLYRO
+        blue: {
+          300: '#7BB8F8',   // états disabled, accents légers
+          400: '#5BA3F5',   // hover boutons primaires
+          500: '#3B8EF0',   // accent principal — boutons CTA, liens actifs
+        },
+        purple: {
+          400: '#AB74F8',   // hover purple
+          500: '#9B5CF6',   // accent secondaire — badges, tags, gradients
+        },
+        cyan: {
+          300: '#6AEDFF',   // glow effects, active states
+          400: '#38E8FF',   // accent tertiaire — highlights, progress bars
+        },
 
-        // ── Fonds sombres (dark mode surfaces) ───────────────────────────
-        'navy-950': '#0A0A0A',   // fond racine
-        'navy-900': '#111111',   // cartes, panels
-        'navy-800': '#1A1A1A',   // inputs, hover
-        'navy-700': '#242424',   // bordures & surbrillances
+        // Sémantiques
+        success: '#22C55E',
+        warning: '#F59E0B',
+        error:   '#EF4444',
+        info:    '#3B8EF0',
 
-        // ── États sémantiques ─────────────────────────────────────────────
-        success: '#00D084',   // Vert Menthe  — validation
-        warning: '#FFAB00',   // Ambre        — quota, traitement
-        error:   '#FF4D4D',   // Rouge Corail — erreurs
-
-        // ── Light mode surfaces ───────────────────────────────────────────
-        'surface-light': '#FFFFFF',
-        'bg-light':      '#F5F5F7',
-        'border-light':  '#E5E5EA',
-        'muted-light':   '#6B7280',
-
-        // ── Brand aliases (compat composants existants) ───────────────────
-        'brand-primary':       '#8A57EA',
-        'brand-primary-dark':  '#6D39D1',
-        'brand-primary-light': '#f0ebfd',
-        'brand-secondary':     '#2C2C2E',
-        'brand-accent':        '#4D9FFF',
-        'brand-accent-light':  '#e8f3ff',
-        'brand-text':          '#111111',
-        'brand-muted':         '#A1A1A6',
-        'brand-surface':       '#FFFFFF',
-        'brand-bg':            '#F5F5F7',
-        'brand-border':        '#E5E5EA',
-        'brand-border-light':  '#F0F0F0',
-
-        // ── shadcn/ui tokens (CSS vars) ────────────────────────────────────
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        // ── Tokens shadcn/ui (CSS vars hex — no hsl() wrapper) ───────────
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
         card: {
-          DEFAULT:    'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT:    'var(--card)',
+          foreground: 'var(--card-foreground)',
         },
         popover: {
-          DEFAULT:    'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+          DEFAULT:    'var(--popover)',
+          foreground: 'var(--popover-foreground)',
         },
         primary: {
-          DEFAULT:    'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT:    'var(--primary)',
+          foreground: 'var(--primary-foreground)',
         },
         secondary: {
-          DEFAULT:    'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT:    'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
         },
         muted: {
-          DEFAULT:    'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT:    'var(--muted)',
+          foreground: 'var(--muted-foreground)',
         },
         accent: {
-          DEFAULT:    'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT:    'var(--accent)',
+          foreground: 'var(--accent-foreground)',
         },
         destructive: {
-          DEFAULT:    'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT:    'var(--destructive)',
+          foreground: 'var(--destructive-foreground)',
         },
-        border: 'hsl(var(--border))',
-        input:  'hsl(var(--input))',
-        ring:   'hsl(var(--ring))',
+        border: 'var(--border)',
+        input:  'var(--input)',
+        ring:   'var(--ring)',
       },
 
       // ── Typographie ───────────────────────────────────────────────────────
       fontFamily: {
-        display: ['var(--font-plus-jakarta)', 'sans-serif'],
-        body:    ['var(--font-inter)', 'sans-serif'],
+        display: ['var(--font-syne)', 'sans-serif'],
+        body:    ['var(--font-dm-sans)', 'sans-serif'],
         mono:    ['var(--font-jetbrains-mono)', 'monospace'],
       },
 
@@ -118,10 +103,10 @@ const config: Config = {
       },
 
       lineHeight: {
-        'body':    '1.6',
-        'heading': '1.2',
-        'tight':   '1.1',
-        'relaxed': '1.75',
+        body:    '1.6',
+        heading: '1.2',
+        tight:   '1.1',
+        relaxed: '1.75',
       },
 
       fontWeight: {
@@ -135,19 +120,23 @@ const config: Config = {
 
       // ── Dégradés ──────────────────────────────────────────────────────────
       backgroundImage: {
-        // Charte CLYRO officielle
-        'grad-primary':  'linear-gradient(135deg, #8A57EA 0%, #6D39D1 100%)',
-        'grad-cta':      'linear-gradient(135deg, #8A57EA 0%, #4D9FFF 100%)',
-        'grad-hero':     'linear-gradient(135deg, #8A57EA 0%, #6D39D1 50%, #4D9FFF 100%)',
-        'grad-soft':     'linear-gradient(135deg, rgba(138,87,234,0.08) 0%, rgba(77,159,255,0.08) 100%)',
-        // États
-        'grad-success':  'linear-gradient(135deg, #00D084, #00B87A)',
-        'grad-warning':  'linear-gradient(135deg, #FFAB00, #FF8C00)',
-        'grad-error':    'linear-gradient(135deg, #FF4D4D, #E53535)',
-        // Fond sombre
-        'grad-dark':     'linear-gradient(180deg, #0A0A0A, #111111)',
-        // Effet électrique (glass hero)
-        'grad-electric': 'linear-gradient(135deg, #38E8FF, #4D9FFF, #8A57EA)',
+        // Boutons CTA principaux, hero sections
+        'grad-primary':      'linear-gradient(135deg, #3B8EF0, #9B5CF6)',
+        // Éléments premium, feature highlights
+        'grad-electric':     'linear-gradient(135deg, #38E8FF, #3B8EF0, #9B5CF6)',
+        // Backgrounds de sections
+        'grad-dark':         'linear-gradient(180deg, #0A0D1A, #060810)',
+        // Cards avec effet depth
+        'grad-card':         'linear-gradient(135deg, #0F1427, #151C38)',
+        // Glow derrière les CTA
+        'grad-glow-blue':    'radial-gradient(circle at center, rgba(59,142,240,0.13), transparent 70%)',
+        // Glow derrière les sections features
+        'grad-glow-purple':  'radial-gradient(circle at center, rgba(155,92,246,0.13), transparent 70%)',
+        // Héritage
+        'grad-cta':          'linear-gradient(135deg, #3B8EF0 0%, #9B5CF6 100%)',
+        'grad-success':      'linear-gradient(135deg, #22C55E, #16A34A)',
+        'grad-warning':      'linear-gradient(135deg, #F59E0B, #D97706)',
+        'grad-error':        'linear-gradient(135deg, #EF4444, #DC2626)',
       },
 
       // ── Rayons ────────────────────────────────────────────────────────────
@@ -160,22 +149,31 @@ const config: Config = {
 
       // ── Ombres & Glows ────────────────────────────────────────────────────
       boxShadow: {
-        // Glows — charte officielle
-        'glow-primary': '0 0 40px rgba(138, 87, 234, 0.35)',
-        'glow-accent':  '0 0 40px rgba(77, 159, 255, 0.30)',
-        'glow-cyan':    '0 0 40px rgba(56, 232, 255, 0.30)',
-        'glow-success': '0 0 24px rgba(0, 208, 132, 0.30)',
-        'glow-warning': '0 0 24px rgba(255, 171, 0, 0.30)',
-        'glow-error':   '0 0 24px rgba(255, 77, 77, 0.30)',
-        // Ombres douces (light mode)
-        'soft-sm':  '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
-        'soft-md':  '0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)',
-        'soft-lg':  '0 12px 40px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.04)',
-        'soft-xl':  '0 24px 64px rgba(138,87,234,0.15)',
+        'glow-blue':   '0 0 20px rgba(59, 142, 240, 0.35)',
+        'glow-purple': '0 0 20px rgba(155, 92, 246, 0.35)',
+        'glow-cyan':   '0 0 20px rgba(56, 232, 255, 0.35)',
+        'card':        '0 4px 24px rgba(0, 0, 0, 0.4)',
+        'card-hover':  '0 8px 40px rgba(0, 0, 0, 0.6)',
+        'inner-dark':  'inset 0 1px 0 rgba(255,255,255,0.05)',
+        // Héritage
+        'glow-success': '0 0 24px rgba(34, 197, 94, 0.30)',
+        'glow-warning': '0 0 24px rgba(245, 158, 11, 0.30)',
+        'glow-error':   '0 0 24px rgba(239, 68, 68, 0.30)',
+      },
+
+      // ── Blur ──────────────────────────────────────────────────────────────
+      backdropBlur: {
+        xs: '2px',
+      },
+
+      // ── Border color par défaut ───────────────────────────────────────────
+      borderColor: {
+        DEFAULT: '#151C38',   // navy-700
       },
 
       // ── Animations ────────────────────────────────────────────────────────
       keyframes: {
+        // shadcn/ui — accordéon (requis)
         'accordion-down': {
           from: { height: '0' },
           to:   { height: 'var(--radix-accordion-content-height)' },
@@ -184,10 +182,27 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to:   { height: '0' },
         },
-        'pulse-glow': {
-          '0%, 100%': { opacity: '1' },
-          '50%':      { opacity: '0.5' },
+        // Loading skeletons
+        shimmer: {
+          '0%':   { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
+        // Glow pulsé sur CTA
+        'glow-pulse': {
+          '0%, 100%': { opacity: '0.6' },
+          '50%':      { opacity: '1' },
+        },
+        // Flottement hero elements
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%':      { transform: 'translateY(-6px)' },
+        },
+        // Entrée depuis le bas
+        'fade-up': {
+          '0%':   { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        // Héritage
         'fade-in': {
           '0%':   { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -197,10 +212,14 @@ const config: Config = {
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
       },
+
       animation: {
         'accordion-down':  'accordion-down 0.2s ease-out',
         'accordion-up':    'accordion-up 0.2s ease-out',
-        'pulse-glow':      'pulse-glow 2s ease-in-out infinite',
+        shimmer:           'shimmer 2s linear infinite',
+        'glow-pulse':      'glow-pulse 2.5s ease-in-out infinite',
+        float:             'float 4s ease-in-out infinite',
+        'fade-up':         'fade-up 0.4s ease-out forwards',
         'fade-in':         'fade-in 0.3s ease-out',
         'slide-in-right':  'slide-in-right 0.3s ease-out',
       },

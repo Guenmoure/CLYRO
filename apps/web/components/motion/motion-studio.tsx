@@ -181,10 +181,10 @@ function SceneCard({
   const styleMeta = STYLE_LABELS[scene.style] ?? { label: scene.style, color: '#999' }
 
   return (
-    <div className="border border-brand-border rounded-xl overflow-hidden bg-brand-surface">
+    <div className="border border-navy-700 rounded-xl overflow-hidden bg-navy-800">
       {/* Header */}
       <div
-        className="flex items-center gap-3 px-4 py-3 border-b border-brand-border cursor-pointer select-none"
+        className="flex items-center gap-3 px-4 py-3 border-b border-navy-700 cursor-pointer select-none"
         onClick={() => setExpanded((v) => !v)}
       >
         <span
@@ -193,12 +193,12 @@ function SceneCard({
         >
           {scene.index} · {styleMeta.label}
         </span>
-        <p className="flex-1 text-sm font-body text-brand-text truncate">{scene.text}</p>
-        <span className="text-xs text-brand-muted font-mono shrink-0">{scene.duree_estimee}s</span>
+        <p className="flex-1 text-sm font-body text-foreground truncate">{scene.text}</p>
+        <span className="text-xs text-[--text-muted] font-mono shrink-0">{scene.duree_estimee}s</span>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onRegenerate() }}
-          className="shrink-0 p-1.5 rounded-lg text-brand-muted hover:text-brand-primary hover:bg-brand-primary-light transition-colors"
+          className="shrink-0 p-1.5 rounded-lg text-[--text-muted] hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
           title="Regénérer cette scène"
         >
           <RefreshCw size={13} />
@@ -212,14 +212,14 @@ function SceneCard({
 
       {/* Voiceover (always visible) */}
       <div className="px-4 pt-3">
-        <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">
+        <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">
           🎙 Voix off
         </label>
         <textarea
           value={scene.texte_voix}
           onChange={(e) => onChange({ texte_voix: e.target.value })}
           rows={2}
-          className="w-full text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition-colors resize-none"
+          className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors resize-none"
         />
       </div>
 
@@ -227,7 +227,7 @@ function SceneCard({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full px-4 py-2.5 text-xs text-brand-muted hover:text-brand-text flex items-center gap-1.5 transition-colors"
+        className="w-full px-4 py-2.5 text-xs text-[--text-muted] hover:text-foreground flex items-center gap-1.5 transition-colors"
       >
         <span
           className="inline-block transition-transform"
@@ -239,57 +239,57 @@ function SceneCard({
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-brand-border pt-3">
+        <div className="px-4 pb-4 space-y-3 border-t border-navy-700 pt-3">
           <div className="grid grid-cols-2 gap-3">
             {/* Text */}
             <div className="col-span-2">
-              <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">Texte principal</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Texte principal</label>
               <input
                 type="text"
                 value={scene.text}
                 onChange={(e) => onChange({ text: e.target.value })}
-                className="w-full text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {/* Subtext */}
             <div className="col-span-2">
-              <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">Sous-titre</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Sous-titre</label>
               <input
                 type="text"
                 value={scene.subtext}
                 onChange={(e) => onChange({ subtext: e.target.value })}
-                className="w-full text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {/* Highlight */}
             <div>
-              <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">
                 Mot en gradient
               </label>
               <input
                 type="text"
                 value={scene.highlight}
                 onChange={(e) => onChange({ highlight: e.target.value })}
-                className="w-full text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {/* Icon */}
             <div>
-              <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">Icône</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Icône</label>
               <input
                 type="text"
                 value={scene.icon}
                 onChange={(e) => onChange({ icon: e.target.value })}
-                className="w-full text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {/* Style */}
             <div>
-              <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">Style</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Style</label>
               <select
                 value={scene.style}
                 onChange={(e) => onChange({ style: e.target.value as MotionScene['style'] })}
-                className="w-full text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               >
                 {Object.entries(STYLE_LABELS).map(([id, { label }]) => (
                   <option key={id} value={id}>{label}</option>
@@ -298,11 +298,11 @@ function SceneCard({
             </div>
             {/* Scene Type (Remotion composition) */}
             <div>
-              <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">Type de scène</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Type de scène</label>
               <select
                 value={scene.scene_type ?? 'text_hero'}
                 onChange={(e) => onChange({ scene_type: e.target.value as any })}
-                className="w-full text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               >
                 {Object.entries(SCENE_TYPE_LABELS).map(([id, label]) => (
                   <option key={id} value={id}>{label}</option>
@@ -311,32 +311,32 @@ function SceneCard({
             </div>
             {/* Accent color */}
             <div>
-              <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">Couleur accent</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Couleur accent</label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={scene.accent_color || '#00CFFF'}
                   onChange={(e) => onChange({ accent_color: e.target.value })}
-                  className="w-9 h-9 rounded-lg border border-brand-border cursor-pointer"
+                  className="w-9 h-9 rounded-lg border border-navy-700 cursor-pointer"
                 />
                 <input
                   type="text"
                   value={scene.accent_color || '#00CFFF'}
                   onChange={(e) => onChange({ accent_color: e.target.value })}
-                  className="flex-1 text-xs font-mono text-brand-text bg-white border border-brand-border rounded-lg px-2 py-2 focus:outline-none focus:border-brand-primary"
+                  className="flex-1 text-xs font-mono text-foreground bg-white border border-navy-700 rounded-lg px-2 py-2 focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
             {/* Duration */}
             <div>
-              <label className="block text-[11px] font-body font-medium text-brand-muted mb-1">Durée (s)</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Durée (s)</label>
               <input
                 type="number"
                 min={2}
                 max={12}
                 value={scene.duree_estimee}
                 onChange={(e) => onChange({ duree_estimee: parseInt(e.target.value) || 5 })}
-                className="w-full text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
           </div>
@@ -344,7 +344,7 @@ function SceneCard({
           {/* Stats editor (only for stats style) */}
           {scene.style === 'stats' && (
             <div>
-              <label className="block text-[11px] font-body font-medium text-brand-muted mb-2">Statistiques</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-2">Statistiques</label>
               <div className="space-y-2">
                 {(scene.stats ?? []).map((stat: { value: string; label: string }, i: number) => (
                   <div key={i} className="flex gap-2">
@@ -357,7 +357,7 @@ function SceneCard({
                         stats[i] = { ...stats[i], value: e.target.value }
                         onChange({ stats })
                       }}
-                      className="w-24 text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand-primary"
+                      className="w-24 text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-500"
                     />
                     <input
                       type="text"
@@ -368,7 +368,7 @@ function SceneCard({
                         stats[i] = { ...stats[i], label: e.target.value }
                         onChange({ stats })
                       }}
-                      className="flex-1 text-sm font-body text-brand-text bg-white border border-brand-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand-primary"
+                      className="flex-1 text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 ))}
@@ -403,8 +403,8 @@ function VoicePicker({
 
   return (
     <div>
-      <label className="block text-xs font-body font-medium text-brand-text mb-2">
-        Voix off <span className="text-brand-muted font-normal">(optionnel)</span>
+      <label className="block text-xs font-body font-medium text-foreground mb-2">
+        Voix off <span className="text-[--text-muted] font-normal">(optionnel)</span>
       </label>
 
       {/* No voice */}
@@ -414,19 +414,19 @@ function VoicePicker({
         className={cn(
           'w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left mb-2 transition-all',
           voiceId === ''
-            ? 'border-brand-primary bg-brand-primary-light'
-            : 'border-brand-border bg-brand-surface hover:border-brand-primary/40'
+            ? 'border-blue-500 bg-blue-500/10'
+            : 'border-navy-700 bg-navy-800 hover:border-blue-500/40'
         )}
       >
-        <div className="w-8 h-8 rounded-full bg-brand-bg border border-brand-border flex items-center justify-center shrink-0">
-          <Mic2 size={14} className="text-brand-muted" />
+        <div className="w-8 h-8 rounded-full bg-navy-900 border border-navy-700 flex items-center justify-center shrink-0">
+          <Mic2 size={14} className="text-[--text-muted]" />
         </div>
-        <p className="text-sm font-display font-semibold text-brand-text">Pas de voix off</p>
-        {voiceId === '' && <CheckCircle2 size={16} className="ml-auto text-brand-primary" />}
+        <p className="text-sm font-display font-semibold text-foreground">Pas de voix off</p>
+        {voiceId === '' && <CheckCircle2 size={16} className="ml-auto text-blue-500" />}
       </button>
 
       {loading ? (
-        <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-brand-muted" /></div>
+        <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-[--text-muted]" /></div>
       ) : (
         <div className="space-y-1.5 max-h-44 overflow-y-auto pr-0.5">
           {voices.map((v) => (
@@ -437,16 +437,16 @@ function VoicePicker({
               className={cn(
                 'w-full flex items-center gap-3 p-2.5 rounded-xl border-2 text-left transition-all',
                 voiceId === v.id
-                  ? 'border-brand-primary bg-brand-primary-light'
-                  : 'border-brand-border bg-brand-surface hover:border-brand-primary/40'
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : 'border-navy-700 bg-navy-800 hover:border-blue-500/40'
               )}
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-primary/20 to-purple-200 flex items-center justify-center text-xs font-bold text-brand-primary shrink-0">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-200 flex items-center justify-center text-xs font-bold text-blue-500 shrink-0">
                 {v.name[0]}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-display font-semibold text-brand-text leading-none">{v.name}</p>
-                <p className="text-xs text-brand-muted mt-0.5 truncate">{[v.gender, v.accent].filter(Boolean).join(' · ')}</p>
+                <p className="text-sm font-display font-semibold text-foreground leading-none">{v.name}</p>
+                <p className="text-xs text-[--text-muted] mt-0.5 truncate">{[v.gender, v.accent].filter(Boolean).join(' · ')}</p>
               </div>
               {'previewUrl' in v && v.previewUrl && (
                 <button
@@ -458,12 +458,12 @@ function VoicePicker({
                     a.play()
                     setPreview(a)
                   }}
-                  className="p-1 rounded-lg hover:bg-brand-primary/10 text-brand-muted hover:text-brand-primary transition-colors"
+                  className="p-1 rounded-lg hover:bg-blue-500/10 text-[--text-muted] hover:text-blue-500 transition-colors"
                 >
                   <Volume2 size={13} />
                 </button>
               )}
-              {voiceId === v.id && <CheckCircle2 size={14} className="text-brand-primary shrink-0" />}
+              {voiceId === v.id && <CheckCircle2 size={14} className="text-blue-500 shrink-0" />}
             </button>
           ))}
         </div>
@@ -501,36 +501,36 @@ function GeneratingView({
     <div className="flex flex-col items-center justify-center flex-1 gap-6 py-12 px-6">
       <div className={cn(
         'w-14 h-14 rounded-full flex items-center justify-center',
-        isError ? 'bg-red-50' : isDone ? 'bg-emerald-50' : 'bg-brand-primary-light'
+        isError ? 'bg-red-50' : isDone ? 'bg-emerald-50' : 'bg-blue-500/10'
       )}>
         {isError
           ? <AlertCircle size={26} className="text-red-500" />
           : isDone
             ? <CheckCircle2 size={26} className="text-emerald-500" />
-            : <Loader2 size={26} className="animate-spin text-brand-primary" />
+            : <Loader2 size={26} className="animate-spin text-blue-500" />
         }
       </div>
 
       <div className="text-center">
-        <h3 className="font-display font-bold text-xl text-brand-text">{title}</h3>
-        <p className="text-sm text-brand-muted mt-1">
+        <h3 className="font-display font-bold text-xl text-foreground">{title}</h3>
+        <p className="text-sm text-[--text-muted] mt-1">
           {isError ? errorMessage : isDone ? 'Votre vidéo est prête !' : step.label}
         </p>
       </div>
 
       {!isError && (
         <div className="w-full max-w-sm">
-          <div className="h-1.5 rounded-full bg-brand-border overflow-hidden">
+          <div className="h-1.5 rounded-full bg-navy-700 overflow-hidden">
             <div
-              className="h-full bg-brand-primary rounded-full transition-all duration-700"
+              className="h-full bg-blue-500 rounded-full transition-all duration-700"
               style={{ width: `${isDone ? 100 : progress}%` }}
             />
           </div>
           <div className="flex justify-between mt-3">
             {PIPELINE_STEPS.map((p) => (
               <div key={p.key} className="flex flex-col items-center gap-1">
-                <div className={cn('w-1.5 h-1.5 rounded-full transition-colors', progress >= p.pct ? 'bg-brand-primary' : 'bg-brand-border')} />
-                <span className="text-[9px] text-brand-muted text-center w-14 leading-tight hidden sm:block">{p.label}</span>
+                <div className={cn('w-1.5 h-1.5 rounded-full transition-colors', progress >= p.pct ? 'bg-blue-500' : 'bg-navy-700')} />
+                <span className="text-[9px] text-[--text-muted] text-center w-14 leading-tight hidden sm:block">{p.label}</span>
               </div>
             ))}
           </div>
@@ -734,25 +734,25 @@ export function MotionStudio({
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* ── Sidebar ── */}
-      <aside className="w-52 bg-brand-surface border-r border-brand-border flex flex-col shrink-0">
-        <div className="p-4 border-b border-brand-border">
-          <h2 className="font-display text-sm font-semibold text-brand-text">Motion Design</h2>
+      <aside className="w-52 bg-navy-800 border-r border-navy-700 flex flex-col shrink-0">
+        <div className="p-4 border-b border-navy-700">
+          <h2 className="font-display text-sm font-semibold text-foreground">Motion Design</h2>
         </div>
-        <div className="p-3 border-b border-brand-border">
+        <div className="p-3 border-b border-navy-700">
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-2 w-full bg-brand-bg border border-brand-border rounded-xl px-3 py-2.5 text-sm font-body text-brand-text hover:border-brand-primary/40 hover:bg-blue-50 transition-all"
+            className="flex items-center gap-2 w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-blue-500/40 hover:bg-blue-50 transition-all"
           >
-            <Plus size={16} className="text-brand-primary" />
+            <Plus size={16} className="text-blue-500" />
             Nouvelle vidéo
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-              <Video size={28} className="text-brand-border mb-2" />
-              <p className="text-brand-muted font-body text-xs">Aucune session encore.</p>
+              <Video size={28} className="text-navy-700 mb-2" />
+              <p className="text-[--text-muted] font-body text-xs">Aucune session encore.</p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -764,12 +764,12 @@ export function MotionStudio({
                   className={cn(
                     'w-full text-left px-3 py-2 rounded-xl text-xs font-body transition-all',
                     activeSession?.id === s.id
-                      ? 'bg-brand-primary-light text-brand-primary border border-brand-primary/20'
-                      : 'text-brand-text hover:bg-brand-bg border border-transparent'
+                      ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+                      : 'text-foreground hover:bg-navy-900 border border-transparent'
                   )}
                 >
                   <p className="font-semibold truncate">{s.title ?? 'Sans titre'}</p>
-                  <p className="text-brand-muted mt-0.5 truncate">
+                  <p className="text-[--text-muted] mt-0.5 truncate">
                     {s.status === 'done' ? '✓ Prête' : s.status}
                   </p>
                 </button>
@@ -789,18 +789,18 @@ export function MotionStudio({
 
               {/* Header */}
               <div>
-                <h1 className="font-display text-2xl font-bold text-brand-text">Créer une vidéo Motion</h1>
-                <p className="text-sm text-brand-muted mt-1">
+                <h1 className="font-display text-2xl font-bold text-foreground">Créer une vidéo Motion</h1>
+                <p className="text-sm text-[--text-muted] mt-1">
                   Décrivez l'ambiance visuelle, entrez votre script — Claude génère le storyboard.
                 </p>
               </div>
 
               {/* Brief */}
               <div>
-                <label className="block text-sm font-body font-semibold text-brand-text mb-1.5">
+                <label className="block text-sm font-body font-semibold text-foreground mb-1.5">
                   Brief visuel <span className="text-red-400">*</span>
                 </label>
-                <p className="text-xs text-brand-muted mb-2">
+                <p className="text-xs text-[--text-muted] mb-2">
                   Style, ambiance, couleurs, émotion recherchée. Ex: "Vidéo dark tech pour une startup IA, tons bleu-violet, rythme dynamique."
                 </p>
                 <textarea
@@ -808,16 +808,16 @@ export function MotionStudio({
                   onChange={(e) => setBrief(e.target.value)}
                   placeholder="Décrivez l'ambiance visuelle et le style de votre vidéo…"
                   rows={4}
-                  className="w-full border border-brand-border rounded-xl px-4 py-3 text-sm font-body text-brand-text placeholder:text-brand-muted bg-brand-surface focus:outline-none focus:border-brand-primary focus:bg-white transition-colors resize-none"
+                  className="w-full border border-navy-700 rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-navy-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none"
                 />
               </div>
 
               {/* Script */}
               <div>
-                <label className="block text-sm font-body font-semibold text-brand-text mb-1.5">
+                <label className="block text-sm font-body font-semibold text-foreground mb-1.5">
                   Script voix off <span className="text-red-400">*</span>
                 </label>
-                <p className="text-xs text-brand-muted mb-2">
+                <p className="text-xs text-[--text-muted] mb-2">
                   Le texte exact qui sera lu par la voix off. Claude le découpera en scènes.
                 </p>
                 <textarea
@@ -825,9 +825,9 @@ export function MotionStudio({
                   onChange={(e) => setScript(e.target.value)}
                   placeholder="Entrez ici le texte complet de votre voix off…"
                   rows={6}
-                  className="w-full border border-brand-border rounded-xl px-4 py-3 text-sm font-body text-brand-text placeholder:text-brand-muted bg-brand-surface focus:outline-none focus:border-brand-primary focus:bg-white transition-colors resize-none"
+                  className="w-full border border-navy-700 rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-navy-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none"
                 />
-                <p className={cn('text-xs mt-1 text-right', script.length < 20 ? 'text-brand-muted' : 'text-emerald-600')}>
+                <p className={cn('text-xs mt-1 text-right', script.length < 20 ? 'text-[--text-muted]' : 'text-emerald-600')}>
                   {script.length} caractères
                 </p>
               </div>
@@ -835,7 +835,7 @@ export function MotionStudio({
               {/* Format + Duration */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-body font-semibold text-brand-text mb-2">Format</label>
+                  <label className="block text-sm font-body font-semibold text-foreground mb-2">Format</label>
                   <div className="flex gap-2">
                     {FORMATS.map((f) => (
                       <button
@@ -845,8 +845,8 @@ export function MotionStudio({
                         className={cn(
                           'flex-1 py-2 rounded-xl border-2 text-xs font-body font-semibold transition-all',
                           format === f.id
-                            ? 'border-brand-primary bg-brand-primary-light text-brand-primary'
-                            : 'border-brand-border text-brand-muted hover:border-brand-primary/40'
+                            ? 'border-blue-500 bg-blue-500/10 text-blue-500'
+                            : 'border-navy-700 text-[--text-muted] hover:border-blue-500/40'
                         )}
                       >
                         {f.label}
@@ -855,7 +855,7 @@ export function MotionStudio({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-body font-semibold text-brand-text mb-2">Durée</label>
+                  <label className="block text-sm font-body font-semibold text-foreground mb-2">Durée</label>
                   <div className="flex gap-2">
                     {DURATIONS.map((d) => (
                       <button
@@ -865,8 +865,8 @@ export function MotionStudio({
                         className={cn(
                           'flex-1 py-2 rounded-xl border-2 text-xs font-body font-semibold transition-all',
                           duration === d.id
-                            ? 'border-brand-primary bg-brand-primary-light text-brand-primary'
-                            : 'border-brand-border text-brand-muted hover:border-brand-primary/40'
+                            ? 'border-blue-500 bg-blue-500/10 text-blue-500'
+                            : 'border-navy-700 text-[--text-muted] hover:border-blue-500/40'
                         )}
                       >
                         {d.label}
@@ -881,10 +881,10 @@ export function MotionStudio({
 
               {/* Logo upload */}
               <div>
-                <label className="block text-sm font-body font-semibold text-brand-text mb-1.5">
-                  Logo <span className="text-brand-muted font-normal">(optionnel)</span>
+                <label className="block text-sm font-body font-semibold text-foreground mb-1.5">
+                  Logo <span className="text-[--text-muted] font-normal">(optionnel)</span>
                 </label>
-                <p className="text-xs text-brand-muted mb-2">
+                <p className="text-xs text-[--text-muted] mb-2">
                   Votre logo sera incrusté dans la vidéo si fourni. PNG ou SVG transparent recommandé.
                 </p>
                 <input
@@ -895,14 +895,14 @@ export function MotionStudio({
                   className="hidden"
                 />
                 {logoPreview ? (
-                  <div className="flex items-center gap-3 border border-brand-border rounded-xl px-4 py-3 bg-brand-surface">
-                    <img src={logoPreview} alt="Logo preview" className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-brand-border" />
+                  <div className="flex items-center gap-3 border border-navy-700 rounded-xl px-4 py-3 bg-navy-800">
+                    <img src={logoPreview} alt="Logo preview" className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-navy-700" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-body text-brand-text truncate">{logoFile?.name}</p>
-                      <p className="text-xs text-brand-muted">{logoFile ? `${(logoFile.size / 1024).toFixed(0)} Ko` : ''}</p>
+                      <p className="text-sm font-body text-foreground truncate">{logoFile?.name}</p>
+                      <p className="text-xs text-[--text-muted]">{logoFile ? `${(logoFile.size / 1024).toFixed(0)} Ko` : ''}</p>
                     </div>
                     <button type="button" onClick={clearLogo}
-                      className="shrink-0 p-1.5 rounded-lg text-brand-muted hover:text-red-500 hover:bg-red-50 transition-colors">
+                      className="shrink-0 p-1.5 rounded-lg text-[--text-muted] hover:text-red-500 hover:bg-red-50 transition-colors">
                       <X size={14} />
                     </button>
                   </div>
@@ -910,7 +910,7 @@ export function MotionStudio({
                   <button
                     type="button"
                     onClick={() => logoInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-brand-border rounded-xl px-4 py-4 text-sm font-body text-brand-muted hover:border-brand-primary/40 hover:text-brand-primary transition-colors"
+                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-navy-700 rounded-xl px-4 py-4 text-sm font-body text-[--text-muted] hover:border-blue-500/40 hover:text-blue-500 transition-colors"
                   >
                     <Upload size={16} />
                     Importer un logo
@@ -931,7 +931,7 @@ export function MotionStudio({
                 type="button"
                 onClick={generateStoryboard}
                 disabled={!brief.trim() || script.trim().length < 20 || genLoading}
-                className="w-full flex items-center justify-center gap-2 bg-brand-text text-white font-display font-semibold text-sm px-5 py-3.5 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
+                className="w-full flex items-center justify-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-5 py-3.5 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
               >
                 {genLoading
                   ? <><Loader2 size={16} className="animate-spin" /> Génération du storyboard…</>
@@ -946,11 +946,11 @@ export function MotionStudio({
         {phase === 'board' && (
           <div className="flex flex-col h-full overflow-hidden">
             {/* Board topbar */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-brand-border shrink-0">
+            <div className="flex items-center justify-between px-6 py-3 border-b border-navy-700 shrink-0">
               <button
                 type="button"
                 onClick={() => setPhase('input')}
-                className="flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-text transition-colors"
+                className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
                 <ArrowLeft size={15} />
                 Modifier le brief
@@ -960,7 +960,7 @@ export function MotionStudio({
                   type="button"
                   onClick={generateStoryboard}
                   disabled={genLoading}
-                  className="flex items-center gap-1.5 text-xs text-brand-primary border border-brand-primary/30 rounded-lg px-3 py-1.5 hover:bg-brand-primary-light transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-xs text-blue-500 border border-blue-500/30 rounded-lg px-3 py-1.5 hover:bg-blue-500/10 transition-colors disabled:opacity-50"
                 >
                   <RefreshCw size={12} className={cn(genLoading && 'animate-spin')} />
                   Tout regénérer
@@ -969,7 +969,7 @@ export function MotionStudio({
                   type="button"
                   onClick={handleLaunch}
                   disabled={launching || scenes.length === 0}
-                  className="flex items-center gap-2 bg-brand-text text-white font-display font-semibold text-sm px-4 py-2 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-4 py-2 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
                 >
                   {launching
                     ? <Loader2 size={14} className="animate-spin" />
@@ -984,8 +984,8 @@ export function MotionStudio({
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {genLoading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3">
-                  <Sparkles size={28} className="text-brand-primary animate-pulse" />
-                  <p className="text-sm text-brand-muted">Régénération du storyboard…</p>
+                  <Sparkles size={28} className="text-blue-500 animate-pulse" />
+                  <p className="text-sm text-[--text-muted]">Régénération du storyboard…</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">

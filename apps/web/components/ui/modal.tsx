@@ -1,194 +1,196 @@
 'use client'
 
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Size map ───────────────────────────────────────────────────────────────────
 
-export interface ModalProps {
-  /** Contrôle la visibilité de la modale */
-  isOpen: boolean
-  /** Appelé quand l'utilisateur ferme la modale (croix, overlay, Escape) */
-  onClose: () => void
-  /** Titre affiché dans le header */
-  title?: string
-  /** Description courte sous le titre */
-  description?: string
-  /** Contenu principal */
-  children: React.ReactNode
-  /** Pied de modale — typiquement des boutons d'action */
-  footer?: React.ReactNode
-  /** Largeur max de la modale */
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
-  /** Empêche la fermeture en cliquant sur l'overlay */
-  disableOverlayClose?: boolean
-  /** Classes CSS supplémentaires sur le conteneur de la modale */
-  className?: string
-}
-
-// ── Tailles ───────────────────────────────────────────────────────────────────
-
-const SIZE_CLASSES: Record<NonNullable<ModalProps['size']>, string> = {
+const SIZE: Record<string, string> = {
   sm:   'max-w-sm',
   md:   'max-w-md',
   lg:   'max-w-lg',
   xl:   'max-w-2xl',
-  full: 'max-w-[95vw]',
+  full: 'max-w-4xl',
 }
 
-// ── Composant ─────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+export interface ModalProps {
+  isOpen: boolean
+  onClose: () => void
+  title?: string
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  scrollable?: boolean
+  footer?: React.ReactNode
+  closeOnOverlayClick?: boolean
+  closeOnEscape?: boolean
+  children: React.ReactNode
+  className?: string
+}
+
+// ── Close button icon ──────────────────────────────────────────────────────────
+
+function XIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  )
+}
+
+// ── Composant ──────────────────────────────────────────────────────────────────
 
 function Modal({
   isOpen,
   onClose,
   title,
-  description,
-  children,
-  footer,
   size = 'md',
-  disableOverlayClose = false,
+  scrollable = false,
+  footer,
+  closeOnOverlayClick = true,
+  closeOnEscape = true,
+  children,
   className,
 }: ModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
 
-  // Fermeture sur Escape
+  // Escape key
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    },
-    [onClose]
+    (e: KeyboardEvent) => { if (closeOnEscape && e.key === 'Escape') onClose() },
+    [onClose, closeOnEscape]
   )
 
   useEffect(() => {
     if (!isOpen) return
     document.addEventListener('keydown', handleKeyDown)
-    // Empêche le scroll du body pendant que la modale est ouverte
     document.body.style.overflow = 'hidden'
+    // Focus trap — focus premier élément focusable
+    requestAnimationFrame(() => {
+      const el = dialogRef.current?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      el?.focus()
+    })
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
     }
   }, [isOpen, handleKeyDown])
 
-  if (!isOpen) return null
+  if (!isOpen || typeof window === 'undefined') return null
 
-  return (
-    // Portail — rendu à la racine du DOM via z-index élevé
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
-      {/* Overlay sombre avec blur */}
+      {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm animate-fade-in"
         aria-hidden="true"
-        onClick={disableOverlayClose ? undefined : onClose}
+        onClick={closeOnOverlayClick ? onClose : undefined}
       />
 
-      {/* Fenêtre modale */}
+      {/* Dialog */}
       <div
+        ref={dialogRef}
         className={cn(
-          'relative w-full bg-navy-900 border border-border rounded-2xl shadow-xl',
-          'animate-fade-in',
-          SIZE_CLASSES[size],
+          'relative w-full bg-navy-900 border border-navy-700/50',
+          'rounded-2xl shadow-card-hover animate-fade-up',
+          SIZE[size],
           className
         )}
       >
         {/* Header */}
-        {(title || description) && (
-          <div className="flex items-start justify-between gap-4 p-6 border-b border-border">
-            <div className="flex-1 min-w-0">
-              {title && (
-                <h2
-                  id="modal-title"
-                  className="font-display font-semibold text-lg text-foreground leading-heading"
-                >
-                  {title}
-                </h2>
-              )}
-              {description && (
-                <p className="font-body text-sm text-muted-foreground mt-1 leading-body">
-                  {description}
-                </p>
-              )}
-            </div>
-
-            {/* Bouton fermeture */}
+        {title && (
+          <div className="flex items-center justify-between p-6 border-b border-navy-700/50">
+            <h2 id="modal-title" className="font-display text-lg text-foreground">
+              {title}
+            </h2>
             <button
+              type="button"
               onClick={onClose}
-              aria-label="Fermer la fenêtre"
+              aria-label="Fermer"
               className={cn(
-                'shrink-0 w-8 h-8 rounded-lg flex items-center justify-center',
-                'text-muted-foreground hover:text-foreground',
-                'bg-transparent hover:bg-navy-800',
-                'border border-transparent hover:border-border',
-                'transition-colors focus-visible:outline-none focus-visible:ring-2',
-                'focus-visible:ring-ring focus-visible:ring-offset-2'
+                'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                'text-[--text-muted] hover:text-foreground',
+                'hover:bg-navy-800 border border-transparent hover:border-navy-600',
+                'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50'
               )}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16" height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <XIcon />
             </button>
           </div>
         )}
 
-        {/* Si pas de header : bouton fermeture flottant */}
-        {!title && !description && (
+        {/* Close button (sans titre) */}
+        {!title && (
           <button
             onClick={onClose}
-            aria-label="Fermer la fenêtre"
+            aria-label="Fermer"
             className={cn(
-              'absolute top-4 right-4 z-10',
-              'w-8 h-8 rounded-lg flex items-center justify-center',
-              'text-muted-foreground hover:text-foreground',
-              'hover:bg-navy-800 border border-transparent hover:border-border',
-              'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+              'absolute top-4 right-4 z-10 w-8 h-8 rounded-lg flex items-center justify-center',
+              'text-[--text-muted] hover:text-foreground',
+              'hover:bg-navy-800 border border-transparent hover:border-navy-600',
+              'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50'
             )}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16" height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <XIcon />
           </button>
         )}
 
-        {/* Contenu */}
-        <div className="p-6">
+        {/* Body */}
+        <div className={cn('p-6', scrollable && 'overflow-y-auto max-h-[70vh]')}>
           {children}
         </div>
 
-        {/* Footer optionnel */}
+        {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-4 border-t border-border">
+          <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-4 border-t border-navy-700/50">
             {footer}
           </div>
         )}
       </div>
+    </div>,
+    document.body
+  )
+}
+
+// ── Sous-composants structurels ────────────────────────────────────────────────
+
+function ModalHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('px-6 pt-6 pb-4 border-b border-navy-700/50', className)} {...props}>
+      {children}
     </div>
   )
 }
+
+function ModalBody({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('p-6', className)} {...props}>
+      {children}
+    </div>
+  )
+}
+
+function ModalFooter({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('px-6 pb-6 pt-4 border-t border-navy-700/50 flex items-center justify-end gap-3', className)} {...props}>
+      {children}
+    </div>
+  )
+}
+
+Modal.Header = ModalHeader
+Modal.Body   = ModalBody
+Modal.Footer = ModalFooter
 
 export { Modal }

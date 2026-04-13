@@ -1,740 +1,694 @@
+// app/page.tsx — Landing Page CLYRO (public)
+// Server Component — pas de 'use client'
+
 import Link from 'next/link'
-import { Video, Wand2, Palette, Check, Play, ArrowRight, Zap, Layers, Globe, Star, ChevronRight } from 'lucide-react'
-import { Reveal } from '@/components/ui/reveal'
-import { Navbar } from '@/components/shared/navbar'
 import type { Metadata } from 'next'
+import {
+  ArrowRight, Play, CheckCircle, Clock, DollarSign,
+  Frown, FileText, Cpu, Download, ChevronDown,
+  Twitter, Linkedin, Youtube, Instagram,
+} from 'lucide-react'
+import { Button }   from '@/components/ui/button'
+import { Badge }    from '@/components/ui/badge'
+import { Card }     from '@/components/ui/card'
+import { SpinnerAI } from '@/components/ui/spinner'
+import { MobileMenu }     from '@/components/landing/mobile-menu'
+import { PricingToggle }  from '@/components/landing/pricing-toggle'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Page — Server Component (no 'use client')
-// ─────────────────────────────────────────────────────────────────────────────
+export const metadata: Metadata = {
+  title: 'CLYRO — Génération vidéo par IA en moins de 10 minutes',
+  description:
+    'De ton script à ta vidéo en moins de 10 minutes. Sans caméra, sans monteur, sans agence. Faceless videos, motion design et brand kit — entièrement par IA.',
+  keywords: ['AI video', 'faceless videos', 'motion graphics', 'brand kit', 'video generation'],
+  openGraph: {
+    title: 'CLYRO — Génération vidéo par IA',
+    description: 'De ton script à ta vidéo en moins de 10 minutes.',
+    type: 'website',
+  },
+}
 
-export default function LandingPage() {
+// ── Shared layout helpers ──────────────────────────────────────────────────────
+
+function SectionLabel({ children, variant = 'info' }: { children: React.ReactNode; variant?: React.ComponentProps<typeof Badge>['variant'] }) {
   return (
-    <div className="min-h-screen bg-white dark:bg-navy-950 font-body overflow-x-hidden transition-colors duration-300">
-      {/* ── Fixed Navbar ─────────────────────────────────────────────────── */}
-      <Navbar />
-
-      {/* ================================================================
-          HERO SECTION
-          ================================================================ */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-16 px-6 grid-bg overflow-hidden">
-        {/* Floating glow blobs */}
-        <div className="animate-float absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-clyro-blue/10 blur-[100px] pointer-events-none" />
-        <div className="animate-float-2 absolute top-1/3 right-1/4 w-[400px] h-[400px] rounded-full bg-clyro-purple/10 blur-[80px] pointer-events-none" />
-        <div className="animate-float-rev absolute bottom-1/4 left-1/2 w-[350px] h-[350px] rounded-full bg-clyro-cyan/[0.08] blur-[90px] pointer-events-none" />
-
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* Badge pill */}
-          <Reveal>
-            <div className="inline-flex items-center gap-2 glass-pill px-4 py-2 rounded-full mb-8">
-              <span className="text-clyro-cyan text-sm">✦</span>
-              <span className="font-mono text-xs uppercase tracking-widest text-gray-500 dark:text-white/60">AI · Faceless · Motion · Voice</span>
-            </div>
-          </Reveal>
-
-          {/* Main headline */}
-          <Reveal delay={80}>
-            <h1 className="font-display font-extrabold text-6xl md:text-7xl lg:text-8xl leading-tight mb-6">
-              <span className="text-gray-900 dark:text-white block">Create videos</span>
-              <span className="text-gradient-animated block">that go viral.</span>
-            </h1>
-          </Reveal>
-
-          {/* Subtext */}
-          <Reveal delay={160}>
-            <p className="text-gray-500 dark:text-white/55 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-              From your script to a polished YouTube, TikTok or Instagram video —{' '}
-              <span className="text-gray-800 dark:text-white/80">in under 5 minutes.</span> No camera. No editor.
-            </p>
-          </Reveal>
-
-          {/* CTA row */}
-          <Reveal delay={240}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-              <Link
-                href="/signup"
-                className="shimmer animate-glow-cta inline-flex items-center gap-2 bg-gradient-to-r from-clyro-blue to-clyro-purple text-white font-semibold text-base px-8 py-4 rounded-2xl hover:opacity-90 transition-opacity duration-200"
-              >
-                Create my first video <ArrowRight size={18} />
-              </Link>
-              <a
-                href="#how-it-works"
-                className="inline-flex items-center gap-2 glass glass-hover text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white font-medium text-base px-7 py-4 rounded-2xl transition-colors duration-200"
-              >
-                <Play size={16} className="text-clyro-cyan" /> Watch how it works
-              </a>
-            </div>
-            <p className="text-gray-400 dark:text-white/30 text-sm">Free · No credit card · 3 videos on signup</p>
-          </Reveal>
-        </div>
-
-        {/* ── Big product mockup ──────────────────────────────────────── */}
-        <Reveal className="relative z-10 w-full max-w-4xl mx-auto mt-16">
-          <div className="glass rounded-3xl overflow-hidden shadow-2xl border border-black/[0.08] dark:border-white/10">
-            {/* Window chrome */}
-            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02]">
-              <span className="w-3 h-3 rounded-full bg-red-400/70" />
-              <span className="w-3 h-3 rounded-full bg-yellow-400/70" />
-              <span className="w-3 h-3 rounded-full bg-green-400/70" />
-              <span className="ml-4 flex items-center gap-1 font-mono text-xs text-gray-400 dark:text-white/30">
-                <span className="text-clyro-cyan">C</span>LYRO — Dashboard
-              </span>
-            </div>
-
-            {/* Tab bar */}
-            <div className="flex items-center gap-1 px-5 pt-4 pb-0 border-b border-black/[0.06] dark:border-white/[0.06]">
-              <button type="button" className="px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white border-b-2 border-clyro-blue -mb-px">
-                Faceless
-              </button>
-              <button type="button" className="px-4 py-2.5 text-sm font-medium text-gray-400 dark:text-white/40 border-b-2 border-transparent -mb-px">
-                Motion
-              </button>
-              <button type="button" className="px-4 py-2.5 text-sm font-medium text-gray-400 dark:text-white/40 border-b-2 border-transparent -mb-px">
-                Voices
-              </button>
-            </div>
-
-            {/* Faceless tab content */}
-            <div className="p-6">
-              <p className="text-xs font-mono uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">Choose your style</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[
-                  { emoji: '🎥', label: 'Cinématique', active: true },
-                  { emoji: '🎬', label: 'Stock + VO',  active: false },
-                  { emoji: '✏️', label: 'Whiteboard',  active: false },
-                  { emoji: '🖊️', label: 'Stickman',    active: false },
-                  { emoji: '⚡', label: 'Motion Graphics', active: false },
-                  { emoji: '🎨', label: 'Animation 2D', active: false },
-                ].map(({ emoji, label, active }) => (
-                  <div
-                    key={label}
-                    className={`glass rounded-xl p-4 flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 ${
-                      active
-                        ? 'ring-2 ring-clyro-blue/70 bg-clyro-blue/10 border-clyro-blue/30'
-                        : 'glass-hover'
-                    }`}
-                  >
-                    <span className="text-2xl">{emoji}</span>
-                    <span className="text-xs font-medium text-gray-600 dark:text-white/70 text-center">{label}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 flex items-center gap-3">
-                <div className="flex-1 glass rounded-xl px-4 py-3">
-                  <p className="text-xs text-gray-400 dark:text-white/25 font-mono">Your script here…</p>
-                </div>
-                <button type="button" className="shimmer bg-gradient-to-r from-clyro-blue to-clyro-purple text-white text-sm font-semibold px-5 py-3 rounded-xl whitespace-nowrap">
-                  Generate →
-                </button>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
-      {/* ================================================================
-          STATS / TRUST BAR
-          ================================================================ */}
-      <div className="glass-heavy glass-border-t glass-border-b py-5 px-6">
-        <Reveal>
-          <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
-            <span className="text-gray-400 dark:text-white/35 text-sm font-medium">Trusted by creators</span>
-            <span className="w-px h-4 bg-gray-200 dark:bg-white/10 hidden sm:block" />
-            {[
-              { value: '10,000+', label: 'videos generated' },
-              { value: '500+',    label: 'active creators' },
-              { value: '< 5 min', label: 'per video' },
-              { value: '7',       label: 'visual styles' },
-            ].map(({ value, label }) => (
-              <div key={label} className="flex items-center gap-2">
-                <span className="font-display font-extrabold text-xl text-gray-900 dark:text-white">{value}</span>
-                <span className="text-gray-400 dark:text-white/35 text-sm">{label}</span>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-      </div>
-
-      {/* ================================================================
-          FEATURE SECTIONS
-          ================================================================ */}
-      <div id="modules" className="max-w-6xl mx-auto px-6">
-
-        {/* ── Feature 1: Faceless Video — Text LEFT, Mockup RIGHT ──── */}
-        <section className="py-28 flex flex-col md:flex-row items-center gap-16">
-          {/* Text side */}
-          <Reveal className="flex-1 min-w-0">
-            <div className="inline-flex items-center gap-2 glass-pill px-3 py-1.5 rounded-full mb-6">
-              <Video size={13} className="text-clyro-blue" />
-              <span className="font-mono text-xs uppercase tracking-widest text-clyro-blue">Faceless Video</span>
-            </div>
-            <h2 className="font-display font-extrabold text-4xl md:text-5xl text-gray-900 dark:text-white mb-5 leading-tight">
-              Go viral without<br />showing your face.
-            </h2>
-            <p className="text-gray-500 dark:text-white/50 text-lg leading-relaxed mb-8">
-              Write your script. CLYRO storyboards, illustrates, and voices it — YouTube, TikTok, Instagram, all formats.
-            </p>
-            <ul className="space-y-3 mb-10">
-              {[
-                '7 visual styles',
-                'HD MP4 export',
-                'Voiceover included',
-                '9:16 · 1:1 · 16:9 formats',
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-gray-600 dark:text-white/65 text-sm">
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-clyro-blue/20 flex items-center justify-center">
-                    <Check size={11} className="text-clyro-blue" />
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 text-clyro-blue font-semibold hover:gap-3 transition-all duration-200"
-            >
-              Start creating Faceless videos <ArrowRight size={16} />
-            </Link>
-          </Reveal>
-
-          {/* Mockup side */}
-          <Reveal className="flex-1 min-w-0 w-full" delay={120}>
-            <div className="glass rounded-2xl overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.08] bg-white/[0.02]">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/60" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-400/60" />
-                <span className="ml-3 text-xs text-gray-400 dark:text-white/25 font-mono">Nouvelle vidéo Faceless</span>
-              </div>
-              <div className="p-5">
-                <p className="text-xs font-mono uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">Style visuel</p>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {[
-                    { emoji: '🎥', label: 'Cinématique', selected: true },
-                    { emoji: '🎬', label: 'Stock+VO',     selected: false },
-                    { emoji: '✏️', label: 'Whiteboard',   selected: false },
-                    { emoji: '🖊️', label: 'Stickman',     selected: false },
-                    { emoji: '⚡', label: 'Motion Gfx',   selected: false },
-                    { emoji: '🎨', label: 'Anim. 2D',     selected: false },
-                  ].map(({ emoji, label, selected }) => (
-                    <div
-                      key={label}
-                      className={`rounded-xl p-3 flex flex-col items-center gap-1.5 ${
-                        selected
-                          ? 'ring-2 ring-clyro-blue/60 bg-clyro-blue/12'
-                          : 'glass'
-                      }`}
-                    >
-                      <span className="text-xl">{emoji}</span>
-                      <span className="text-[10px] text-gray-500 dark:text-white/60 text-center font-medium">{label}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 glass rounded-xl px-4 py-3">
-                  <p className="text-xs text-gray-400 dark:text-white/20 font-mono">Votre script ici…</p>
-                </div>
-                <div className="mt-3 flex justify-end">
-                  <span className="text-xs text-gray-400 dark:text-white/30 font-mono">Format: 9:16 · HD · FR</span>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </section>
-
-        {/* ── Feature 2: Motion Design — Mockup LEFT, Text RIGHT ───── */}
-        <section className="py-28 flex flex-col md:flex-row-reverse items-center gap-16">
-          {/* Text side */}
-          <Reveal className="flex-1 min-w-0">
-            <div className="inline-flex items-center gap-2 glass-pill px-3 py-1.5 rounded-full mb-6">
-              <Zap size={13} className="text-clyro-purple" />
-              <span className="font-mono text-xs uppercase tracking-widest text-clyro-purple">Motion Design</span>
-            </div>
-            <h2 className="font-display font-extrabold text-4xl md:text-5xl text-gray-900 dark:text-white mb-5 leading-tight">
-              After Effects quality.<br />Zero experience needed.
-            </h2>
-            <p className="text-gray-500 dark:text-white/50 text-lg leading-relaxed mb-8">
-              Describe your product. Add your brand colors. CLYRO generates a polished animated ad in minutes.
-            </p>
-            <ul className="space-y-3 mb-10">
-              {[
-                'Brand colors & logo',
-                'Animated typography',
-                'Voiceover sync',
-                '9:16 · 16:9 formats',
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-gray-600 dark:text-white/65 text-sm">
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-clyro-purple/20 flex items-center justify-center">
-                    <Check size={11} className="text-clyro-purple" />
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 text-clyro-purple font-semibold hover:gap-3 transition-all duration-200"
-            >
-              Create a Motion ad <ArrowRight size={16} />
-            </Link>
-          </Reveal>
-
-          {/* Mockup side */}
-          <Reveal className="flex-1 min-w-0 w-full" delay={120}>
-            <div className="glass rounded-2xl overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.08] bg-white/[0.02]">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/60" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-400/60" />
-                <span className="ml-3 text-xs text-gray-400 dark:text-white/25 font-mono">Motion Design — Brief</span>
-              </div>
-              <div className="p-5 space-y-5">
-                <div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-gray-400 dark:text-white/30 mb-2">Votre brief</p>
-                  <div className="glass rounded-xl px-4 py-3 h-20 flex items-start">
-                    <p className="text-sm text-gray-400 dark:text-white/30">Une pub dynamique pour mon application de productivité, style corporate moderne…</p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">Couleur principale</p>
-                  <div className="flex items-center gap-2">
-                    {[
-                      { bg: 'bg-clyro-blue',   ring: true },
-                      { bg: 'bg-clyro-purple', ring: false },
-                      { bg: 'bg-red-500',      ring: false },
-                      { bg: 'bg-yellow-400',   ring: false },
-                    ].map(({ bg, ring }, i) => (
-                      <span
-                        key={i}
-                        className={`w-7 h-7 rounded-full ${bg} cursor-pointer ${
-                          ring ? 'ring-2 ring-white/40 ring-offset-2 ring-offset-transparent' : ''
-                        }`}
-                      />
-                    ))}
-                    <span className="ml-1 glass rounded-lg px-3 py-1.5 text-xs text-gray-500 dark:text-white/40 font-mono">#3B8EF0</span>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">Style</p>
-                  <div className="flex flex-wrap gap-2">
-                    {['Corporate', 'Luxe', 'Dynamique', 'Fun'].map((style, i) => (
-                      <span
-                        key={style}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer ${
-                          i === 0 ? 'bg-clyro-purple/20 text-clyro-purple ring-1 ring-clyro-purple/40' : 'glass text-gray-500 dark:text-white/50'
-                        }`}
-                      >
-                        {style}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <button type="button" className="w-full shimmer bg-gradient-to-r from-clyro-purple to-clyro-blue text-white text-sm font-semibold py-3 rounded-xl">
-                  Générer la pub →
-                </button>
-              </div>
-            </div>
-          </Reveal>
-        </section>
-
-        {/* ── Feature 3: Brand Kit — Text LEFT, Mockup RIGHT ───── */}
-        <section className="py-28 flex flex-col md:flex-row items-center gap-16">
-          {/* Text side */}
-          <Reveal className="flex-1 min-w-0">
-            <div className="inline-flex items-center gap-2 glass-pill px-3 py-1.5 rounded-full mb-6">
-              <Palette size={13} className="text-clyro-accent" />
-              <span className="font-mono text-xs uppercase tracking-widest text-clyro-accent">Brand Kit</span>
-            </div>
-            <h2 className="font-display font-extrabold text-4xl md:text-5xl text-gray-900 dark:text-white mb-5 leading-tight">
-              Ta marque.<br />Tes visuels. Par l'IA.
-            </h2>
-            <p className="text-gray-500 dark:text-white/50 text-lg leading-relaxed mb-8">
-              Définis ta charte graphique une fois. CLYRO l'applique à chaque génération — logos, posts réseaux sociaux, vidéos Faceless et Motion Design.
-            </p>
-            <ul className="space-y-3 mb-10">
-              {[
-                'Logo generation by AI',
-                'Posts Instagram, LinkedIn, TikTok',
-                'Couleurs appliquées à tous les modules',
-                'Galerie d\'assets téléchargeables',
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-gray-600 dark:text-white/65 text-sm">
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-clyro-accent/20 flex items-center justify-center">
-                    <Check size={11} className="text-clyro-accent" />
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/brand"
-              className="inline-flex items-center gap-2 text-clyro-accent font-semibold hover:gap-3 transition-all duration-200"
-            >
-              Créer mon Brand Kit <ArrowRight size={16} />
-            </Link>
-          </Reveal>
-
-          {/* Mockup side */}
-          <Reveal className="flex-1 min-w-0 w-full" delay={120}>
-            <div className="glass rounded-2xl overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.08] bg-white/[0.02]">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/60" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-400/60" />
-                <span className="ml-3 text-xs text-gray-400 dark:text-white/25 font-mono">Brand Kit — Générateur IA</span>
-              </div>
-              <div className="p-5 space-y-4">
-                {/* Active brand */}
-                <div className="glass rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-clyro-accent to-clyro-purple flex items-center justify-center">
-                    <Palette size={16} className="text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">CLYRO Official</p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="w-3 h-3 rounded-full bg-clyro-accent" />
-                      <span className="w-3 h-3 rounded-full bg-clyro-purple" />
-                      <span className="text-[10px] text-gray-400 dark:text-white/30 font-mono ml-1">Montserrat</span>
-                    </div>
-                  </div>
-                  <span className="font-mono text-[9px] text-clyro-primary uppercase tracking-wider bg-clyro-primary/10 px-2 py-0.5 rounded-full">★ Défaut</span>
-                </div>
-                {/* Generated assets grid */}
-                <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30">Assets générés</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: 'Logo', color: 'from-clyro-accent/40 to-clyro-purple/40' },
-                    { label: 'Instagram', color: 'from-pink-400/30 to-clyro-accent/30' },
-                    { label: 'LinkedIn', color: 'from-blue-400/30 to-clyro-primary/30' },
-                  ].map(({ label, color }) => (
-                    <div key={label} className={`aspect-square rounded-lg bg-gradient-to-br ${color} flex flex-col items-center justify-center gap-1 glass`}>
-                      <span className="text-lg">🎨</span>
-                      <span className="font-mono text-[9px] text-gray-400 dark:text-white/30">{label}</span>
-                    </div>
-                  ))}
-                </div>
-                {/* Generate button */}
-                <div className="glass rounded-xl p-3 flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className="h-2 bg-gray-100 dark:bg-white/10 rounded w-3/4 mb-1.5" />
-                    <div className="h-2 bg-gray-100 dark:bg-white/10 rounded w-1/2" />
-                  </div>
-                  <div className="bg-gradient-to-r from-clyro-accent to-clyro-purple text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1">
-                    <Palette size={10} /> Générer
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </section>
-      </div>
-
-      {/* ================================================================
-          HOW IT WORKS
-          ================================================================ */}
-      <section id="how-it-works" className="py-28 px-6 bg-gray-50/80 dark:bg-navy-900/50">
-        <div className="max-w-5xl mx-auto">
-          <Reveal className="text-center mb-16">
-            <p className="font-mono text-xs uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">Simple process</p>
-            <h2 className="font-display font-extrabold text-4xl md:text-5xl text-gray-900 dark:text-white">
-              From idea to video in 3 steps
-            </h2>
-          </Reveal>
-
-          <Reveal stagger>
-            <div className="relative">
-              {/* Connector line — visible md+ */}
-              <div className="hidden md:block absolute top-10 left-[16.66%] right-[16.66%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                  {
-                    num: '01',
-                    icon: '✍️',
-                    title: 'Write your script',
-                    desc: 'Type or paste your script. CLYRO handles storyboarding, pacing, and visuals automatically.',
-                    color: 'text-clyro-blue',
-                    ring: 'ring-clyro-blue/30',
-                  },
-                  {
-                    num: '02',
-                    icon: '🎨',
-                    title: 'Choose style & voice',
-                    desc: 'Pick from 7 visual styles and 400+ voices — or use your cloned voice for instant brand consistency.',
-                    color: 'text-clyro-purple',
-                    ring: 'ring-clyro-purple/30',
-                  },
-                  {
-                    num: '03',
-                    icon: '⚡',
-                    title: 'Download your video',
-                    desc: 'Your HD video is ready in minutes. Download MP4 in 9:16, 1:1, or 16:9 — ready to post.',
-                    color: 'text-clyro-cyan',
-                    ring: 'ring-clyro-cyan/30',
-                  },
-                ].map(({ num, icon, title, desc, color, ring }) => (
-                  <div key={num} className="glass rounded-2xl p-7 card-hover relative">
-                    <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl glass ${ring} ring-1 text-2xl mb-5`}>
-                      {icon}
-                    </div>
-                    <p className={`font-mono text-xs font-bold mb-1 ${color}`}>{num}</p>
-                    <h3 className="font-display font-bold text-lg text-gray-900 dark:text-white mb-3">{title}</h3>
-                    <p className="text-gray-500 dark:text-white/45 text-sm leading-relaxed">{desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ================================================================
-          TESTIMONIALS
-          ================================================================ */}
-      <section className="py-28 px-6">
-        <div className="max-w-5xl mx-auto">
-          <Reveal className="text-center mb-14">
-            <p className="font-mono text-xs uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">Social proof</p>
-            <h2 className="font-display font-extrabold text-4xl md:text-5xl text-gray-900 dark:text-white">
-              Creators love CLYRO
-            </h2>
-          </Reveal>
-
-          <Reveal stagger>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  quote: "We went from 1 video per week to 1 per day. The Cinématique style looks better than anything we produced manually.",
-                  name: 'Marcus K.',
-                  role: 'YouTube Creator · 320K subs',
-                  avatar: 'MK',
-                  gradient: 'from-clyro-blue to-clyro-purple',
-                  stars: 5,
-                },
-                {
-                  quote: "The voice cloning is scary good. My audience can't even tell it's AI — they just think I got a new mic.",
-                  name: 'Amara D.',
-                  role: 'Content Creator · TikTok',
-                  avatar: 'AD',
-                  gradient: 'from-yellow-400 to-orange-400',
-                  stars: 5,
-                },
-                {
-                  quote: "Motion Design in under 5 minutes. My clients are blown away every time. CLYRO replaced a tool that cost me 10x more.",
-                  name: 'Théo M.',
-                  role: 'Brand Designer · Freelance',
-                  avatar: 'TM',
-                  gradient: 'from-clyro-cyan to-clyro-blue',
-                  stars: 5,
-                },
-              ].map(({ quote, name, role, avatar, gradient, stars }) => (
-                <div key={name} className="glass rounded-2xl p-6 card-hover flex flex-col gap-5">
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: stars }).map((_, i) => (
-                      <Star key={i} size={13} className="fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-gray-600 dark:text-white/65 text-sm leading-relaxed flex-1">"{quote}"</p>
-                  <div className="flex items-center gap-3 pt-1 border-t border-gray-100 dark:border-white/[0.06]">
-                    <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-xs font-bold text-white`}>
-                      {avatar}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{name}</p>
-                      <p className="text-xs text-gray-400 dark:text-white/35">{role}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ================================================================
-          PRICING
-          ================================================================ */}
-      <section id="pricing" className="py-28 px-6 bg-gray-50/80 dark:bg-navy-900/50">
-        <div className="max-w-5xl mx-auto">
-          <Reveal className="text-center mb-14">
-            <p className="font-mono text-xs uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">Simple pricing</p>
-            <h2 className="font-display font-extrabold text-4xl md:text-5xl text-gray-900 dark:text-white">
-              Start free. Scale when ready.
-            </h2>
-            <p className="text-gray-400 dark:text-white/40 mt-4 max-w-md mx-auto">No hidden fees. Cancel anytime.</p>
-          </Reveal>
-
-          <Reveal stagger>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Free */}
-              <div className="glass rounded-2xl p-7 card-hover flex flex-col">
-                <p className="font-mono text-xs uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">Free</p>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="font-display font-extrabold text-5xl text-gray-900 dark:text-white">0€</span>
-                </div>
-                <p className="text-gray-400 dark:text-white/35 text-sm mb-8">Forever free — no card needed</p>
-                <ul className="space-y-3 flex-1 mb-8">
-                  {['3 generation credits', '2 visual styles', 'SD export (720p)', 'Standard voices'].map((f) => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-gray-500 dark:text-white/55">
-                      <Check size={13} className="text-gray-300 dark:text-white/25 flex-shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/signup" className="glass glass-hover text-center py-3 rounded-xl text-sm font-semibold text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Get started free
-                </Link>
-              </div>
-
-              {/* Starter — highlighted */}
-              <div className="glass glass-blue rounded-2xl p-7 card-hover flex flex-col relative overflow-hidden">
-                <div className="absolute top-4 right-4 glass-blue px-2.5 py-1 rounded-full">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-clyro-blue font-bold">Popular</span>
-                </div>
-                <p className="font-mono text-xs uppercase tracking-widest text-clyro-blue mb-4">Starter</p>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="font-display font-extrabold text-5xl text-gray-900 dark:text-white">19€</span>
-                  <span className="text-gray-400 dark:text-white/35 text-sm mb-2">/mo</span>
-                </div>
-                <p className="text-gray-400 dark:text-white/35 text-sm mb-8">For active content creators</p>
-                <ul className="space-y-3 flex-1 mb-8">
-                  {['30 credits per month', 'All 7 visual styles', '2 voice clones', 'HD export (1080p)', 'Priority generation'].map((f) => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-white/70">
-                      <Check size={13} className="text-clyro-blue flex-shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/signup" className="shimmer bg-gradient-to-r from-clyro-blue to-clyro-purple text-center py-3 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity">
-                  Start Starter plan
-                </Link>
-              </div>
-
-              {/* Studio */}
-              <div className="glass glass-purple rounded-2xl p-7 card-hover flex flex-col">
-                <p className="font-mono text-xs uppercase tracking-widest text-clyro-purple mb-4">Studio</p>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="font-display font-extrabold text-5xl text-gray-900 dark:text-white">49€</span>
-                  <span className="text-gray-400 dark:text-white/35 text-sm mb-2">/mo</span>
-                </div>
-                <p className="text-gray-400 dark:text-white/35 text-sm mb-8">For agencies &amp; power users</p>
-                <ul className="space-y-3 flex-1 mb-8">
-                  {['Unlimited credits', 'Motion Design module', 'Unlimited voice clones', 'All formats (9:16, 1:1, 16:9)', 'API access', 'White-label export'].map((f) => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-white/70">
-                      <Check size={13} className="text-clyro-purple flex-shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/signup" className="glass-hover text-center py-3 rounded-xl text-sm font-semibold text-clyro-purple border border-clyro-purple/30 hover:bg-clyro-purple/10 transition-colors">
-                  Start Studio plan
-                </Link>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ================================================================
-          CTA BANNER
-          ================================================================ */}
-      <section className="py-28 px-6">
-        <div className="max-w-3xl mx-auto">
-          <Reveal>
-            <div className="glass glass-heavy rounded-3xl p-12 md:p-16 text-center relative overflow-hidden">
-              {/* Background blobs */}
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-64 h-64 rounded-full bg-clyro-blue/10 blur-[60px]" />
-                <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full bg-clyro-purple/10 blur-[60px]" />
-              </div>
-              <div className="relative z-10">
-                <p className="font-mono text-xs uppercase tracking-widest text-gray-400 dark:text-white/30 mb-5">Ready to create?</p>
-                <h2 className="font-display font-extrabold text-4xl md:text-5xl text-gray-900 dark:text-white mb-5 leading-tight">
-                  Start creating for free today.
-                </h2>
-                <p className="text-gray-500 dark:text-white/45 text-lg mb-10">
-                  3 videos free · No credit card · Results in under 5 minutes.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Link
-                    href="/signup"
-                    className="shimmer animate-glow-cta inline-flex items-center gap-2 bg-gradient-to-r from-clyro-blue to-clyro-purple text-white font-semibold text-base px-8 py-4 rounded-2xl hover:opacity-90 transition-opacity duration-200"
-                  >
-                    Create my free account <ArrowRight size={18} />
-                  </Link>
-                  <Link
-                    href="/login"
-                    className="inline-flex items-center gap-1.5 text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 text-sm transition-colors duration-200"
-                  >
-                    Already have an account <ChevronRight size={14} />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ================================================================
-          FOOTER
-          ================================================================ */}
-      <footer className="glass-heavy glass-border-t py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-10">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <span className="font-display font-extrabold text-xl">
-                <span className="text-clyro-cyan">C</span>
-                <span className="text-gray-900 dark:text-white">LYRO</span>
-              </span>
-              <span className="font-mono text-[9px] uppercase tracking-wider glass-blue px-1.5 py-0.5 rounded-full text-clyro-blue">
-                Beta
-              </span>
-            </Link>
-
-            {/* Nav links */}
-            <nav className="flex flex-wrap items-center gap-x-8 gap-y-3">
-              {[
-                { href: '#modules',      label: 'Modules' },
-                { href: '#how-it-works', label: 'How it works' },
-                { href: '#pricing',      label: 'Pricing' },
-                { href: '/login',        label: 'Sign in' },
-                { href: '/signup',       label: 'Sign up' },
-              ].map(({ href, label }) => (
-                <a
-                  key={href}
-                  href={href}
-                  className="text-sm text-gray-400 dark:text-white/35 hover:text-gray-700 dark:hover:text-white/70 transition-colors duration-200"
-                >
-                  {label}
-                </a>
-              ))}
-            </nav>
-          </div>
-
-          <div className="border-t border-gray-100 dark:border-white/[0.06] pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-gray-400 dark:text-white/25 font-mono">
-              © 2026 CLYRO · AI Video Generation Platform
-            </p>
-            <div className="flex items-center gap-6">
-              <a href="#" className="text-xs text-gray-400 dark:text-white/25 hover:text-gray-600 dark:hover:text-white/50 transition-colors">Privacy</a>
-              <a href="#" className="text-xs text-gray-400 dark:text-white/25 hover:text-gray-600 dark:hover:text-white/50 transition-colors">Terms</a>
-              <a href="#" className="text-xs text-gray-400 dark:text-white/25 hover:text-gray-600 dark:hover:text-white/50 transition-colors">Contact</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+    <div className="flex justify-center mb-4">
+      <Badge variant={variant}>{children}</Badge>
     </div>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Metadata (server component pattern)
-// ─────────────────────────────────────────────────────────────────────────────
-export const metadata: Metadata = {
-  title: 'CLYRO — AI Video Generation in Under 5 Minutes',
-  description:
-    'Create faceless YouTube, TikTok and Instagram videos with AI. 7 visual styles, 400+ voices, voice cloning. No camera. No editor. Results in under 5 minutes.',
-  openGraph: {
-    title: 'CLYRO — AI Video Generation in Under 5 Minutes',
-    description:
-      'From your script to a polished video in under 5 minutes. Faceless, Motion Design & AI Voiceover.',
-    type: 'website',
+function SectionHeader({ label, labelVariant, title, subtitle, titleGradient }: {
+  label: string
+  labelVariant?: React.ComponentProps<typeof Badge>['variant']
+  title: React.ReactNode
+  subtitle?: string
+  titleGradient?: boolean
+}) {
+  return (
+    <div className="text-center max-w-2xl mx-auto mb-12">
+      <SectionLabel variant={labelVariant}>{label}</SectionLabel>
+      <h2 className={`font-display text-3xl md:text-4xl font-bold text-foreground ${titleGradient ? '' : ''}`}>
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="font-body text-lg text-[--text-secondary] mt-4 leading-relaxed">{subtitle}</p>
+      )}
+    </div>
+  )
+}
+
+// ── 1. HEADER ─────────────────────────────────────────────────────────────────
+
+const NAV_LINKS = [
+  { label: 'Fonctionnalités', href: '#fonctionnalites' },
+  { label: 'Styles',          href: '#styles' },
+  { label: 'Tarifs',          href: '#tarifs' },
+  { label: 'FAQ',             href: '#faq' },
+]
+
+function Header() {
+  return (
+    <header className="fixed top-0 w-full z-50 bg-navy-950/80 backdrop-blur-md border-b border-navy-700/40">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        {/* Logo */}
+        <Link href="/" className="font-display text-xl font-bold shrink-0">
+          <span className="text-foreground">CLY</span>
+          <span className="gradient-text">RO</span>
+        </Link>
+
+        {/* Nav — desktop */}
+        <nav className="hidden md:flex items-center gap-6">
+          {NAV_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              className="font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors"
+            >
+              {l.label}
+            </a>
+          ))}
+        </nav>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Link href="/login" className="hidden sm:block">
+            <Button variant="ghost" size="sm">Connexion</Button>
+          </Link>
+          <Link href="/signup">
+            <Button variant="primary" size="sm">Commencer gratuitement</Button>
+          </Link>
+          <MobileMenu />
+        </div>
+      </div>
+    </header>
+  )
+}
+
+// ── 2. HERO ───────────────────────────────────────────────────────────────────
+
+function HeroSection() {
+  return (
+    <section className="relative min-h-screen flex items-center pt-16 overflow-hidden noise-overlay">
+      {/* Glow blobs */}
+      <div className="pointer-events-none absolute top-1/4 -left-24 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-1/4 -right-24 w-96 h-96 rounded-full bg-purple-500/10 blur-3xl" />
+
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-24 text-center w-full">
+        <Badge variant="info" dot className="mb-8 inline-flex">
+          Génération vidéo par IA
+        </Badge>
+
+        <h1 className="font-display text-5xl md:text-7xl font-bold leading-tight text-foreground">
+          De ton{' '}
+          <span className="gradient-text">script à ta vidéo</span>
+          <br />
+          en moins de 10 minutes.
+        </h1>
+
+        <p className="font-body text-lg md:text-xl text-[--text-secondary] max-w-2xl mx-auto mt-6 leading-relaxed">
+          Sans caméra. Sans monteur. Sans agence.
+          <br />
+          CLYRO génère tes vidéos faceless, tes motion designs
+          et ton identité visuelle — entièrement par IA.
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <Link href="/signup">
+            <Button variant="primary" size="lg" rightIcon={<ArrowRight size={18} />}>
+              Créer ma première vidéo gratuitement
+            </Button>
+          </Link>
+          <a href="#fonctionnalites">
+            <Button variant="secondary" size="lg" leftIcon={<Play size={16} />}>
+              Voir une démo
+            </Button>
+          </a>
+        </div>
+
+        <p className="font-mono text-xs text-[--text-muted] mt-5">
+          ✓ 3 vidéos gratuites à l'inscription · ✓ Sans carte bancaire · ✓ Résultat en moins de 5 minutes
+        </p>
+
+        {/* Hero mockup */}
+        <div className="mt-16 perspective-[1000px]">
+          <div className="[transform:rotateX(4deg)] hover:[transform:rotateX(0deg)] transition-transform duration-500">
+            <Card variant="glass" padding="md" className="max-w-3xl mx-auto shadow-card-hover">
+              {/* Generation bar */}
+              <div className="flex items-center gap-4 mb-5">
+                <SpinnerAI size="md" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-body text-sm text-[--text-secondary]">Génération en cours...</span>
+                    <span className="font-mono text-xs text-[--text-muted]">Scène 3 / 6</span>
+                  </div>
+                  <div className="h-1 bg-navy-700 rounded-full overflow-hidden">
+                    <div className="h-full w-1/2 bg-grad-primary rounded-full" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Scene thumbnails */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Scène 1', done: true },
+                  { label: 'Scène 2', done: true },
+                  { label: 'Scène 3', active: true },
+                ].map((scene) => (
+                  <div
+                    key={scene.label}
+                    className="relative aspect-video bg-navy-700 rounded-xl overflow-hidden flex items-center justify-center"
+                  >
+                    {scene.done && (
+                      <div className="absolute inset-0 bg-navy-800/60 flex items-center justify-center">
+                        <Play size={20} className="text-foreground/60" />
+                      </div>
+                    )}
+                    {scene.active && (
+                      <div className="absolute inset-0 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center justify-center">
+                        <SpinnerAI size="sm" />
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2">
+                      <Badge variant={scene.done ? 'success' : scene.active ? 'info' : 'neutral'} dot={!!scene.active}>
+                        {scene.done ? 'HD' : scene.active ? 'IA' : '—'}
+                      </Badge>
+                    </div>
+                    <span className="absolute bottom-2 left-2 font-mono text-xs text-[--text-muted]">{scene.label}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── 3. SOCIAL PROOF ───────────────────────────────────────────────────────────
+
+const STATS = [
+  { value: '2 000+', label: 'vidéos générées' },
+  { value: '500+',   label: 'créateurs actifs' },
+  { value: '<5 min', label: 'temps de génération moyen' },
+  { value: '4.8/5',  label: 'note moyenne' },
+]
+
+function SocialProof() {
+  return (
+    <section className="bg-navy-900 border-y border-navy-700/50 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
+          {STATS.map((stat, i) => (
+            <div key={stat.label} className="flex items-center gap-12">
+              <div className="text-center">
+                <div className="font-display text-2xl font-bold gradient-text">{stat.value}</div>
+                <div className="font-body text-sm text-[--text-muted] mt-0.5">{stat.label}</div>
+              </div>
+              {i < STATS.length - 1 && (
+                <div className="hidden md:block h-10 w-px bg-navy-600" aria-hidden="true" />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── 4. PROBLEM ────────────────────────────────────────────────────────────────
+
+const PROBLEMS = [
+  {
+    icon: <Clock size={22} />,
+    iconColor: 'text-error',
+    iconBg:    'bg-error/10',
+    title:     'Des heures de montage',
+    text:      'Trouver les visuels, monter, ajuster, exporter... Une vidéo de 2 minutes = une journée de travail.',
   },
+  {
+    icon: <DollarSign size={22} />,
+    iconColor: 'text-warning',
+    iconBg:    'bg-warning/10',
+    title:     'Des agences hors de prix',
+    text:      'Une vidéo professionnelle coûte entre 500€ et 5 000€. Inatteignable pour scaler sa production de contenu.',
+  },
+  {
+    icon: <Frown size={22} />,
+    iconColor: 'text-purple-400',
+    iconBg:    'bg-purple-500/10',
+    title:     'Des résultats inconsistants',
+    text:      "Changer de freelance, d'outil ou de style à chaque vidéo. Aucune cohérence de marque sur la durée.",
+  },
+]
+
+function ProblemSection() {
+  return (
+    <section id="fonctionnalites" className="bg-navy-950 py-24 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto">
+        <SectionHeader
+          label="Le problème"
+          labelVariant="error"
+          title="La création vidéo prend trop de temps"
+          subtitle="Les créateurs passent 80% de leur temps à produire, pas à créer."
+        />
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {PROBLEMS.map((p) => (
+            <Card key={p.title} variant="elevated" hoverable>
+              <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl ${p.iconBg} ${p.iconColor} mb-4`}>
+                {p.icon}
+              </div>
+              <h3 className="font-display text-lg font-semibold text-foreground mb-2">{p.title}</h3>
+              <p className="font-body text-sm text-[--text-secondary] leading-relaxed">{p.text}</p>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── 5. SOLUTION ───────────────────────────────────────────────────────────────
+
+function ModuleMockup({ slots }: { slots: string[] }) {
+  return (
+    <Card variant="glass" padding="md" className="w-full">
+      <div className="grid grid-cols-2 gap-2">
+        {slots.map((label, i) => (
+          <div key={i} className="aspect-video bg-navy-700 rounded-lg flex items-center justify-center">
+            <span className="font-mono text-xs text-[--text-muted]">{label}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+const MODULES = [
+  {
+    badge:       { label: 'Module 1', variant: 'purple' as const },
+    title:       'Vidéos faceless animées',
+    desc:        "Colle ton script, choisis ton style parmi 6 univers visuels, sélectionne une voix — CLYRO génère ta vidéo complète avec scènes animées, voix off et sous-titres karaoke.",
+    features:    [
+      '6 styles : Animation 2D, Cinématique, Whiteboard...',
+      'Sous-titres karaoke synchronisés automatiquement',
+      'Re-génération scène par scène si besoin',
+    ],
+    reverse:     false,
+    mockupSlots: ['Scène 1', 'Scène 2', 'Scène 3', 'Scène 4'],
+  },
+  {
+    badge:       { label: 'Module 2', variant: 'info' as const },
+    title:       'Motion design style After Effects',
+    desc:        "Crée des ads, des présentations produit et des teasers animés. Définis ton brief, CLYRO génère un storyboard structuré et rend ta vidéo avec animations pro.",
+    features:    [
+      'Formats 9:16, 1:1, 16:9 — prêts pour toutes les plateformes',
+      "Assets visuels générés selon l'ambiance de ta marque",
+      'Thumbnail auto-généré pour les ads',
+    ],
+    reverse:     true,
+    mockupSlots: ['Intro', 'Slide 1', 'Slide 2', 'Outro'],
+  },
+  {
+    badge:       { label: 'Nouveau', variant: 'purple' as const, dot: true },
+    title:       'Identité visuelle complète',
+    desc:        "En 15 minutes, CLYRO génère ton logo, ta palette, tes typographies, tes mockups et une charte graphique PDF professionnelle — depuis un simple brief textuel.",
+    features:    [
+      '3 directions créatives au choix avec hybridation possible',
+      'Vérification WCAG automatique de tes couleurs',
+      'Export brand kit ZIP (logos PNG/SVG, palette ASE, PDF charte)',
+    ],
+    reverse:     false,
+    mockupSlots: ['Direction A', 'Direction B', 'Direction C', 'Export'],
+  },
+]
+
+function SolutionSection() {
+  return (
+    <section className="bg-navy-900 py-24 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto">
+        <SectionHeader
+          label="La solution CLYRO"
+          title={<>Trois outils. <span className="gradient-text">Un seul workflow.</span></>}
+        />
+
+        <div className="flex flex-col gap-20">
+          {MODULES.map((mod, i) => (
+            <div
+              key={i}
+              className={`flex flex-col ${mod.reverse ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 items-center`}
+            >
+              {/* Text */}
+              <div className="flex-1">
+                <Badge variant={mod.badge.variant} dot={mod.badge.dot} className="mb-4">
+                  {mod.badge.label}
+                </Badge>
+                <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
+                  {mod.title}
+                </h3>
+                <p className="font-body text-[--text-secondary] leading-relaxed mb-6">{mod.desc}</p>
+                <ul className="flex flex-col gap-3 mb-8">
+                  {mod.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2.5">
+                      <CheckCircle size={16} className="text-success shrink-0 mt-0.5" />
+                      <span className="font-body text-sm text-[--text-secondary]">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button variant="secondary" size="md">Voir un exemple →</Button>
+              </div>
+
+              {/* Mockup */}
+              <div className="flex-1 w-full">
+                <ModuleMockup slots={mod.mockupSlots} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── 6. HOW IT WORKS ───────────────────────────────────────────────────────────
+
+const STEPS = [
+  {
+    num:   '01',
+    icon:  <FileText size={24} />,
+    title: 'Écris ou colle ton script',
+    text:  'Quelques mots ou 10 000 caractères. CLYRO découpe intelligemment en scènes visuelles cohérentes.',
+  },
+  {
+    num:   '02',
+    icon:  <Cpu size={24} />,
+    title: "L'IA génère tout",
+    text:  'Images, animations, voix off, sous-titres karaoke. En parallèle, en quelques minutes.',
+  },
+  {
+    num:   '03',
+    icon:  <Download size={24} />,
+    title: 'Télécharge et publie',
+    text:  "MP4 prêt à être uploadé sur YouTube, TikTok ou Instagram. Sans aucun montage supplémentaire.",
+  },
+]
+
+function HowItWorks() {
+  return (
+    <section className="bg-navy-950 py-24 px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto">
+        <SectionHeader
+          label="Comment ça marche"
+          labelVariant="neutral"
+          title="Prêt en 3 étapes"
+        />
+
+        <div className="flex flex-col md:flex-row gap-8 relative">
+          {/* Connector line — desktop */}
+          <div
+            className="hidden md:block absolute top-12 left-[calc(16.66%+2rem)] right-[calc(16.66%+2rem)] h-px border-t border-dashed border-navy-600"
+            aria-hidden="true"
+          />
+
+          {STEPS.map((step) => (
+            <div key={step.num} className="flex-1 flex flex-col items-center text-center relative z-10">
+              <div className="font-mono text-4xl font-bold gradient-text mb-4">{step.num}</div>
+              <div className="w-14 h-14 flex items-center justify-center bg-navy-800 rounded-2xl text-[--text-secondary] mb-4">
+                {step.icon}
+              </div>
+              <h3 className="font-display text-lg font-semibold text-foreground mb-2">{step.title}</h3>
+              <p className="font-body text-sm text-[--text-secondary] leading-relaxed">{step.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── 7. STYLES SECTION ─────────────────────────────────────────────────────────
+
+const VIDEO_STYLES = [
+  { name: 'Animation 2D',     desc: 'Personnages cartoon animés' },
+  { name: 'Stock + Voix Off', desc: 'Images réalistes professionnelles' },
+  { name: 'Minimaliste',      desc: 'Typographie épurée et impactante' },
+  { name: 'Infographie',      desc: 'Données visualisées en mouvement' },
+  { name: 'Whiteboard',       desc: 'Explication dessinée en direct' },
+  { name: 'Cinématique',      desc: 'Plans épiques, ambiance premium' },
+]
+
+function StylesSection() {
+  return (
+    <section id="styles" className="bg-navy-900 py-24 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto">
+        <SectionHeader
+          label="6 styles disponibles"
+          title="Un style pour chaque contenu"
+        />
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {VIDEO_STYLES.map((style) => (
+            <Card key={style.name} variant="elevated" hoverable className="group cursor-pointer p-0 overflow-hidden">
+              {/* Thumbnail placeholder */}
+              <div className="relative aspect-video bg-navy-700 overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <Play size={16} className="text-[--text-secondary] ml-0.5" />
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/10 transition-colors duration-200" />
+              </div>
+              {/* Info */}
+              <div className="p-4">
+                <h3 className="font-display text-sm font-semibold text-foreground">{style.name}</h3>
+                <p className="font-body text-xs text-[--text-muted] mt-0.5">{style.desc}</p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── 8. PRICING ────────────────────────────────────────────────────────────────
+
+function PricingSection() {
+  return (
+    <section id="tarifs" className="bg-navy-950 py-24 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto">
+        <SectionHeader
+          label="Tarifs"
+          labelVariant="neutral"
+          title="Simple. Transparent. Sans surprise."
+        />
+        <PricingToggle />
+      </div>
+    </section>
+  )
+}
+
+// ── 9. FAQ ────────────────────────────────────────────────────────────────────
+
+const FAQS = [
+  {
+    q: "Combien de temps prend la génération d'une vidéo ?",
+    a: "Pour une vidéo Faceless de 30 secondes (5–6 scènes), comptez 3 à 5 minutes de génération. Le Motion Design est légèrement plus rapide car il n'utilise pas d'animation image-to-video.",
+  },
+  {
+    q: "Est-ce que je peux modifier les scènes après génération ?",
+    a: "Oui. CLYRO permet de régénérer chaque scène individuellement sans relancer toute la vidéo. Tu peux éditer le prompt, demander une amélioration par l'IA, ou comparer jusqu'à 3 versions d'une même scène.",
+  },
+  {
+    q: "Les vidéos générées m'appartiennent-elles ?",
+    a: "Oui, entièrement. Tous les droits sur les vidéos générées t'appartiennent. CLYRO n'utilise pas tes créations pour entraîner ses modèles.",
+  },
+  {
+    q: "Puis-je utiliser ma propre voix ?",
+    a: "Oui, avec le clonage vocal. Upload un échantillon de 30 secondes minimum, et CLYRO génère toutes tes voix off avec ta propre voix. Disponible à partir du plan Pro.",
+  },
+]
+
+function FaqSection() {
+  return (
+    <section id="faq" className="bg-navy-900 py-24 px-4 sm:px-6">
+      <div className="max-w-2xl mx-auto">
+        <SectionHeader
+          label="Questions fréquentes"
+          labelVariant="neutral"
+          title="Tout ce que tu dois savoir"
+        />
+
+        <div className="flex flex-col gap-3">
+          {FAQS.map((faq) => (
+            <details
+              key={faq.q}
+              className="group bg-navy-800 border border-navy-700/50 rounded-xl overflow-hidden"
+            >
+              <summary className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer list-none select-none">
+                <span className="font-display text-sm font-semibold text-foreground">{faq.q}</span>
+                <ChevronDown
+                  size={16}
+                  className="text-[--text-muted] shrink-0 transition-transform duration-200 group-open:rotate-180"
+                />
+              </summary>
+              <div className="px-6 pb-5">
+                <p className="font-body text-sm text-[--text-secondary] leading-relaxed">{faq.a}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── 10. CTA FINAL ─────────────────────────────────────────────────────────────
+
+function CtaSection() {
+  return (
+    <section className="bg-navy-900 py-24 px-4 sm:px-6 relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-grad-glow-blue opacity-60" />
+      <div className="pointer-events-none absolute inset-0 bg-grad-glow-purple opacity-40" />
+
+      <div className="relative z-10 max-w-3xl mx-auto text-center">
+        <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
+          Crée ta première vidéo{' '}
+          <span className="gradient-text">maintenant.</span>
+        </h2>
+        <p className="font-body text-lg text-[--text-secondary] mt-4">
+          3 vidéos gratuites. Sans carte bancaire. Résultat en moins de 5 minutes.
+        </p>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <Link href="/signup">
+            <Button variant="primary" size="lg" rightIcon={<ArrowRight size={18} />}>
+              Créer mon compte gratuitement
+            </Button>
+          </Link>
+          <a href="#fonctionnalites">
+            <Button variant="ghost" size="lg">Voir une démo →</Button>
+          </a>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── 11. FOOTER ────────────────────────────────────────────────────────────────
+
+const FOOTER_COLS = [
+  {
+    title: 'Produit',
+    links: ['Faceless Videos', 'Motion Design', 'Brand Kit', 'Tarifs', 'API'],
+  },
+  {
+    title: 'Ressources',
+    links: ['Documentation', 'Exemples vidéos', 'Blog', 'Changelog', 'Status'],
+  },
+  {
+    title: 'Légal',
+    links: ['Politique de confidentialité', 'CGU', 'Mentions légales', 'Contact'],
+  },
+]
+
+function Footer() {
+  return (
+    <footer className="bg-navy-950 border-t border-navy-700/50 py-12 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+          {/* Col 1 — Brand */}
+          <div className="col-span-2 md:col-span-1">
+            <Link href="/" className="font-display text-xl font-bold">
+              <span className="text-foreground">CLY</span>
+              <span className="gradient-text">RO</span>
+            </Link>
+            <p className="font-body text-sm text-[--text-muted] mt-2 mb-5">
+              De ton script à ta vidéo en 10 minutes.
+            </p>
+            <div className="flex items-center gap-3">
+              {[Twitter, Instagram, Youtube, Linkedin].map((Icon, i) => (
+                <a
+                  key={i}
+                  href="#"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[--text-muted] hover:text-foreground hover:bg-navy-800 transition-colors"
+                  aria-label="Réseau social"
+                >
+                  <Icon size={16} />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Cols 2–4 */}
+          {FOOTER_COLS.map((col) => (
+            <div key={col.title}>
+              <h4 className="font-mono text-xs uppercase tracking-wider text-[--text-muted] mb-4">
+                {col.title}
+              </h4>
+              <ul className="flex flex-col gap-2.5">
+                {col.links.map((link) => (
+                  <li key={link}>
+                    <a href="#" className="font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors">
+                      {link}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t border-navy-700/30 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p className="font-mono text-xs text-[--text-muted]">
+            © 2026 CLYRO. Tous droits réservés.
+          </p>
+          <p className="font-mono text-xs text-[--text-muted]">
+            Fait avec IA · Hébergé en Europe
+          </p>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+// ── PAGE ──────────────────────────────────────────────────────────────────────
+
+export default function LandingPage() {
+  return (
+    <main className="bg-navy-950 text-foreground min-h-screen">
+      <Header />
+      <HeroSection />
+      <SocialProof />
+      <ProblemSection />
+      <SolutionSection />
+      <HowItWorks />
+      <StylesSection />
+      <PricingSection />
+      <FaqSection />
+      <CtaSection />
+      <Footer />
+    </main>
+  )
 }

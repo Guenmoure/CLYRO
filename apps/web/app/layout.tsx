@@ -1,29 +1,31 @@
 import type { Metadata } from 'next'
-import { Plus_Jakarta_Sans, Inter, JetBrains_Mono } from 'next/font/google'
+import { Syne, DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from '@/components/ui/toast'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import './globals.css'
 
-// Display — titres, marque, UI bold (charte v2)
-const plusJakarta = Plus_Jakarta_Sans({
+// Display — titres H1/H2, boutons, logo CLYRO, labels navigation
+const syne = Syne({
   subsets:  ['latin'],
-  variable: '--font-plus-jakarta',
+  variable: '--font-syne',
   display:  'swap',
-  weight:   ['300', '400', '500', '600', '700', '800'],
+  weight:   ['400', '600', '700'],
 })
 
-// Body — corps de texte principal (charte v2)
-const inter = Inter({
+// Body — corps de texte, descriptions, paragraphes
+const dmSans = DM_Sans({
   subsets:  ['latin'],
-  variable: '--font-inter',
+  variable: '--font-dm-sans',
   display:  'swap',
+  weight:   ['400', '500'],
 })
 
-// Mono — code, tags, labels techniques
+// Mono — labels techniques, badges, codes, metadata, step numbers
 const jetbrainsMono = JetBrains_Mono({
   subsets:  ['latin'],
   variable: '--font-jetbrains-mono',
   display:  'swap',
+  weight:   ['400', '500'],
 })
 
 export const metadata: Metadata = {
@@ -46,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <ThemeProvider>
           {children}

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { authMiddleware } from '../../middleware/auth'
+import { quotaMiddleware, deductCredit } from '../../middleware/quota'
 import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
 import { renderQueue, isRedisReady } from '../../queues/renderQueue'
@@ -82,7 +83,7 @@ const reassembleVideoSchema = z.object({
  * Lance le pipeline de génération Faceless Videos
  * Retourne immédiatement { video_id } — la génération tourne en arrière-plan
  */
-pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
+pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async (req, res) => {
   const parsed = createFacelessSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
@@ -107,25 +108,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
   const wpmMeta: { condensed?: boolean } = {}
 
   try {
-    // Vérifier les crédits de l'utilisateur
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('credits, plan')
-      .eq('id', req.userId)
-      .single()
-
-    if (!profile) {
-      res.status(404).json({ error: 'Profile not found', code: 'NOT_FOUND' })
-      return
-    }
-
-    if (profile.plan !== 'studio' && profile.credits <= 0) {
-      res.status(403).json({
-        error: 'Insufficient credits',
-        code: 'INSUFFICIENT_CREDITS',
-      })
-      return
-    }
+    const profile = req.userProfile!
 
     // Charger le brand kit si fourni
     let brandKit: { primary_color: string; secondary_color: string | null; font_family: string | null; logo_url: string | null; name: string } | null = null
@@ -218,12 +201,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
     }
 
     // Décrémenter les crédits après enqueue réussi (sauf plan studio)
-    if (profile.plan !== 'studio') {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ credits: profile.credits - 1 })
-        .eq('id', req.userId)
-    }
+    await deductCredit(req.userId, profile)
 
     // Retourner immédiatement
     res.status(202).json({

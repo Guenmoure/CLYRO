@@ -21,14 +21,14 @@ interface VideoCardProps {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  done: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  done: 'bg-success/10 text-success border-success/20',
   error: 'bg-red-500/10 text-red-500 border-red-500/20',
   pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
-  processing: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
-  storyboard: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
-  visuals: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20',
-  audio: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20',
-  assembly: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
+  processing: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  storyboard: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  visuals: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+  audio: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+  assembly: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -91,19 +91,19 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
   }
 
   return (
-    <div className="bg-brand-surface border border-brand-border rounded-xl p-4 hover:border-brand-primary/30 transition-colors">
+    <div className="bg-navy-800 border border-navy-700 rounded-xl p-4 hover:border-blue-500/30 transition-colors">
       <div className="flex items-center gap-4">
         {/* Thumbnail / icon */}
-        <div className="w-14 h-14 bg-brand-bg rounded-lg flex items-center justify-center shrink-0 text-2xl">
+        <div className="w-14 h-14 bg-navy-900 rounded-lg flex items-center justify-center shrink-0 text-2xl">
           {icon}
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <p className="font-display font-semibold text-brand-text truncate">
+          <p className="font-display font-semibold text-foreground truncate">
             {video.title ?? 'Vidéo sans titre'}
           </p>
-          <p className="font-mono text-xs text-brand-muted mt-0.5">
+          <p className="font-mono text-xs text-[--text-muted] mt-0.5">
             {video.module ?? '—'} · {video.style ?? '—'} · {formatDateTime(video.created_at)}
           </p>
         </div>
@@ -120,7 +120,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
               type="button"
               onClick={handleDownload}
               disabled={downloading}
-              className="font-mono text-xs text-brand-primary hover:underline px-3 py-1.5 bg-brand-primary/10 border border-brand-primary/20 rounded-lg transition-colors hover:bg-brand-primary/20 disabled:opacity-50"
+              className="font-mono text-xs text-blue-500 hover:underline px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg transition-colors hover:bg-blue-500/20 disabled:opacity-50"
             >
               {downloading ? '...' : 'Télécharger'}
             </button>
@@ -149,7 +149,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
                 type="button"
                 onClick={() => setShowConfirm(false)}
                 disabled={deleting}
-                className="font-mono text-xs text-brand-muted px-3 py-1.5 bg-brand-bg border border-brand-border rounded-lg hover:bg-brand-surface transition-colors"
+                className="font-mono text-xs text-[--text-muted] px-3 py-1.5 bg-navy-900 border border-navy-700 rounded-lg hover:bg-navy-800 transition-colors"
               >
                 Annuler
               </button>

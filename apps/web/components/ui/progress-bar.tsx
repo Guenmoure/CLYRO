@@ -40,20 +40,20 @@ export function ProgressBar({
     if (status === 'error') return 'from-red-500 to-red-600'
     if (status === 'done') return 'from-emerald-500 to-emerald-600'
     if (status === 'pending' || status === 'processing') return 'from-amber-400 to-amber-500'
-    return 'from-brand-primary to-purple-500'
+    return 'from-blue-500 to-purple-500'
   }
 
   const getContainerColor = () => {
     if (status === 'error') return 'bg-red-100'
     if (status === 'done') return 'bg-emerald-100'
     if (status === 'pending' || status === 'processing') return 'bg-amber-100'
-    return 'bg-brand-bg'
+    return 'bg-navy-900'
   }
 
   return (
     <div className={cn('w-full space-y-2', className)}>
       {message && (
-        <p className="font-body text-xs text-brand-muted">{message}</p>
+        <p className="font-body text-xs text-[--text-muted]">{message}</p>
       )}
       <div
         className={cn('h-1.5 rounded-full overflow-hidden transition-colors duration-300', getContainerColor())}
@@ -69,7 +69,7 @@ export function ProgressBar({
         />
       </div>
       {showLabel && (
-        <p className="font-mono text-xs text-brand-muted text-center">{clamped}%</p>
+        <p className="font-mono text-xs text-[--text-muted] text-center">{clamped}%</p>
       )}
     </div>
   )

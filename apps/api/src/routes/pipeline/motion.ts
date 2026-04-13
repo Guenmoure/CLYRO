@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { authMiddleware } from '../../middleware/auth'
+import { quotaMiddleware, deductCredit } from '../../middleware/quota'
 import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
 import { renderQueue, isRedisReady } from '../../queues/renderQueue'
@@ -36,7 +37,7 @@ const createMotionSchema = z.object({
  * Lance le pipeline Motion Graphics
  * Retourne immédiatement { video_id } — génération en arrière-plan
  */
-pipelineMotionRouter.post('/motion', authMiddleware, async (req, res) => {
+pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req, res) => {
   const parsed = createMotionSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
@@ -46,21 +47,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, async (req, res) => {
   const { title, brief, format, duration, style, brand_config, voice_id, music_track_id } = parsed.data
 
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('credits, plan')
-      .eq('id', req.userId)
-      .single()
-
-    if (!profile) {
-      res.status(404).json({ error: 'Profile not found', code: 'NOT_FOUND' })
-      return
-    }
-
-    if (profile.plan !== 'studio' && profile.credits <= 0) {
-      res.status(403).json({ error: 'Insufficient credits', code: 'INSUFFICIENT_CREDITS' })
-      return
-    }
+    const profile = req.userProfile!
 
     const { data: video, error: dbError } = await supabaseAdmin
       .from('videos')
@@ -117,12 +104,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, async (req, res) => {
     }
 
     // Décrémenter les crédits après enqueue réussi (sauf plan studio)
-    if (profile.plan !== 'studio') {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ credits: profile.credits - 1 })
-        .eq('id', req.userId)
-    }
+    await deductCredit(req.userId, profile)
 
     res.status(202).json({ video_id: video.id, status: 'pending' })
   } catch (err) {

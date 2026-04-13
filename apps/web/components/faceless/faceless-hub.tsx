@@ -324,7 +324,7 @@ const PIPELINE_STEPS: Array<{ id: PipelineStep; label: string }> = [
 function StepIndicator({ current, savedState }: { current: PipelineStep; savedState?: 'saving' | 'saved' | null }) {
   const currentIdx = PIPELINE_STEPS.findIndex((s) => s.id === current)
   return (
-    <div className="flex items-center gap-1 px-6 py-3 border-b border-brand-border bg-brand-surface shrink-0">
+    <div className="flex items-center gap-1 px-6 py-3 border-b border-navy-700 bg-navy-800 shrink-0">
       {PIPELINE_STEPS.map((step, i) => {
         const done   = i < currentIdx
         const active = i === currentIdx
@@ -332,9 +332,9 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
           <div key={step.id} className="flex items-center gap-1">
             <div className={cn(
               'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-body font-medium transition-all',
-              active ? 'bg-brand-primary text-white shadow-sm' :
+              active ? 'bg-blue-500 text-white shadow-sm' :
               done   ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                       'text-brand-muted'
+                       'text-[--text-muted]'
             )}>
               {done
                 ? <Check size={10} />
@@ -343,7 +343,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
               <span>{step.label}</span>
             </div>
             {i < PIPELINE_STEPS.length - 1 && (
-              <div className={cn('w-5 h-px', done ? 'bg-emerald-300' : 'bg-brand-border')} />
+              <div className={cn('w-5 h-px', done ? 'bg-emerald-300' : 'bg-navy-700')} />
             )}
           </div>
         )
@@ -352,7 +352,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
       {savedState && (
         <div className={cn(
           'ml-auto flex items-center gap-1 text-[10px] font-mono transition-all',
-          savedState === 'saving' ? 'text-brand-muted' : 'text-emerald-600'
+          savedState === 'saving' ? 'text-[--text-muted]' : 'text-emerald-600'
         )}>
           {savedState === 'saving'
             ? <><Loader2 size={10} className="animate-spin" /> Sauvegarde…</>
@@ -372,10 +372,10 @@ function StylePickerDropdown({ value, onChange, onClose }: {
   onClose: () => void
 }) {
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-[480px] bg-white border border-brand-border rounded-2xl shadow-xl p-4 animate-fade-in">
+    <div className="absolute left-0 top-full mt-2 z-50 w-[480px] bg-white border border-navy-700 rounded-2xl shadow-xl p-4 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
-        <p className="font-display text-sm font-semibold text-brand-text">Style visuel</p>
-        <button type="button" onClick={onClose} aria-label="Fermer" className="text-brand-muted hover:text-brand-text transition-colors"><X size={14} /></button>
+        <p className="font-display text-sm font-semibold text-foreground">Style visuel</p>
+        <button type="button" onClick={onClose} aria-label="Fermer" className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
       </div>
       <div className="grid grid-cols-4 gap-2">
         {STYLE_TEMPLATES.map((s) => {
@@ -383,13 +383,13 @@ function StylePickerDropdown({ value, onChange, onClose }: {
           return (
             <button key={s.id} type="button" onClick={() => { onChange(s.id); onClose() }}
               className={cn('relative rounded-xl overflow-hidden transition-all',
-                value === s.id ? 'ring-2 ring-brand-primary ring-offset-1' : 'hover:ring-1 hover:ring-brand-border')}>
+                value === s.id ? 'ring-2 ring-blue-500 ring-offset-1' : 'hover:ring-1 hover:ring-navy-700')}>
               <div className="h-16 w-full relative"><Preview selected={value === s.id} /></div>
-              <div className="p-2 bg-brand-surface">
-                <p className="font-display font-semibold text-[11px] text-brand-text truncate">{s.label}</p>
+              <div className="p-2 bg-navy-800">
+                <p className="font-display font-semibold text-[11px] text-foreground truncate">{s.label}</p>
               </div>
-              {s.badge && <span className="absolute top-1 right-1 font-mono text-[8px] uppercase tracking-wider bg-brand-primary text-white px-1 py-0.5 rounded-full">{s.badge}</span>}
-              {value === s.id && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-brand-primary flex items-center justify-center"><Check size={8} className="text-white" /></div>}
+              {s.badge && <span className="absolute top-1 right-1 font-mono text-[8px] uppercase tracking-wider bg-blue-500 text-white px-1 py-0.5 rounded-full">{s.badge}</span>}
+              {value === s.id && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center"><Check size={8} className="text-white" /></div>}
             </button>
           )
         })}
@@ -423,30 +423,30 @@ function VoicePickerDropdown({ value, voices, onChange, onClose }: {
   }
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-white border border-brand-border rounded-2xl shadow-xl p-3 animate-fade-in">
+    <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-white border border-navy-700 rounded-2xl shadow-xl p-3 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
-        <p className="font-display text-sm font-semibold text-brand-text">Voix off</p>
-        <button type="button" onClick={onClose} aria-label="Fermer" className="text-brand-muted hover:text-brand-text transition-colors"><X size={14} /></button>
+        <p className="font-display text-sm font-semibold text-foreground">Voix off</p>
+        <button type="button" onClick={onClose} aria-label="Fermer" className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
       </div>
       {voices.length === 0 && (
-        <p className="text-xs text-brand-muted text-center py-3">Chargement des voix…</p>
+        <p className="text-xs text-[--text-muted] text-center py-3">Chargement des voix…</p>
       )}
       <div className="space-y-1 max-h-64 overflow-y-auto">
         <button type="button" onClick={() => { onChange(''); onClose() }}
           className={cn('w-full text-left px-3 py-2 rounded-xl text-sm font-body transition-colors',
-            !value ? 'bg-brand-primary-light text-brand-primary' : 'hover:bg-brand-bg text-brand-muted')}>
+            !value ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-navy-900 text-[--text-muted]')}>
           Aucune voix
         </button>
         {voices.map((v) => (
-          <div key={v.id} className={cn('flex items-center gap-2 rounded-xl transition-colors', value === v.id ? 'bg-brand-primary-light' : 'hover:bg-brand-bg')}>
+          <div key={v.id} className={cn('flex items-center gap-2 rounded-xl transition-colors', value === v.id ? 'bg-blue-500/10' : 'hover:bg-navy-900')}>
             <button type="button" onClick={() => { onChange(v.id); onClose() }} className="flex-1 text-left px-3 py-2">
-              <p className={cn('text-sm font-body font-medium', value === v.id ? 'text-brand-primary' : 'text-brand-text')}>{v.name}</p>
-              {(v.gender || v.accent) && <p className="text-[11px] text-brand-muted">{[v.gender, v.accent].filter(Boolean).join(' · ')}</p>}
+              <p className={cn('text-sm font-body font-medium', value === v.id ? 'text-blue-500' : 'text-foreground')}>{v.name}</p>
+              {(v.gender || v.accent) && <p className="text-[11px] text-[--text-muted]">{[v.gender, v.accent].filter(Boolean).join(' · ')}</p>}
             </button>
             {v.previewUrl && (
               <button type="button" onClick={(e) => playPreview(e, v)} aria-label="Prévisualiser la voix"
                 className={cn('w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center mr-2 transition-all',
-                  playingId === v.id ? 'bg-brand-primary text-white' : 'bg-brand-bg border border-brand-border text-brand-muted hover:text-brand-primary')}>
+                  playingId === v.id ? 'bg-blue-500 text-white' : 'bg-navy-900 border border-navy-700 text-[--text-muted] hover:text-blue-500')}>
                 {playingId === v.id
                   ? <div className="w-2.5 h-2.5 flex gap-0.5 items-center"><div className="w-0.5 h-2.5 bg-white rounded" /><div className="w-0.5 h-2.5 bg-white rounded" /></div>
                   : <Play size={9} className="fill-current translate-x-px" />}
@@ -466,16 +466,16 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
   const filtered = activeCategory === 'all' ? STYLE_TEMPLATES : STYLE_TEMPLATES.filter((t) => t.category === activeCategory)
 
   return (
-    <div className="border-t border-brand-border px-6 py-8 bg-brand-surface/50">
+    <div className="border-t border-navy-700 px-6 py-8 bg-navy-800/50">
       <div className="max-w-2xl mx-auto">
-        <p className="font-display text-base font-semibold text-brand-text mb-4">Styles disponibles</p>
+        <p className="font-display text-base font-semibold text-foreground mb-4">Styles disponibles</p>
         <div className="flex flex-wrap gap-2 mb-5">
           {TEMPLATE_CATEGORIES.map((cat) => (
             <button key={cat.id} type="button" onClick={() => setActiveCategory(cat.id)}
               className={cn('px-3.5 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
                 activeCategory === cat.id
-                  ? 'bg-brand-primary-light border-brand-primary text-brand-primary'
-                  : 'bg-brand-surface border-brand-border text-brand-muted hover:border-brand-primary/40 hover:text-brand-text')}>
+                  ? 'bg-blue-500/10 border-blue-500 text-blue-500'
+                  : 'bg-navy-800 border-navy-700 text-[--text-muted] hover:border-blue-500/40 hover:text-foreground')}>
               {cat.label}
             </button>
           ))}
@@ -487,14 +487,14 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
             return (
               <button key={t.id} type="button" onClick={() => onSelect(t.id)}
                 className={cn('relative rounded-2xl overflow-hidden text-left transition-all',
-                  isSelected ? 'ring-2 ring-brand-primary ring-offset-2' : 'hover:scale-[1.02] hover:shadow-brand-md')}>
+                  isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : 'hover:scale-[1.02] hover:shadow-card')}>
                 <div className="h-24 w-full relative"><Preview selected={isSelected} /></div>
-                <div className="p-2.5 bg-brand-surface border-t border-brand-border/50">
-                  <p className="font-display font-bold text-[11px] text-brand-text">{t.label}</p>
-                  <p className="font-body text-[10px] text-brand-muted mt-0.5 leading-tight">{t.desc}</p>
+                <div className="p-2.5 bg-navy-800 border-t border-navy-700/50">
+                  <p className="font-display font-bold text-[11px] text-foreground">{t.label}</p>
+                  <p className="font-body text-[10px] text-[--text-muted] mt-0.5 leading-tight">{t.desc}</p>
                 </div>
-                {t.badge && <span className="absolute top-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-brand-primary text-white px-1.5 py-0.5 rounded-full">{t.badge}</span>}
-                {isSelected && <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-brand-primary flex items-center justify-center shadow"><Check size={9} className="text-white" /></div>}
+                {t.badge && <span className="absolute top-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-blue-500 text-white px-1.5 py-0.5 rounded-full">{t.badge}</span>}
+                {isSelected && <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow"><Check size={9} className="text-white" /></div>}
               </button>
             )
           })}
@@ -554,38 +554,38 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
 
           {/* Headline */}
           <div className="text-center">
-            <h1 className="font-display text-2xl font-bold text-brand-text mb-1">Crée ta vidéo Faceless</h1>
-            <p className="font-body text-sm text-brand-muted">Décris le contenu, colle ton script, choisis ton style — l'IA fait le reste scène par scène.</p>
+            <h1 className="font-display text-2xl font-bold text-foreground mb-1">Crée ta vidéo Faceless</h1>
+            <p className="font-body text-sm text-[--text-muted]">Décris le contenu, colle ton script, choisis ton style — l'IA fait le reste scène par scène.</p>
           </div>
 
           {/* Description */}
-          <div className="rounded-2xl border border-brand-border bg-brand-surface overflow-hidden">
+          <div className="rounded-2xl border border-navy-700 bg-navy-800 overflow-hidden">
             <div className="px-4 pt-4 pb-2">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-brand-muted mb-2">Description du contenu</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2">Description du contenu</p>
               <textarea
                 value={project.description}
                 onChange={(e) => onChange({ description: e.target.value })}
                 placeholder="Décris ta vidéo : personnages, ambiance, message principal... Ex : une vidéo éducative sur les trous noirs avec un narrateur scientifique et des animations spatiales."
                 rows={3}
-                className="w-full bg-transparent text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none resize-none"
+                className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none"
               />
             </div>
           </div>
 
           {/* Script / Audio */}
-          <div className="rounded-2xl border border-brand-border bg-brand-surface overflow-hidden">
+          <div className="rounded-2xl border border-navy-700 bg-navy-800 overflow-hidden">
             {/* Tab bar */}
             <div className="flex items-center gap-1 px-4 pt-3 mb-2">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-brand-muted flex-1">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] flex-1">
                 {project.inputType === 'script' ? 'Script' : 'Audio'}
               </p>
-              <div className="flex items-center gap-1 bg-brand-bg border border-brand-border rounded-xl p-0.5">
+              <div className="flex items-center gap-1 bg-navy-900 border border-navy-700 rounded-xl p-0.5">
                 <button type="button" onClick={() => onChange({ inputType: 'script' })}
-                  className={cn('px-3 py-1 rounded-lg text-xs font-mono transition-all', project.inputType === 'script' ? 'bg-white shadow-sm text-brand-text' : 'text-brand-muted hover:text-brand-text')}>
+                  className={cn('px-3 py-1 rounded-lg text-xs font-mono transition-all', project.inputType === 'script' ? 'bg-white shadow-sm text-foreground' : 'text-[--text-muted] hover:text-foreground')}>
                   Script
                 </button>
                 <button type="button" onClick={() => onChange({ inputType: 'audio' })}
-                  className={cn('px-3 py-1 rounded-lg text-xs font-mono transition-all', project.inputType === 'audio' ? 'bg-white shadow-sm text-brand-text' : 'text-brand-muted hover:text-brand-text')}>
+                  className={cn('px-3 py-1 rounded-lg text-xs font-mono transition-all', project.inputType === 'audio' ? 'bg-white shadow-sm text-foreground' : 'text-[--text-muted] hover:text-foreground')}>
                   Audio
                 </button>
               </div>
@@ -598,16 +598,16 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                 placeholder="Colle ou écris ton script complet ici. L'IA le découpera automatiquement en scènes et générera les prompts visuels pour chacune."
                 maxLength={8000}
                 rows={6}
-                className="w-full bg-transparent px-4 pb-3 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none resize-none"
+                className="w-full bg-transparent px-4 pb-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none"
               />
             ) : (
               <div className="px-4 pb-4">
                 <label htmlFor="faceless-audio"
                   className={cn('flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed cursor-pointer transition-all',
-                    project.audioFile ? 'border-brand-primary bg-brand-primary-light' : 'border-brand-border hover:border-brand-primary/50')}>
-                  <Upload size={18} className={cn('mb-2', project.audioFile ? 'text-brand-primary' : 'text-brand-muted')} />
-                  <p className="font-display text-sm font-semibold text-brand-text">{project.audioFile ? project.audioFile.name : 'Importer un fichier audio'}</p>
-                  <p className="text-xs text-brand-muted mt-0.5">MP3, WAV, M4A — max 50 MB</p>
+                    project.audioFile ? 'border-blue-500 bg-blue-500/10' : 'border-navy-700 hover:border-blue-500/50')}>
+                  <Upload size={18} className={cn('mb-2', project.audioFile ? 'text-blue-500' : 'text-[--text-muted]')} />
+                  <p className="font-display text-sm font-semibold text-foreground">{project.audioFile ? project.audioFile.name : 'Importer un fichier audio'}</p>
+                  <p className="text-xs text-[--text-muted] mt-0.5">MP3, WAV, M4A — max 50 MB</p>
                   <input ref={fileRef} id="faceless-audio" type="file" accept="audio/*" className="hidden"
                     onChange={(e) => onChange({ audioFile: e.target.files?.[0] ?? null })} />
                 </label>
@@ -621,7 +621,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                     const words = project.script.trim() ? project.script.trim().split(/\s+/).length : 0
                     const estSec = Math.round(words / 2.5) // ~150 wpm voiceover
                     return (
-                      <span className={cn('font-mono text-[10px]', project.script.length < 20 ? 'text-amber-500' : 'text-brand-muted')}>
+                      <span className={cn('font-mono text-[10px]', project.script.length < 20 ? 'text-amber-500' : 'text-[--text-muted]')}>
                         {words} mots · ~{estSec}s estimé
                         {project.script.length < 20 && ` · encore ${20 - project.script.length} car.`}
                       </span>
@@ -634,7 +634,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                           key={ex.label}
                           type="button"
                           onClick={() => onChange({ script: ex.script, description: ex.description, style: ex.style, duration: ex.duration })}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg border border-brand-border text-[10px] font-mono text-brand-muted hover:border-brand-primary/40 hover:text-brand-primary transition-all"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg border border-navy-700 text-[10px] font-mono text-[--text-muted] hover:border-blue-500/40 hover:text-blue-500 transition-all"
                         >
                           <Sparkles size={9} /> {ex.label}
                         </button>
@@ -670,7 +670,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             <div ref={styleRef} className="relative">
               <button type="button" onClick={() => { setShowStylePicker((v) => !v); setShowVoicePicker(false) }}
                 className={cn('flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-body transition-all',
-                  project.style ? 'bg-brand-primary-light border-brand-primary text-brand-primary' : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-primary/40')}>
+                  project.style ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40')}>
                 <span className="font-medium">{selectedStyle?.label ?? 'Style visuel'}</span>
                 <ChevronDown size={13} className={cn('transition-transform', showStylePicker && 'rotate-180')} />
               </button>
@@ -681,7 +681,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             <div ref={voiceRef} className="relative">
               <button type="button" onClick={() => { setShowVoicePicker((v) => !v); setShowStylePicker(false) }}
                 className={cn('flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-body transition-all',
-                  project.voiceId ? 'bg-brand-primary-light border-brand-primary text-brand-primary' : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-primary/40')}>
+                  project.voiceId ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40')}>
                 <Mic2 size={14} />
                 <span className="font-medium">{selectedVoice?.name ?? 'Voix off'}</span>
                 <ChevronDown size={13} className={cn('transition-transform', showVoicePicker && 'rotate-180')} />
@@ -690,11 +690,11 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             </div>
 
             {/* Format */}
-            <div className="flex items-center gap-1 rounded-xl border border-brand-border bg-brand-bg px-1.5 py-1">
+            <div className="flex items-center gap-1 rounded-xl border border-navy-700 bg-navy-900 px-1.5 py-1">
               {FORMATS.map((f) => (
                 <button key={f.id} type="button" title={f.desc} onClick={() => onChange({ format: f.id })}
                   className={cn('px-2.5 py-1 rounded-lg text-xs font-display font-semibold transition-all',
-                    project.format === f.id ? 'bg-brand-primary-light border border-brand-primary text-brand-primary' : 'text-brand-muted hover:text-brand-text')}>
+                    project.format === f.id ? 'bg-blue-500/10 border border-blue-500 text-blue-500' : 'text-[--text-muted] hover:text-foreground')}>
                   {f.label}
                 </button>
               ))}
@@ -703,7 +703,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             {/* Title */}
             <input type="text" value={project.title} onChange={(e) => onChange({ title: e.target.value })}
               placeholder="Titre (auto si vide)"
-              className="ml-auto hidden sm:block flex-1 max-w-xs bg-brand-surface border border-brand-border rounded-xl px-3 py-2 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary transition-colors" />
+              className="ml-auto hidden sm:block flex-1 max-w-xs bg-navy-800 border border-navy-700 rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors" />
           </div>
 
           {/* Generate row — separate from dropdowns to avoid click interception (P0 fix) */}
@@ -711,7 +711,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             <span />
             <button type="button" onClick={onNext} disabled={!canNext || loading}
               className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all shrink-0',
-                canNext && !loading ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-brand-bg border border-brand-border text-brand-muted cursor-not-allowed')}>
+                canNext && !loading ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-navy-900 border border-navy-700 text-[--text-muted] cursor-not-allowed')}>
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               Générer le storyboard
               {!loading && <ArrowRight size={13} />}
@@ -828,13 +828,13 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-brand-border shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-700 shrink-0">
         <div>
-          <h2 className="font-display text-base font-bold text-brand-text">Storyboard</h2>
-          <p className="font-body text-xs text-brand-muted">{scenes.length} scènes générées — modifie le script et les prompts avant de générer les images</p>
+          <h2 className="font-display text-base font-bold text-foreground">Storyboard</h2>
+          <p className="font-body text-xs text-[--text-muted]">{scenes.length} scènes générées — modifie le script et les prompts avant de générer les images</p>
         </div>
         <button type="button" onClick={regenAll} disabled={generating}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand-border text-xs font-body text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all">
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-navy-700 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
           {generating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
           Tout régénérer
         </button>
@@ -851,17 +851,17 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
             onDrop={() => handleDrop(i)}
             onDragEnd={handleDragEnd}
             className={cn(
-              'rounded-2xl border bg-brand-surface overflow-hidden transition-all',
-              dragOverIndex === i && dragIndex !== i ? 'border-brand-primary/60 ring-2 ring-brand-primary/20' : 'border-brand-border',
+              'rounded-2xl border bg-navy-800 overflow-hidden transition-all',
+              dragOverIndex === i && dragIndex !== i ? 'border-blue-500/60 ring-2 ring-blue-500/20' : 'border-navy-700',
               dragIndex === i ? 'opacity-50' : '',
             )}
           >
             {/* Scene header */}
-            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-brand-border/60 bg-brand-bg/40">
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-navy-700/60 bg-navy-900/40">
               {/* Drag handle */}
-              <GripVertical size={14} className="text-brand-muted/40 cursor-grab active:cursor-grabbing shrink-0" />
+              <GripVertical size={14} className="text-[--text-muted]/40 cursor-grab active:cursor-grabbing shrink-0" />
               <div className="flex items-center gap-1.5">
-                <span className="font-mono text-[10px] font-bold text-brand-primary bg-brand-primary-light px-2 py-0.5 rounded-full">
+                <span className="font-mono text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">
                   Scène {i + 1}
                 </span>
                 <span className="font-mono text-[10px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
@@ -870,13 +870,13 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               </div>
               <div className="flex-1" />
               <button type="button" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
-                className={cn('flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all', editingId === scene.id ? 'bg-brand-primary-light text-brand-primary' : 'text-brand-muted hover:text-brand-text')}>
+                className={cn('flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all', editingId === scene.id ? 'bg-blue-500/10 text-blue-500' : 'text-[--text-muted] hover:text-foreground')}>
                 <Edit3 size={11} />
                 {editingId === scene.id ? 'Fermer' : 'Modifier'}
               </button>
               <button type="button" onClick={() => regenScene(scene.id)}
                 disabled={scene.imageStatus === 'generating'}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-brand-muted hover:text-brand-text transition-all">
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[--text-muted] hover:text-foreground transition-all">
                 {scene.imageStatus === 'generating' ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
                 Régénérer
               </button>
@@ -884,7 +884,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               {i < scenes.length - 1 && (
                 <button type="button" onClick={() => mergeWithNext(scene.id)}
                   title="Fusionner avec la scène suivante"
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-brand-muted hover:text-amber-600 transition-all">
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[--text-muted] hover:text-amber-600 transition-all">
                   <Merge size={11} />
                 </button>
               )}
@@ -892,7 +892,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               {scenes.length > 1 && (
                 <button type="button" onClick={() => deleteScene(scene.id)}
                   title="Supprimer cette scène"
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-brand-muted hover:text-red-500 transition-all">
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[--text-muted] hover:text-red-500 transition-all">
                   <Trash2 size={11} />
                 </button>
               )}
@@ -901,46 +901,46 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
             <div className="p-4 space-y-3">
               {/* Script text */}
               <div>
-                <p className="font-mono text-[9px] uppercase tracking-widest text-brand-muted mb-1.5">Script de la scène</p>
+                <p className="font-mono text-[9px] uppercase tracking-widest text-[--text-muted] mb-1.5">Script de la scène</p>
                 {editingId === scene.id ? (
                   <textarea value={scene.scriptText} onChange={(e) => updateScene(scene.id, { scriptText: e.target.value })}
                     rows={3} placeholder="Texte du script pour cette scène…"
-                    className="w-full bg-brand-bg border border-brand-border rounded-xl px-3 py-2 text-sm font-body text-brand-text focus:outline-none focus:border-brand-primary transition-colors resize-none" />
+                    className="w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
                 ) : (
-                  <p className="text-sm font-body text-brand-text leading-relaxed">{scene.scriptText}</p>
+                  <p className="text-sm font-body text-foreground leading-relaxed">{scene.scriptText}</p>
                 )}
               </div>
 
               {/* Prompts */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-brand-bg rounded-xl p-3 border border-brand-border/60">
+                <div className="bg-navy-900 rounded-xl p-3 border border-navy-700/60">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <div className="w-3 h-3 rounded bg-sky-200 flex items-center justify-center">
                       <span className="text-[8px]">🖼</span>
                     </div>
-                    <p className="font-mono text-[9px] uppercase tracking-widest text-brand-muted">Prompt image</p>
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-[--text-muted]">Prompt image</p>
                   </div>
                   {editingId === scene.id ? (
                     <textarea value={scene.imagePrompt} onChange={(e) => updateScene(scene.id, { imagePrompt: e.target.value })}
                       rows={3} placeholder="Prompt image pour cette scène…"
-                      className="w-full bg-white border border-brand-border rounded-lg px-2 py-1.5 text-xs font-mono text-brand-text focus:outline-none focus:border-brand-primary transition-colors resize-none" />
+                      className="w-full bg-white border border-navy-700 rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
                   ) : (
-                    <p className="text-xs font-mono text-brand-muted leading-relaxed line-clamp-3">{scene.imagePrompt}</p>
+                    <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-3">{scene.imagePrompt}</p>
                   )}
                 </div>
-                <div className="bg-brand-bg rounded-xl p-3 border border-brand-border/60">
+                <div className="bg-navy-900 rounded-xl p-3 border border-navy-700/60">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <div className="w-3 h-3 rounded bg-violet-200 flex items-center justify-center">
                       <span className="text-[8px]">🎬</span>
                     </div>
-                    <p className="font-mono text-[9px] uppercase tracking-widest text-brand-muted">Prompt animation</p>
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-[--text-muted]">Prompt animation</p>
                   </div>
                   {editingId === scene.id ? (
                     <textarea value={scene.animationPrompt} onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
                       rows={3} placeholder="Prompt animation pour cette scène…"
-                      className="w-full bg-white border border-brand-border rounded-lg px-2 py-1.5 text-xs font-mono text-brand-text focus:outline-none focus:border-brand-primary transition-colors resize-none" />
+                      className="w-full bg-white border border-navy-700 rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
                   ) : (
-                    <p className="text-xs font-mono text-brand-muted leading-relaxed line-clamp-3">{scene.animationPrompt}</p>
+                    <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-3">{scene.animationPrompt}</p>
                   )}
                 </div>
               </div>
@@ -950,15 +950,15 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
 
         {/* Add scene button */}
         <button type="button" onClick={addScene}
-          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-dashed border-brand-border/60 text-xs font-body text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all hover:bg-brand-primary-light/20">
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-dashed border-navy-700/60 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all hover:bg-blue-500/10/20">
           <Plus size={14} />
           Ajouter une scène
         </button>
       </div>
 
       {/* Footer navigation */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-brand-border bg-brand-surface shrink-0">
-        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text transition-all">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-navy-700 bg-navy-800 shrink-0">
+        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
         <button type="button" onClick={onNext} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all">
@@ -1000,7 +1000,7 @@ function ComparisonSlider({ before, after, onClose }: { before: string; after: s
           <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none"
             style={{ left: `${pct}%` }}>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white shadow-xl flex items-center justify-center">
-              <span className="text-brand-muted font-mono text-xs">↔</span>
+              <span className="text-[--text-muted] font-mono text-xs">↔</span>
             </div>
           </div>
           {/* Labels */}
@@ -1305,10 +1305,10 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-brand-border shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-700 shrink-0">
         <div>
-          <h2 className="font-display text-base font-bold text-brand-text">Génération des images</h2>
-          <p className="font-body text-xs text-brand-muted">{doneCnt}/{scenes.length} images générées</p>
+          <h2 className="font-display text-base font-bold text-foreground">Génération des images</h2>
+          <p className="font-body text-xs text-[--text-muted]">{doneCnt}/{scenes.length} images générées</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -1317,14 +1317,14 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-body transition-all',
               batchMode
-                ? 'bg-brand-primary-light border-brand-primary text-brand-primary'
-                : 'border-brand-border text-brand-muted hover:text-brand-text hover:border-brand-primary/40'
+                ? 'bg-blue-500/10 border-blue-500 text-blue-500'
+                : 'border-navy-700 text-[--text-muted] hover:text-foreground hover:border-blue-500/40'
             )}>
             {batchMode ? <Check size={12} /> : <Settings2 size={12} />}
             {batchMode ? 'Sélection active' : 'Sélection multiple'}
           </button>
           <button type="button" onClick={generateAll} disabled={generatingAll || allDone || scene0Phase === 'pending_validation'}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand-border text-xs font-body text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all disabled:opacity-40">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-navy-700 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all disabled:opacity-40">
             {generatingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
             {allDone ? 'Toutes générées'
               : scene0Phase === 'idle' ? 'Générer scène 0'
@@ -1337,16 +1337,16 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
       {/* Batch action bar */}
       {batchMode && selected.size > 0 && (
-        <div className="px-6 py-2.5 bg-brand-primary-light border-b border-brand-primary/20 flex items-center gap-3 shrink-0">
-          <p className="font-mono text-xs text-brand-primary flex-1">
+        <div className="px-6 py-2.5 bg-blue-500/10 border-b border-blue-500/20 flex items-center gap-3 shrink-0">
+          <p className="font-mono text-xs text-blue-500 flex-1">
             {selected.size} scène{selected.size > 1 ? 's' : ''} sélectionnée{selected.size > 1 ? 's' : ''}
           </p>
           <button type="button" onClick={() => setSelected(new Set())}
-            className="text-xs text-brand-muted hover:text-brand-text transition-colors">
+            className="text-xs text-[--text-muted] hover:text-foreground transition-colors">
             Tout désélectionner
           </button>
           <button type="button" onClick={regenerateSelected}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-display font-semibold hover:bg-brand-primary/90 transition-all">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500 text-white text-xs font-display font-semibold hover:bg-blue-500/90 transition-all">
             <RefreshCw size={11} /> Régénérer {selected.size} scène{selected.size > 1 ? 's' : ''}
           </button>
         </div>
@@ -1400,7 +1400,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       <div className="flex-1 overflow-y-auto px-6 py-5">
         <div className="grid grid-cols-3 gap-4">
           {scenes.map((scene, i) => (
-            <div key={scene.id} className="rounded-2xl border border-brand-border overflow-hidden bg-brand-surface">
+            <div key={scene.id} className="rounded-2xl border border-navy-700 overflow-hidden bg-navy-800">
               {/* Image preview */}
               <div className={cn('h-36 relative bg-gradient-to-br', SCENE_COLORS[i % SCENE_COLORS.length])}>
                 {scene.imageStatus === 'generating' ? (
@@ -1445,7 +1445,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                     className={cn(
                       'absolute top-2 left-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all z-10',
                       selected.has(scene.id)
-                        ? 'bg-brand-primary border-brand-primary'
+                        ? 'bg-blue-500 border-blue-500'
                         : 'bg-black/40 border-white/40 hover:border-white'
                     )}>
                     {selected.has(scene.id) && <Check size={10} className="text-white" />}
@@ -1481,7 +1481,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                         before: scene.imageHistory![scene.imageHistory!.length - 1],
                         after: scene.imageUrl!,
                       })}
-                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-brand-secondary/80 flex items-center justify-center transition-all"
+                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-purple-500/80 flex items-center justify-center transition-all"
                       title="Comparer avant/après"
                     >
                       <ArrowLeft size={8} className="translate-x-px" />
@@ -1489,7 +1489,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                     </button>
                   )}
                   <button type="button" aria-label="Modifier le prompt" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
-                    className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-brand-primary text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
+                    className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-blue-500 text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
                     <Edit3 size={10} />
                   </button>
                   <button type="button" aria-label="Régénérer l'image" onClick={() => generateImage(scene.id)} disabled={scene.imageStatus === 'generating'}
@@ -1506,20 +1506,20 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                     <textarea value={scene.imagePrompt}
                       onChange={(e) => updateScene(scene.id, { imagePrompt: e.target.value })}
                       placeholder="Prompt image…" rows={3}
-                      className="w-full bg-brand-bg border border-brand-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-brand-text focus:outline-none focus:border-brand-primary resize-none" />
+                      className="w-full bg-navy-900 border border-navy-700 rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none" />
 
                     {/* Improve prompt panel */}
                     {improveResult && improvingId === null && (
-                      <div className="bg-brand-primary-light border border-brand-primary/20 rounded-lg p-2.5 space-y-1.5">
-                        <p className="font-mono text-[9px] uppercase tracking-widest text-brand-primary">✨ Suggestion Claude</p>
-                        <p className="font-mono text-[10px] text-brand-text leading-relaxed">{improveResult.improvedPrompt}</p>
-                        <p className="text-[10px] text-brand-muted italic">{improveResult.explanation}</p>
+                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2.5 space-y-1.5">
+                        <p className="font-mono text-[9px] uppercase tracking-widest text-blue-500">✨ Suggestion Claude</p>
+                        <p className="font-mono text-[10px] text-foreground leading-relaxed">{improveResult.improvedPrompt}</p>
+                        <p className="text-[10px] text-[--text-muted] italic">{improveResult.explanation}</p>
                         <button type="button"
                           onClick={() => {
                             updateScene(scene.id, { imagePrompt: improveResult.improvedPrompt })
                             setImproveResult(null)
                           }}
-                          className="w-full py-1 rounded-md bg-brand-primary text-white text-[10px] font-display font-semibold hover:bg-brand-primary/90 transition-all">
+                          className="w-full py-1 rounded-md bg-blue-500 text-white text-[10px] font-display font-semibold hover:bg-blue-500/90 transition-all">
                           Utiliser ce prompt
                         </button>
                       </div>
@@ -1529,20 +1529,20 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                       <button type="button"
                         onClick={() => improvePrompt(scene.id)}
                         disabled={improvingId === scene.id}
-                        className="flex items-center gap-1 flex-1 py-1.5 rounded-lg border border-brand-secondary/30 text-brand-secondary bg-brand-secondary/5 text-xs font-body hover:bg-brand-secondary/10 transition-all disabled:opacity-50">
+                        className="flex items-center gap-1 flex-1 py-1.5 rounded-lg border border-purple-500/30 text-purple-500 bg-purple-500/5 text-xs font-body hover:bg-purple-500/10 transition-all disabled:opacity-50">
                         {improvingId === scene.id
                           ? <Loader2 size={10} className="animate-spin" />
                           : <Sparkles size={10} />}
                         Améliorer via IA
                       </button>
                       <button type="button" onClick={() => { generateImage(scene.id); setEditingId(null); setImproveResult(null) }}
-                        className="flex-1 py-1.5 rounded-lg bg-brand-primary text-white text-xs font-display font-semibold hover:bg-brand-primary/90 transition-all">
+                        className="flex-1 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-display font-semibold hover:bg-blue-500/90 transition-all">
                         Régénérer
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-[11px] font-body text-brand-muted leading-snug line-clamp-3">{scene.scriptText}</p>
+                  <p className="text-[11px] font-body text-[--text-muted] leading-snug line-clamp-3">{scene.scriptText}</p>
                 )}
               </div>
             </div>
@@ -1551,17 +1551,17 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-brand-border bg-brand-surface shrink-0">
-        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text transition-all">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-navy-700 bg-navy-800 shrink-0">
+        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
         <div className="flex items-center gap-3">
           {!allDone && (
-            <p className="text-xs font-body text-brand-muted">{scenes.length - doneCnt} image(s) restante(s)</p>
+            <p className="text-xs font-body text-[--text-muted]">{scenes.length - doneCnt} image(s) restante(s)</p>
           )}
           <button type="button" onClick={onNext} disabled={!allDone}
             className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
-              allDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-brand-bg border border-brand-border text-brand-muted cursor-not-allowed')}>
+              allDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-navy-900 border border-navy-700 text-[--text-muted] cursor-not-allowed')}>
             Générer les clips <ArrowRight size={13} />
           </button>
         </div>
@@ -1694,13 +1694,13 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-brand-border shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-700 shrink-0">
         <div>
-          <h2 className="font-display text-base font-bold text-brand-text">Génération des clips</h2>
-          <p className="font-body text-xs text-brand-muted">{doneCnt}/{scenes.length} clips · voix off {voiceStatus === 'done' ? '✓ prête' : 'en attente'}</p>
+          <h2 className="font-display text-base font-bold text-foreground">Génération des clips</h2>
+          <p className="font-body text-xs text-[--text-muted]">{doneCnt}/{scenes.length} clips · voix off {voiceStatus === 'done' ? '✓ prête' : 'en attente'}</p>
         </div>
         <button type="button" onClick={generateAll} disabled={generatingAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand-border text-xs font-body text-brand-muted hover:text-brand-text transition-all disabled:opacity-40">
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-navy-700 text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
           {generatingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
           Tout générer
         </button>
@@ -1709,7 +1709,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
         {/* Clips list */}
         {scenes.map((scene, i) => (
-          <div key={scene.id} className="rounded-2xl border border-brand-border bg-brand-surface overflow-hidden">
+          <div key={scene.id} className="rounded-2xl border border-navy-700 bg-navy-800 overflow-hidden">
             <div className="flex items-start gap-4 p-4">
               {/* Video thumbnail / preview */}
               <div className={cn('w-28 h-16 rounded-xl flex-shrink-0 relative overflow-hidden bg-gradient-to-br', SCENE_COLORS[i % SCENE_COLORS.length])}>
@@ -1743,7 +1743,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                   <span className={cn('font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full',
                     scene.clipStatus === 'done' ? 'bg-emerald-50 text-emerald-600' :
                     scene.clipStatus === 'generating' ? 'bg-blue-50 text-blue-500' :
-                    'bg-brand-bg text-brand-muted border border-brand-border')}>
+                    'bg-navy-900 text-[--text-muted] border border-navy-700')}>
                     {scene.clipStatus === 'done' ? '✓ Prêt' : scene.clipStatus === 'generating' ? 'Génération…' : 'En attente'}
                   </span>
                   {scene.audioDuration && scene.duree_estimee && scene.audioDuration > scene.duree_estimee * 1.2 && (
@@ -1754,16 +1754,16 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                   )}
                   <div className="flex-1" />
                   <button type="button" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
-                    className={cn('flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] transition-all', editingId === scene.id ? 'bg-brand-primary-light text-brand-primary' : 'text-brand-muted hover:text-brand-text')}>
+                    className={cn('flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] transition-all', editingId === scene.id ? 'bg-blue-500/10 text-blue-500' : 'text-[--text-muted] hover:text-foreground')}>
                     <Edit3 size={10} /> Prompt
                   </button>
                   <button type="button" onClick={() => generateClip(scene.id)} disabled={scene.clipStatus === 'generating'}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] text-brand-muted hover:text-brand-text transition-all disabled:opacity-40">
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
                     <RefreshCw size={10} /> Clip
                   </button>
                   {videoId && (
                     <button type="button" onClick={() => regenImageAndClip(scene.id)} disabled={scene.clipStatus === 'generating' || scene.imageStatus === 'generating'}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] text-brand-muted hover:text-brand-primary transition-all disabled:opacity-40">
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] text-[--text-muted] hover:text-blue-500 transition-all disabled:opacity-40">
                       <Sparkles size={10} /> Image+Clip
                     </button>
                   )}
@@ -1772,9 +1772,9 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                 {editingId === scene.id ? (
                   <textarea value={scene.animationPrompt} onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
                     rows={2} placeholder="Prompt animation…"
-                    className="w-full bg-brand-bg border border-brand-border rounded-lg px-2 py-1.5 text-xs font-mono text-brand-text focus:outline-none focus:border-brand-primary resize-none" />
+                    className="w-full bg-navy-900 border border-navy-700 rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none" />
                 ) : (
-                  <p className="text-xs font-mono text-brand-muted leading-relaxed line-clamp-2">{scene.animationPrompt}</p>
+                  <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-2">{scene.animationPrompt}</p>
                 )}
               </div>
             </div>
@@ -1796,21 +1796,21 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
 
         {/* Voice-over section */}
         {voiceId && (
-          <div className="rounded-2xl border border-brand-border bg-brand-surface overflow-hidden">
+          <div className="rounded-2xl border border-navy-700 bg-navy-800 overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-3">
               <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
-                voiceStatus === 'done' ? 'bg-emerald-50' : voiceStatus === 'generating' ? 'bg-blue-50' : 'bg-brand-bg border border-brand-border')}>
-                {voiceStatus === 'generating' ? <Loader2 size={16} className="text-blue-500 animate-spin" /> : <Volume2 size={16} className={voiceStatus === 'done' ? 'text-emerald-600' : 'text-brand-muted'} />}
+                voiceStatus === 'done' ? 'bg-emerald-50' : voiceStatus === 'generating' ? 'bg-blue-50' : 'bg-navy-900 border border-navy-700')}>
+                {voiceStatus === 'generating' ? <Loader2 size={16} className="text-blue-500 animate-spin" /> : <Volume2 size={16} className={voiceStatus === 'done' ? 'text-emerald-600' : 'text-[--text-muted]'} />}
               </div>
               <div className="flex-1">
-                <p className="font-display text-sm font-semibold text-brand-text">Voix off</p>
-                <p className="text-xs font-body text-brand-muted">
+                <p className="font-display text-sm font-semibold text-foreground">Voix off</p>
+                <p className="text-xs font-body text-[--text-muted]">
                   {voiceStatus === 'done' ? 'Générée et synchronisée sur les scènes' : voiceStatus === 'generating' ? 'Synthèse en cours…' : 'Sera générée en parallèle des clips'}
                 </p>
               </div>
               {voiceStatus !== 'done' && (
                 <button type="button" onClick={generateVoice} disabled={voiceStatus === 'generating'}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand-border text-xs font-body text-brand-muted hover:text-brand-text transition-all disabled:opacity-40">
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-navy-700 text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
                   {voiceStatus === 'generating' ? <Loader2 size={11} className="animate-spin" /> : <Play size={11} />}
                   Générer la voix
                 </button>
@@ -1819,8 +1819,8 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
 
             {/* Audio player */}
             {voiceStatus === 'done' && videoId && (
-              <div className="px-4 py-3 border-t border-brand-border/60">
-                <p className="font-mono text-[9px] uppercase tracking-widest text-brand-muted mb-2">Lecture de la voix off</p>
+              <div className="px-4 py-3 border-t border-navy-700/60">
+                <p className="font-mono text-[9px] uppercase tracking-widest text-[--text-muted] mb-2">Lecture de la voix off</p>
                 <audio
                   controls
                   className="w-full h-10 rounded-lg"
@@ -1834,18 +1834,18 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
             {/* Sync timeline */}
             {voiceStatus === 'done' && (
               <div className="px-4 pb-4">
-                <div className="bg-brand-bg rounded-xl p-3 border border-brand-border/60">
-                  <p className="font-mono text-[9px] uppercase tracking-widest text-brand-muted mb-2">Synchronisation</p>
+                <div className="bg-navy-900 rounded-xl p-3 border border-navy-700/60">
+                  <p className="font-mono text-[9px] uppercase tracking-widest text-[--text-muted] mb-2">Synchronisation</p>
                   <div className="flex gap-1 h-8 items-center">
                     {scenes.map((_, i) => (
-                      <div key={i} className={cn('flex-1 h-full rounded-md flex items-center justify-center text-[8px] font-mono text-white font-bold', ['bg-brand-primary/70','bg-violet-500/70','bg-sky-500/70','bg-emerald-500/70','bg-orange-500/70','bg-pink-500/70'][i % 6])}>
+                      <div key={i} className={cn('flex-1 h-full rounded-md flex items-center justify-center text-[8px] font-mono text-white font-bold', ['bg-blue-500/70','bg-violet-500/70','bg-sky-500/70','bg-emerald-500/70','bg-orange-500/70','bg-pink-500/70'][i % 6])}>
                         S{i + 1}
                       </div>
                     ))}
                   </div>
                   <div className="flex justify-between mt-1">
-                    <span className="font-mono text-[8px] text-brand-muted">0:00</span>
-                    <span className="font-mono text-[8px] text-brand-muted">0:30</span>
+                    <span className="font-mono text-[8px] text-[--text-muted]">0:00</span>
+                    <span className="font-mono text-[8px] text-[--text-muted]">0:30</span>
                   </div>
                 </div>
               </div>
@@ -1855,21 +1855,21 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-brand-border bg-brand-surface shrink-0">
-        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text transition-all">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-navy-700 bg-navy-800 shrink-0">
+        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
         <div className="flex items-center gap-2">
           {videoId && hasRegenerated && (
             <button type="button" onClick={handleReassemble} disabled={reassembling}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-primary text-white font-display font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white font-display font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50">
               {reassembling ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
               {reassembling ? 'Assemblage…' : 'Réassembler'}
             </button>
           )}
           <button type="button" onClick={onNext} disabled={!allClipsDone}
             className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
-              allClipsDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-brand-bg border border-brand-border text-brand-muted cursor-not-allowed')}>
+              allClipsDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-navy-900 border border-navy-700 text-[--text-muted] cursor-not-allowed')}>
             Assembler la vidéo <ArrowRight size={13} />
           </button>
         </div>
@@ -1965,13 +1965,13 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
     <div className="flex flex-col items-center justify-center h-full px-8 max-w-xl mx-auto gap-6">
       {!isDone && !isError ? (
         <div className="w-full text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-brand-primary/10 flex items-center justify-center mx-auto">
-            <Loader2 size={28} className="text-brand-primary animate-spin" />
+          <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto">
+            <Loader2 size={28} className="text-blue-500 animate-spin" />
           </div>
-          <h2 className="font-display text-xl font-bold text-brand-text">
+          <h2 className="font-display text-xl font-bold text-foreground">
             {STATUS_LABELS[status] ?? 'Génération en cours…'}
           </h2>
-          <p className="font-body text-sm text-brand-muted">
+          <p className="font-body text-sm text-[--text-muted]">
             {project.title || 'Vidéo Faceless'} · {project.scenes.length} scènes · {project.duration}
           </p>
           <ProgressBar value={progress} showLabel status={status} message={STATUS_LABELS[status] ?? 'En cours…'} />
@@ -1981,17 +1981,17 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
           <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
             <X size={26} className="text-red-500" />
           </div>
-          <h2 className="font-display text-xl font-bold text-brand-text">Erreur de génération</h2>
-          <p className="font-body text-sm text-brand-muted">La génération a échoué. Vérifie les logs du serveur.</p>
+          <h2 className="font-display text-xl font-bold text-foreground">Erreur de génération</h2>
+          <p className="font-body text-sm text-[--text-muted]">La génération a échoué. Vérifie les logs du serveur.</p>
           <div className="flex items-center gap-3 justify-center">
             {onRetry && (
               <button type="button" onClick={onRetry}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary text-white text-sm font-body hover:opacity-90 transition-all">
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 text-white text-sm font-body hover:opacity-90 transition-all">
                 <RotateCcw size={14} /> Relancer la génération
               </button>
             )}
             <button type="button" onClick={onNew}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text transition-all">
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
               <Plus size={14} /> Nouvelle vidéo
             </button>
           </div>
@@ -2002,8 +2002,8 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
             <Check size={26} className="text-emerald-600" />
           </div>
           <div>
-            <h2 className="font-display text-2xl font-bold text-brand-text mb-1">Votre vidéo est prête !</h2>
-            <p className="font-body text-sm text-brand-muted">{project.title || 'Vidéo Faceless'} · {project.scenes.length} scènes · {project.duration}</p>
+            <h2 className="font-display text-2xl font-bold text-foreground mb-1">Votre vidéo est prête !</h2>
+            <p className="font-body text-sm text-[--text-muted]">{project.title || 'Vidéo Faceless'} · {project.scenes.length} scènes · {project.duration}</p>
           </div>
 
           <div className={cn('w-full rounded-2xl overflow-hidden aspect-video bg-gradient-to-br', SCENE_COLORS[0], 'flex items-center justify-center')}>
@@ -2031,13 +2031,13 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
             </button>
             {onEditScenes && (
               <button type="button" onClick={onEditScenes}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all">
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
                 <Edit3 size={14} />
                 Modifier des scènes
               </button>
             )}
             <button type="button" onClick={onNew}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-border text-sm font-body text-brand-muted hover:text-brand-text hover:border-brand-primary/40 transition-all">
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
               <Plus size={14} />
               Nouvelle vidéo
             </button>
@@ -2240,9 +2240,9 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
-        <Loader2 size={32} className="text-brand-primary animate-spin" />
-        <p className="font-display text-base font-semibold text-brand-text">Découpage du script en scènes…</p>
-        <p className="font-body text-sm text-brand-muted">L'IA analyse ton script et génère les prompts visuels.</p>
+        <Loader2 size={32} className="text-blue-500 animate-spin" />
+        <p className="font-display text-base font-semibold text-foreground">Découpage du script en scènes…</p>
+        <p className="font-body text-sm text-[--text-muted]">L'IA analyse ton script et génère les prompts visuels.</p>
       </div>
     )
   }
@@ -2372,16 +2372,16 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside className="w-52 bg-brand-surface border-r border-brand-border flex flex-col shrink-0">
-        <div className="p-4 border-b border-brand-border flex items-center justify-between">
-          <h2 className="font-display text-sm font-semibold text-brand-text">Faceless Video</h2>
-          <Wand2 size={14} className="text-brand-muted" />
+      <aside className="w-52 bg-navy-800 border-r border-navy-700 flex flex-col shrink-0">
+        <div className="p-4 border-b border-navy-700 flex items-center justify-between">
+          <h2 className="font-display text-sm font-semibold text-foreground">Faceless Video</h2>
+          <Wand2 size={14} className="text-[--text-muted]" />
         </div>
 
-        <div className="p-3 border-b border-brand-border">
+        <div className="p-3 border-b border-navy-700">
           <button type="button" onClick={() => setViewId(null)}
-            className="flex items-center gap-2 w-full bg-brand-bg border border-brand-border rounded-xl px-3 py-2.5 text-sm font-body text-brand-text hover:border-brand-primary/40 hover:bg-blue-50 transition-all">
-            <Plus size={15} className="text-brand-primary" />
+            className="flex items-center gap-2 w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-blue-500/40 hover:bg-blue-50 transition-all">
+            <Plus size={15} className="text-blue-500" />
             Nouvelle vidéo
           </button>
         </div>
@@ -2389,8 +2389,8 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-              <Video size={26} className="text-brand-border mb-2" />
-              <p className="text-brand-muted font-body text-xs">Aucune vidéo.</p>
+              <Video size={26} className="text-navy-700 mb-2" />
+              <p className="text-[--text-muted] font-body text-xs">Aucune vidéo.</p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -2398,9 +2398,9 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
                 <button key={s.id} type="button" onClick={() => setViewId(s.id)}
                   title={s.title ?? 'Sans titre'}
                   className={cn('w-full text-left px-3 py-2.5 rounded-xl transition-all',
-                    viewId === s.id ? 'bg-blue-50' : 'hover:bg-brand-bg')}>
-                  <p className="font-body text-xs text-brand-text truncate">{s.title ?? 'Sans titre'}</p>
-                  <span className="font-mono text-[9px] text-brand-muted">
+                    viewId === s.id ? 'bg-blue-50' : 'hover:bg-navy-900')}>
+                  <p className="font-body text-xs text-foreground truncate">{s.title ?? 'Sans titre'}</p>
+                  <span className="font-mono text-[9px] text-[--text-muted]">
                     {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                   </span>
                 </button>
@@ -2416,8 +2416,8 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
           <div className="flex flex-col items-center justify-center h-full px-8 max-w-xl mx-auto gap-4">
             <div className="w-full">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-lg font-bold text-brand-text">{viewSession.title ?? 'Vidéo'}</h2>
-                <button type="button" onClick={() => setViewId(null)} className="text-xs font-mono text-brand-primary hover:underline">+ Nouvelle vidéo</button>
+                <h2 className="font-display text-lg font-bold text-foreground">{viewSession.title ?? 'Vidéo'}</h2>
+                <button type="button" onClick={() => setViewId(null)} className="text-xs font-mono text-blue-500 hover:underline">+ Nouvelle vidéo</button>
               </div>
               {viewSession.output_url
                 ? <VideoPlayer url={viewSession.output_url} title={viewSession.title ?? undefined} />

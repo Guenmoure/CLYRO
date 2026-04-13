@@ -58,7 +58,7 @@ export function VideoPlayer({ url, title, className }: VideoPlayerProps) {
       {/* Actions */}
       <div className="flex items-center gap-2">
         {title && (
-          <p className="flex-1 font-display font-semibold text-sm text-brand-text truncate">{title}</p>
+          <p className="flex-1 font-display font-semibold text-sm text-foreground truncate">{title}</p>
         )}
         <button
           onClick={handleCopy}
@@ -66,7 +66,7 @@ export function VideoPlayer({ url, title, className }: VideoPlayerProps) {
             'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono transition-all',
             copied
               ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
-              : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-primary hover:text-brand-primary'
+              : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500 hover:text-blue-500'
           )}
         >
           {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -75,7 +75,7 @@ export function VideoPlayer({ url, title, className }: VideoPlayerProps) {
         <a
           href={url}
           download
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-text text-white text-xs font-mono hover:opacity-80 transition-opacity"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-white text-xs font-mono hover:opacity-80 transition-opacity"
         >
           <Download size={12} />
           Télécharger

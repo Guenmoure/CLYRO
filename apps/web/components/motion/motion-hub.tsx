@@ -126,14 +126,14 @@ interface VoiceItem { id: string; name: string; gender?: string }
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    done:       'bg-[#eafaf1] text-[#27ae60]',
-    processing: 'bg-brand-primary-light text-brand-primary',
-    storyboard: 'bg-brand-primary-light text-brand-primary',
-    visuals:    'bg-brand-primary-light text-brand-primary',
-    audio:      'bg-brand-primary-light text-brand-primary',
-    assembly:   'bg-brand-primary-light text-brand-primary',
-    pending:    'bg-brand-bg text-brand-muted',
-    error:      'bg-red-50 text-red-500',
+    done:       'bg-success/10 text-success',
+    processing: 'bg-blue-500/10 text-blue-400',
+    storyboard: 'bg-blue-500/10 text-blue-400',
+    visuals:    'bg-blue-500/10 text-blue-400',
+    audio:      'bg-blue-500/10 text-blue-400',
+    assembly:   'bg-blue-500/10 text-blue-400',
+    pending:    'bg-navy-900 text-[--text-muted]',
+    error:      'bg-error/10 text-error',
   }
   const label: Record<string, string> = {
     done: 'Prête', processing: 'En cours', storyboard: 'Storyboard',
@@ -179,34 +179,34 @@ function StoryboardPanel({ scenes, onScenesChange }: {
 
   return (
     <div className="mt-6">
-      <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-3">
+      <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-3">
         Storyboard — {scenes.length} scène{scenes.length > 1 ? 's' : ''}
       </p>
       <div className="space-y-2">
         {scenes.map((scene, idx) => (
           <div
             key={scene.id}
-            className="bg-brand-bg border border-brand-border rounded-xl p-3 flex flex-col gap-2"
+            className="bg-navy-900 border border-navy-700 rounded-xl p-3 flex flex-col gap-2"
           >
             {/* Header row */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-mono text-[11px] text-brand-muted shrink-0">#{idx + 1}</span>
+              <span className="font-mono text-[11px] text-[--text-muted] shrink-0">#{idx + 1}</span>
               <SceneTypeBadge sceneType={scene.scene_type} />
-              <span className="font-mono text-[10px] text-brand-muted ml-auto shrink-0">
+              <span className="font-mono text-[10px] text-[--text-muted] ml-auto shrink-0">
                 {scene.duree_estimee}s
               </span>
             </div>
 
             {/* display_text */}
             {scene.display_text && (
-              <p className="font-display text-sm font-semibold text-brand-text leading-tight truncate">
+              <p className="font-display text-sm font-semibold text-foreground leading-tight truncate">
                 {scene.display_text}
               </p>
             )}
 
             {/* texte_voix */}
             {scene.texte_voix && (
-              <p className="font-body text-xs text-brand-muted leading-snug line-clamp-2">
+              <p className="font-body text-xs text-[--text-muted] leading-snug line-clamp-2">
                 {scene.texte_voix}
               </p>
             )}
@@ -215,7 +215,7 @@ function StoryboardPanel({ scenes, onScenesChange }: {
             <div className="flex items-center gap-2">
               <label
                 htmlFor={`scene-type-${idx}`}
-                className="font-mono text-[10px] uppercase tracking-wider text-brand-muted shrink-0"
+                className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] shrink-0"
               >
                 Type
               </label>
@@ -224,7 +224,7 @@ function StoryboardPanel({ scenes, onScenesChange }: {
                 value={scene.scene_type ?? ''}
                 onChange={(e) => handleTypeChange(idx, e.target.value as SceneType)}
                 aria-label={`Type de scène ${idx + 1}`}
-                className="flex-1 bg-brand-surface border border-brand-border rounded-lg px-2 py-1 text-brand-text font-body text-xs focus:outline-none focus:border-brand-primary appearance-none cursor-pointer"
+                className="flex-1 bg-navy-800 border border-navy-700 rounded-lg px-2 py-1 text-foreground font-body text-xs focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
               >
                 <option value="">— Choisir —</option>
                 {SCENE_TYPE_OPTIONS.map((opt) => (
@@ -287,10 +287,10 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-6 px-8 max-w-lg mx-auto overflow-y-auto py-8">
       <div className="w-full">
-        <h2 className="font-display text-xl font-bold text-brand-text mb-1 text-center">
+        <h2 className="font-display text-xl font-bold text-foreground mb-1 text-center">
           {isError ? 'Erreur de génération' : isDone ? 'Publicité prête !' : 'Génération en cours…'}
         </h2>
-        <p className="text-brand-muted text-sm text-center mb-6">
+        <p className="text-[--text-muted] text-sm text-center mb-6">
           {!isDone && !isError && 'Environ 2–5 minutes. Tu peux fermer cet onglet.'}
         </p>
 
@@ -303,14 +303,14 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
             return (
               <div key={p.key} className="flex items-center gap-3">
                 <div className={cn('w-5 h-5 rounded-full border text-xs font-mono flex items-center justify-center transition-all',
-                  done   ? 'bg-brand-secondary border-brand-secondary text-white'
-                  : active ? 'border-brand-secondary text-brand-secondary'
-                  : 'border-brand-border text-brand-muted'
+                  done   ? 'bg-purple-500 border-purple-500 text-white'
+                  : active ? 'border-purple-500 text-purple-500'
+                  : 'border-navy-700 text-[--text-muted]'
                 )}>
                   {done ? '✓' : '·'}
                 </div>
-                <span className={cn('font-body text-sm', done ? 'text-brand-text' : 'text-brand-muted')}>{p.label}</span>
-                {active && <Loader2 size={12} className="text-brand-secondary animate-spin" />}
+                <span className={cn('font-body text-sm', done ? 'text-foreground' : 'text-[--text-muted]')}>{p.label}</span>
+                {active && <Loader2 size={12} className="text-purple-500 animate-spin" />}
               </div>
             )
           })}
@@ -325,7 +325,7 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
         )}
 
         {isError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm mb-4">
+          <div className="bg-error/10 border border-error/30 rounded-xl p-4 text-error text-sm mb-4">
             {errorMessage ?? 'Une erreur est survenue.'}
           </div>
         )}
@@ -335,7 +335,7 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
         )}
 
         {isError && (
-          <button type="button" onClick={onReset} className="mt-4 text-sm text-brand-primary font-medium hover:underline">
+          <button type="button" onClick={onReset} className="mt-4 text-sm text-blue-500 font-medium hover:underline">
             Recommencer
           </button>
         )}
@@ -351,13 +351,13 @@ function DoneView({ session, onNew }: { session: VideoSession; onNew: () => void
     <div className="flex flex-col items-center justify-center h-full px-8 max-w-lg mx-auto gap-4">
       <div className="w-full">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-lg font-bold text-brand-text">{session.title ?? 'Publicité'}</h2>
-          <button type="button" onClick={onNew} className="text-xs font-mono text-brand-primary hover:underline">+ Nouvelle vidéo</button>
+          <h2 className="font-display text-lg font-bold text-foreground">{session.title ?? 'Publicité'}</h2>
+          <button type="button" onClick={onNew} className="text-xs font-mono text-blue-500 hover:underline">+ Nouvelle vidéo</button>
         </div>
         {session.output_url ? (
           <VideoPlayer url={session.output_url} title={session.title ?? undefined} />
         ) : (
-          <div className="flex items-center justify-center h-40 rounded-2xl bg-brand-bg border border-brand-border text-brand-muted text-sm">
+          <div className="flex items-center justify-center h-40 rounded-2xl bg-navy-900 border border-navy-700 text-[--text-muted] text-sm">
             Vidéo non disponible
           </div>
         )}
@@ -438,9 +438,9 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
     <div className="flex flex-col h-full overflow-y-auto">
 
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 border-b border-brand-border">
-        <h1 className="font-display text-2xl font-bold text-brand-text">Nouvelle publicité Motion</h1>
-        <p className="text-brand-muted text-sm mt-1">Brief créatif → visuels animés → voix off → rendu final.</p>
+      <div className="px-8 pt-8 pb-6 border-b border-navy-700">
+        <h1 className="font-display text-2xl font-bold text-foreground">Nouvelle publicité Motion</h1>
+        <p className="text-[--text-muted] text-sm mt-1">Brief créatif → visuels animés → voix off → rendu final.</p>
       </div>
 
       <div className="flex-1 px-8 py-6 space-y-7">
@@ -448,7 +448,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
         {/* SECTION 1 — Style (le plus important, en premier) */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted">Style visuel</p>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">Style visuel</p>
             {!style && <span className="font-mono text-[10px] text-red-400 uppercase tracking-wider">· Requis</span>}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -459,7 +459,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 onClick={() => setStyle(s.id)}
                 className={cn(
                   'relative overflow-hidden rounded-xl border-2 transition-all text-left',
-                  style === s.id ? 'border-brand-secondary ring-2 ring-brand-secondary/20' : 'border-transparent hover:border-brand-border'
+                  style === s.id ? 'border-purple-500 ring-2 ring-purple-500/20' : 'border-transparent hover:border-navy-700'
                 )}
               >
                 {/* Gradient preview */}
@@ -468,11 +468,11 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 </div>
                 {/* Label */}
                 <div className="p-2.5">
-                  <p className="font-display font-semibold text-brand-text text-sm">{s.emoji} {s.label}</p>
-                  <p className="font-body text-xs text-brand-muted mt-0.5">{s.desc}</p>
+                  <p className="font-display font-semibold text-foreground text-sm">{s.emoji} {s.label}</p>
+                  <p className="font-body text-xs text-[--text-muted] mt-0.5">{s.desc}</p>
                 </div>
                 {style === s.id && (
-                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand-secondary flex items-center justify-center">
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
                     <span className="text-white text-[10px]">✓</span>
                   </div>
                 )}
@@ -484,13 +484,13 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
         {/* SECTION 2 — Format + Durée + Voix */}
         <div className="flex gap-3 flex-wrap">
           <div className="flex-1 min-w-36">
-            <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">Format</label>
+            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Format</label>
             <div className="flex gap-2">
               {FORMATS.map((f) => (
                 <button key={f.id} type="button" onClick={() => setFormat(f.id)}
                   title={f.desc}
                   className={cn('flex-1 py-2.5 rounded-xl border text-xs font-display font-semibold transition-all',
-                    format === f.id ? 'bg-brand-primary-light border-brand-primary text-brand-primary' : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-primary/40'
+                    format === f.id ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40'
                   )}>
                   {f.label}
                   <p className="font-body font-normal text-[10px] mt-0.5 opacity-70">{f.desc}</p>
@@ -499,12 +499,12 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
             </div>
           </div>
           <div className="flex-1 min-w-36">
-            <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">Durée</label>
+            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Durée</label>
             <div className="flex gap-2">
               {DURATIONS.map((d) => (
                 <button key={d.id} type="button" onClick={() => setDuration(d.id)}
                   className={cn('flex-1 py-2.5 rounded-xl border text-xs font-display font-semibold transition-all',
-                    duration === d.id ? 'bg-brand-primary-light border-brand-primary text-brand-primary' : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-primary/40'
+                    duration === d.id ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40'
                   )}>
                   {d.label}
                 </button>
@@ -512,10 +512,10 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
             </div>
           </div>
           <div className="flex-1 min-w-36">
-            <label htmlFor="voice-select" className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">Voix off</label>
+            <label htmlFor="voice-select" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Voix off</label>
             <select id="voice-select" value={voiceId} onChange={(e) => setVoiceId(e.target.value)}
               aria-label="Sélectionner une voix off"
-              className="w-full bg-brand-bg border border-brand-border rounded-xl px-3 py-2.5 text-brand-text font-body text-sm focus:outline-none focus:border-brand-primary appearance-none">
+              className="w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-foreground font-body text-sm focus:outline-none focus:border-blue-500 appearance-none">
               <option value="">Aucune voix</option>
               {voices.map((v) => <option key={v.id} value={v.id}>{v.name}{v.gender ? ` · ${v.gender}` : ''}</option>)}
             </select>
@@ -525,8 +525,8 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
         {/* SECTION 2b — Musique de fond */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Music size={12} className="text-brand-muted" />
-            <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted">Musique de fond</p>
+            <Music size={12} className="text-[--text-muted]" />
+            <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">Musique de fond</p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button
@@ -534,7 +534,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
               onClick={() => setMusicTrackId('')}
               className={cn(
                 'px-3 py-2 rounded-xl border text-xs font-body transition-all',
-                musicTrackId === '' ? 'bg-brand-primary-light border-brand-primary text-brand-primary' : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-primary/40'
+                musicTrackId === '' ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40'
               )}
             >
               Aucune
@@ -546,11 +546,11 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 onClick={() => setMusicTrackId(t.id)}
                 className={cn(
                   'px-3 py-2 rounded-xl border text-left transition-all',
-                  musicTrackId === t.id ? 'bg-brand-primary-light border-brand-primary' : 'bg-brand-bg border-brand-border hover:border-brand-primary/40'
+                  musicTrackId === t.id ? 'bg-blue-500/10 border-blue-500' : 'bg-navy-900 border-navy-700 hover:border-blue-500/40'
                 )}
               >
-                <p className={cn('text-xs font-display font-semibold', musicTrackId === t.id ? 'text-brand-primary' : 'text-brand-text')}>{t.label}</p>
-                <p className="text-[10px] font-body text-brand-muted mt-0.5">{t.mood}</p>
+                <p className={cn('text-xs font-display font-semibold', musicTrackId === t.id ? 'text-blue-500' : 'text-foreground')}>{t.label}</p>
+                <p className="text-[10px] font-body text-[--text-muted] mt-0.5">{t.mood}</p>
               </button>
             ))}
           </div>
@@ -558,25 +558,25 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
 
         {/* SECTION 3 — Identité de marque */}
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-3">Identité de marque</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-3">Identité de marque</p>
           <div className="flex gap-3 flex-wrap">
             {/* Couleur principale */}
             <div>
-              <label htmlFor="brand-color" className="font-mono text-[11px] text-brand-muted mb-1.5 block">Couleur principale</label>
-              <div className="flex items-center gap-2 bg-brand-bg border border-brand-border rounded-xl px-3 py-2">
+              <label htmlFor="brand-color" className="font-mono text-[11px] text-[--text-muted] mb-1.5 block">Couleur principale</label>
+              <div className="flex items-center gap-2 bg-navy-900 border border-navy-700 rounded-xl px-3 py-2">
                 <input id="brand-color" type="color" value={color} onChange={(e) => setColor(e.target.value)}
                   title="Couleur principale de la marque"
                   aria-label="Couleur principale de la marque"
                   className="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent" />
-                <span className="font-mono text-xs text-brand-muted">{color.toUpperCase()}</span>
+                <span className="font-mono text-xs text-[--text-muted]">{color.toUpperCase()}</span>
               </div>
             </div>
             {/* Logo upload */}
             <div>
-              <label className="font-mono text-[11px] text-brand-muted mb-1.5 block">Logo (optionnel)</label>
+              <label className="font-mono text-[11px] text-[--text-muted] mb-1.5 block">Logo (optionnel)</label>
               <div className="flex items-center gap-2">
                 {logoUrl ? (
-                  <div className="relative w-10 h-10 rounded-xl border border-brand-border bg-brand-bg overflow-hidden flex items-center justify-center shrink-0">
+                  <div className="relative w-10 h-10 rounded-xl border border-navy-700 bg-navy-900 overflow-hidden flex items-center justify-center shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain p-1" />
                     <button
@@ -589,8 +589,8 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                     </button>
                   </div>
                 ) : (
-                  <div className="w-10 h-10 rounded-xl border-2 border-dashed border-brand-border bg-brand-bg flex items-center justify-center shrink-0">
-                    <ImageIcon size={14} className="text-brand-muted" />
+                  <div className="w-10 h-10 rounded-xl border-2 border-dashed border-navy-700 bg-navy-900 flex items-center justify-center shrink-0">
+                    <ImageIcon size={14} className="text-[--text-muted]" />
                   </div>
                 )}
                 <input
@@ -605,7 +605,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                   type="button"
                   onClick={() => logoFileRef.current?.click()}
                   disabled={logoUploading}
-                  className="flex items-center gap-1.5 bg-brand-bg border border-brand-border rounded-xl px-3 py-2 text-xs text-brand-muted hover:text-brand-text hover:border-brand-primary transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1.5 bg-navy-900 border border-navy-700 rounded-xl px-3 py-2 text-xs text-[--text-muted] hover:text-foreground hover:border-blue-500 transition-colors disabled:opacity-40"
                 >
                   {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
                   {logoUploading ? 'Import…' : logoUrl ? 'Changer' : 'Importer'}
@@ -618,23 +618,23 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
         {/* SECTION 4 — Titre + Brief */}
         <div className="space-y-3">
           <div>
-            <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">Titre de la publicité</label>
+            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Titre de la publicité</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="ex: Lancement produit — Janvier 2026" maxLength={200}
-              className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-3 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary" />
+              className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500" />
           </div>
           <div>
-            <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">Brief créatif</label>
-            <div className="relative border border-brand-border rounded-2xl bg-brand-bg focus-within:border-brand-primary transition-colors">
+            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Brief créatif</label>
+            <div className="relative border border-navy-700 rounded-2xl bg-navy-900 focus-within:border-blue-500 transition-colors">
               <textarea value={brief} onChange={(e) => setBrief(e.target.value)}
                 placeholder="Produit, message clé, public cible, ton, call-to-action…&#10;&#10;ex : Application SaaS de gestion de projet pour PME. Message : gagnez 2h par jour. CTA : Essayez gratuitement." maxLength={2000} rows={5}
-                className="w-full bg-transparent px-4 pt-4 pb-14 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none resize-none rounded-2xl" />
+                className="w-full bg-transparent px-4 pt-4 pb-14 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none rounded-2xl" />
               <div className="absolute bottom-3 left-4 right-3 flex items-center justify-between">
-                <span className={cn('font-mono text-[11px]', brief.length < 20 ? 'text-red-400' : 'text-brand-muted')}>
+                <span className={cn('font-mono text-[11px]', brief.length < 20 ? 'text-red-400' : 'text-[--text-muted]')}>
                   {brief.length}/2000{brief.length < 20 ? ` · encore ${20 - brief.length} caractères` : ''}
                 </span>
                 <button type="button" onClick={handleGenerate} disabled={!canSubmit || launching}
-                  className="flex items-center gap-2 bg-brand-text text-white font-display font-semibold text-sm px-5 py-2 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity">
+                  className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-5 py-2 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity">
                   {launching ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
                   Générer
                 </button>
@@ -692,22 +692,22 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* Sidebar */}
-      <aside className="w-64 bg-brand-surface border-r border-brand-border flex flex-col shrink-0">
-        <div className="p-4 border-b border-brand-border">
-          <h2 className="font-display text-sm font-semibold text-brand-text">Motion Design</h2>
+      <aside className="w-64 bg-navy-800 border-r border-navy-700 flex flex-col shrink-0">
+        <div className="p-4 border-b border-navy-700">
+          <h2 className="font-display text-sm font-semibold text-foreground">Motion Design</h2>
         </div>
-        <div className="p-3 border-b border-brand-border">
+        <div className="p-3 border-b border-navy-700">
           <button type="button" onClick={handleReset}
-            className="flex items-center gap-2 w-full bg-brand-bg border border-brand-border rounded-xl px-3 py-2.5 text-sm font-body text-brand-text hover:border-brand-secondary/40 hover:bg-purple-50 transition-all">
-            <Plus size={16} className="text-brand-secondary" />
+            className="flex items-center gap-2 w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-purple-500/40 hover:bg-purple-50 transition-all">
+            <Plus size={16} className="text-purple-500" />
             Nouvelle vidéo
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-              <Wand2 size={28} className="text-brand-border mb-2" />
-              <p className="text-brand-muted font-body text-xs">Aucune session. Créez votre première publicité !</p>
+              <Wand2 size={28} className="text-navy-700 mb-2" />
+              <p className="text-[--text-muted] font-body text-xs">Aucune session. Créez votre première publicité !</p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -719,15 +719,15 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
                     type="button"
                     onClick={() => handleSessionClick(s)}
                     className={cn('w-full text-left px-3 py-2.5 rounded-xl transition-all',
-                      isCurrent ? 'bg-purple-50' : 'hover:bg-brand-bg'
+                      isCurrent ? 'bg-purple-50' : 'hover:bg-navy-900'
                     )}>
                     <div className="flex items-center gap-1.5">
-                      {inProgress && <Loader2 size={10} className="shrink-0 text-brand-secondary animate-spin" />}
-                      <p className="font-body text-sm text-brand-text truncate">{s.title ?? 'Sans titre'}</p>
+                      {inProgress && <Loader2 size={10} className="shrink-0 text-purple-500 animate-spin" />}
+                      <p className="font-body text-sm text-foreground truncate">{s.title ?? 'Sans titre'}</p>
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
                       <StatusBadge status={s.status} />
-                      <span className="font-mono text-[10px] text-brand-muted">
+                      <span className="font-mono text-[10px] text-[--text-muted]">
                         {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                       </span>
                     </div>

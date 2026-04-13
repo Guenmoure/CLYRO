@@ -1,86 +1,114 @@
 import * as React from 'react'
-import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
-// ── Variants ──────────────────────────────────────────────────────────────────
+// ── Size map ───────────────────────────────────────────────────────────────────
 
-const spinnerVariants = cva(
-  // Base — cercle SVG animé, couleur héritée du parent
-  'animate-spin shrink-0',
-  {
-    variants: {
-      size: {
-        sm: 'h-4 w-4',   // 16px — inline dans les boutons
-        md: 'h-6 w-6',   // 24px — loaders de sections
-        lg: 'h-10 w-10', // 40px — page entière ou modals
-      },
-      color: {
-        /** Bleu-violet brand v2 — charte graphique officielle */
-        primary: 'text-clyro-primary',
-        /** Bleu CLYRO — dark mode */
-        blue:    'text-clyro-blue',
-        /** Violet — module Motion */
-        purple:  'text-clyro-purple',
-        /** Cyan — effets électriques */
-        cyan:    'text-clyro-cyan',
-        /** Blanc — sur fonds sombres colorés */
-        white:   'text-white',
-        /** Hérité du parent — s'adapte au contexte */
-        current: 'text-current',
-      },
-    },
-    defaultVariants: {
-      size:  'md',
-      color: 'blue',
-    },
-  }
-)
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-export interface SpinnerProps
-  extends Omit<React.SVGAttributes<SVGSVGElement>, 'color'>,
-    VariantProps<typeof spinnerVariants> {
-  /** Texte pour les lecteurs d'écran */
-  label?: string
+const SIZE: Record<string, { wh: string; border: string }> = {
+  xs: { wh: 'w-3 h-3',   border: 'border-[1.5px]' },
+  sm: { wh: 'w-4 h-4',   border: 'border-2'       },
+  md: { wh: 'w-6 h-6',   border: 'border-2'       },
+  lg: { wh: 'w-8 h-8',   border: 'border-[3px]'   },
+  xl: { wh: 'w-12 h-12', border: 'border-[3px]'   },
 }
 
-// ── Composant ─────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-function Spinner({ className, size, color, label = 'Chargement...', ...props }: SpinnerProps) {
+export interface SpinnerProps {
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  /** Classe de couleur Tailwind, ex: 'text-blue-500' (défaut) */
+  color?: string
+  variant?: 'default' | 'ai'
+  /** Texte pour les lecteurs d'écran */
+  label?: string
+  className?: string
+}
+
+// ── Spinner default ────────────────────────────────────────────────────────────
+
+function Spinner({
+  size = 'md',
+  color = 'text-blue-500',
+  variant = 'default',
+  label = 'Chargement…',
+  className,
+}: SpinnerProps) {
+  if (variant === 'ai') return <SpinnerAI size={size} label={label} className={className} />
+
+  const { wh, border } = SIZE[size]
+
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      role="status"
-      aria-label={label}
-      className={cn(spinnerVariants({ size, color, className }))}
-      {...props}
-    >
-      {/* Piste de fond */}
-      <circle
-        className="opacity-20"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="3"
+    <span role="status" aria-label={label} className={cn('inline-flex items-center justify-center', className)}>
+      <span
+        className={cn(
+          'rounded-full animate-spin',
+          'border-t-current border-r-current border-b-transparent border-l-transparent',
+          wh, border, color
+        )}
       />
-      {/* Arc animé */}
-      <path
-        className="opacity-80"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
+      <span className="sr-only">{label}</span>
+    </span>
   )
 }
 
-// ── Wrapper centré — utile pour les loaders de page ──────────────────────────
+// ── SpinnerAI — trois arcs concentriques ──────────────────────────────────────
+
+function SpinnerAI({
+  size = 'md',
+  label = 'Génération en cours…',
+  className,
+}: Pick<SpinnerProps, 'size' | 'label' | 'className'>) {
+  const dim = size === 'xs' ? 12 : size === 'sm' ? 16 : size === 'md' ? 24 : size === 'lg' ? 32 : 48
+  const stroke = dim <= 16 ? 1.5 : dim <= 24 ? 2 : 3
+  const cx = dim / 2
+  const r = {
+    outer:  cx - stroke,
+    middle: cx - stroke * 3.5,
+    inner:  cx - stroke * 6,
+  }
+
+  return (
+    <span role="status" aria-label={label} className={cn('inline-flex items-center justify-center', className)}>
+      <svg width={dim} height={dim} viewBox={`0 0 ${dim} ${dim}`} fill="none" aria-hidden="true">
+        {/* Arc externe — blue-500, 1s */}
+        <circle
+          cx={cx} cy={cx} r={r.outer}
+          stroke="#3B8EF0"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${r.outer * 1.5} ${r.outer * 5}`}
+          className="spin-ai-outer"
+        />
+        {/* Arc intermédiaire — purple-500, 0.75s */}
+        {r.middle > 1 && (
+          <circle
+            cx={cx} cy={cx} r={r.middle}
+            stroke="#9B5CF6"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${r.middle * 1.5} ${r.middle * 5}`}
+            className="spin-ai-middle"
+          />
+        )}
+        {/* Arc interne — cyan-400, 0.5s */}
+        {r.inner > 1 && (
+          <circle
+            cx={cx} cy={cx} r={r.inner}
+            stroke="#38E8FF"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${r.inner * 1.5} ${r.inner * 5}`}
+            className="spin-ai-inner"
+          />
+        )}
+      </svg>
+      <span className="sr-only">{label}</span>
+    </span>
+  )
+}
+
+// ── SpinnerOverlay — centré dans son conteneur (héritage) ─────────────────────
 
 interface SpinnerOverlayProps extends SpinnerProps {
-  /** Texte affiché sous le spinner */
   text?: string
 }
 
@@ -89,7 +117,7 @@ function SpinnerOverlay({ text, size = 'lg', ...spinnerProps }: SpinnerOverlayPr
     <div className="flex flex-col items-center justify-center gap-3 py-12">
       <Spinner size={size} {...spinnerProps} />
       {text && (
-        <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest animate-pulse">
+        <p className="font-mono text-xs text-[--text-muted] uppercase tracking-widest animate-pulse">
           {text}
         </p>
       )}
@@ -97,4 +125,4 @@ function SpinnerOverlay({ text, size = 'lg', ...spinnerProps }: SpinnerOverlayPr
   )
 }
 
-export { Spinner, SpinnerOverlay, spinnerVariants }
+export { Spinner, SpinnerAI, SpinnerOverlay }

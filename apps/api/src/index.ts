@@ -21,6 +21,8 @@ import { generatePdfRouter } from './routes/generate-pdf'
 import { generateRouter } from './routes/generate'
 import { stripeWebhookRouter } from './routes/webhooks/stripe'
 import { monerooWebhookRouter } from './routes/webhooks/moneroo'
+import { hmacMiddleware } from './middleware/hmac'
+import { internalRouter } from './routes/internal'
 
 // ── Sentry — Error monitoring (init before anything else) ─────────────────
 if (process.env.SENTRY_DSN) {
@@ -149,6 +151,9 @@ app.use('/api/v1', healthRouter)
 // Webhooks (pas d'authMiddleware, signature vérification dans les routes)
 app.use('/webhook', stripeWebhookRouter)
 app.use('/webhook', monerooWebhookRouter)
+
+// Routes internes inter-services (HMAC-SHA256)
+app.use('/api/internal', hmacMiddleware, internalRouter)
 
 // Routes API protégées
 app.use('/api/v1', apiLimiter)

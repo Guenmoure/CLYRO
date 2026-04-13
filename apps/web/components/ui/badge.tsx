@@ -2,64 +2,53 @@ import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
-// ── Variants ──────────────────────────────────────────────────────────────────
+// ── Variants ───────────────────────────────────────────────────────────────────
 
 const badgeVariants = cva(
-  // Base — pill compact, police mono pour un look technique CLYRO
-  'inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider rounded-full border px-2.5 py-1 font-medium leading-none whitespace-nowrap',
+  'inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider rounded-md border px-2 py-0.5 leading-none whitespace-nowrap',
   {
     variants: {
       variant: {
-        /** success — vert, confirmations & statuts OK */
-        success: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-        /** warning — orange, alertes & en attente */
-        warning: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400',
-        /** error — rouge, échecs & erreurs */
-        error:   'bg-red-500/10   border-red-500/20   text-red-400',
-        /** info — bleu CLYRO, informations générales */
-        info:    'bg-clyro-blue/10 border-clyro-blue/20 text-clyro-blue',
-        /** primary — dégradé bleu→violet, éléments à mettre en valeur */
-        primary: 'bg-clyro-blue/10 border-clyro-blue/30 text-clyro-blue',
-        /** purple — violet, module Motion */
-        purple:  'bg-clyro-purple/10 border-clyro-purple/20 text-clyro-purple',
-        /** muted — neutre, statuts secondaires */
-        muted:   'bg-navy-800 border-border text-muted-foreground',
-      },
-      size: {
-        sm: 'text-[0.65rem] px-2 py-0.5',
-        md: 'text-xs     px-2.5 py-1',
-        lg: 'text-sm     px-3 py-1.5',
+        success: 'bg-success/15 text-success border-success/30',
+        warning: 'bg-warning/15 text-warning border-warning/30',
+        error:   'bg-error/15   text-error   border-error/30',
+        info:    'bg-blue-500/15 text-blue-300 border-blue-500/30',
+        purple:  'bg-purple-500/15 text-purple-400 border-purple-500/30',
+        neutral: 'bg-navy-700 text-[--text-secondary] border-navy-600',
       },
     },
     defaultVariants: {
       variant: 'info',
-      size:    'md',
     },
   }
 )
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {
-  /** Icône ou point coloré affiché avant le texte */
+  /** Affiche un point animé (pulse) à gauche — utile pour les statuts live */
   dot?: boolean
+  /** Icône Lucide ou autre ReactNode à gauche du texte */
+  icon?: React.ReactNode
 }
 
-// ── Composant ─────────────────────────────────────────────────────────────────
+// ── Composant ──────────────────────────────────────────────────────────────────
 
-function Badge({ className, variant, size, dot = false, children, ...props }: BadgeProps) {
+function Badge({ className, variant, dot = false, icon, children, ...props }: BadgeProps) {
   return (
-    <span
-      className={cn(badgeVariants({ variant, size, className }))}
-      {...props}
-    >
+    <span className={cn(badgeVariants({ variant }), className)} {...props}>
       {dot && (
         <span
-          className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70 shrink-0"
+          className="inline-block w-1.5 h-1.5 rounded-full bg-current animate-pulse shrink-0"
           aria-hidden="true"
         />
+      )}
+      {icon && !dot && (
+        <span className="shrink-0 flex items-center" aria-hidden="true">
+          {icon}
+        </span>
       )}
       {children}
     </span>

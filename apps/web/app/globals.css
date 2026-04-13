@@ -5,6 +5,12 @@
 /* Progress bar — width driven by --progress-width CSS variable (set via JS) */
 .progress-bar { width: var(--progress-width, 0%); }
 
+/* ── SpinnerAI — arcs SVG concentriques ────────────────────────────────────── */
+/* Évite les inline styles interdits par le linter */
+.spin-ai-outer  { transform-origin: center; animation: spin 1s    linear infinite; }
+.spin-ai-middle { transform-origin: center; animation: spin 0.75s  linear infinite reverse; }
+.spin-ai-inner  { transform-origin: center; animation: spin 0.5s   linear infinite; }
+
 /* ============================================================
    CLYRO Animations & Transitions
    ============================================================ */
@@ -328,89 +334,70 @@
 
 /* ============================================================
    CLYRO Design System — CSS Variables
-   Charte officielle : Primary #8A57EA · Accent #4D9FFF · BG #0A0A0A
+   Dark-first · Inspiré HeyGen AI · Glassmorphism léger
    ============================================================ */
 
 @layer base {
-  /* ── Light mode ─────────────────────────────────────────────────────────── */
+  /* CLYRO est dark-first : la class 'dark' est toujours présente sur <html>.
+     Les variables sont définies ici une seule fois pour les deux contextes. */
   :root {
-    --background: 0 0% 96%;       /* #F5F5F7 */
-    --foreground: 0 0% 7%;        /* #111111 */
+    /* Surfaces */
+    --background:             #060810;
+    --foreground:             #F1F5FF;
+    --card:                   #0A0D1A;
+    --card-foreground:        #F1F5FF;
+    --popover:                #0F1427;
+    --popover-foreground:     #F1F5FF;
 
-    --card: 0 0% 100%;            /* #FFFFFF */
-    --card-foreground: 0 0% 7%;
+    /* Accents */
+    --primary:                #3B8EF0;
+    --primary-foreground:     #F1F5FF;
+    --secondary:              #9B5CF6;
+    --secondary-foreground:   #F1F5FF;
+    --muted:                  #0F1427;
+    --muted-foreground:       #94A3B8;
+    --accent:                 #38E8FF;
+    --accent-foreground:      #060810;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 7%;
+    /* Sémantiques */
+    --destructive:            #EF4444;
+    --destructive-foreground: #F1F5FF;
 
-    --primary: 263 77% 63%;       /* #8A57EA — Violet Royal */
-    --primary-foreground: 0 0% 100%;
+    /* Structurel */
+    --border:                 #151C38;
+    --input:                  #0F1427;
+    --ring:                   #3B8EF0;
+    --radius:                 0.75rem;
 
-    --secondary: 0 0% 94%;        /* #F0F0F0 */
-    --secondary-foreground: 0 0% 7%;
-
-    --muted: 0 0% 94%;
-    --muted-foreground: 240 2% 63%; /* #A1A1A6 — Gris Acier */
-
-    --accent: 211 100% 65%;       /* #4D9FFF — Bleu Électrique */
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 100% 65%;    /* #FF4D4D — Rouge Corail */
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 90%;           /* #E5E5EA */
-    --input:  0 0% 90%;
-    --ring:   263 77% 63%;        /* #8A57EA */
-
-    --radius: 0.75rem;
+    /* Textes */
+    --text-primary:           #F1F5FF;
+    --text-secondary:         #94A3B8;
+    --text-muted:             #64748B;
+    --text-disabled:          #475569;
   }
 
-  /* ── Dark mode — Charte officielle CLYRO ───────────────────────────────── */
+  /* Miroir .dark — darkMode: 'class' de Tailwind requiert ce bloc */
   .dark {
-    /* Surfaces */
-    --bg-950:  0 0% 4%;           /* #0A0A0A — Noir Profond */
-    --bg-900:  0 0% 7%;           /* #111111 */
-    --bg-800:  0 0% 10%;          /* #1A1A1A */
-    --bg-700:  0 0% 14%;          /* #242424 */
-
-    /* Brand */
-    --primary-h: 263;
-    --primary-s: 77%;
-    --primary-l: 63%;             /* #8A57EA — Violet Royal */
-
-    --accent-h:  211;
-    --accent-s:  100%;
-    --accent-l:  65%;             /* #4D9FFF — Bleu Électrique */
-
-    --background: var(--bg-950);
-    --foreground: 0 0% 95%;       /* #F2F2F2 */
-
-    --card: var(--bg-900);
-    --card-foreground: 0 0% 95%;
-
-    --popover: var(--bg-800);
-    --popover-foreground: 0 0% 95%;
-
-    --primary: 263 77% 63%;       /* #8A57EA */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 14%;        /* #242424 — Anthracite */
-    --secondary-foreground: 0 0% 90%;
-
-    --muted: 0 0% 10%;            /* #1A1A1A */
-    --muted-foreground: 240 2% 63%; /* #A1A1A6 — Gris Acier */
-
-    --accent: 211 100% 65%;       /* #4D9FFF */
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 100% 65%;    /* #FF4D4D */
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 16%;           /* ~#282828 */
-    --input:  0 0% 10%;
-    --ring:   263 77% 63%;        /* #8A57EA */
-
-    --radius: 0.75rem;
+    --background:             #060810;
+    --foreground:             #F1F5FF;
+    --card:                   #0A0D1A;
+    --card-foreground:        #F1F5FF;
+    --popover:                #0F1427;
+    --popover-foreground:     #F1F5FF;
+    --primary:                #3B8EF0;
+    --primary-foreground:     #F1F5FF;
+    --secondary:              #9B5CF6;
+    --secondary-foreground:   #F1F5FF;
+    --muted:                  #0F1427;
+    --muted-foreground:       #94A3B8;
+    --accent:                 #38E8FF;
+    --accent-foreground:      #060810;
+    --destructive:            #EF4444;
+    --destructive-foreground: #F1F5FF;
+    --border:                 #151C38;
+    --input:                  #0F1427;
+    --ring:                   #3B8EF0;
+    --radius:                 0.75rem;
   }
 }
 
@@ -425,7 +412,7 @@
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 
-  /* Titres — Plus Jakarta Sans Bold (charte v2) */
+  /* Titres — Syne (charte v3) */
   h1 {
     @apply font-display font-extrabold text-5xl;
     line-height: 1.1;
@@ -511,8 +498,10 @@
 /* ============================================================
    Gradient Text
    ============================================================ */
-.text-gradient-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* grad-primary CLYRO — blue → purple */
+.text-gradient-primary,
+.gradient-text {
+  background: linear-gradient(135deg, #3B8EF0, #9B5CF6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -526,7 +515,7 @@
 }
 
 /* ============================================================
-   Scrollbar Custom — light mode (HeyGen style)
+   Scrollbar Custom — dark CLYRO style
    ============================================================ */
 ::-webkit-scrollbar {
   width: 5px;
@@ -538,34 +527,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D1D5DB;
+  background: #1E2A4A;   /* navy-600 */
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
-}
-
-/* ============================================================
-   Dashboard default — light mode surface overrides
-   Ensures the app renders in light mode by default on all
-   HeyGen-style pages without requiring a .dark class toggle.
-   ============================================================ */
-.dashboard-surface {
-  background-color: #F7F8FA;
-  color: #111827;
-}
-
-.hg-card {
-  background: #FFFFFF;
-  border: 1px solid #EAEAEC;
-  border-radius: 16px;
-}
-
-.hg-card-hover {
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.hg-card-hover:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border-color: #D1D5DB;
+  background: #151C38;   /* navy-700 */
 }

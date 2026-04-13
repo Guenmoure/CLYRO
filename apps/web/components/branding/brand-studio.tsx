@@ -256,10 +256,10 @@ function Stepper({ current }: { current: BrandStudioStep }) {
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-display font-semibold transition-all",
                 done
-                  ? "bg-brand-secondary/10 text-brand-secondary"
+                  ? "bg-purple-500/10 text-purple-500"
                   : active
-                    ? "bg-brand-secondary text-white shadow-sm"
-                    : "bg-brand-bg text-brand-muted",
+                    ? "bg-purple-500 text-white shadow-sm"
+                    : "bg-navy-900 text-[--text-muted]",
               )}
             >
               {done ? (
@@ -273,7 +273,7 @@ function Stepper({ current }: { current: BrandStudioStep }) {
               <div
                 className={cn(
                   "w-4 h-px",
-                  i < currentIdx ? "bg-brand-secondary" : "bg-brand-border",
+                  i < currentIdx ? "bg-purple-500" : "bg-navy-700",
                 )}
               />
             )}
@@ -306,7 +306,7 @@ function ColorSwatch({
         title={hex}
       />
       {label && (
-        <span className="font-mono text-[9px] text-brand-muted">{label}</span>
+        <span className="font-mono text-[9px] text-[--text-muted]">{label}</span>
       )}
     </div>
   );
@@ -400,16 +400,16 @@ function AnalystModal({
             )}
           </div>
           <div>
-            <p className="font-display font-bold text-brand-text">
+            <p className="font-display font-bold text-foreground">
               {analysis.is_ready ? "Brief validé" : "Brief incomplet"}
             </p>
-            <p className="text-xs text-brand-muted">
+            <p className="text-xs text-[--text-muted]">
               Score : {analysis.brief_score}/100
             </p>
           </div>
           {/* Score bar */}
           <div className="ml-auto flex flex-col items-end gap-1">
-            <div className="w-20 h-2 bg-brand-border rounded-full overflow-hidden">
+            <div className="w-20 h-2 bg-navy-700 rounded-full overflow-hidden">
               <div
                 className={cn(
                   "h-full rounded-full transition-all",
@@ -431,7 +431,7 @@ function AnalystModal({
                 </p>
                 <ul className="space-y-2">
                   {analysis.clarification_questions.map((q, i) => (
-                    <li key={i} className="text-sm text-brand-text flex gap-2">
+                    <li key={i} className="text-sm text-foreground flex gap-2">
                       <span className="text-red-400 shrink-0 mt-0.5">❓</span>{" "}
                       <span>{q}</span>
                     </li>
@@ -446,7 +446,7 @@ function AnalystModal({
               </p>
               <ul className="space-y-1">
                 {analysis.contradictions.map((c, i) => (
-                  <li key={i} className="text-sm text-brand-text flex gap-2">
+                  <li key={i} className="text-sm text-foreground flex gap-2">
                     <span className="text-red-400 shrink-0">✗</span> {c}
                   </li>
                 ))}
@@ -460,7 +460,7 @@ function AnalystModal({
               </p>
               <ul className="space-y-1">
                 {analysis.questions.map((q, i) => (
-                  <li key={i} className="text-sm text-brand-text flex gap-2">
+                  <li key={i} className="text-sm text-foreground flex gap-2">
                     <span className="text-amber-400 shrink-0">?</span> {q}
                   </li>
                 ))}
@@ -469,13 +469,13 @@ function AnalystModal({
           )}
           {analysis.suggestions.length > 0 && (
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-wider text-brand-primary mb-2">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-blue-500 mb-2">
                 Suggestions
               </p>
               <ul className="space-y-1">
                 {analysis.suggestions.map((s, i) => (
-                  <li key={i} className="text-sm text-brand-muted flex gap-2">
-                    <span className="text-brand-primary shrink-0">→</span> {s}
+                  <li key={i} className="text-sm text-[--text-muted] flex gap-2">
+                    <span className="text-blue-500 shrink-0">→</span> {s}
                   </li>
                 ))}
               </ul>
@@ -483,18 +483,18 @@ function AnalystModal({
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-brand-border flex gap-3">
+        <div className="px-6 py-4 border-t border-navy-700 flex gap-3">
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-text transition-colors px-4 py-2.5"
+            className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors px-4 py-2.5"
           >
             <ArrowLeft size={14} /> Modifier le brief
           </button>
           <button
             type="button"
             onClick={onContinue}
-            className="flex-1 flex items-center justify-center gap-2 bg-brand-text text-white font-display font-semibold text-sm px-5 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
+            className="flex-1 flex items-center justify-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-5 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
           >
             <ChevronRight size={14} />
             {analysis.is_ready
@@ -524,28 +524,28 @@ function ContradictionPathsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden">
         {/* Header */}
-        <div className="bg-purple-50 flex items-center gap-3 px-6 py-5 border-b border-brand-border">
+        <div className="bg-purple-50 flex items-center gap-3 px-6 py-5 border-b border-navy-700">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-100">
             <AlertTriangle size={20} className="text-purple-600" />
           </div>
           <div className="flex-1">
-            <p className="font-display font-bold text-brand-text">
+            <p className="font-display font-bold text-foreground">
               Contradictions détectées
             </p>
-            <p className="text-xs text-brand-muted">
+            <p className="text-xs text-[--text-muted]">
               Sélectionne un chemin créatif pour les résoudre
             </p>
           </div>
         </div>
 
         {/* Contradictions list */}
-        <div className="px-6 py-4 border-b border-brand-border bg-purple-50/30">
+        <div className="px-6 py-4 border-b border-navy-700 bg-purple-50/30">
           <p className="font-mono text-[10px] uppercase tracking-wider text-purple-600 mb-2">
             Contradictions détectées
           </p>
           <ul className="space-y-1">
             {contradictions.map((c, i) => (
-              <li key={i} className="text-sm text-brand-text flex gap-2">
+              <li key={i} className="text-sm text-foreground flex gap-2">
                 <span className="text-purple-500 shrink-0">⚡</span> {c}
               </li>
             ))}
@@ -554,7 +554,7 @@ function ContradictionPathsModal({
 
         {/* Path cards */}
         <div className="px-6 py-6 space-y-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-brand-muted mb-4">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] mb-4">
             2 chemins créatifs
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -562,15 +562,15 @@ function ContradictionPathsModal({
               <button
                 key={idx}
                 onClick={() => onSelectPath(path.resolution)}
-                className="group relative rounded-2xl border-2 border-brand-border bg-white p-4 text-left transition-all hover:border-purple-400 hover:shadow-lg"
+                className="group relative rounded-2xl border-2 border-navy-700 bg-white p-4 text-left transition-all hover:border-purple-400 hover:shadow-lg"
               >
                 {/* Path label */}
-                <p className="font-display font-bold text-brand-text group-hover:text-purple-600 transition-colors mb-2">
+                <p className="font-display font-bold text-foreground group-hover:text-purple-600 transition-colors mb-2">
                   {path.label}
                 </p>
 
                 {/* Description */}
-                <p className="text-sm text-brand-muted mb-3">
+                <p className="text-sm text-[--text-muted] mb-3">
                   {path.description}
                 </p>
 
@@ -596,16 +596,16 @@ function ContradictionPathsModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-brand-border flex gap-3 bg-gray-50">
+        <div className="px-6 py-4 border-t border-navy-700 flex gap-3 bg-gray-50">
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-text transition-colors px-4 py-2.5"
+            className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors px-4 py-2.5"
           >
             <ArrowLeft size={14} /> Modifier le brief
           </button>
           <div className="flex-1" />
-          <p className="text-xs text-brand-muted self-center">
+          <p className="text-xs text-[--text-muted] self-center">
             Clique sur un chemin pour continuer
           </p>
         </div>
@@ -664,7 +664,7 @@ function BriefForm({
     <div className="space-y-6 max-w-2xl">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
             Nom de la marque *
           </label>
           <input
@@ -672,11 +672,11 @@ function BriefForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="ex: Celeste, Nøvak, Bloom…"
-            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary"
+            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
         <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
             Secteur d'activité *
           </label>
           <input
@@ -684,13 +684,13 @@ function BriefForm({
             value={secteur}
             onChange={(e) => setSecteur(e.target.value)}
             placeholder="ex: Cosmétique, SaaS B2B, Restauration…"
-            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary"
+            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
       </div>
 
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">
+        <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
           Cible principale *
         </label>
         <input
@@ -698,12 +698,12 @@ function BriefForm({
           value={cible}
           onChange={(e) => setCible(e.target.value)}
           placeholder="ex: Femmes 25–40 ans, CSP+, urbaines, passionnées de bien-être"
-          className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary"
+          className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
         />
       </div>
 
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">
+        <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
           3 valeurs de marque *
         </label>
         <div className="flex gap-2">
@@ -718,14 +718,14 @@ function BriefForm({
                 setValeurs(next);
               }}
               placeholder={["Innovation", "Simplicité", "Confiance"][i]}
-              className="flex-1 bg-brand-bg border border-brand-border rounded-xl px-3 py-2.5 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary"
+              className="flex-1 bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
             />
           ))}
         </div>
       </div>
 
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-3 block">
+        <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-3 block">
           Ambiance visuelle *
         </label>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -737,19 +737,19 @@ function BriefForm({
               className={cn(
                 "relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-center transition-all",
                 ambiance === opt.id
-                  ? "border-brand-secondary bg-brand-secondary/5"
-                  : "border-brand-border bg-brand-bg hover:border-brand-secondary/40",
+                  ? "border-purple-500 bg-purple-500/5"
+                  : "border-navy-700 bg-navy-900 hover:border-purple-500/40",
               )}
             >
               <span className="text-xl">{opt.emoji}</span>
-              <p className="font-display font-semibold text-xs text-brand-text">
+              <p className="font-display font-semibold text-xs text-foreground">
                 {opt.label}
               </p>
-              <p className="font-body text-[10px] text-brand-muted leading-tight">
+              <p className="font-body text-[10px] text-[--text-muted] leading-tight">
                 {opt.desc}
               </p>
               {ambiance === opt.id && (
-                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-brand-secondary flex items-center justify-center">
+                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
                   <Check size={9} className="text-white" />
                 </div>
               )}
@@ -760,7 +760,7 @@ function BriefForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
             Concurrents à éviter
           </label>
           <input
@@ -768,11 +768,11 @@ function BriefForm({
             value={concurrents}
             onChange={(e) => setConcurrents(e.target.value)}
             placeholder="ex: Nike, Apple, Zara…"
-            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary"
+            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
         <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
             Marques de référence
           </label>
           <input
@@ -780,11 +780,11 @@ function BriefForm({
             value={references}
             onChange={(e) => setReferences(e.target.value)}
             placeholder="ex: Glossier, Notion, Oatly…"
-            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary"
+            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
         <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
             Couleurs imposées (HEX)
           </label>
           <input
@@ -792,7 +792,7 @@ function BriefForm({
             value={couleursImp}
             onChange={(e) => setCouleursImp(e.target.value)}
             placeholder="#FF5733, #2C3E50…"
-            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary"
+            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
           {imposedHexes.map((hex) => (
             <WcagInline
@@ -809,7 +809,7 @@ function BriefForm({
           ))}
         </div>
         <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2 block">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
             Logo existant (URL)
           </label>
           <input
@@ -817,7 +817,7 @@ function BriefForm({
             value={logoUrl}
             onChange={(e) => setLogoUrl(e.target.value)}
             placeholder="https://exemple.com/logo.png"
-            className="w-full bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text font-body text-sm placeholder:text-brand-muted focus:outline-none focus:border-brand-primary"
+            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
       </div>
@@ -845,7 +845,7 @@ function BriefForm({
         type="button"
         onClick={handleSubmit}
         disabled={!canSubmit}
-        className="flex items-center gap-2 bg-brand-text text-white font-display font-semibold text-sm px-6 py-3 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
+        className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-3 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
       >
         <Sparkles size={15} /> Analyser le brief
       </button>
@@ -872,12 +872,12 @@ function DirectionCard({
       className={cn(
         "relative text-left rounded-2xl border-2 overflow-hidden transition-all hover:shadow-lg",
         selected
-          ? "border-brand-secondary ring-2 ring-brand-secondary/20"
-          : "border-brand-border hover:border-brand-secondary/40",
+          ? "border-purple-500 ring-2 ring-purple-500/20"
+          : "border-navy-700 hover:border-purple-500/40",
       )}
     >
       {selected && (
-        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-secondary flex items-center justify-center z-10">
+        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center z-10">
           <Check size={12} className="text-white" />
         </div>
       )}
@@ -910,7 +910,7 @@ function DirectionCard({
           ))}
         </div>
         <div className="bg-white/30 rounded-lg px-3 py-2 space-y-0.5">
-          <p className="font-mono text-[9px] text-brand-muted uppercase tracking-wider">
+          <p className="font-mono text-[9px] text-[--text-muted] uppercase tracking-wider">
             Typographie
           </p>
           <p style={{ color: p.primary, fontSize: 14, fontWeight: 700 }}>
@@ -955,26 +955,26 @@ function HybridPanel({
   const opts = directions.map((d, i) => ({ value: i, label: d.name }));
 
   return (
-    <div className="bg-brand-bg border border-brand-border rounded-2xl p-5 space-y-4">
+    <div className="bg-navy-900 border border-navy-700 rounded-2xl p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <Sparkles size={14} className="text-brand-secondary" />
-        <p className="font-display font-semibold text-sm text-brand-text">
+        <Sparkles size={14} className="text-purple-500" />
+        <p className="font-display font-semibold text-sm text-foreground">
           Créer une direction hybride
         </p>
       </div>
-      <p className="text-xs text-brand-muted">
+      <p className="text-xs text-[--text-muted]">
         Combine la palette, la typographie et le style de logo de différentes
         directions.
       </p>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="font-mono text-[10px] uppercase tracking-widest text-brand-muted mb-1.5 block">
+          <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
             Palette de
           </label>
           <select
             value={paletteFrom}
             onChange={(e) => setPaletteFrom(Number(e.target.value))}
-            className="w-full bg-white border border-brand-border rounded-xl px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-primary"
+            className="w-full bg-white border border-navy-700 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -984,13 +984,13 @@ function HybridPanel({
           </select>
         </div>
         <div>
-          <label className="font-mono text-[10px] uppercase tracking-widest text-brand-muted mb-1.5 block">
+          <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
             Typo de
           </label>
           <select
             value={typoFrom}
             onChange={(e) => setTypoFrom(Number(e.target.value))}
-            className="w-full bg-white border border-brand-border rounded-xl px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-primary"
+            className="w-full bg-white border border-navy-700 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -1000,13 +1000,13 @@ function HybridPanel({
           </select>
         </div>
         <div>
-          <label className="font-mono text-[10px] uppercase tracking-widest text-brand-muted mb-1.5 block">
+          <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
             Logo de
           </label>
           <select
             value={logoFrom}
             onChange={(e) => setLogoFrom(Number(e.target.value))}
-            className="w-full bg-white border border-brand-border rounded-xl px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-primary"
+            className="w-full bg-white border border-navy-700 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -1019,7 +1019,7 @@ function HybridPanel({
       <button
         type="button"
         onClick={() => onGenerate(paletteFrom, typoFrom, logoFrom)}
-        className="flex items-center gap-2 text-sm font-display font-semibold text-brand-secondary hover:opacity-70 transition-opacity"
+        className="flex items-center gap-2 text-sm font-display font-semibold text-purple-500 hover:opacity-70 transition-opacity"
       >
         <Sparkles size={13} /> Générer la direction hybride + logos
       </button>
@@ -1073,12 +1073,12 @@ function LogoConceptCard({
       className={cn(
         "rounded-2xl border-2 overflow-hidden transition-all",
         selected
-          ? "border-brand-secondary ring-2 ring-brand-secondary/20"
-          : "border-brand-border",
+          ? "border-purple-500 ring-2 ring-purple-500/20"
+          : "border-navy-700",
       )}
     >
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <p className="font-display font-semibold text-sm text-brand-text">
+        <p className="font-display font-semibold text-sm text-foreground">
           {concept.name}
         </p>
         <button
@@ -1087,8 +1087,8 @@ function LogoConceptCard({
           className={cn(
             "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
             selected
-              ? "border-brand-secondary bg-brand-secondary"
-              : "border-brand-border",
+              ? "border-purple-500 bg-purple-500"
+              : "border-navy-700",
           )}
         >
           {selected && <Check size={10} className="text-white" />}
@@ -1098,7 +1098,7 @@ function LogoConceptCard({
         {bgs.map(({ key, label, bg, url, textColor }) => (
           <div key={key} className="space-y-1">
             <div
-              className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-brand-secondary/40 transition-all relative"
+              className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-purple-500/40 transition-all relative"
               style={{ background: bg }}
               onClick={() => url && onSelectUrl(url)}
               title={`Utiliser comme référence — ${label}`}
@@ -1137,7 +1137,7 @@ function LogoConceptCard({
                 </div>
               )}
             </div>
-            <p className="font-mono text-[9px] text-center text-brand-muted">
+            <p className="font-mono text-[9px] text-center text-[--text-muted]">
               {label}
             </p>
           </div>
@@ -1222,7 +1222,7 @@ function AssetCard({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
           {label}
         </p>
         <div className="flex items-center gap-2">
@@ -1230,7 +1230,7 @@ function AssetCard({
             <button
               type="button"
               onClick={() => onSetReference(url)}
-              className="text-[10px] text-brand-primary hover:underline flex items-center gap-0.5"
+              className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5"
             >
               <ImageIcon size={9} /> Référence
             </button>
@@ -1239,7 +1239,7 @@ function AssetCard({
             type="button"
             onClick={handleRegen}
             disabled={loading}
-            className="flex items-center gap-1 text-[10px] text-brand-muted hover:text-brand-text transition-colors disabled:opacity-40"
+            className="flex items-center gap-1 text-[10px] text-[--text-muted] hover:text-foreground transition-colors disabled:opacity-40"
           >
             {loading ? (
               <Loader2 size={10} className="animate-spin" />
@@ -1251,7 +1251,7 @@ function AssetCard({
         </div>
       </div>
       <div
-        className="relative rounded-2xl overflow-hidden border border-brand-border bg-brand-bg aspect-video flex items-center justify-center group cursor-pointer"
+        className="relative rounded-2xl overflow-hidden border border-navy-700 bg-navy-900 aspect-video flex items-center justify-center group cursor-pointer"
         onClick={() => {
           if (url && !loading) setLightboxOpen(true);
         }}
@@ -1266,7 +1266,7 @@ function AssetCard({
         }
       >
         {loading ? (
-          <Loader2 size={24} className="text-brand-muted animate-spin" />
+          <Loader2 size={24} className="text-[--text-muted] animate-spin" />
         ) : url ? (
           <>
             <img src={url} alt={label} className="w-full h-full object-cover" />
@@ -1275,7 +1275,7 @@ function AssetCard({
             </div>
           </>
         ) : (
-          <ImageIcon size={24} className="text-brand-muted" />
+          <ImageIcon size={24} className="text-[--text-muted]" />
         )}
       </div>
       {url && (
@@ -1283,7 +1283,7 @@ function AssetCard({
           type="button"
           onClick={() => handleDownloadAsset(url)}
           disabled={downloading}
-          className="inline-flex items-center gap-1.5 text-xs text-brand-primary font-medium hover:underline disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 text-xs text-blue-500 font-medium hover:underline disabled:opacity-50"
         >
           <Download size={10} /> {downloading ? "…" : "Télécharger"}
         </button>
@@ -1327,8 +1327,8 @@ function CharteSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white border border-brand-border rounded-2xl p-5 space-y-3">
-      <h3 className="font-display font-bold text-brand-text text-sm">
+    <div className="bg-white border border-navy-700 rounded-2xl p-5 space-y-3">
+      <h3 className="font-display font-bold text-foreground text-sm">
         {title}
       </h3>
       {children}
@@ -1763,13 +1763,13 @@ export function BrandStudio() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
-        <div className="w-12 h-12 rounded-2xl bg-brand-secondary/10 flex items-center justify-center">
-          <Loader2 size={24} className="text-brand-secondary animate-spin" />
+        <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center">
+          <Loader2 size={24} className="text-purple-500 animate-spin" />
         </div>
-        <p className="font-display font-semibold text-brand-text">
+        <p className="font-display font-semibold text-foreground">
           {loadingMsg}
         </p>
-        <p className="text-brand-muted text-sm">Cela prend 30–120 secondes…</p>
+        <p className="text-[--text-muted] text-sm">Cela prend 30–120 secondes…</p>
       </div>
     );
   }
@@ -1803,10 +1803,10 @@ export function BrandStudio() {
 
       <div className="flex flex-col h-full overflow-y-auto px-8 py-8 max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="font-display text-2xl font-bold text-brand-text">
+          <h1 className="font-display text-2xl font-bold text-foreground">
             Identité de marque
           </h1>
-          <p className="text-brand-muted text-sm mt-1">
+          <p className="text-[--text-muted] text-sm mt-1">
             Brief → Stratégie → Logos → Visuels → Charte → Export
           </p>
         </div>
@@ -1821,11 +1821,11 @@ export function BrandStudio() {
         {/* ── STEP 2: Strategy ── */}
         {step === "strategy" && strategy && (
           <div className="space-y-6">
-            <div className="bg-brand-bg border border-brand-border rounded-2xl p-5">
-              <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-2">
+            <div className="bg-navy-900 border border-navy-700 rounded-2xl p-5">
+              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">
                 Voix de marque
               </p>
-              <p className="text-sm text-brand-text font-medium mb-3">
+              <p className="text-sm text-foreground font-medium mb-3">
                 {strategy.voice.tone}
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -1835,7 +1835,7 @@ export function BrandStudio() {
                   </p>
                   <ul className="space-y-1">
                     {strategy.voice.dos.slice(0, 3).map((d, i) => (
-                      <li key={i} className="text-xs text-brand-text">
+                      <li key={i} className="text-xs text-foreground">
                         {d}
                       </li>
                     ))}
@@ -1847,7 +1847,7 @@ export function BrandStudio() {
                   </p>
                   <ul className="space-y-1">
                     {strategy.voice.donts.slice(0, 3).map((d, i) => (
-                      <li key={i} className="text-xs text-brand-text">
+                      <li key={i} className="text-xs text-foreground">
                         {d}
                       </li>
                     ))}
@@ -1857,7 +1857,7 @@ export function BrandStudio() {
             </div>
 
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-4">
+              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-4">
                 Sélectionne ta direction créative
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1875,7 +1875,7 @@ export function BrandStudio() {
             {/* Hybrid panel — show if hybrid exists */}
             {(strategy as any).hybrid && (
               <div className="mt-2">
-                <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted mb-3">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-3">
                   Direction hybride
                 </p>
                 <DirectionCard
@@ -1895,7 +1895,7 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={() => setStep("brief")}
-                className="flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-text transition-colors"
+                className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
                 <ArrowLeft size={14} /> Modifier le brief
               </button>
@@ -1903,7 +1903,7 @@ export function BrandStudio() {
                 type="button"
                 onClick={handleDirectionToLogos}
                 disabled={!selectedId}
-                className="flex items-center gap-2 bg-brand-text text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
               >
                 <ChevronRight size={14} /> Générer les logos
               </button>
@@ -1915,13 +1915,13 @@ export function BrandStudio() {
         {step === "logos" && logos && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted">
+              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
                 3 concepts de logo × 3 fonds
               </p>
               <button
                 type="button"
                 onClick={handleDirectionToLogos}
-                className="flex items-center gap-1.5 text-xs text-brand-muted hover:text-brand-text transition-colors"
+                className="flex items-center gap-1.5 text-xs text-[--text-muted] hover:text-foreground transition-colors"
               >
                 <RefreshCw size={12} /> Regénérer
               </button>
@@ -1945,20 +1945,20 @@ export function BrandStudio() {
             </div>
 
             {referenceUrl && (
-              <div className="flex items-center gap-3 px-4 py-2.5 bg-brand-secondary/5 border border-brand-secondary/20 rounded-xl">
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-purple-500/5 border border-purple-500/20 rounded-xl">
                 <img
                   src={referenceUrl}
                   alt="Référence"
-                  className="w-8 h-8 rounded-lg object-contain border border-brand-border"
+                  className="w-8 h-8 rounded-lg object-contain border border-navy-700"
                 />
-                <p className="text-xs text-brand-text flex-1">
+                <p className="text-xs text-foreground flex-1">
                   Image de référence sélectionnée pour les assets
                 </p>
                 <button
                   type="button"
                   onClick={() => setReferenceUrl(undefined)}
                 >
-                  <X size={14} className="text-brand-muted" />
+                  <X size={14} className="text-[--text-muted]" />
                 </button>
               </div>
             )}
@@ -1967,14 +1967,14 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={() => setStep("strategy")}
-                className="flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-text transition-colors"
+                className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
                 <ArrowLeft size={14} /> Changer de direction
               </button>
               <button
                 type="button"
                 onClick={handleLogosToAssets}
-                className="flex items-center gap-2 bg-brand-text text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
               >
                 <ChevronRight size={14} /> Générer les visuels
               </button>
@@ -1986,15 +1986,15 @@ export function BrandStudio() {
         {step === "assets" && assets && brief && selectedDirection && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <p className="font-mono text-[11px] uppercase tracking-widest text-brand-muted">
+              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
                 Direction : {selectedDirection.name}
               </p>
               {referenceUrl && (
-                <div className="flex items-center gap-1.5 text-xs text-brand-muted">
+                <div className="flex items-center gap-1.5 text-xs text-[--text-muted]">
                   <img
                     src={referenceUrl}
                     alt="ref"
-                    className="w-5 h-5 rounded object-contain border border-brand-border"
+                    className="w-5 h-5 rounded object-contain border border-navy-700"
                   />
                   Référence active
                 </div>
@@ -2024,14 +2024,14 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={() => setStep("logos")}
-                className="flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-text transition-colors"
+                className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
                 <ArrowLeft size={14} /> Retour aux logos
               </button>
               <button
                 type="button"
                 onClick={handleGenerateCharte}
-                className="flex items-center gap-2 bg-brand-text text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
               >
                 <ChevronRight size={14} /> Générer la charte graphique
               </button>
@@ -2048,13 +2048,13 @@ export function BrandStudio() {
                   <div key={c.hex} className="flex items-center gap-3">
                     <ColorSwatch hex={c.hex} />
                     <div>
-                      <p className="font-display font-semibold text-sm text-brand-text">
+                      <p className="font-display font-semibold text-sm text-foreground">
                         {c.name}
                       </p>
-                      <p className="font-mono text-xs text-brand-muted">
+                      <p className="font-mono text-xs text-[--text-muted]">
                         {c.hex} · {c.rgb}
                       </p>
-                      <p className="text-xs text-brand-muted mt-0.5 max-w-48">
+                      <p className="text-xs text-[--text-muted] mt-0.5 max-w-48">
                         {c.usage}
                       </p>
                     </div>
@@ -2068,19 +2068,19 @@ export function BrandStudio() {
                 {Object.entries(charte.typography).map(([level, t]) => (
                   <div
                     key={level}
-                    className="flex items-start gap-4 py-2 border-b border-brand-border last:border-0"
+                    className="flex items-start gap-4 py-2 border-b border-navy-700 last:border-0"
                   >
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-brand-muted w-16 pt-0.5 shrink-0">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] w-16 pt-0.5 shrink-0">
                       {level}
                     </span>
                     <div className="flex-1">
-                      <p className="font-display font-semibold text-sm text-brand-text">
+                      <p className="font-display font-semibold text-sm text-foreground">
                         {t.font}
                       </p>
-                      <p className="font-mono text-xs text-brand-muted">
+                      <p className="font-mono text-xs text-[--text-muted]">
                         {t.weight} · {t.sizes}
                       </p>
-                      <p className="text-xs text-brand-muted mt-0.5">
+                      <p className="text-xs text-[--text-muted] mt-0.5">
                         {t.usage}
                       </p>
                     </div>
@@ -2092,15 +2092,15 @@ export function BrandStudio() {
             <CharteSection title="Règles d'usage du logo">
               <div className="space-y-2 text-sm">
                 <p>
-                  <span className="font-semibold text-brand-text">
+                  <span className="font-semibold text-foreground">
                     Espace de protection :
                   </span>{" "}
-                  <span className="text-brand-muted">
+                  <span className="text-[--text-muted]">
                     {charte.logo_rules.clear_space}
                   </span>
                 </p>
                 <div>
-                  <p className="font-semibold text-brand-text mb-1">
+                  <p className="font-semibold text-foreground mb-1">
                     Fonds autorisés
                   </p>
                   <div className="flex gap-2 flex-wrap">
@@ -2115,7 +2115,7 @@ export function BrandStudio() {
                   </div>
                 </div>
                 <div>
-                  <p className="font-semibold text-brand-text mb-1">
+                  <p className="font-semibold text-foreground mb-1">
                     Interdits
                   </p>
                   <div className="flex gap-2 flex-wrap">
@@ -2134,21 +2134,21 @@ export function BrandStudio() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <CharteSection title="Mise en page">
-                <div className="space-y-2 text-sm text-brand-muted">
+                <div className="space-y-2 text-sm text-[--text-muted]">
                   <p>
-                    <span className="font-semibold text-brand-text">
+                    <span className="font-semibold text-foreground">
                       Grille :
                     </span>{" "}
                     {charte.layout.grid}
                   </p>
                   <p>
-                    <span className="font-semibold text-brand-text">
+                    <span className="font-semibold text-foreground">
                       Espacement :
                     </span>{" "}
                     {charte.layout.spacing}
                   </p>
                   <p>
-                    <span className="font-semibold text-brand-text">
+                    <span className="font-semibold text-foreground">
                       Marges :
                     </span>{" "}
                     {charte.layout.margins}
@@ -2156,7 +2156,7 @@ export function BrandStudio() {
                 </div>
               </CharteSection>
               <CharteSection title="Direction photographique">
-                <div className="space-y-2 text-sm text-brand-muted">
+                <div className="space-y-2 text-sm text-[--text-muted]">
                   <p>{charte.photography.style}</p>
                   <p className="italic">{charte.photography.mood}</p>
                   <div className="flex gap-2 flex-wrap mt-1">
@@ -2177,14 +2177,14 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={() => setStep("assets")}
-                className="flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-text transition-colors"
+                className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
                 <ArrowLeft size={14} /> Retour aux visuels
               </button>
               <button
                 type="button"
                 onClick={() => setStep("export")}
-                className="flex items-center gap-2 bg-brand-text text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
               >
                 <ChevronRight size={14} /> Exporter le brand kit
               </button>
@@ -2195,7 +2195,7 @@ export function BrandStudio() {
         {/* ── STEP 6: Export ── */}
         {step === "export" && brief && selectedDirection && (
           <div className="space-y-6 max-w-lg">
-            <div className="bg-brand-bg border border-brand-border rounded-2xl p-5 space-y-3">
+            <div className="bg-navy-900 border border-navy-700 rounded-2xl p-5 space-y-3">
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-display font-bold text-lg"
@@ -2204,10 +2204,10 @@ export function BrandStudio() {
                   {brief.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-display font-bold text-brand-text">
+                  <p className="font-display font-bold text-foreground">
                     {brief.name}
                   </p>
-                  <p className="text-xs text-brand-muted">
+                  <p className="text-xs text-[--text-muted]">
                     {selectedDirection.name} · {brief.secteur}
                   </p>
                 </div>
@@ -2235,7 +2235,7 @@ export function BrandStudio() {
                 type="button"
                 onClick={handleDownloadPdf}
                 disabled={!charte}
-                className="flex items-center gap-3 w-full bg-brand-text text-white font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+                className="flex items-center gap-3 w-full bg-foreground text-white font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
               >
                 <FileText size={16} />
                 <div className="text-left">
@@ -2252,12 +2252,12 @@ export function BrandStudio() {
                   type="button"
                   onClick={handleDownloadZip}
                   disabled={!charte}
-                  className="flex items-center gap-3 flex-1 border border-brand-border bg-white text-brand-text font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-brand-bg transition-colors disabled:opacity-40"
+                  className="flex items-center gap-3 flex-1 border border-navy-700 bg-white text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-navy-900 transition-colors disabled:opacity-40"
                 >
                   <Archive size={16} />
                   <div className="text-left">
                     <p>Télécharger le brand kit ZIP</p>
-                    <p className="text-xs font-body font-normal text-brand-muted">
+                    <p className="text-xs font-body font-normal text-[--text-muted]">
                       Logos + mockups + palette.json + charte.html
                     </p>
                   </div>
@@ -2267,7 +2267,7 @@ export function BrandStudio() {
                   onClick={handleShareZip}
                   disabled={!charte || sharing}
                   title="Partager un lien de téléchargement"
-                  className="flex items-center justify-center gap-1.5 border border-brand-border bg-white text-brand-text font-display font-semibold text-sm px-3.5 rounded-xl hover:bg-brand-bg transition-colors disabled:opacity-40"
+                  className="flex items-center justify-center gap-1.5 border border-navy-700 bg-white text-foreground font-display font-semibold text-sm px-3.5 rounded-xl hover:bg-navy-900 transition-colors disabled:opacity-40"
                 >
                   {sharing ? (
                     <Loader2 size={16} className="animate-spin" />
@@ -2279,19 +2279,19 @@ export function BrandStudio() {
 
               {/* Share URL panel */}
               {shareUrl && (
-                <div className="flex items-center gap-2 px-3 py-2.5 bg-brand-bg border border-brand-border rounded-xl">
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-navy-900 border border-navy-700 rounded-xl">
                   <input
                     readOnly
                     value={shareUrl}
                     title="Lien de partage du brand kit"
                     aria-label="Lien de partage du brand kit"
-                    className="flex-1 bg-transparent text-xs font-mono text-brand-muted truncate outline-none"
+                    className="flex-1 bg-transparent text-xs font-mono text-[--text-muted] truncate outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleCopyShareUrl}
                     title="Copier le lien"
-                    className="flex items-center gap-1 text-xs font-semibold text-brand-secondary hover:opacity-70 transition-opacity shrink-0"
+                    className="flex items-center gap-1 text-xs font-semibold text-purple-500 hover:opacity-70 transition-opacity shrink-0"
                   >
                     {copied ? <CheckCheck size={14} /> : <Copy size={14} />}
                     {copied ? "Copié" : "Copier"}
@@ -2300,7 +2300,7 @@ export function BrandStudio() {
                     type="button"
                     onClick={() => setShareUrl(null)}
                     title="Fermer"
-                    className="text-brand-muted hover:text-brand-text"
+                    className="text-[--text-muted] hover:text-foreground"
                   >
                     <X size={14} />
                   </button>
@@ -2311,12 +2311,12 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={handleExportJson}
-                className="flex items-center gap-3 w-full border border-brand-border bg-white text-brand-text font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-brand-bg transition-colors"
+                className="flex items-center gap-3 w-full border border-navy-700 bg-white text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-navy-900 transition-colors"
               >
                 <Download size={16} />
                 <div className="text-left">
                   <p>Exporter en JSON</p>
-                  <p className="text-xs font-body font-normal text-brand-muted">
+                  <p className="text-xs font-body font-normal text-[--text-muted]">
                     Stratégie + palette + typographie + charte
                   </p>
                 </div>
@@ -2337,7 +2337,7 @@ export function BrandStudio() {
                 setAssets(null);
                 setCharte(null);
               }}
-              className="flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-text transition-colors"
+              className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
             >
               <RefreshCw size={13} /> Créer une nouvelle identité
             </button>

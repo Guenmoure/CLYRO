@@ -49,7 +49,25 @@ export const MUSIC_TRACKS: MusicTrack[] = [
   },
 ]
 
+/**
+ * Returns the URL for a music track by ID.
+ * Returns undefined if the track is not found or its URL env var is not configured.
+ * This ensures the pipeline skips background music gracefully instead of crashing.
+ */
 export function getMusicTrackUrl(trackId: string): string | undefined {
   const track = MUSIC_TRACKS.find((t) => t.id === trackId)
-  return track?.url || undefined
+  if (!track) return undefined
+  if (!track.url) {
+    console.warn(`[music] Track "${trackId}" has no URL configured (missing env var). Skipping background music.`)
+    return undefined
+  }
+  return track.url
+}
+
+/**
+ * Returns only the tracks that have a URL configured.
+ * Used to filter the music catalogue shown to the user.
+ */
+export function getAvailableTracks(): MusicTrack[] {
+  return MUSIC_TRACKS.filter((t) => !!t.url)
 }
