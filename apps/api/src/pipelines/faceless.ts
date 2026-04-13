@@ -332,12 +332,23 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
 
     if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
 
-    // Signed URL 1 an — storagePath conservé en metadata pour renouvellement futur
-    const { data: signedUrl } = await supabaseAdmin.storage
-      .from('videos')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+    // Signed URL 1 an — avec retry (Supabase Storage peut être lent)
+    let outputUrl = ''
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data: signedUrl, error: signError } = await supabaseAdmin.storage
+        .from('videos')
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+      if (signedUrl?.signedUrl) {
+        outputUrl = signedUrl.signedUrl
+        break
+      }
+      logger.warn({ attempt, signError, videoId }, 'createSignedUrl failed, retrying…')
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+    }
 
-    const outputUrl = signedUrl?.signedUrl ?? ''
+    if (!outputUrl) {
+      throw new Error('Failed to create signed URL after 3 attempts — storage_path saved for manual recovery')
+    }
 
     await supabaseAdmin
       .from('videos')

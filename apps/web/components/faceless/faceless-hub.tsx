@@ -1900,9 +1900,31 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
 }) {
   const { status, progress, outputUrl, isError, isDone } = useVideoStatus(project.videoId ?? null)
   const [downloading, setDownloading] = useState(false)
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null)
   const notifiedRef = useRef(false)
+  const fallbackTriedRef = useRef(false)
 
-  const videoUrl = outputUrl ?? project.finalVideoUrl
+  const videoUrl = outputUrl ?? fallbackUrl ?? project.finalVideoUrl
+
+  // Fallback : si done mais pas d'URL, requêter Supabase directement
+  useEffect(() => {
+    if (isDone && !outputUrl && project.videoId && !fallbackTriedRef.current) {
+      fallbackTriedRef.current = true
+      const supabase = (async () => {
+        const { createBrowserClient } = await import('@/lib/supabase')
+        const sb = createBrowserClient()
+        const { data } = await sb
+          .from('videos')
+          .select('output_url')
+          .eq('id', project.videoId!)
+          .single()
+        if (data?.output_url) {
+          setFallbackUrl(data.output_url)
+        }
+      })()
+      supabase.catch(() => null)
+    }
+  }, [isDone, outputUrl, project.videoId])
 
   // Notifier le parent une seule fois quand la vidéo est prête
   useEffect(() => {
@@ -2201,8 +2223,15 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
 
       patch({ videoId: video_id, step: 'final' })
       onGenerated(project.title || project.script.slice(0, 60) || 'Nouvelle vidéo', video_id)
-    } catch {
-      toast.error('Erreur lors du lancement de la génération')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[goToFinal] Pipeline start failed:', msg, err)
+      // Si session expirée → message explicite pour que l'utilisateur se reconnecte
+      if (msg.includes('Session expirée') || msg.includes('reconnecter')) {
+        toast.error('Session expirée — veuillez vous reconnecter puis relancer la génération')
+      } else {
+        toast.error(`Erreur génération : ${msg}`)
+      }
     } finally {
       setLoading(false)
     }

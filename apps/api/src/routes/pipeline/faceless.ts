@@ -196,7 +196,25 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
       }
     }
     if (!enqueued) {
-      runFacelessPipeline(jobData).catch((err) => logger.error({ err, videoId: video.id }, 'Faceless pipeline failed'))
+      runFacelessPipeline(jobData).catch(async (err) => {
+        logger.error({ err, videoId: video.id }, 'Faceless pipeline failed')
+        // Persister le statut erreur dans Supabase pour que le frontend puisse l'afficher
+        try {
+          await supabaseAdmin
+            .from('videos')
+            .update({
+              status: 'error',
+              metadata: {
+                error_message: err instanceof Error ? err.message : String(err),
+                error_at: new Date().toISOString(),
+              },
+            })
+            .eq('id', video.id)
+          logger.info({ videoId: video.id }, 'Video status updated to error in DB')
+        } catch (dbErr) {
+          logger.error({ dbErr, videoId: video.id }, 'Failed to update video error status in DB')
+        }
+      })
     }
 
     // Décrémenter les crédits après enqueue réussi (sauf plan studio)
@@ -432,12 +450,23 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
 
     if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
 
-    // Créer une signed URL
-    const { data: signedUrl } = await supabaseAdmin.storage
-      .from('videos')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+    // Créer une signed URL avec retry
+    let outputUrl = ''
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data: signedUrl, error: signError } = await supabaseAdmin.storage
+        .from('videos')
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+      if (signedUrl?.signedUrl) {
+        outputUrl = signedUrl.signedUrl
+        break
+      }
+      logger.warn({ attempt, signError, videoId: video_id }, 'reassemble: createSignedUrl failed, retrying…')
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+    }
 
-    const outputUrl = signedUrl?.signedUrl ?? ''
+    if (!outputUrl) {
+      throw new Error('Failed to create signed URL after 3 attempts')
+    }
 
     // Mettre à jour le statut de la vidéo
     await supabaseAdmin

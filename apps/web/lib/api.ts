@@ -18,16 +18,30 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
  */
 async function getAuthToken(): Promise<string> {
   const supabase = createBrowserClient()
+
+  // 1. Tenter de récupérer la session en cache
   const {
     data: { session },
     error,
   } = await supabase.auth.getSession()
 
-  if (error || !session) {
+  if (session?.access_token) {
+    return session.access_token
+  }
+
+  // 2. Session absente ou expirée → tenter un refresh silencieux
+  console.warn('[getAuthToken] Session manquante ou expirée, tentative de refresh…')
+  const {
+    data: { session: refreshed },
+    error: refreshError,
+  } = await supabase.auth.refreshSession()
+
+  if (refreshError || !refreshed) {
+    console.error('[getAuthToken] Refresh échoué:', refreshError?.message ?? error?.message)
     throw new Error('Session expirée — veuillez vous reconnecter')
   }
 
-  return session.access_token
+  return refreshed.access_token
 }
 
 /**
