@@ -68,21 +68,15 @@ export function selectFalModel(sceneType?: string, style?: string): FalModelConf
 // the style model — it is the only guaranteed i2i endpoint across all fal.ai plans.
 
 const F1_STYLE_MODEL_MAP: Record<string, string> = {
-  // Ultra quality — product/luxury/CGI scenes benefit most from flux-pro-ultra
-  cinematique:      'fal-ai/flux-pro/v1.1-ultra',
-  luxe:             'fal-ai/flux-pro/v1.1-ultra',
-  '3d-pixar':       'fal-ai/flux-pro/v1.1-ultra',
-
-  // High quality — animated / graphic styles need strong prompt adherence
-  'animation-2d':   'fal-ai/flux-pro',
-  'flat-design':    'fal-ai/flux-pro',
-  'motion-graphics':'fal-ai/flux-pro',
-  corporate:        'fal-ai/flux-pro',
-
-  // Text-in-image — ideogram excels at legible text rendering
-  infographie:      'fal-ai/ideogram/v2',
-
-  // Standard quality — sketch/whiteboard/stickman are low-detail; flux/dev is sufficient
+  // All styles use flux/dev — consistent API (image_size, num_inference_steps, seed all supported)
+  cinematique:      'fal-ai/flux/dev',
+  luxe:             'fal-ai/flux/dev',
+  '3d-pixar':       'fal-ai/flux/dev',
+  'animation-2d':   'fal-ai/flux/dev',
+  'flat-design':    'fal-ai/flux/dev',
+  'motion-graphics':'fal-ai/flux/dev',
+  corporate:        'fal-ai/flux/dev',
+  infographie:      'fal-ai/flux/dev',
   whiteboard:       'fal-ai/flux/dev',
   stickman:         'fal-ai/flux/dev',
   minimaliste:      'fal-ai/flux/dev',
