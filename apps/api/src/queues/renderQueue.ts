@@ -8,7 +8,11 @@ export const RENDER_QUEUE_NAME = 'render'
 // En local, Redis doit tourner sur 127.0.0.1:6379
 // Sur Render, utiliser REDIS_URL (ex: redis://red-xxxxx.onrender.com:6379)
 function createRedisConnection(): IORedis | null {
-  const url = process.env.REDIS_URL ?? 'redis://127.0.0.1:6379'
+  const url = process.env.REDIS_URL
+  if (!url) {
+    logger.info('REDIS_URL not set — queue disabled, using inline execution')
+    return null
+  }
   try {
     const conn = new IORedis(url, {
       maxRetriesPerRequest: null, // requis par BullMQ
