@@ -8,7 +8,7 @@ const fal = createFalClient({
   credentials: process.env.FAL_KEY,
 })
 
-const MAX_RETRIES = 2             // 2 retries avec backoff exponentiel avant fallback schnell
+const MAX_RETRIES = 1             // 1 retry avant fallback schnell (fail fast)
 
 // Models that use aspect_ratio instead of image_size
 const ASPECT_RATIO_MODELS = new Set([
@@ -22,7 +22,7 @@ const IMAGE_SIZE_TO_ASPECT_RATIO: Record<string, string> = {
   'square_hd': '1:1',
   'portrait_16_9': '9:16',
 }
-const TIMEOUT_IMAGE_MS = 60_000   // flux/dev: 20-40s — timeout strict pour fail fast
+const TIMEOUT_IMAGE_MS = 120_000  // flux/dev: 20-90s depending on queue load
 const TIMEOUT_VIDEO_MS = 90_000   // kling standard: ~30-60s — réduit de 180s pour fail-fast
 
 // Configuration par style
@@ -184,7 +184,7 @@ export async function generateSceneImage(
       }
 
       const result = await Promise.race([
-        fal.subscribe(model, { input } as any),
+        fal.run(model, { input } as any),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('fal.ai timeout')), TIMEOUT_IMAGE_MS)
         ),
@@ -227,7 +227,7 @@ export async function generateSceneImage(
     if (seed !== undefined) input.seed = seed
 
     const result = await Promise.race([
-      fal.subscribe('fal-ai/flux/schnell', { input } as any),
+      fal.run('fal-ai/flux/schnell', { input } as any),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('flux/schnell timeout')), TIMEOUT_IMAGE_MS)
       ),
@@ -258,7 +258,7 @@ export async function generateSceneImages(
 ): Promise<Array<{ sceneId: string; imageUrl: string; promptUsed: string }>> {
   if (scenes.length === 0) return []
 
-  const results = await Promise.all(
+  const settled = await Promise.allSettled(
     scenes.map(async (scene, idx) => {
       const seed = masterSeed !== undefined ? masterSeed + idx : undefined
       const { imageUrl: falUrl, promptUsed } = await generateSceneImage(
@@ -276,7 +276,24 @@ export async function generateSceneImages(
     })
   )
 
-  return results
+  const failed = settled.filter((r) => r.status === 'rejected')
+  if (failed.length > 0) {
+    logger.warn({ failedCount: failed.length, total: scenes.length }, 'fal.ai: some scenes failed image generation')
+  }
+
+  // If ALL scenes failed, throw so the pipeline can surface the error
+  if (failed.length === scenes.length) {
+    const firstErr = (failed[0] as PromiseRejectedResult).reason
+    throw new Error(`All scene image generation failed: ${firstErr?.message ?? String(firstErr)}`)
+  }
+
+  return settled
+    .map((r, idx) =>
+      r.status === 'fulfilled'
+        ? r.value
+        : { sceneId: scenes[idx].id, imageUrl: '', promptUsed: '' }
+    )
+    .filter((r) => r.imageUrl !== '')
 }
 
 /**
