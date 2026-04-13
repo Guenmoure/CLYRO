@@ -55,7 +55,7 @@ export interface FacelessPipelineParams {
 }
 
 export async function runFacelessPipeline(params: FacelessPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, style, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices } = params
+  const { videoId, userId, userEmail, title, style, duration, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices } = params
 
   const updateStatus = async (status: string, progress: number, extra?: object) => {
     await supabaseAdmin
@@ -91,7 +91,7 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Using pre-generated scenes — skipping storyboard generation')
     } else {
       await updateStatus('storyboard', 10)
-      storyboard = await generateStoryboard(script, style, '30s', brandKit)
+      storyboard = await generateStoryboard(script, style, duration, brandKit)
       await updateStatus('storyboard', 25, { scenes: storyboard.scenes })
       logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Storyboard generated')
     }

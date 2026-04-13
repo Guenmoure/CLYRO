@@ -32,7 +32,7 @@ const FACELESS_STYLES = [
 ] as const
 
 const VIDEO_FORMATS  = ['9:16', '1:1', '16:9'] as const
-const VIDEO_DURATIONS = ['15s', '30s', '60s'] as const
+const VIDEO_DURATIONS = ['15s', '30s', '60s', '120s', '180s', '300s', 'auto'] as const
 
 const preGeneratedSceneSchema = z.object({
   id:               z.string(),
@@ -49,7 +49,7 @@ const createFacelessSchema = z.object({
   input_type:   z.enum(['script', 'audio']),
   format:       z.enum(VIDEO_FORMATS).default('16:9'),
   duration:     z.enum(VIDEO_DURATIONS).default('30s'),
-  script:       z.string().min(1).max(5000).optional(),
+  script:       z.string().min(1).max(100000).optional(),
   audio_url:    z.string().url().optional(),
   voice_id:       z.string().optional(),
   brand_kit_id:   z.string().uuid().optional(),
@@ -102,28 +102,9 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, async (req, res) => {
     return
   }
 
-  // ── WPM check — condense automatiquement si dépassement > 20% ──────────────
-  let effectiveScript = script ?? ''
-  let wpmMeta: { originalWordCount?: number; condensedWordCount?: number; overflowPct?: number; condensed?: boolean } = {}
-
-  if (input_type === 'script' && effectiveScript && !hasPreGeneratedScenes) {
-    const wpm = checkScriptWpm(effectiveScript, duration)
-    if (!wpm.ok) {
-      logger.info(
-        { wordCount: wpm.wordCount, estimatedSeconds: wpm.estimatedSeconds, targetSeconds: wpm.targetSeconds, overflowPct: wpm.overflowPct },
-        'Script WPM overflow > 20% — auto-condensing via Claude'
-      )
-      try {
-        const { condensedScript, originalWordCount, condensedWordCount } = await condenseScript(effectiveScript, duration)
-        effectiveScript = condensedScript
-        wpmMeta = { originalWordCount, condensedWordCount, overflowPct: wpm.overflowPct, condensed: true }
-      } catch (condenseErr) {
-        // Non-bloquant — on continue avec le script original et on avertit
-        logger.warn({ condenseErr }, 'Script condensation failed — continuing with original script')
-        wpmMeta = { overflowPct: wpm.overflowPct, condensed: false }
-      }
-    }
-  }
+  // Script utilisé tel quel — pas de limite de durée ni de condensation
+  const effectiveScript = script ?? ''
+  const wpmMeta: { condensed?: boolean } = {}
 
   try {
     // Vérifier les crédits de l'utilisateur

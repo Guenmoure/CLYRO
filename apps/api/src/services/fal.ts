@@ -9,6 +9,19 @@ const fal = createFalClient({
 })
 
 const MAX_RETRIES = 2             // 2 retries avec backoff exponentiel avant fallback schnell
+
+// Models that use aspect_ratio instead of image_size
+const ASPECT_RATIO_MODELS = new Set([
+  'fal-ai/flux-pro/v1.1-ultra',
+  'fal-ai/flux-pro',
+  'fal-ai/ideogram/v2',
+])
+
+const IMAGE_SIZE_TO_ASPECT_RATIO: Record<string, string> = {
+  'landscape_16_9': '16:9',
+  'square_hd': '1:1',
+  'portrait_16_9': '9:16',
+}
 const TIMEOUT_IMAGE_MS = 60_000   // flux/dev: 20-40s — timeout strict pour fail fast
 const TIMEOUT_VIDEO_MS = 90_000   // kling standard: ~30-60s — réduit de 180s pour fail-fast
 
@@ -155,9 +168,14 @@ export async function generateSceneImage(
 
       const input: Record<string, unknown> = {
         prompt: fullPrompt,
-        image_size: styleConfig.image_size,
         num_inference_steps: modelOverride ? 28 : styleConfig.num_inference_steps,
         num_images: 1,
+      }
+
+      if (ASPECT_RATIO_MODELS.has(model)) {
+        input.aspect_ratio = IMAGE_SIZE_TO_ASPECT_RATIO[styleConfig.image_size] ?? '16:9'
+      } else {
+        input.image_size = styleConfig.image_size
       }
 
       // Seed fixe = character consistency entre scènes (PDF: cref pattern)

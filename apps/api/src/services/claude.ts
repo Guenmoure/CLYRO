@@ -16,6 +16,10 @@ const SCENE_COUNT_MAP: Record<string, number> = {
   '15s': 4,
   '30s': 6,
   '60s': 10,
+  '120s': 18,
+  '180s': 24,
+  '300s': 36,
+  'auto': 12,
   default: 6,
 }
 
@@ -351,6 +355,7 @@ const WPM_FR = 150
 /** Durée cible en secondes par identifiant */
 const DURATION_SECONDS: Record<string, number> = {
   '6s': 6, '15s': 15, '30s': 30, '60s': 60,
+  '120s': 120, '180s': 180, '300s': 300, 'auto': 120,
 }
 
 export interface WpmCheckResult {
