@@ -35,6 +35,10 @@ if (process.env.SENTRY_DSN) {
 const app = express()
 const PORT = process.env.PORT ?? 4000
 
+// Render/Vercel place un reverse proxy devant Express.
+// Sans trust proxy, express-rate-limit crash avec ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+app.set('trust proxy', 1)
+
 // ── Minimal health check (avant tout middleware) ───────────────────────────
 // Render (et autres proxies) ne envoient pas de header Origin → CORS bloquerait
 // Ce endpoint répond immédiatement sans passer par CORS/auth/rate-limit
