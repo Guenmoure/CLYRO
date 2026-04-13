@@ -1051,6 +1051,9 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
   const [selected,   setSelected]   = useState<Set<string>>(new Set())
   // Style reference tracking
   const [localStyleRef, setLocalStyleRef] = useState<string | undefined>(styleReference)
+  // Keep a ref to scenes to avoid stale closures in async callbacks
+  const scenesRef = useRef(scenes)
+  scenesRef.current = scenes
   // Scene 0 validation gate
   const [scene0Phase, setScene0Phase] = useState<'idle' | 'generating' | 'pending_validation' | 'validated'>(
     styleReference ? 'validated' : 'idle'
@@ -1167,7 +1170,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
         const hdError = errData.error ?? `HTTP ${hdRes.status}`
         console.warn(`[stream-image] Scene ${scene.index} HD failed: ${hdError}`)
         // If we have a draft, keep it. If not, this is a full failure.
-        const currentScene = scenes.find((s) => s.id === id)
+        const currentScene = scenesRef.current.find((s) => s.id === id)
         if (!currentScene?.imageUrl) {
           throw new Error(`Génération échouée (preview + HD): ${hdError}`)
         }
@@ -1200,7 +1203,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
    * 3. Generate scenes 1..N with style reference from scene 0
    */
   async function generateScene0() {
-    const scene0 = scenes.find((s) => s.index === 0)
+    const scene0 = scenesRef.current.find((s) => s.index === 0)
     if (!scene0) return
     setScene0Phase('generating')
     setGeneratingAll(true)
@@ -1210,9 +1213,11 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
   }
 
   async function validateScene0() {
-    const scene0 = scenes.find((s) => s.index === 0)
+    // Use ref to get latest scenes (avoids stale closure after generateImage updates)
+    const scene0 = scenesRef.current.find((s) => s.index === 0)
     if (!scene0?.imageUrl) {
-      toast.error('Scène 0 pas encore générée')
+      console.error('[validateScene0] scene0 imageUrl missing. scene0:', JSON.stringify(scene0 ? { id: scene0.id, index: scene0.index, imageStatus: scene0.imageStatus, imageUrl: scene0.imageUrl?.slice(0, 50) } : null))
+      toast.error('Scène 0 pas encore générée — réessayez dans quelques secondes')
       return
     }
     // Capture style reference from scene 0 HD image
