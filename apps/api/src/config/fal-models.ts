@@ -68,21 +68,21 @@ export function selectFalModel(sceneType?: string, style?: string): FalModelConf
 // the style model — it is the only guaranteed i2i endpoint across all fal.ai plans.
 
 const F1_STYLE_MODEL_MAP: Record<string, string> = {
-  // All styles use flux/dev — consistent API (image_size, num_inference_steps, seed all supported)
-  cinematique:      'fal-ai/flux/dev',
-  luxe:             'fal-ai/flux/dev',
-  '3d-pixar':       'fal-ai/flux/dev',
-  'animation-2d':   'fal-ai/flux/dev',
-  'flat-design':    'fal-ai/flux/dev',
-  'motion-graphics':'fal-ai/flux/dev',
-  corporate:        'fal-ai/flux/dev',
-  infographie:      'fal-ai/flux/dev',
-  whiteboard:       'fal-ai/flux/dev',
-  stickman:         'fal-ai/flux/dev',
-  minimaliste:      'fal-ai/flux/dev',
-  'stock-vo':       'fal-ai/flux/dev',
-  dynamique:        'fal-ai/flux/dev',
-  fun:              'fal-ai/flux/dev',
+  // All styles use flux/schnell — 10× cheaper than flux/dev, ~3s/image, sufficient for scene backgrounds
+  cinematique:      'fal-ai/flux/schnell',
+  luxe:             'fal-ai/flux/schnell',
+  '3d-pixar':       'fal-ai/flux/schnell',
+  'animation-2d':   'fal-ai/flux/schnell',
+  'flat-design':    'fal-ai/flux/schnell',
+  'motion-graphics':'fal-ai/flux/schnell',
+  corporate:        'fal-ai/flux/schnell',
+  infographie:      'fal-ai/flux/schnell',
+  whiteboard:       'fal-ai/flux/schnell',
+  stickman:         'fal-ai/flux/schnell',
+  minimaliste:      'fal-ai/flux/schnell',
+  'stock-vo':       'fal-ai/flux/schnell',
+  dynamique:        'fal-ai/flux/schnell',
+  fun:              'fal-ai/flux/schnell',
 }
 
 /**

@@ -12,15 +12,15 @@ const RETRY_DELAY_MS = 1000
 
 // Nombre de scènes selon la durée cible
 const SCENE_COUNT_MAP: Record<string, number> = {
-  '6s': 2,
-  '15s': 4,
-  '30s': 6,
-  '60s': 10,
-  '120s': 18,
-  '180s': 24,
-  '300s': 36,
-  'auto': 12,
-  default: 6,
+  '6s':   2,
+  '15s':  3,
+  '30s':  4,
+  '60s':  6,
+  '120s': 10,
+  '180s': 14,
+  '300s': 20,
+  'auto': 8,
+  default: 4,
 }
 
 // Instructions visuelles par style — transmises à Claude pour générer description_visuelle cohérente avec fal.ai

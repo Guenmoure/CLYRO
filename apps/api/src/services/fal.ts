@@ -166,9 +166,10 @@ export async function generateSceneImage(
     try {
       const startTime = Date.now()
 
+      const isSchnell = model.includes('schnell')
       const input: Record<string, unknown> = {
         prompt: fullPrompt,
-        num_inference_steps: modelOverride ? 28 : styleConfig.num_inference_steps,
+        num_inference_steps: isSchnell ? 4 : (modelOverride ? 28 : styleConfig.num_inference_steps),
         num_images: 1,
       }
 
