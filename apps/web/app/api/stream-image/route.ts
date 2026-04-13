@@ -1,8 +1,8 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createFalClient } from '@fal-ai/client'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 120
 
 const fal = createFalClient({ credentials: process.env.FAL_KEY })
 
@@ -21,107 +21,66 @@ const STYLE_CONFIGS: Record<string, { model: string; prefix: string }> = {
 
 /**
  * POST /api/stream-image
- * Streams fal.ai image generation progress as Server-Sent Events.
+ * HD image generation using fal.run() (blocking, reliable on Vercel serverless).
+ * Replaces the previous SSE streaming approach which was unreliable on serverless.
  *
  * Body: { prompt: string; style: string; seed?: number; styleReferenceUrl?: string }
- * Events:
- *   data: {"type":"log","message":"..."}          — generation log line
- *   data: {"type":"progress","pct":42}            — percentage estimate
- *   data: {"type":"done","imageUrl":"https://..."}— final result
- *   data: {"type":"error","message":"..."}        — failure
+ * Response: { imageUrl: string } or { error: string }
  */
 export async function POST(request: NextRequest) {
   if (!process.env.FAL_KEY) {
-    return new Response('FAL_KEY not configured', { status: 500 })
+    return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
   }
 
   const body = await request.json() as { prompt: string; style: string; seed?: number; styleReferenceUrl?: string }
   const { prompt, style, seed, styleReferenceUrl } = body
 
   if (!prompt || !style) {
-    return new Response('prompt and style are required', { status: 400 })
+    return NextResponse.json({ error: 'prompt and style are required' }, { status: 400 })
   }
 
   const config = STYLE_CONFIGS[style] ?? STYLE_CONFIGS['cinematique']
   const fullPrompt = `${config.prefix} ${prompt}`
 
-  const encoder = new TextEncoder()
+  try {
+    const input: Record<string, unknown> = {
+      prompt: fullPrompt,
+      image_size: 'landscape_16_9',
+      num_inference_steps: 28,
+      num_images: 1,
+      enable_safety_checker: true,
+    }
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      const send = (payload: object) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`))
-      }
+    if (seed !== undefined) {
+      input.seed = seed
+    }
 
-      try {
-        const input: Record<string, unknown> = {
-          prompt: fullPrompt,
-          image_size: 'landscape_16_9',
-          num_inference_steps: 28,
-          num_images: 1,
-          enable_safety_checker: true,
-        }
+    // Use style reference for scenes 1..N (image-to-image)
+    let model = config.model
+    if (styleReferenceUrl) {
+      input.image_url = styleReferenceUrl
+      input.strength = 0.72
+      model = 'fal-ai/flux/dev/image-to-image'
+    }
 
-        // Add deterministic seed for visual consistency
-        if (seed !== undefined) {
-          input.seed = seed
-        }
+    console.log(`[stream-image] Generating with model=${model}, style=${style}, seed=${seed}, hasRef=${!!styleReferenceUrl}`)
 
-        // Use style reference image for consistent styling (image-to-image).
-        // fal.ai convention: strength=0 → copy reference, strength=1 → ignore reference (free generation).
-        // 0.72 = 72% prompt freedom + 28% visual anchor (palette, lighting, mood).
-        let model = config.model
-        if (styleReferenceUrl) {
-          input.image_url = styleReferenceUrl
-          input.strength = 0.72
-          model = 'fal-ai/flux/dev/image-to-image'
-        }
+    const result = await fal.run(model, {
+      input,
+    }) as unknown as { data?: { images: Array<{ url: string }> }; images?: Array<{ url: string }> }
 
-        // fal.stream() returns a Promise<FalStream> — must be awaited before iterating
-        const falStream = await fal.stream(model, {
-          input,
-        })
+    const imageUrl = (result.data ?? result).images?.[0]?.url
 
-        let logCount = 0
-        // Consume the stream for log progress events
-        for await (const partial of falStream) {
-          const logs = (partial as { logs?: Array<{ message: string }> }).logs
-          if (logs && logs.length > logCount) {
-            const newLogs = logs.slice(logCount)
-            for (const log of newLogs) {
-              send({ type: 'log', message: log.message })
-            }
-            logCount = logs.length
-            // Estimate progress: flux-dev runs ~28 steps; logs ≈ 1 per step
-            send({ type: 'progress', pct: Math.min(90, Math.round((logCount / 28) * 90)) })
-          }
-        }
+    if (!imageUrl) {
+      console.error('[stream-image] No image in fal.ai response:', JSON.stringify(result).slice(0, 500))
+      return NextResponse.json({ error: 'No image returned from fal.ai' }, { status: 500 })
+    }
 
-        // Get the final completed result
-        const result = await falStream.done() as
-          | { images: Array<{ url: string }> }
-          | { data: { images: Array<{ url: string }> } }
-
-        const images = ('data' in result ? result.data.images : result.images)
-        const imageUrl = images?.[0]?.url
-
-        if (!imageUrl) throw new Error('No image returned from fal.ai')
-
-        send({ type: 'progress', pct: 100 })
-        send({ type: 'done', imageUrl })
-      } catch (err) {
-        send({ type: 'error', message: err instanceof Error ? err.message : 'Generation failed' })
-      } finally {
-        controller.close()
-      }
-    },
-  })
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      'X-Accel-Buffering': 'no',
-    },
-  })
+    console.log(`[stream-image] Success: ${imageUrl.slice(0, 80)}...`)
+    return NextResponse.json({ imageUrl })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'HD generation failed'
+    console.error('[stream-image] Error:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

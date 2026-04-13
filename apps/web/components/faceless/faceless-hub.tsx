@@ -1149,8 +1149,9 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
         console.warn(`[preview-image] Scene ${scene.index} failed: ${previewRes.status} ${errText.slice(0, 200)}`)
       }
 
-      // ── Phase 2 : flux/dev HD via SSE stream (20-40s) ──────────────────────
-      const res = await fetch('/api/stream-image', {
+      // ── Phase 2 : flux/dev HD (blocking fal.run — reliable on Vercel) ────
+      updateScene(id, { streamLog: 'Génération HD en cours…' })
+      const hdRes = await fetch('/api/stream-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1160,52 +1161,30 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
           styleReferenceUrl: scene.index > 0 ? localStyleRef : undefined,
         }),
       })
-      if (!res.ok || !res.body) {
-        const errBody = await res.text().catch(() => 'no body')
-        throw new Error(`Stream request failed: ${res.status} ${res.statusText} — ${errBody}`)
-      }
 
-      const reader = res.body.getReader()
-      const dec = new TextDecoder()
-      let buf = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buf += dec.decode(value, { stream: true })
-
-        const parts = buf.split('\n\n')
-        buf = parts.pop() ?? ''
-
-        for (const part of parts) {
-          if (!part.startsWith('data: ')) continue
-          try {
-            const evt = JSON.parse(part.slice(6)) as {
-              type: 'log' | 'progress' | 'done' | 'error'
-              message?: string
-              imageUrl?: string
-            }
-            if (evt.type === 'log' && evt.message) {
-              updateScene(id, { streamLog: evt.message })
-            } else if (evt.type === 'done' && evt.imageUrl) {
-              // Silent HD replacement — already showing draft
-              updateScene(id, { imageStatus: 'done', imageUrl: evt.imageUrl, qualityHint: 'hd', streamLog: undefined })
-              // Capture style reference from first HD image (scene 0)
-              if (scene.index === 0 && !localStyleRef) {
-                setLocalStyleRef(evt.imageUrl)
-              }
-            } else if (evt.type === 'error') {
-              // HD failed — draft is still shown, don't mark as error
-              updateScene(id, { streamLog: undefined })
-            }
-          } catch {
-            // ignore malformed SSE frame
+      if (!hdRes.ok) {
+        const errData = await hdRes.json().catch(() => ({ error: `HTTP ${hdRes.status}` })) as { error?: string }
+        const hdError = errData.error ?? `HTTP ${hdRes.status}`
+        console.warn(`[stream-image] Scene ${scene.index} HD failed: ${hdError}`)
+        // If we have a draft, keep it. If not, this is a full failure.
+        const currentScene = scenes.find((s) => s.id === id)
+        if (!currentScene?.imageUrl) {
+          throw new Error(`Génération échouée (preview + HD): ${hdError}`)
+        }
+        // Draft exists — mark as done with draft quality
+        updateScene(id, { streamLog: undefined })
+      } else {
+        const hdData = await hdRes.json() as { imageUrl?: string }
+        if (hdData.imageUrl) {
+          updateScene(id, { imageStatus: 'done', imageUrl: hdData.imageUrl, qualityHint: 'hd', streamLog: undefined })
+          // Capture style reference from first HD image (scene 0)
+          if (scene.index === 0 && !localStyleRef) {
+            setLocalStyleRef(hdData.imageUrl)
           }
+        } else {
+          updateScene(id, { imageStatus: 'done', streamLog: undefined })
         }
       }
-
-      // If HD stream finished without 'done', mark as done with whatever we have
-      updateScene(id, { imageStatus: 'done', streamLog: undefined })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error(`[generateImage] Scene ${scene.index}:`, msg)
