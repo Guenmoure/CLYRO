@@ -620,8 +620,6 @@ export async function assembleVideo(options: AssembleVideoOptions): Promise<Buff
 
     return finalBuffer
   } finally {
-    // Cleanup des fichiers temporaires
-    await Promise.all(tempFiles.map((f) => unlink(f).catch(() => null)))
-    await unlink(workDir).catch(() => null)
+    await rm(workDir, { recursive: true, force: true }).catch(() => null)
   }
 }

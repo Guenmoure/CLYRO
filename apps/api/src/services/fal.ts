@@ -23,7 +23,7 @@ const IMAGE_SIZE_TO_ASPECT_RATIO: Record<string, string> = {
   'portrait_16_9': '9:16',
 }
 const TIMEOUT_IMAGE_MS = 120_000  // flux/dev: 20-90s depending on queue load
-const TIMEOUT_VIDEO_MS = 90_000   // kling standard: ~30-60s — réduit de 180s pour fail-fast
+const TIMEOUT_VIDEO_MS = 150_000  // kling: up to 120s for Pro quality
 
 // Configuration par style
 interface StyleConfig {
@@ -184,7 +184,7 @@ export async function generateSceneImage(
       }
 
       const result = await Promise.race([
-        fal.run(model, { input } as any),
+        fal.subscribe(model, { input } as any),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('fal.ai timeout')), TIMEOUT_IMAGE_MS)
         ),
@@ -227,7 +227,7 @@ export async function generateSceneImage(
     if (seed !== undefined) input.seed = seed
 
     const result = await Promise.race([
-      fal.run('fal-ai/flux/schnell', { input } as any),
+      fal.subscribe('fal-ai/flux/schnell', { input } as any),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('flux/schnell timeout')), TIMEOUT_IMAGE_MS)
       ),
@@ -617,8 +617,15 @@ export async function uploadFalUrlToStorage(
       return falUrl
     }
 
+    const { data: signedData } = await supabaseAdmin.storage
+      .from(bucket)
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 7) // 7-day signed URL (bucket is private)
+    if (signedData?.signedUrl) {
+      logger.info({ storagePath, bucket }, 'fal.ai: asset uploaded to Supabase Storage')
+      return signedData.signedUrl
+    }
+    // Fallback to public URL if signed URL creation fails
     const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(storagePath)
-    logger.info({ storagePath, bucket }, 'fal.ai: asset uploaded to Supabase Storage')
     return data.publicUrl
   } catch (err) {
     logger.warn({ err, falUrl }, 'uploadFalUrlToStorage: error, returning original URL')
