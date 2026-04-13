@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createFalClient } from '@fal-ai/client'
 import type { BrandBrief, BrandDirection } from '@clyro/shared'
 
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 const fal = createFalClient({ credentials: process.env.FAL_KEY })
 
 const LOGO_CONCEPTS = [

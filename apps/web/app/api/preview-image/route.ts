@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createFalClient } from '@fal-ai/client'
 
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 const fal = createFalClient({ credentials: process.env.FAL_KEY })
 
 const STYLE_PREFIXES: Record<string, string> = {

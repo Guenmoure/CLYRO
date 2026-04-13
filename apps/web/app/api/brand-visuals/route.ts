@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createFalClient } from '@fal-ai/client'
 import type { BrandBrief, BrandDirection } from '@clyro/shared'
 
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 const fal = createFalClient({ credentials: process.env.FAL_KEY })
 
 type FalModel = 'fal-ai/flux-pro/v1.1-ultra' | 'fal-ai/flux/dev' | 'fal-ai/recraft-v3'

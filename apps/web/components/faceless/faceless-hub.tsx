@@ -1144,6 +1144,9 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
             streamLog: 'Draft prêt — amélioration HD en cours…',
           })
         }
+      } else {
+        const errText = await previewRes.text().catch(() => '')
+        console.warn(`[preview-image] Scene ${scene.index} failed: ${previewRes.status} ${errText.slice(0, 200)}`)
       }
 
       // ── Phase 2 : flux/dev HD via SSE stream (20-40s) ──────────────────────
@@ -1157,7 +1160,10 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
           styleReferenceUrl: scene.index > 0 ? localStyleRef : undefined,
         }),
       })
-      if (!res.ok || !res.body) throw new Error('Stream request failed')
+      if (!res.ok || !res.body) {
+        const errBody = await res.text().catch(() => 'no body')
+        throw new Error(`Stream request failed: ${res.status} ${res.statusText} — ${errBody}`)
+      }
 
       const reader = res.body.getReader()
       const dec = new TextDecoder()
@@ -1200,8 +1206,10 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
       // If HD stream finished without 'done', mark as done with whatever we have
       updateScene(id, { imageStatus: 'done', streamLog: undefined })
-    } catch {
-      toast.error(`Erreur image scène ${scene.index + 1}`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error(`[generateImage] Scene ${scene.index}:`, msg)
+      toast.error(`Erreur image scène ${scene.index + 1}: ${msg.slice(0, 120)}`)
       updateScene(id, { imageStatus: 'error', streamLog: undefined, qualityHint: undefined })
     }
   }

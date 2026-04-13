@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import type { BrandBrief, BrandDirection, BrandCharte } from '@clyro/shared'
 import { buildCharteHtml } from '@/lib/brand-charte-html'
 
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 const supabaseAdmin = () =>
   createClient(
     process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
