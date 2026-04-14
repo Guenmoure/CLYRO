@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -16,6 +18,13 @@ const ALLOWED_TYPES = ['image/png', 'image/svg+xml', 'image/jpeg', 'image/webp']
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check — bloquer les requêtes non authentifiées
+    const supabaseAuth = createServerComponentClient({ cookies })
+    const { data: { session } } = await supabaseAuth.auth.getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File | null
 

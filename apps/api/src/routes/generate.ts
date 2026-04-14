@@ -571,7 +571,7 @@ generateRouter.post('/generate/brand-hybrid', authMiddleware, async (req, res) =
 
 // ── POST /notify/brand-kit-ready ──────────────────────────────────────────────
 
-generateRouter.post('/notify/brand-kit-ready', async (req, res) => {
+generateRouter.post('/notify/brand-kit-ready', authMiddleware, async (req, res) => {
   try {
     const { email, brandName, downloadUrl } = req.body as {
       email: string

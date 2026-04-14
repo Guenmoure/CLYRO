@@ -456,6 +456,15 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
     res.json({ status: 'done', output_url: outputUrl })
   } catch (err) {
     logger.error({ err, videoId: video_id }, 'pipeline.faceless.reassemble error')
+    // Persister l'erreur dans Supabase pour que le frontend l'affiche
+    await supabaseAdmin
+      .from('videos')
+      .update({
+        status: 'error',
+        metadata: { error_message: err instanceof Error ? err.message : String(err), error_at: new Date().toISOString() },
+      })
+      .eq('id', video_id)
+      .then(() => null, () => null)
     res.status(500).json({ error: 'Failed to reassemble video', code: 'SERVICE_ERROR' })
   }
 })

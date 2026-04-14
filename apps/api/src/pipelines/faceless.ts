@@ -54,8 +54,34 @@ export interface FacelessPipelineParams {
   speakerVoices?: Record<string, string> // map speaker name → voice_id (optional override)
 }
 
+// Timeout global du pipeline : 30 min — au-delà, on considère qu'il est bloqué
+const PIPELINE_TIMEOUT_MS = Number(process.env.PIPELINE_TIMEOUT_MS ?? 30 * 60 * 1000)
+
 export async function runFacelessPipeline(params: FacelessPipelineParams): Promise<void> {
   const { videoId, userId, userEmail, title, style, duration, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices } = params
+
+  // Watchdog : si le pipeline n'a pas fini au bout de PIPELINE_TIMEOUT_MS,
+  // on marque la vidéo en erreur pour débloquer le frontend
+  let finished = false
+  const watchdog = setTimeout(async () => {
+    if (finished) return
+    logger.error({ videoId, timeoutMs: PIPELINE_TIMEOUT_MS }, 'Pipeline watchdog triggered — marking video as error')
+    try {
+      await supabaseAdmin
+        .from('videos')
+        .update({
+          status: 'error',
+          metadata: {
+            error_message: `Pipeline timeout after ${PIPELINE_TIMEOUT_MS / 1000}s — process may still be running`,
+            error_at: new Date().toISOString(),
+          },
+        })
+        .eq('id', videoId)
+      await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
+    } catch (dbErr) {
+      logger.error({ dbErr, videoId }, 'Watchdog DB update failed')
+    }
+  }, PIPELINE_TIMEOUT_MS)
 
   const updateStatus = async (status: string, progress: number, extra?: object) => {
     await supabaseAdmin
@@ -360,7 +386,11 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
     await sendVideoReadyEmail(userEmail, title, outputUrl).catch((err) =>
       logger.warn({ err }, 'Failed to send video ready email (non-blocking)')
     )
+    finished = true
+    clearTimeout(watchdog)
   } catch (err) {
+    finished = true
+    clearTimeout(watchdog)
     const errorMessage = err instanceof Error ? err.message : String(err)
     Sentry.captureException(err, { extra: { videoId, userId } })
     logger.error({ err, videoId }, 'Faceless pipeline error')

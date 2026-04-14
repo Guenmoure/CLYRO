@@ -58,30 +58,65 @@ const MODULES = [
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
-  const supabase = createServerComponentClient<Database>({ cookies })
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    return null // middleware handles redirect
+  // Guard env vars — évite le crash SSR si Vercel n'a pas les variables Supabase
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return (
+      <div className="px-4 sm:px-6 py-16 max-w-2xl mx-auto">
+        <Card variant="elevated" className="flex items-start gap-4 py-6 px-6">
+          <div className="bg-error/10 rounded-xl p-3 shrink-0">
+            <AlertCircle className="text-error" size={20} />
+          </div>
+          <div>
+            <p className="font-display text-sm text-foreground mb-1">Configuration manquante</p>
+            <p className="font-body text-xs text-[--text-muted]">
+              Les variables d&apos;environnement Supabase ne sont pas configurées sur le déploiement.
+              Contacte le support ou vérifie la config Vercel.
+            </p>
+          </div>
+        </Card>
+      </div>
+    )
   }
 
-  const [profileResult, videosResult] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('full_name, plan, credits')
-      .eq('id', user.id)
-      .single(),
-    supabase
-      .from('videos')
-      .select('id, title, module, style, status, output_url, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(50),
-  ])
+  let user: { id: string; email?: string } | null = null
+  let profile: Profile | null = null
+  let videos: VideoRow[] | null = null
+  let fetchErr: unknown = null
 
-  const profile  = profileResult.data as Profile | null
-  const videos   = videosResult.data as VideoRow[] | null
-  const fetchErr = videosResult.error
+  try {
+    const supabase = createServerComponentClient<Database>({ cookies })
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !authData.user) {
+      return null // middleware handles redirect
+    }
+    user = authData.user
+
+    const [profileResult, videosResult] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('full_name, plan, credits')
+        .eq('id', user.id)
+        .single(),
+      supabase
+        .from('videos')
+        .select('id, title, module, style, status, output_url, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50),
+    ])
+
+    profile  = profileResult.data as Profile | null
+    videos   = videosResult.data as VideoRow[] | null
+    fetchErr = profileResult.error ?? videosResult.error
+  } catch (err) {
+    console.error('[DashboardPage] Server error:', err)
+    fetchErr = err
+  }
+
+  if (!user) {
+    return null
+  }
 
   const firstName = (profile?.full_name ?? user.email ?? 'là').split(/[\s@]/)[0]
   const plan      = profile?.plan ?? 'free'
@@ -130,7 +165,7 @@ export default async function DashboardPage() {
       )}
 
       {/* ── Fetch error ────────────────────────────────────────────── */}
-      {fetchErr && (
+      {Boolean(fetchErr) && (
         <Card variant="elevated" className="flex items-center gap-4 py-5 px-6">
           <div className="bg-error/10 rounded-xl p-3 shrink-0">
             <AlertCircle className="text-error" size={20} />
@@ -150,7 +185,7 @@ export default async function DashboardPage() {
       )}
 
       {/* ── Project sections (client component for realtime) ────────── */}
-      {!fetchErr && (
+      {!fetchErr && user && (
         <ProjectSections
           userId={user.id}
           videos={(videos ?? []) as VideoRow[]}

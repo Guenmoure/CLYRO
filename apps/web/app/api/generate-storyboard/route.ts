@@ -11,13 +11,16 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient({ cookies })
     const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
 
     const body = await request.json()
     const res = await fetch(`${API_URL}/api/v1/generate/storyboard`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify(body),
     })

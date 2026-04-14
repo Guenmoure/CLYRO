@@ -4,7 +4,7 @@ services:
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    plan: starter          # starter = 512 MB RAM / 0.5 CPU — upgrade to standard for prod
+    plan: standard         # 2 GB RAM / 1 CPU — requis pour FFmpeg + video processing
     region: frankfurt      # EU pour la latence Afrique/Europe
     healthCheckPath: /health
     autoDeploy: true
@@ -13,7 +13,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        value: 4000          # aligné avec Dockerfile EXPOSE + HEALTHCHECK
 
       # — Supabase —
       - key: SUPABASE_URL
@@ -46,6 +46,8 @@ services:
         sync: false
       - key: MONEROO_WEBHOOK_SECRET
         sync: false
+      - key: MONEROO_SIGNATURE_HEADER
+        sync: false        # nom exact du header de signature (voir doc Moneroo)
 
       # — Resend emails —
       - key: RESEND_API_KEY

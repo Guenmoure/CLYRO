@@ -100,7 +100,23 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
       }
     }
     if (!enqueued) {
-      runMotionPipeline(jobData).catch((err) => logger.error({ err, videoId: video.id }, 'Motion pipeline failed'))
+      runMotionPipeline(jobData).catch(async (err) => {
+        logger.error({ err, videoId: video.id }, 'Motion pipeline failed')
+        try {
+          await supabaseAdmin
+            .from('videos')
+            .update({
+              status: 'error',
+              metadata: {
+                error_message: err instanceof Error ? err.message : String(err),
+                error_at: new Date().toISOString(),
+              },
+            })
+            .eq('id', video.id)
+        } catch (dbErr) {
+          logger.error({ dbErr, videoId: video.id }, 'Failed to update motion video error status')
+        }
+      })
     }
 
     // Décrémenter les crédits après enqueue réussi (sauf plan studio)

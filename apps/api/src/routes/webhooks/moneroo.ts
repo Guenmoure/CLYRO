@@ -12,8 +12,11 @@ export const monerooWebhookRouter = Router()
  */
 monerooWebhookRouter.post('/moneroo', async (req, res) => {
   // Extraire la signature depuis les headers Moneroo
-  // TODO Phase 3 : vérifier le nom exact du header de signature Moneroo
+  // Le nom du header est configurable via MONEROO_SIGNATURE_HEADER
+  // (par défaut : 'x-moneroo-signature' — fallback sur 'moneroo-signature' pour compat)
+  const signatureHeaderName = (process.env.MONEROO_SIGNATURE_HEADER ?? 'x-moneroo-signature').toLowerCase()
   const signature =
+    (req.headers[signatureHeaderName] as string) ??
     (req.headers['x-moneroo-signature'] as string) ??
     (req.headers['moneroo-signature'] as string) ??
     ''

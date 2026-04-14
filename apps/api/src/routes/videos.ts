@@ -210,6 +210,7 @@ videosRouter.get('/videos/:id/status', authMiddleware, async (req, res) => {
     .subscribe((status) => {
       if (status === 'CHANNEL_ERROR') {
         logger.error({ videoId: id }, 'Supabase Realtime channel error — closing SSE')
+        sendEvent({ status: 'error', progress: 0, output_url: null, error_message: 'Realtime channel disconnected — refresh the page' })
         res.end()
       }
     })
