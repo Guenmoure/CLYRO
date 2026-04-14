@@ -57,70 +57,90 @@ const MODULES = [
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
+  console.log('[DashboardPage] Starting render')
+
   // Guard env vars — évite le crash SSR si Vercel n'a pas les variables Supabase
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error('[DashboardPage] Missing Supabase env vars')
     return (
       <div className="px-4 sm:px-6 py-16 max-w-2xl mx-auto">
-        <Card variant="elevated" className="flex items-start gap-4 py-6 px-6">
-          <div className="bg-error/10 rounded-xl p-3 shrink-0">
-            <AlertCircle className="text-error" size={20} />
-          </div>
-          <div>
-            <p className="font-display text-sm text-foreground mb-1">Configuration manquante</p>
-            <p className="font-body text-xs text-[--text-muted]">
-              Les variables d&apos;environnement Supabase ne sont pas configurées sur le déploiement.
-              Contacte le support ou vérifie la config Vercel.
-            </p>
-          </div>
-        </Card>
+        <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6">
+          <p className="font-display text-sm text-foreground mb-1">Configuration manquante</p>
+          <p className="font-body text-xs text-[--text-muted]">
+            Les variables d&apos;environnement Supabase ne sont pas configurées.
+          </p>
+        </div>
       </div>
     )
   }
 
-  let user: { id: string; email?: string } | null = null
+  let userId: string | null = null
+  let userEmail: string | null = null
   let profile: Profile | null = null
   let videos: VideoRow[] | null = null
-  let fetchErr: unknown = null
+  let errorMsg: string | null = null
 
   try {
+    console.log('[DashboardPage] Creating Supabase client')
     const supabase = createServerComponentClient<Database>({ cookies })
+
+    console.log('[DashboardPage] Fetching user')
     const { data: authData, error: authError } = await supabase.auth.getUser()
 
-    if (authError || !authData.user) {
-      return null // middleware handles redirect
+    if (authError) {
+      console.error('[DashboardPage] Auth error:', authError.message)
+      errorMsg = `Auth: ${authError.message}`
+    } else if (!authData?.user) {
+      console.log('[DashboardPage] No user — middleware will redirect')
+      return null
+    } else {
+      userId = authData.user.id
+      userEmail = authData.user.email ?? null
+      console.log('[DashboardPage] User authenticated:', userId)
+
+      console.log('[DashboardPage] Fetching profile + videos')
+      const [profileResult, videosResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('full_name, plan, credits')
+          .eq('id', userId)
+          .maybeSingle(),
+        supabase
+          .from('videos')
+          .select('id, title, module, style, status, output_url, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(50),
+      ])
+
+      if (profileResult.error) {
+        console.error('[DashboardPage] Profile fetch error:', profileResult.error.message)
+      }
+      if (videosResult.error) {
+        console.error('[DashboardPage] Videos fetch error:', videosResult.error.message)
+      }
+
+      profile = (profileResult.data as Profile | null) ?? null
+      videos  = (videosResult.data as VideoRow[] | null) ?? []
+      console.log('[DashboardPage] Loaded profile + videos, count:', videos?.length ?? 0)
     }
-    user = authData.user
-
-    const [profileResult, videosResult] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('full_name, plan, credits')
-        .eq('id', user.id)
-        .single(),
-      supabase
-        .from('videos')
-        .select('id, title, module, style, status, output_url, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50),
-    ])
-
-    profile  = profileResult.data as Profile | null
-    videos   = videosResult.data as VideoRow[] | null
-    fetchErr = profileResult.error ?? videosResult.error
   } catch (err) {
-    console.error('[DashboardPage] Server error:', err)
-    fetchErr = err
+    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+    console.error('[DashboardPage] Uncaught server error:', msg, err)
+    errorMsg = msg
   }
 
-  if (!user) {
+  if (!userId) {
+    console.log('[DashboardPage] No userId after auth block — returning null')
     return null
   }
 
-  const firstName = (profile?.full_name ?? user.email ?? 'là').split(/[\s@]/)[0]
+  const firstName = (profile?.full_name ?? userEmail ?? 'là').split(/[\s@]/)[0] ?? 'là'
   const plan      = profile?.plan ?? 'free'
   const credits   = profile?.credits ?? 0
   const isStarter = plan !== 'pro' && plan !== 'studio'
+
+  console.log('[DashboardPage] Rendering JSX')
 
   return (
     <div className="px-4 sm:px-6 py-8 max-w-7xl mx-auto space-y-10">
@@ -163,8 +183,8 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      {/* ── Fetch error ────────────────────────────────────────────── */}
-      {Boolean(fetchErr) && (
+      {/* ── Fetch error banner ─────────────────────────────────────── */}
+      {errorMsg && (
         <Card variant="elevated" className="flex items-center gap-4 py-5 px-6">
           <div className="bg-error/10 rounded-xl p-3 shrink-0">
             <AlertCircle className="text-error" size={20} />
@@ -173,8 +193,8 @@ export default async function DashboardPage() {
             <p className="font-display text-sm text-foreground">
               Impossible de charger tes projets
             </p>
-            <p className="font-body text-xs text-[--text-muted] mt-1">
-              Une erreur est survenue. Actualise la page ou contacte le support si le problème persiste.
+            <p className="font-body text-xs text-[--text-muted] mt-1 font-mono">
+              {errorMsg}
             </p>
           </div>
           <Button variant="secondary" size="sm" leftIcon={<RefreshCw size={14} />} asChild>
@@ -184,10 +204,10 @@ export default async function DashboardPage() {
       )}
 
       {/* ── Project sections (client-only, no SSR) ────────── */}
-      {!fetchErr && user && (
+      {!errorMsg && (
         <ProjectSectionsClient
-          userId={user.id}
-          videos={(videos ?? []) as VideoRow[]}
+          userId={userId}
+          videos={videos ?? []}
           modules={MODULES as unknown as typeof MODULES}
         />
       )}
