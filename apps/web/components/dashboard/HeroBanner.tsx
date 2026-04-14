@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Mic2, Video, Palette } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Slide {
@@ -32,7 +32,7 @@ const SLIDES: Slide[] = [
     ctaHref: '/voices',
     gradient: 'from-blue-500/20 via-purple-500/15 to-transparent',
     glow: 'bg-gradient-to-br from-blue-500/30 to-purple-600/30',
-    icon: Sparkles,
+    icon: Mic2,
   },
   {
     badge: 'PIPELINE COMPLET',
@@ -49,7 +49,7 @@ const SLIDES: Slide[] = [
     ctaHref: '/faceless/new',
     gradient: 'from-cyan-500/20 via-blue-500/15 to-transparent',
     glow: 'bg-gradient-to-br from-cyan-500/30 to-blue-600/30',
-    icon: Sparkles,
+    icon: Video,
   },
   {
     badge: 'BRAND KIT',
@@ -66,7 +66,7 @@ const SLIDES: Slide[] = [
     ctaHref: '/brand',
     gradient: 'from-purple-500/20 via-pink-500/15 to-transparent',
     glow: 'bg-gradient-to-br from-purple-500/30 to-pink-600/30',
-    icon: Sparkles,
+    icon: Palette,
   },
 ]
 
@@ -78,6 +78,7 @@ export function HeroBanner() {
 
   const next = useCallback(() => setIndex((i) => (i + 1) % SLIDES.length), [])
   const prev = useCallback(() => setIndex((i) => (i - 1 + SLIDES.length) % SLIDES.length), [])
+  const goTo = useCallback((i: number) => setIndex(i), [])
 
   useEffect(() => {
     if (paused) return
@@ -102,21 +103,14 @@ export function HeroBanner() {
       <div className="absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
 
       {/* Subtle grid overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
+      <div className="absolute inset-0 grid-bg opacity-[0.04]" />
 
       {/* Content */}
       <div className="relative px-8 py-10 md:px-12 md:py-14">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="flex-1 min-w-0 space-y-4">
             {slide.badge && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1 text-[11px] font-mono uppercase tracking-widest text-white">
                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
                 {slide.badge}
               </span>
@@ -126,11 +120,11 @@ export function HeroBanner() {
               {slide.title}
             </h1>
 
-            <p key={`desc-${index}`} className="font-body text-sm md:text-base text-white/70 max-w-xl animate-fade-up" style={{ animationDelay: '100ms' }}>
+            <p key={`desc-${index}`} className="font-body text-sm md:text-base text-white/70 max-w-xl animate-fade-up reveal-delay-200">
               {slide.description}
             </p>
 
-            <div className="flex items-center gap-3 pt-2 animate-fade-up" style={{ animationDelay: '200ms' }}>
+            <div className="flex items-center gap-3 pt-2 animate-fade-up reveal-delay-400">
               <Link
                 href={slide.ctaHref}
                 className="group inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 font-display text-sm font-semibold text-gray-950 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
@@ -154,19 +148,33 @@ export function HeroBanner() {
 
         {/* Slider controls */}
         <div className="absolute right-6 bottom-6 flex items-center gap-2">
-          {/* Dots */}
-          <div className="flex items-center gap-1.5 mr-3">
-            {SLIDES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setIndex(i)}
-                aria-label={`Slide ${i + 1}`}
+          {/* Progress bar + dots */}
+          <div className="flex flex-col items-end gap-2 mr-3">
+            {/* Progress bar — CSS keyframe resets on slide change via key */}
+            <div className="w-24 h-0.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                key={`pb-${index}`}
                 className={cn(
-                  'h-1.5 rounded-full transition-all duration-300',
-                  i === index ? 'w-6 bg-white' : 'w-1.5 bg-white/30 hover:bg-white/50',
+                  'h-full bg-white/60 rounded-full banner-progress',
+                  paused && '[animation-play-state:paused]',
                 )}
               />
-            ))}
+            </div>
+            {/* Dots */}
+            <div className="flex items-center gap-1.5">
+              {SLIDES.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-label={`Slide ${i + 1}`}
+                  className={cn(
+                    'h-1.5 rounded-full transition-all duration-300',
+                    i === index ? 'w-6 bg-white' : 'w-1.5 bg-white/30 hover:bg-white/50',
+                  )}
+                />
+              ))}
+            </div>
           </div>
           <button
             onClick={prev}

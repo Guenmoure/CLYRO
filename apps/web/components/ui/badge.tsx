@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 // ── Variants ───────────────────────────────────────────────────────────────────
 
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider rounded-md border px-2 py-0.5 leading-none whitespace-nowrap',
+  'inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider rounded-lg border px-2 py-0.5 leading-none whitespace-nowrap',
   {
     variants: {
       variant: {
@@ -15,6 +15,8 @@ const badgeVariants = cva(
         info:    'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30',
         purple:  'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30',
         neutral: 'bg-muted text-[--text-secondary] border-border',
+        cyan:    'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+        live:    'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 animate-pulse',
       },
     },
     defaultVariants: {

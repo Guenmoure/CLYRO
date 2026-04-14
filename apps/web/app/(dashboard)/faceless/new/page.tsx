@@ -217,7 +217,7 @@ function StepFormat({
               )} />
               <div className="text-center">
                 <p className="font-display text-sm text-foreground">{opt.label}</p>
-                <p className="font-mono text-[10px] text-[--text-muted]">{opt.desc}</p>
+                <p className="font-mono text-[11px] text-[--text-muted]">{opt.desc}</p>
               </div>
             </button>
           ))}

@@ -112,8 +112,8 @@ function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center pt-16 overflow-hidden noise-overlay">
       {/* Glow blobs */}
-      <div className="pointer-events-none absolute top-1/4 -left-24 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-1/4 -right-24 w-96 h-96 rounded-full bg-purple-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/4 -left-24 w-96 h-96 rounded-full bg-[var(--primary)]/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-1/4 -right-24 w-96 h-96 rounded-full bg-[var(--secondary)]/10 blur-3xl" />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-24 text-center w-full">
         <Badge variant="info" dot className="mb-8 inline-flex">
@@ -220,16 +220,11 @@ function SocialProof() {
   return (
     <section className="bg-card border-y border-border/50 py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
-          {STATS.map((stat, i) => (
-            <div key={stat.label} className="flex items-center gap-12">
-              <div className="text-center">
-                <div className="font-display text-2xl font-bold gradient-text">{stat.value}</div>
-                <div className="font-body text-sm text-[--text-muted] mt-0.5">{stat.label}</div>
-              </div>
-              {i < STATS.length - 1 && (
-                <div className="hidden md:block h-10 w-px bg-border" aria-hidden="true" />
-              )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x md:divide-border/50">
+          {STATS.map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center text-center px-4 py-2">
+              <div className="font-display text-2xl font-bold gradient-text">{stat.value}</div>
+              <div className="font-body text-sm text-[--text-muted] mt-0.5">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -426,17 +421,20 @@ function HowItWorks() {
           title="Prêt en 3 étapes"
         />
 
-        <div className="flex flex-col md:flex-row gap-8 relative">
-          {/* Connector line — desktop */}
+        <div className="grid md:grid-cols-3 gap-8 relative">
+          {/* Connector line — spans columns, sits behind content */}
           <div
-            className="hidden md:block absolute top-12 left-[calc(16.66%+2rem)] right-[calc(16.66%+2rem)] h-px border-t border-dashed border-border"
+            className="hidden md:block absolute top-[28px] left-[calc(33.33%-1px)] right-[calc(33.33%-1px)] h-px border-t border-dashed border-border z-0"
             aria-hidden="true"
           />
 
           {STEPS.map((step) => (
-            <div key={step.num} className="flex-1 flex flex-col items-center text-center relative z-10">
-              <div className="font-mono text-4xl font-bold gradient-text mb-4">{step.num}</div>
-              <div className="w-14 h-14 flex items-center justify-center bg-muted rounded-2xl text-[--text-secondary] mb-4">
+            <div key={step.num} className="flex flex-col items-center text-center relative z-10">
+              {/* Step number circle */}
+              <div className="w-14 h-14 rounded-full bg-muted border border-border flex items-center justify-center mb-4 shrink-0">
+                <span className="font-mono text-lg font-bold gradient-text">{step.num}</span>
+              </div>
+              <div className="w-12 h-12 flex items-center justify-center bg-card rounded-2xl text-[--text-secondary] mb-4 border border-border/60">
                 {step.icon}
               </div>
               <h3 className="font-display text-lg font-semibold text-foreground mb-2">{step.title}</h3>
@@ -452,12 +450,89 @@ function HowItWorks() {
 // ── 7. STYLES SECTION ─────────────────────────────────────────────────────────
 
 const VIDEO_STYLES = [
-  { name: 'Animation 2D',     desc: 'Personnages cartoon animés' },
-  { name: 'Stock + Voix Off', desc: 'Images réalistes professionnelles' },
-  { name: 'Minimaliste',      desc: 'Typographie épurée et impactante' },
-  { name: 'Infographie',      desc: 'Données visualisées en mouvement' },
-  { name: 'Whiteboard',       desc: 'Explication dessinée en direct' },
-  { name: 'Cinématique',      desc: 'Plans épiques, ambiance premium' },
+  {
+    name: 'Animation 2D',
+    desc: 'Personnages cartoon animés',
+    preview: (
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/30 to-yellow-500/15 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-2 border-orange-400/60 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-full bg-orange-400/40" />
+        </div>
+        <div className="absolute bottom-3 left-3 right-3 flex gap-1">
+          <div className="h-1 rounded-full bg-orange-400/30 w-[40%]" />
+          <div className="h-1 rounded-full bg-orange-400/30 w-[60%]" />
+          <div className="h-1 rounded-full bg-orange-400/30 w-[35%]" />
+          <div className="h-1 rounded-full bg-orange-400/30 w-[50%]" />
+        </div>
+      </div>
+    ),
+  },
+  {
+    name: 'Stock + Voix Off',
+    desc: 'Images réalistes professionnelles',
+    preview: (
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 to-slate-900/70">
+        {/* Cinematic bars */}
+        <div className="absolute top-0 left-0 right-0 h-[14%] bg-black/70" />
+        <div className="absolute bottom-0 left-0 right-0 h-[14%] bg-black/70" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-white/30 flex items-center justify-center">
+            <Play size={12} className="text-white/60 ml-0.5" />
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    name: 'Minimaliste',
+    desc: 'Typographie épurée et impactante',
+    preview: (
+      <div className="absolute inset-0 bg-white dark:bg-zinc-900 flex flex-col items-center justify-center gap-1.5 px-4">
+        <div className="w-16 h-2 rounded bg-foreground/80" />
+        <div className="w-10 h-1.5 rounded bg-foreground/30" />
+        <div className="w-12 h-1.5 rounded bg-foreground/20 mt-1" />
+      </div>
+    ),
+  },
+  {
+    name: 'Infographie',
+    desc: 'Données visualisées en mouvement',
+    preview: (
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/50 to-teal-900/40 flex items-end justify-center gap-1.5 pb-4 px-4">
+        <div className="flex-1 rounded-t bg-emerald-400/30 h-[55%]" />
+        <div className="flex-1 rounded-t bg-emerald-400/40 h-[80%]" />
+        <div className="flex-1 rounded-t bg-emerald-400/50 h-[40%]" />
+        <div className="flex-1 rounded-t bg-emerald-400/60 h-[95%]" />
+        <div className="flex-1 rounded-t bg-emerald-400/70 h-[65%]" />
+      </div>
+    ),
+  },
+  {
+    name: 'Whiteboard',
+    desc: 'Explication dessinée en direct',
+    preview: (
+      <div className="absolute inset-0 bg-zinc-50 dark:bg-zinc-100 flex items-center justify-center p-4">
+        <svg viewBox="0 0 80 50" className="w-full h-full opacity-50" stroke="#374151" fill="none" strokeWidth="1.5" strokeLinecap="round">
+          <circle cx="15" cy="25" r="8" />
+          <line x1="23" y1="25" x2="35" y2="25" />
+          <rect x="35" y="18" width="14" height="14" rx="2" />
+          <line x1="49" y1="25" x2="60" y2="25" />
+          <circle cx="65" cy="25" r="6" />
+        </svg>
+      </div>
+    ),
+  },
+  {
+    name: 'Cinématique',
+    desc: 'Plans épiques, ambiance premium',
+    preview: (
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-900/50 to-zinc-900/80 flex items-center justify-center">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-amber-300/70 blur-[3px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_40%_30%,rgba(251,191,36,0.12)_0%,transparent_60%)]" />
+        <div className="absolute bottom-3 left-3 right-3 h-px bg-white/10" />
+      </div>
+    ),
+  },
 ]
 
 function StylesSection() {
@@ -471,22 +546,21 @@ function StylesSection() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {VIDEO_STYLES.map((style) => (
-            <Card key={style.name} variant="elevated" hoverable className="group cursor-pointer p-0 overflow-hidden">
-              {/* Thumbnail placeholder */}
-              <div className="relative aspect-video bg-border overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <Play size={16} className="text-[--text-secondary] ml-0.5" />
-                  </div>
-                </div>
-                <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/10 transition-colors duration-200" />
+            <div
+              key={style.name}
+              className="group rounded-2xl overflow-hidden border border-border/60 bg-card hover:border-border hover:shadow-card-hover transition-all duration-200 cursor-pointer"
+            >
+              {/* Distinct CSS art thumbnail */}
+              <div className="relative aspect-video overflow-hidden">
+                {style.preview}
+                <div className="absolute inset-0 bg-[var(--primary)]/0 group-hover:bg-[var(--primary)]/5 transition-colors duration-200" />
               </div>
               {/* Info */}
               <div className="p-4">
                 <h3 className="font-display text-sm font-semibold text-foreground">{style.name}</h3>
                 <p className="font-body text-xs text-[--text-muted] mt-0.5">{style.desc}</p>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       </div>

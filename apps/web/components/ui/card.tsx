@@ -21,12 +21,24 @@ const cardVariants = cva(
           'before:absolute before:inset-0 before:rounded-2xl before:-z-10 before:p-px',
           'before:bg-gradient-to-br before:from-blue-500/20 before:to-purple-500/20',
         ].join(' '),
+        /** Carte entièrement cliquable — navigation cards */
+        interactive: [
+          'bg-card border border-border/50 shadow-card cursor-pointer',
+          'hover:border-border hover:shadow-card-hover hover:-translate-y-0.5',
+          'active:scale-[0.99] active:shadow-card',
+        ].join(' '),
+        /** Carte mise en avant — plan Pro, direction recommandée */
+        highlight: [
+          'bg-card border-2 border-[--primary]/50',
+          'shadow-[0_0_30px_rgba(59,142,240,0.12)]',
+        ].join(' '),
       },
       padding: {
         none: '',
         sm:   'p-4',
         md:   'p-6',
         lg:   'p-8',
+        xl:   'p-10',
       },
       hoverable: {
         true:  'cursor-pointer hover:shadow-card-hover hover:border-border',

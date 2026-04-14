@@ -31,7 +31,7 @@ export default function DashboardError({
             Le dashboard n&apos;a pas pu être chargé.
           </p>
           {error.digest && (
-            <p className="font-mono text-[10px] text-[--text-muted]">
+            <p className="font-mono text-[11px] text-[--text-muted]">
               Code : {error.digest}
             </p>
           )}

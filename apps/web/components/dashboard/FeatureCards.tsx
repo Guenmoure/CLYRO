@@ -76,7 +76,7 @@ const FEATURES: Feature[] = [
     category: 'Archive',
     title: 'Historique',
     description: 'Tous tes projets passés, prêts à être édités, dupliqués ou exportés.',
-    href: '/projects',
+    href: '/history',
     icon: History,
     iconColor: 'text-pink-400',
     iconBg: 'bg-pink-500/10',
@@ -116,7 +116,7 @@ export function FeatureCards() {
 
               {/* Category */}
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1.5">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5">
                   {feature.category}
                 </p>
                 <h3 className="font-display text-xl text-foreground leading-tight">

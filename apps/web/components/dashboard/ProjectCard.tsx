@@ -152,6 +152,10 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
       'bg-muted border border-border',
       'hover:border-border hover:shadow-card-hover',
       'transition-all duration-200',
+      // Module color left-border stripe
+      project.module === 'faceless' && 'border-l-2 border-l-blue-500/50',
+      project.module === 'motion'   && 'border-l-2 border-l-purple-500/50',
+      project.module === 'brand'    && 'border-l-2 border-l-cyan-500/50',
       deleting && 'opacity-50 pointer-events-none',
     )}>
       {/* Thumbnail zone */}

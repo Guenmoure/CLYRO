@@ -161,6 +161,17 @@
 .reveal-delay-200 { --reveal-delay: 200ms; }
 .reveal-delay-400 { --reveal-delay: 400ms; }
 
+/* ── HeroBanner progress bar — scaleX is GPU-compositable (no Layout/Paint) ── */
+@keyframes banner-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.banner-progress {
+  transform-origin: left;
+  will-change: transform;
+  animation: banner-progress 6s linear forwards;
+}
+
 /* ── Hover lift (cartes interactives) ──────────────────────── */
 .card-hover {
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
@@ -399,8 +410,8 @@
     --radius:                 0.75rem;
     --text-primary:           #F1F5FF;
     --text-secondary:         #94A3B8;
-    --text-muted:             #64748B;
-    --text-disabled:          #475569;
+    --text-muted:             #94A3B8;   /* 4.5:1 on #060810 ✓ (was #64748B = 2.7:1 ✗) */
+    --text-disabled:          #64748B;
   }
 }
 

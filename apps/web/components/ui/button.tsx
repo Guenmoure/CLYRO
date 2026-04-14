@@ -65,11 +65,27 @@ const buttonVariants = cva(
           'bg-grad-electric text-gray-950 font-display font-bold',
           'hover:brightness-110',
         ].join(' '),
+        /** Contour sans fond — CTAs secondaires sur fond coloré */
+        outline: [
+          'border border-[--primary] text-[--primary] bg-transparent font-display',
+          'hover:bg-[var(--primary)]/10',
+        ].join(' '),
+        /** Confirmation / succès */
+        success: [
+          'bg-success/15 border border-success/30 text-success font-display',
+          'hover:bg-success/25',
+        ].join(' '),
+        /** Avertissement / upgrade urgence */
+        warning: [
+          'bg-warning/15 border border-warning/30 text-warning font-display',
+          'hover:bg-warning/25',
+        ].join(' '),
       },
       size: {
         sm:  'h-7  px-3   text-xs  font-mono uppercase tracking-wider',
         md:  'h-9  px-4   text-sm',
         lg:  'h-11 px-6   text-base',
+        xl:  'h-14 px-8   text-lg  rounded-2xl',
         icon:'h-9  w-9',
       },
     },
