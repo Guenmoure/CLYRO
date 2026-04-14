@@ -84,22 +84,44 @@ export function getStyleGradient(style: ContentTemplateStyle): string {
   }
 }
 
+// Visual style → descriptor used in the auto-generated description
+const STYLE_VISUAL_DESCRIPTORS: Record<ContentTemplateStyle, string> = {
+  'cinematique':
+    'cinématique, lumière dorée ou bleue, plans contemplatifs, textures organiques (nature, eau, ciel), silhouettes poétiques',
+  'animation-2d':
+    'animation 2D cartoon, personnages stylisés avec expressions expressives, palette colorée non agressive, bulles de pensée',
+  'minimaliste':
+    'minimaliste, fonds épurés, palette douce (beige, blanc cassé, vert sauge), formes géométriques simples, espace négatif dominant',
+  'infographie':
+    'infographie moderne, graphiques et schémas animés, icônes plates, palette bleue/cyan, data visuelle claire',
+  'stock-vo':
+    'plans stock réalistes (nature, ville, gens), voix-off narrative, transitions douces, style documentaire accessible',
+  'whiteboard':
+    'whiteboard animé, tracé à la main qui se dessine, palette noir/blanc/bleu, style pédagogique épuré',
+}
+
 /**
  * Build a user-facing description from a template.
  * This is what gets pre-filled in the "Description du contenu" textarea
  * when the user picks a template.
+ *
+ * Focuses on: ambience, visuals/animation, main message — NO script.
+ * The actual script belongs in the Script field below.
  */
 export function buildTemplateDescription(t: ContentTemplate): string {
-  const niche = getNicheLabel(t.niche).label
+  const niche = getNicheLabel(t.niche).label.toLowerCase()
   const tone = t.tone_keywords.slice(0, 4).join(', ')
-  const structure = Object.values(t.structure_guide).join(' → ')
-  return `Style "${t.name}" — vidéo ${niche.toLowerCase()} avec un ton ${tone}.
+  const visuals = STYLE_VISUAL_DESCRIPTORS[t.fal_style]
+  // Main message arc: first and last scene of the structure guide
+  const structureValues = Object.values(t.structure_guide)
+  const arcStart = structureValues[0]?.replace(/\s*\(\d+s?\)\s*$/, '') ?? ''
+  const arcEnd   = structureValues[structureValues.length - 1]?.replace(/\s*\(\d+s?\)\s*$/, '') ?? ''
 
-Structure recommandée (${t.recommended_scene_count} scènes) :
-${structure}
+  return `Vidéo ${niche} inspirée du style "${t.name}".
 
-Exemple de ton attendu :
-"${t.script_example}"
+Ambiance : ${tone}.
 
-Édite ce texte pour décrire ta vidéo, puis colle ton script (ou importe ton audio) plus bas.`
+Visuel : ${visuals}. ${t.recommended_scene_count} scènes rythmées.
+
+Message principal : partir de "${arcStart.toLowerCase()}" pour amener le spectateur vers "${arcEnd.toLowerCase()}".`
 }
