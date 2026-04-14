@@ -95,7 +95,7 @@ function NavItem({
     <>
       <Icon
         size={18}
-        className={cn('shrink-0', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-[--text-muted] group-hover:text-[--text-secondary]')}
+        className={cn('shrink-0 transition-colors', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-[--text-secondary] group-hover:text-foreground')}
       />
       {!collapsed && (
         <span className="font-body text-sm truncate">{label}</span>
@@ -271,7 +271,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           {NAV_SECTIONS.map((section) => (
             <div key={section.label} className={cn('space-y-0.5', collapsed ? 'px-2' : 'px-3')}>
               {!collapsed && (
-                <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] px-1 mb-2">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold px-1 mb-2">
                   {section.label}
                 </p>
               )}

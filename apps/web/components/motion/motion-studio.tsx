@@ -132,7 +132,7 @@ function ScenePreview({ scene }: { scene: MotionScene }) {
 
       {/* Subtext */}
       {scene.subtext && (
-        <p className="text-[10px] opacity-50 text-white leading-tight">{scene.subtext}</p>
+        <p className="text-[11px] opacity-50 text-white leading-tight">{scene.subtext}</p>
       )}
 
       {/* Stats */}
@@ -141,7 +141,7 @@ function ScenePreview({ scene }: { scene: MotionScene }) {
           {scene.stats.slice(0, 3).map((s: { value: string; label: string }, i: number) => (
             <div key={i} className="text-center">
               <p className="text-xs font-bold" style={{ color: accent }}>{s.value}</p>
-              <p className="text-[9px] text-white/40">{s.label}</p>
+              <p className="text-[11px] text-white/40">{s.label}</p>
             </div>
           ))}
         </div>
@@ -149,14 +149,14 @@ function ScenePreview({ scene }: { scene: MotionScene }) {
 
       {/* Style badge */}
       <div
-        className="absolute bottom-2 right-2 text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+        className="absolute bottom-2 right-2 text-[11px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full"
         style={{ background: `${accent}20`, color: accent }}
       >
         {STYLE_LABELS[scene.style]?.label ?? scene.style}
       </div>
 
       {/* Duration */}
-      <div className="absolute top-2 right-2 text-[9px] text-white/30 font-mono">
+      <div className="absolute top-2 right-2 text-[11px] text-white/30 font-mono">
         {scene.duree_estimee}s
       </div>
     </div>
@@ -188,7 +188,7 @@ function SceneCard({
         onClick={() => setExpanded((v) => !v)}
       >
         <span
-          className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
+          className="text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
           style={{ background: `${styleMeta.color}20`, color: styleMeta.color }}
         >
           {scene.index} · {styleMeta.label}
@@ -530,7 +530,7 @@ function GeneratingView({
             {PIPELINE_STEPS.map((p) => (
               <div key={p.key} className="flex flex-col items-center gap-1">
                 <div className={cn('w-1.5 h-1.5 rounded-full transition-colors', progress >= p.pct ? 'bg-blue-500' : 'bg-border')} />
-                <span className="text-[9px] text-[--text-muted] text-center w-14 leading-tight hidden sm:block">{p.label}</span>
+                <span className="text-[11px] text-[--text-muted] text-center w-14 leading-tight hidden sm:block">{p.label}</span>
               </div>
             ))}
           </div>
@@ -808,7 +808,7 @@ export function MotionStudio({
                   onChange={(e) => setBrief(e.target.value)}
                   placeholder="Décrivez l'ambiance visuelle et le style de votre vidéo…"
                   rows={4}
-                  className="w-full border border-border rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-muted focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none"
+                  className="w-full border border-border rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-muted focus:outline-none focus:border-blue-500 focus:bg-muted/60 transition-colors resize-none"
                 />
               </div>
 
@@ -825,7 +825,7 @@ export function MotionStudio({
                   onChange={(e) => setScript(e.target.value)}
                   placeholder="Entrez ici le texte complet de votre voix off…"
                   rows={6}
-                  className="w-full border border-border rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-muted focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none"
+                  className="w-full border border-border rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-muted focus:outline-none focus:border-blue-500 focus:bg-muted/60 transition-colors resize-none"
                 />
                 <p className={cn('text-xs mt-1 text-right', script.length < 20 ? 'text-[--text-muted]' : 'text-emerald-600')}>
                   {script.length} caractères

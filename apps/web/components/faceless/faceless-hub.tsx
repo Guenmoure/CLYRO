@@ -568,13 +568,13 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
           {/* Description */}
           <div className="rounded-2xl border border-border bg-muted overflow-hidden">
             <div className="px-4 pt-4 pb-2">
-              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">Description du contenu</p>
+              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold mb-2">Description du contenu</p>
               <textarea
                 value={project.description}
                 onChange={(e) => onChange({ description: e.target.value })}
                 placeholder="Décris ta vidéo : personnages, ambiance, message principal... Ex : une vidéo éducative sur les trous noirs avec un narrateur scientifique et des animations spatiales."
                 rows={3}
-                className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none"
+                className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-secondary] focus:outline-none resize-none"
               />
             </div>
           </div>
@@ -602,10 +602,17 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               <textarea
                 value={project.script}
                 onChange={(e) => onChange({ script: e.target.value })}
-                placeholder="Colle ou écris ton script complet ici. L'IA le découpera automatiquement en scènes et générera les prompts visuels pour chacune."
+                onKeyDown={(e) => {
+                  // Cmd/Ctrl + Enter → go to next step (quick flow for power users)
+                  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && canNext && !loading) {
+                    e.preventDefault()
+                    onNext()
+                  }
+                }}
+                placeholder="Colle ou écris ton script complet ici. L'IA le découpera automatiquement en scènes. ⌘↵ pour lancer la génération."
                 maxLength={8000}
                 rows={6}
-                className="w-full bg-transparent px-4 pb-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none"
+                className="w-full bg-transparent px-4 pb-3 text-foreground font-body text-sm placeholder:text-[--text-secondary] focus:outline-none resize-none"
               />
             ) : (
               <div className="px-4 pb-4">
@@ -715,10 +722,23 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
 
           {/* Generate row — separate from dropdowns to avoid click interception (P0 fix) */}
           <div className="relative z-10 flex items-center justify-between gap-3 pt-1">
-            <span />
+            {/* Inline hint when button is disabled — user knows why */}
+            <p
+              className={cn(
+                'font-body text-xs transition-opacity duration-200',
+                canNext || loading ? 'opacity-0' : 'text-[--text-secondary] opacity-100',
+              )}
+              aria-live="polite"
+            >
+              {!project.style ? '→ Sélectionne un style visuel ci-dessous' :
+                project.inputType === 'script'
+                  ? '→ Colle un script (min. 20 caractères)'
+                  : '→ Importe un fichier audio'}
+            </p>
             <button type="button" onClick={onNext} disabled={!canNext || loading}
+              aria-disabled={!canNext || loading}
               className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all shrink-0',
-                canNext && !loading ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
+                canNext && !loading ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-sm hover:shadow-md' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               Générer le storyboard
               {!loading && <ArrowRight size={13} />}

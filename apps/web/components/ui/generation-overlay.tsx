@@ -46,7 +46,7 @@ function GenerationOverlay({
           {message}
         </p>
         {subMessage && (
-          <p className="font-mono text-[--text-muted] text-xs">
+          <p className="font-mono text-[--text-secondary] text-xs">
             {subMessage}
           </p>
         )}

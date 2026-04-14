@@ -135,11 +135,16 @@ export function NotificationPanel() {
         type="button"
         aria-label="Notifications"
         onClick={() => setOpen(v => !v)}
-        className="relative w-9 h-9 rounded-xl glass glass-hover flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors duration-200"
+        className="relative w-9 h-9 rounded-xl glass glass-hover flex items-center justify-center text-[--text-secondary] hover:text-foreground transition-colors duration-200"
       >
         <Bell size={15} strokeWidth={1.6} />
         {unread > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
+          <span
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-error text-white text-[10px] font-mono font-bold flex items-center justify-center shadow ring-2 ring-background"
+            aria-label={`${unread} notifications non lues`}
+          >
+            {unread > 9 ? '9+' : unread}
+          </span>
         )}
       </button>
 
@@ -152,7 +157,7 @@ export function NotificationPanel() {
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-foreground">Notifications</span>
               {unread > 0 && (
-                <span className="text-[10px] font-bold text-white bg-error rounded-full px-1.5 py-0.5 leading-none">
+                <span className="text-[11px] font-bold text-white bg-error rounded-full px-1.5 py-0.5 leading-none">
                   {unread}
                 </span>
               )}
@@ -210,7 +215,7 @@ export function NotificationPanel() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-xs font-semibold text-foreground leading-snug">{n.title}</p>
-                        <span className="text-[10px] text-[--text-muted] shrink-0 whitespace-nowrap">{n.time}</span>
+                        <span className="text-[11px] text-[--text-muted] shrink-0 whitespace-nowrap">{n.time}</span>
                       </div>
                       <p className="text-xs text-[--text-muted] mt-0.5 leading-relaxed">
                         {renderBody(n.body)}

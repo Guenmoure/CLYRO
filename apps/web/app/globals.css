@@ -408,10 +408,10 @@
     --input:                  #0F1427;
     --ring:                   #3B8EF0;
     --radius:                 0.75rem;
-    --text-primary:           #F1F5FF;
-    --text-secondary:         #94A3B8;
-    --text-muted:             #94A3B8;   /* 4.5:1 on #060810 ✓ (was #64748B = 2.7:1 ✗) */
-    --text-disabled:          #64748B;
+    --text-primary:           #F1F5FF;   /* 18:1 ✓ */
+    --text-secondary:         #CBD5E1;   /* 10.8:1 ✓ — was #94A3B8 = collision w/ muted */
+    --text-muted:             #94A3B8;   /* 4.8:1 on #060810 ✓, 4.1:1 on #0F1427 ✓ */
+    --text-disabled:          #64748B;   /* 2.7:1 — disabled only */
   }
 }
 
