@@ -89,7 +89,7 @@ function StepBrief({ brief, onChange }: { brief: string; onChange: (v: string) =
         onChange={e => onChange(e.target.value)}
         rows={10}
         placeholder="Ex: Nous sommes une startup SaaS qui aide les PME à automatiser leur comptabilité. Notre cible : dirigeants de 30-50 ans. Objectif : générer des leads qualifiés via LinkedIn..."
-        className="w-full bg-navy-800 border border-navy-700 rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+        className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
       />
       <p className="font-mono text-xs text-[--text-muted] text-right">
         {brief.trim().length} / 1000 caractères recommandés
@@ -134,11 +134,11 @@ function StepStyleFormat({
                 'flex-1 min-w-[120px] flex flex-col items-center gap-3 rounded-xl p-4 border-2 transition-all duration-200',
                 format === opt.value
                   ? 'border-blue-500 bg-blue-500/10'
-                  : 'border-navy-700 bg-navy-800 hover:border-navy-600',
+                  : 'border-border bg-muted hover:border-border',
               )}
             >
               <div className={cn(
-                'bg-navy-700 rounded-lg',
+                'bg-border rounded-lg',
                 opt.value === '9:16' && 'w-8 h-14',
                 opt.value === '1:1'  && 'w-10 h-10',
                 opt.value === '16:9' && 'w-14 h-8',
@@ -162,7 +162,7 @@ function StepStyleFormat({
                 'px-6 py-3 rounded-xl border-2 font-display text-sm transition-all duration-200',
                 duration === opt.value
                   ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                  : 'border-navy-700 bg-navy-800 text-[--text-secondary] hover:border-navy-600',
+                  : 'border-border bg-muted text-[--text-secondary] hover:border-border',
               )}
             >
               {opt.label}
@@ -193,7 +193,7 @@ function StepBrand({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="font-mono text-xs text-[--text-muted]">Couleur principale</label>
-          <div className="flex items-center gap-3 bg-navy-800 border border-navy-700 rounded-xl px-3 py-2">
+          <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={primaryColor}
@@ -208,7 +208,7 @@ function StepBrand({
 
         <div className="space-y-2">
           <label className="font-mono text-xs text-[--text-muted]">Couleur secondaire</label>
-          <div className="flex items-center gap-3 bg-navy-800 border border-navy-700 rounded-xl px-3 py-2">
+          <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={secondaryColor}
@@ -234,7 +234,7 @@ function StepBrand({
                 'px-3 py-1.5 rounded-lg border text-sm transition-all duration-150',
                 fontFamily === f
                   ? 'border-blue-500/40 bg-blue-500/10 text-blue-400'
-                  : 'border-navy-700 bg-navy-800 text-[--text-secondary] hover:border-navy-600',
+                  : 'border-border bg-muted text-[--text-secondary] hover:border-border',
               )}
               data-font={f}
             >
@@ -267,10 +267,10 @@ function StepVoiceAudio({
             'flex items-center gap-4 w-full rounded-xl px-4 py-3 border-2 transition-all duration-200',
             selectedVoice
               ? 'border-blue-500/40 bg-blue-500/5'
-              : 'border-navy-700 bg-navy-800 hover:border-navy-600',
+              : 'border-border bg-muted hover:border-border',
           )}
         >
-          <div className="w-10 h-10 rounded-xl bg-navy-700 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-border flex items-center justify-center shrink-0">
             {selectedVoice
               ? <Volume2 size={18} className="text-blue-400" />
               : <Mic size={18} className="text-[--text-muted]" />}
@@ -296,7 +296,7 @@ function StepVoiceAudio({
       <div>
         <SectionTitle>Musique de fond</SectionTitle>
         <SectionSub>Optionnel — une piste musicale jouée en fond.</SectionSub>
-        <div className="flex items-center gap-3 rounded-xl bg-navy-800 border border-navy-700 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-xl bg-muted border border-border px-4 py-3">
           <Music size={18} className="text-[--text-muted]" />
           <p className="font-body text-sm text-[--text-muted] flex-1">Aucune musique (coming soon)</p>
           <Badge variant="neutral">Bientôt</Badge>
@@ -330,13 +330,13 @@ function StepReview({
       <SectionTitle>Prêt à rendre</SectionTitle>
       <SectionSub>Vérifie tes paramètres avant de lancer le rendu Remotion.</SectionSub>
 
-      <div className="rounded-xl bg-navy-800 border border-navy-700 overflow-hidden">
+      <div className="rounded-xl bg-muted border border-border overflow-hidden">
         {rows.map(([label, value], i) => (
           <div
             key={label}
             className={cn(
               'flex items-center justify-between px-4 py-3',
-              i < rows.length - 1 && 'border-b border-navy-700/50',
+              i < rows.length - 1 && 'border-b border-border/50',
             )}
           >
             <span className="font-mono text-xs text-[--text-muted]">{label}</span>

@@ -9,15 +9,15 @@ const cardVariants = cva(
   {
     variants: {
       variant: {
-        /** Carte standard — fond navy-900, bordure subtile */
-        default: 'bg-navy-900 border border-navy-700/50 shadow-card',
+        /** Carte standard — fond card, bordure subtile */
+        default: 'bg-card border border-border/50 shadow-card',
         /** Glassmorphism — overlays de génération en cours */
         glass:   'glass',
-        /** Card de scènes et assets — fond navy-800 plus élevé */
-        elevated:'bg-navy-800 border border-navy-600 shadow-card-hover',
+        /** Card de scènes et assets — fond muted plus élevé */
+        elevated:'bg-muted border border-border shadow-card-hover',
         /** Plans tarifaires & feature highlights — gradient border */
         gradient:[
-          'bg-navy-900 border border-transparent',
+          'bg-card border border-transparent',
           'before:absolute before:inset-0 before:rounded-2xl before:-z-10 before:p-px',
           'before:bg-gradient-to-br before:from-blue-500/20 before:to-purple-500/20',
         ].join(' '),
@@ -29,7 +29,7 @@ const cardVariants = cva(
         lg:   'p-8',
       },
       hoverable: {
-        true:  'cursor-pointer hover:shadow-card-hover hover:border-navy-600',
+        true:  'cursor-pointer hover:shadow-card-hover hover:border-border',
         false: '',
       },
     },
@@ -88,7 +88,7 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('px-6 pb-6 border-t border-navy-700/50 pt-4 flex items-center justify-between', className)}
+      className={cn('px-6 pb-6 border-t border-border/50 pt-4 flex items-center justify-between', className)}
       {...props}
     />
   )

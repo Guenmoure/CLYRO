@@ -54,7 +54,7 @@ const NAV_SECTIONS = [
 function NavTooltip({ label }: { label: string }) {
   return (
     <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-      <div className="bg-navy-700 border border-navy-600 text-foreground font-mono text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-card">
+      <div className="bg-muted border border-border text-foreground font-mono text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-card">
         {label}
       </div>
     </div>
@@ -88,7 +88,7 @@ function NavItem({
     collapsed ? 'h-10 justify-center px-0' : 'h-10 px-3',
     isActive
       ? 'bg-blue-500/15 border-l-2 border-blue-500 text-foreground pl-[10px]'
-      : 'text-[--text-secondary] hover:bg-navy-800 hover:text-foreground border-l-2 border-transparent'
+      : 'text-[--text-secondary] hover:bg-muted hover:text-foreground border-l-2 border-transparent'
   )
 
   const inner = (
@@ -154,11 +154,11 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
 
   return (
     <div className={cn(
-      'relative group border-t border-navy-700/50 mt-auto pt-3',
+      'relative group border-t border-border/50 mt-auto pt-3',
       collapsed ? 'px-2' : 'px-3',
     )}>
       <div className={cn(
-        'flex items-center gap-3 py-2 rounded-xl hover:bg-navy-800 transition-colors cursor-pointer',
+        'flex items-center gap-3 py-2 rounded-xl hover:bg-muted transition-colors cursor-pointer',
         collapsed ? 'justify-center px-0' : 'px-2',
       )}>
         {/* Avatar */}
@@ -207,7 +207,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-navy-950/60 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 bg-background/60 backdrop-blur-sm z-30 md:hidden"
           onClick={onMobileClose}
         />
       )}
@@ -215,7 +215,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
       <aside
         className={cn(
           'fixed left-0 top-0 h-full z-40',
-          'bg-navy-900 border-r border-navy-700/50',
+          'bg-card border-r border-border/50',
           'flex flex-col',
           'transition-all duration-300 ease-in-out',
           collapsed ? 'w-[72px]' : 'w-60',
@@ -225,7 +225,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
       >
         {/* Header */}
         <div className={cn(
-          'flex items-center h-14 border-b border-navy-700/50 shrink-0 relative',
+          'flex items-center h-14 border-b border-border/50 shrink-0 relative',
           collapsed ? 'justify-center px-0' : 'px-5',
         )}>
           <Link href="/dashboard">
@@ -239,7 +239,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           <button
             type="button"
             onClick={() => onToggle(!collapsed)}
-            className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-navy-800 border border-navy-700 rounded-full items-center justify-center shadow-card hover:bg-navy-700 transition-colors z-10"
+            className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-muted border border-border rounded-full items-center justify-center shadow-card hover:bg-border transition-colors z-10"
             aria-label={collapsed ? 'Étendre la sidebar' : 'Réduire la sidebar'}
           >
             <ChevronRight

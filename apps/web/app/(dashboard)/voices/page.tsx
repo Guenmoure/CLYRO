@@ -56,7 +56,7 @@ function FiltersBar({
         onChange={(e) => onFilter('language', e.target.value)}
         title="Filtrer par langue"
         aria-label="Filtrer par langue"
-        className="bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/[0.06] rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/70 font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
+        className="bg-white dark:bg-card border border-gray-200 dark:border-border/[0.06] rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/70 font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
       >
         <option value="">🌐 Toutes les langues</option>
         {options.languages.map((l) => (
@@ -69,7 +69,7 @@ function FiltersBar({
         onChange={(e) => onFilter('gender', e.target.value)}
         title="Filtrer par genre"
         aria-label="Filtrer par genre"
-        className="bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/[0.06] rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/70 font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
+        className="bg-white dark:bg-card border border-gray-200 dark:border-border/[0.06] rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/70 font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
       >
         <option value="">Genre</option>
         {options.genders.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -80,7 +80,7 @@ function FiltersBar({
         onChange={(e) => onFilter('useCase', e.target.value)}
         title="Filtrer par utilisation"
         aria-label="Filtrer par utilisation"
-        className="bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/[0.06] rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/70 font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
+        className="bg-white dark:bg-card border border-gray-200 dark:border-border/[0.06] rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/70 font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
       >
         <option value="">Utilisation</option>
         {options.useCases.map((o) => <option key={o} value={o}>{o}</option>)}

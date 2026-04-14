@@ -91,10 +91,10 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
   }
 
   return (
-    <div className="bg-navy-800 border border-navy-700 rounded-xl p-4 hover:border-blue-500/30 transition-colors">
+    <div className="bg-muted border border-border rounded-xl p-4 hover:border-blue-500/30 transition-colors">
       <div className="flex items-center gap-4">
         {/* Thumbnail / icon */}
-        <div className="w-14 h-14 bg-navy-900 rounded-lg flex items-center justify-center shrink-0 text-2xl">
+        <div className="w-14 h-14 bg-card rounded-lg flex items-center justify-center shrink-0 text-2xl">
           {icon}
         </div>
 
@@ -149,7 +149,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
                 type="button"
                 onClick={() => setShowConfirm(false)}
                 disabled={deleting}
-                className="font-mono text-xs text-[--text-muted] px-3 py-1.5 bg-navy-900 border border-navy-700 rounded-lg hover:bg-navy-800 transition-colors"
+                className="font-mono text-xs text-[--text-muted] px-3 py-1.5 bg-card border border-border rounded-lg hover:bg-muted transition-colors"
               >
                 Annuler
               </button>

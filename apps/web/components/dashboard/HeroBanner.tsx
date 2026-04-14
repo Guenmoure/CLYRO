@@ -90,7 +90,7 @@ export function HeroBanner() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border border-navy-700/60 bg-navy-900"
+      className="relative overflow-hidden rounded-3xl border border-border/60 bg-card"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -133,7 +133,7 @@ export function HeroBanner() {
             <div className="flex items-center gap-3 pt-2 animate-fade-up" style={{ animationDelay: '200ms' }}>
               <Link
                 href={slide.ctaHref}
-                className="group inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 font-display text-sm font-semibold text-navy-950 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                className="group inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 font-display text-sm font-semibold text-gray-950 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
                 {slide.ctaLabel}
                 <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />

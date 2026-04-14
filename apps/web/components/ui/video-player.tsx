@@ -101,7 +101,7 @@ export function VideoPlayer({ url, title, className, onError }: VideoPlayerProps
             'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono transition-all',
             copied
               ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
-              : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500 hover:text-blue-500'
+              : 'bg-card border-border text-[--text-muted] hover:border-blue-500 hover:text-blue-500'
           )}
         >
           {copied ? <Check size={12} /> : <Copy size={12} />}

@@ -58,17 +58,17 @@ function WizardTopBar({
   }
 
   return (
-    <header className="h-14 shrink-0 flex items-center justify-between px-4 border-b border-navy-700/50 bg-navy-900">
+    <header className="h-14 shrink-0 flex items-center justify-between px-4 border-b border-border/50 bg-card">
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={handleBack}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-navy-800 transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
           aria-label="Retour"
         >
           <ArrowLeft size={16} />
         </button>
-        <div className="h-4 w-px bg-navy-700" />
+        <div className="h-4 w-px bg-border" />
         <p className="font-display text-sm text-foreground">{featureTitle}</p>
       </div>
 
@@ -111,7 +111,7 @@ function WizardBottomBar({
   const isLast = currentStep >= totalSteps - 1
 
   return (
-    <footer className="h-16 shrink-0 flex items-center justify-between px-6 border-t border-navy-700/50 bg-navy-900">
+    <footer className="h-16 shrink-0 flex items-center justify-between px-6 border-t border-border/50 bg-card">
       <Button
         variant="ghost"
         size="md"
@@ -132,7 +132,7 @@ function WizardBottomBar({
                 ? 'w-4 h-1.5 bg-blue-500'
                 : i < currentStep
                   ? 'w-1.5 h-1.5 bg-success/60'
-                  : 'w-1.5 h-1.5 bg-navy-700',
+                  : 'w-1.5 h-1.5 bg-border',
             )}
           />
         ))}

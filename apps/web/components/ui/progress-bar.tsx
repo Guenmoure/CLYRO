@@ -47,7 +47,7 @@ export function ProgressBar({
     if (status === 'error') return 'bg-red-100'
     if (status === 'done') return 'bg-emerald-100'
     if (status === 'pending' || status === 'processing') return 'bg-amber-100'
-    return 'bg-navy-900'
+    return 'bg-card'
   }
 
   return (

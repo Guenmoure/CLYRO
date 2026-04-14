@@ -78,7 +78,7 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
 
       {/* Tabs */}
       <div className="flex items-center justify-center">
-        <div className="inline-flex items-center gap-1 rounded-full border border-navy-700 bg-navy-900 p-1">
+        <div className="inline-flex items-center gap-1 rounded-full border border-border bg-card p-1">
           <TabButton
             label="Récents"
             count={recentCount}
@@ -116,7 +116,7 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
         <div className="flex justify-center pt-2">
           <Link
             href="/projects"
-            className="inline-flex items-center gap-2 rounded-full border border-navy-700 bg-navy-900 px-5 py-2 text-sm font-body text-[--text-secondary] hover:text-foreground hover:border-navy-600 transition-all"
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2 text-sm font-body text-[--text-secondary] hover:text-foreground hover:border-border transition-all"
           >
             Voir tous les projets
           </Link>
@@ -141,7 +141,7 @@ function TabButton({ label, count, active, onClick }: {
       className={cn(
         'inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-body text-sm transition-all duration-200',
         active
-          ? 'bg-foreground text-navy-950 shadow-sm'
+          ? 'bg-foreground text-gray-950 shadow-sm'
           : 'text-[--text-muted] hover:text-foreground',
       )}
     >
@@ -149,7 +149,7 @@ function TabButton({ label, count, active, onClick }: {
       {count > 0 && (
         <span className={cn(
           'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-mono',
-          active ? 'bg-navy-950/10 text-navy-950' : 'bg-navy-800 text-[--text-muted]',
+          active ? 'bg-background/10 text-gray-950' : 'bg-muted text-[--text-muted]',
         )}>
           {count}
         </span>
@@ -173,7 +173,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
   const isDone = project.status === 'done'
 
   const ModuleIcon  = MODULE_ICONS[project.module ?? ''] ?? Video
-  const moduleColor = MODULE_COLORS[project.module ?? ''] ?? 'text-navy-600 bg-navy-800'
+  const moduleColor = MODULE_COLORS[project.module ?? ''] ?? 'text-[--text-muted] bg-muted'
   const moduleLabel = MODULE_LABELS[project.module ?? ''] ?? 'Projet'
 
   async function handleDelete() {
@@ -196,13 +196,13 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
   return (
     <div
       className={cn(
-        'group flex items-center gap-4 rounded-2xl border border-navy-700/50 bg-navy-900 px-4 py-3 transition-all duration-200',
-        'hover:border-navy-600 hover:bg-navy-800/50',
+        'group flex items-center gap-4 rounded-2xl border border-border/50 bg-card px-4 py-3 transition-all duration-200',
+        'hover:border-border hover:bg-muted/50',
         deleting && 'opacity-40 pointer-events-none',
       )}
     >
       {/* Thumbnail */}
-      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-navy-800 shrink-0">
+      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-muted shrink-0">
         <div className="absolute inset-0 flex items-center justify-center">
           {isProcessing ? (
             <Loader2 size={20} className="text-blue-400 animate-spin" />
@@ -252,7 +252,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
           <button
             type="button"
             onClick={handleEdit}
-            className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1.5 rounded-lg border border-navy-700 bg-navy-800 px-3 py-1.5 font-body text-xs text-foreground hover:bg-navy-700 transition-all"
+            className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 font-body text-xs text-foreground hover:bg-border transition-all"
           >
             Ouvrir
           </button>
@@ -264,19 +264,19 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
             type="button"
             onClick={() => onMenuToggle(!menuOpen)}
             aria-label="Options du projet"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[--text-muted] hover:bg-navy-700 hover:text-foreground transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[--text-muted] hover:bg-border hover:text-foreground transition-colors"
           >
             <MoreHorizontal size={16} />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-navy-700 bg-navy-900 shadow-2xl z-20 overflow-hidden">
+            <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-border bg-card shadow-2xl z-20 overflow-hidden">
               {project.output_url && (
                 <a
                   href={project.output_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => onMenuToggle(false)}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-navy-800 hover:text-foreground transition-colors"
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <ExternalLink size={13} /> Ouvrir dans un onglet
                 </a>
@@ -286,7 +286,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
                   href={project.output_url}
                   download
                   onClick={() => onMenuToggle(false)}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-navy-800 hover:text-foreground transition-colors"
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <Download size={13} /> Télécharger
                 </a>
@@ -294,11 +294,11 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
               <button
                 type="button"
                 onClick={handleEdit}
-                className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-navy-800 hover:text-foreground transition-colors"
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors"
               >
                 <Pencil size={13} /> Renommer
               </button>
-              <div className="border-t border-navy-700" />
+              <div className="border-t border-border" />
               <button
                 type="button"
                 onClick={() => { onMenuToggle(false); handleDelete() }}
@@ -318,8 +318,8 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
 
 function EmptyState({ tab }: { tab: 'recent' | 'drafts' }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-navy-700 bg-navy-900/30">
-      <div className="rounded-2xl bg-navy-800 p-4 mb-4">
+    <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border bg-card/30">
+      <div className="rounded-2xl bg-muted p-4 mb-4">
         <FolderOpen size={28} className="text-[--text-muted]" />
       </div>
       <p className="font-display text-sm text-foreground">

@@ -93,7 +93,7 @@ function Modal({
     >
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-fade-in"
         aria-hidden="true"
         onClick={closeOnOverlayClick ? onClose : undefined}
       />
@@ -102,7 +102,7 @@ function Modal({
       <div
         ref={dialogRef}
         className={cn(
-          'relative w-full bg-navy-900 border border-navy-700/50',
+          'relative w-full bg-card border border-border/50',
           'rounded-2xl shadow-card-hover animate-fade-up',
           SIZE[size],
           className
@@ -110,7 +110,7 @@ function Modal({
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between p-6 border-b border-navy-700/50">
+          <div className="flex items-center justify-between p-6 border-b border-border/50">
             <h2 id="modal-title" className="font-display text-lg text-foreground">
               {title}
             </h2>
@@ -121,7 +121,7 @@ function Modal({
               className={cn(
                 'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
                 'text-[--text-muted] hover:text-foreground',
-                'hover:bg-navy-800 border border-transparent hover:border-navy-600',
+                'hover:bg-muted border border-transparent hover:border-border',
                 'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50'
               )}
             >
@@ -138,7 +138,7 @@ function Modal({
             className={cn(
               'absolute top-4 right-4 z-10 w-8 h-8 rounded-lg flex items-center justify-center',
               'text-[--text-muted] hover:text-foreground',
-              'hover:bg-navy-800 border border-transparent hover:border-navy-600',
+              'hover:bg-muted border border-transparent hover:border-border',
               'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50'
             )}
           >
@@ -153,7 +153,7 @@ function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-4 border-t border-navy-700/50">
+          <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-4 border-t border-border/50">
             {footer}
           </div>
         )}
@@ -167,7 +167,7 @@ function Modal({
 
 function ModalHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('px-6 pt-6 pb-4 border-b border-navy-700/50', className)} {...props}>
+    <div className={cn('px-6 pt-6 pb-4 border-b border-border/50', className)} {...props}>
       {children}
     </div>
   )
@@ -183,7 +183,7 @@ function ModalBody({ className, children, ...props }: React.HTMLAttributes<HTMLD
 
 function ModalFooter({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('px-6 pb-6 pt-4 border-t border-navy-700/50 flex items-center justify-end gap-3', className)} {...props}>
+    <div className={cn('px-6 pb-6 pt-4 border-t border-border/50 flex items-center justify-end gap-3', className)} {...props}>
       {children}
     </div>
   )

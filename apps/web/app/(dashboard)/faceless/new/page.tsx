@@ -100,7 +100,7 @@ function StepScript({
         onChange={e => onChange(e.target.value)}
         rows={14}
         placeholder="Ex: Aujourd'hui, on parle de la révolution de l'IA dans le marketing digital..."
-        className="w-full bg-navy-800 border border-navy-700 rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+        className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
       />
       <div className="flex items-center justify-between">
         <p className="font-mono text-xs text-[--text-muted]">
@@ -152,10 +152,10 @@ function StepStyleVoice({
             'flex items-center gap-4 w-full rounded-xl px-4 py-3 border-2 transition-all duration-200',
             selectedVoice
               ? 'border-blue-500/40 bg-blue-500/5'
-              : 'border-navy-700 bg-navy-800 hover:border-navy-600',
+              : 'border-border bg-muted hover:border-border',
           )}
         >
-          <div className="w-10 h-10 rounded-xl bg-navy-700 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-border flex items-center justify-center shrink-0">
             {selectedVoice ? <Volume2 size={18} className="text-blue-400" /> : <Mic size={18} className="text-[--text-muted]" />}
           </div>
           <div className="flex-1 text-left">
@@ -205,12 +205,12 @@ function StepFormat({
                 'flex-1 min-w-[120px] flex flex-col items-center gap-3 rounded-xl p-4 border-2 transition-all duration-200',
                 format === opt.value
                   ? 'border-blue-500 bg-blue-500/10'
-                  : 'border-navy-700 bg-navy-800 hover:border-navy-600',
+                  : 'border-border bg-muted hover:border-border',
               )}
             >
               {/* Aspect preview */}
               <div className={cn(
-                'bg-navy-700 rounded-lg',
+                'bg-border rounded-lg',
                 opt.value === '9:16' && 'w-8 h-14',
                 opt.value === '1:1'  && 'w-10 h-10',
                 opt.value === '16:9' && 'w-14 h-8',
@@ -237,7 +237,7 @@ function StepFormat({
                 'px-6 py-3 rounded-xl border-2 font-display text-sm transition-all duration-200',
                 duration === opt.value
                   ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                  : 'border-navy-700 bg-navy-800 text-[--text-secondary] hover:border-navy-600',
+                  : 'border-border bg-muted text-[--text-secondary] hover:border-border',
               )}
             >
               {opt.label}
@@ -264,7 +264,7 @@ function StepOptions({
       <SectionSub>Personnalise le comportement de la génération.</SectionSub>
 
       {/* Dialogue mode toggle */}
-      <div className="flex items-center justify-between rounded-xl bg-navy-800 border border-navy-700 px-4 py-4">
+      <div className="flex items-center justify-between rounded-xl bg-muted border border-border px-4 py-4">
         <div className="flex items-center gap-3">
           {dialogueMode ? (
             <Mic size={18} className="text-blue-400" />
@@ -283,7 +283,7 @@ function StepOptions({
           onClick={() => onDialogueModeChange(!dialogueMode)}
           className={cn(
             'relative w-11 h-6 rounded-full transition-colors duration-200',
-            dialogueMode ? 'bg-blue-500' : 'bg-navy-700',
+            dialogueMode ? 'bg-blue-500' : 'bg-border',
           )}
           role="switch"
           title={dialogueMode ? 'Désactiver le mode dialogue' : 'Activer le mode dialogue'}
@@ -336,13 +336,13 @@ function StepReview({
       <SectionTitle>Récapitulatif</SectionTitle>
       <SectionSub>Vérifie tes paramètres avant de lancer la génération.</SectionSub>
 
-      <div className="rounded-xl bg-navy-800 border border-navy-700 overflow-hidden">
+      <div className="rounded-xl bg-muted border border-border overflow-hidden">
         {rows.map(([label, value], i) => (
           <div
             key={label}
             className={cn(
               'flex items-center justify-between px-4 py-3',
-              i < rows.length - 1 && 'border-b border-navy-700/50',
+              i < rows.length - 1 && 'border-b border-border/50',
             )}
           >
             <span className="font-mono text-xs text-[--text-muted]">{label}</span>

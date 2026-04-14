@@ -83,7 +83,7 @@ function StepBrief({
           value={name}
           onChange={e => onChange('name', e.target.value)}
           placeholder="Ex: CLYRO, Acme Corp, Studio Nova…"
-          className="w-full bg-navy-800 border border-navy-700 rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+          className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
         />
       </div>
 
@@ -95,7 +95,7 @@ function StepBrief({
           value={industry}
           onChange={e => onChange('industry', e.target.value)}
           placeholder="Ex: Tech SaaS, Mode, Restauration, Conseil…"
-          className="w-full bg-navy-800 border border-navy-700 rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+          className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
         />
       </div>
 
@@ -107,7 +107,7 @@ function StepBrief({
           onChange={e => onChange('values', e.target.value)}
           rows={5}
           placeholder="Ex: Innovation, confiance, accessibilité. Ton : moderne et chaleureux. Cible : entrepreneurs 25-40 ans…"
-          className="w-full bg-navy-800 border border-navy-700 rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+          className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
         />
       </div>
     </div>
@@ -140,7 +140,7 @@ function StepVisuals({
                 'flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-150',
                 primaryColor === p.primary && secondaryColor === p.secondary
                   ? 'border-blue-500/40 bg-blue-500/10'
-                  : 'border-navy-700 bg-navy-800 hover:border-navy-600',
+                  : 'border-border bg-muted hover:border-border',
               )}
             >
               <div className="flex gap-1">
@@ -156,7 +156,7 @@ function StepVisuals({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="font-mono text-xs text-[--text-muted]">Couleur principale</label>
-          <div className="flex items-center gap-3 bg-navy-800 border border-navy-700 rounded-xl px-3 py-2">
+          <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={primaryColor}
@@ -170,7 +170,7 @@ function StepVisuals({
         </div>
         <div className="space-y-2">
           <label className="font-mono text-xs text-[--text-muted]">Couleur secondaire</label>
-          <div className="flex items-center gap-3 bg-navy-800 border border-navy-700 rounded-xl px-3 py-2">
+          <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={secondaryColor}
@@ -196,7 +196,7 @@ function StepVisuals({
                 'px-3 py-1.5 rounded-lg border text-sm transition-all duration-150',
                 fontFamily === f
                   ? 'border-blue-500/40 bg-blue-500/10 text-blue-400'
-                  : 'border-navy-700 bg-navy-800 text-[--text-secondary] hover:border-navy-600',
+                  : 'border-border bg-muted text-[--text-secondary] hover:border-border',
               )}
               data-font={f}
             >
@@ -234,7 +234,7 @@ function StepLogo({
       <SectionSub>Upload ton logo existant ou génère-en un nouveau via IA.</SectionSub>
 
       {/* Mode toggle */}
-      <div className="flex gap-2 bg-navy-800 rounded-xl p-1">
+      <div className="flex gap-2 bg-muted rounded-xl p-1">
         {(['upload', 'ai'] as const).map(mode => (
           <button
             key={mode}
@@ -243,7 +243,7 @@ function StepLogo({
             className={cn(
               'flex-1 flex items-center justify-center gap-2 rounded-lg py-2 font-mono text-xs transition-all duration-150',
               logoMode === mode
-                ? 'bg-navy-700 text-foreground'
+                ? 'bg-border text-foreground'
                 : 'text-[--text-muted] hover:text-foreground',
             )}
           >
@@ -260,7 +260,7 @@ function StepLogo({
             'flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all duration-200',
             logoUrl
               ? 'border-success/40 bg-success/5'
-              : 'border-navy-600 hover:border-blue-500/50 hover:bg-blue-500/5',
+              : 'border-border hover:border-blue-500/50 hover:bg-blue-500/5',
           )}
         >
           <input
@@ -300,7 +300,7 @@ function StepLogo({
             onChange={e => onLogoPromptChange(e.target.value)}
             rows={4}
             placeholder="Ex: Logo minimaliste avec un éclair stylisé, style tech moderne, couleurs bleu électrique et violet…"
-            className="w-full bg-navy-800 border border-navy-700 rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
           />
           <p className="font-body text-xs text-[--text-muted]">
             Le logo sera généré lors de l&apos;étape Export.
@@ -336,12 +336,12 @@ function StepAssets({
                 'w-full flex items-center gap-4 rounded-xl px-4 py-3 border-2 transition-all duration-200 text-left',
                 selected
                   ? 'border-blue-500/40 bg-blue-500/5'
-                  : 'border-navy-700 bg-navy-800 hover:border-navy-600',
+                  : 'border-border bg-muted hover:border-border',
               )}
             >
               <div className={cn(
                 'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors',
-                selected ? 'border-blue-500 bg-blue-500' : 'border-navy-600',
+                selected ? 'border-blue-500 bg-blue-500' : 'border-border',
               )}>
                 {selected && <Check size={11} className="text-white" />}
               </div>
@@ -370,18 +370,18 @@ function StepPreview({
       <SectionSub>Aperçu de ton identité de marque avant génération.</SectionSub>
 
       {/* Brand card preview */}
-      <div className="rounded-2xl border border-navy-700 overflow-hidden">
+      <div className="rounded-2xl border border-border overflow-hidden">
         {/* Header gradient */}
         <div
           className="h-20 w-full"
           style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}
         />
 
-        <div className="bg-navy-800 p-5 space-y-4">
+        <div className="bg-muted p-5 space-y-4">
           <div className="flex items-center gap-3">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-xl bg-navy-700 p-1" />
+              <img src={logoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-xl bg-border p-1" />
             ) : (
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg"
@@ -397,11 +397,11 @@ function StepPreview({
           </div>
 
           <div className="flex gap-2">
-            <div className="flex items-center gap-2 bg-navy-700 rounded-lg px-3 py-1.5">
+            <div className="flex items-center gap-2 bg-border rounded-lg px-3 py-1.5">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
               <span className="font-mono text-xs text-[--text-secondary]">{primaryColor.toUpperCase()}</span>
             </div>
-            <div className="flex items-center gap-2 bg-navy-700 rounded-lg px-3 py-1.5">
+            <div className="flex items-center gap-2 bg-border rounded-lg px-3 py-1.5">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: secondaryColor }} />
               <span className="font-mono text-xs text-[--text-secondary]">{secondaryColor.toUpperCase()}</span>
             </div>
@@ -428,7 +428,7 @@ function StepExport({
         L&apos;IA va générer ton Brand Kit complet et tous les assets sélectionnés.
       </SectionSub>
 
-      <div className="rounded-xl bg-navy-800 border border-navy-700 p-5 space-y-3">
+      <div className="rounded-xl bg-muted border border-border p-5 space-y-3">
         <p className="font-display text-sm text-foreground">{name || 'Mon Brand Kit'}</p>
         <div className="flex flex-wrap gap-2">
           {selectedLabels.map(label => (
@@ -441,7 +441,7 @@ function StepExport({
       </div>
 
       {generating && (
-        <div className="rounded-xl bg-navy-800 border border-navy-700 px-4 py-3 flex items-center gap-3">
+        <div className="rounded-xl bg-muted border border-border px-4 py-3 flex items-center gap-3">
           <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0" />
           <p className="font-body text-sm text-[--text-secondary]">Génération du Brand Kit en cours…</p>
         </div>

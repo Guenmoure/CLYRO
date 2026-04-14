@@ -35,7 +35,7 @@ interface ResultModalProps {
 
 function VideoResult({ videoUrl, thumbnailUrl, title }: { videoUrl: string; thumbnailUrl?: string; title: string }) {
   return (
-    <div className="rounded-xl overflow-hidden bg-navy-950 aspect-video">
+    <div className="rounded-xl overflow-hidden bg-background aspect-video">
       <video
         src={videoUrl}
         poster={thumbnailUrl}
@@ -68,11 +68,11 @@ function BrandResult({ assets }: { assets: BrandAsset[] }) {
           rel="noopener noreferrer"
           className={cn(
             'group flex flex-col items-center gap-3 rounded-xl p-4',
-            'bg-navy-800 border border-navy-700 hover:border-blue-500/50',
-            'transition-all duration-200 hover:bg-navy-750',
+            'bg-muted border border-border hover:border-blue-500/50',
+            'transition-all duration-200 hover:bg-muted',
           )}
         >
-          <div className="w-12 h-12 rounded-xl bg-navy-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <div className="w-12 h-12 rounded-xl bg-border flex items-center justify-center group-hover:scale-105 transition-transform">
             <AssetIcon type={asset.type} />
           </div>
           <span className="font-body text-xs text-[--text-secondary] text-center leading-snug">
@@ -132,13 +132,13 @@ export function ResultModal({
         ) : type === 'brand' && assets.length > 0 ? (
           <BrandResult assets={assets} />
         ) : (
-          <div className="rounded-xl bg-navy-800 border border-navy-700 p-8 flex items-center justify-center">
+          <div className="rounded-xl bg-muted border border-border p-8 flex items-center justify-center">
             <p className="font-mono text-sm text-[--text-muted]">Résultat non disponible</p>
           </div>
         )}
 
         {/* Action row */}
-        <div className="flex flex-wrap gap-2 justify-end pt-2 border-t border-navy-700/50">
+        <div className="flex flex-wrap gap-2 justify-end pt-2 border-t border-border/50">
           {onNewProject && (
             <Button variant="ghost" onClick={onNewProject}>
               Nouveau projet

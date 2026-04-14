@@ -181,10 +181,10 @@ function SceneCard({
   const styleMeta = STYLE_LABELS[scene.style] ?? { label: scene.style, color: '#999' }
 
   return (
-    <div className="border border-navy-700 rounded-xl overflow-hidden bg-navy-800">
+    <div className="border border-border rounded-xl overflow-hidden bg-muted">
       {/* Header */}
       <div
-        className="flex items-center gap-3 px-4 py-3 border-b border-navy-700 cursor-pointer select-none"
+        className="flex items-center gap-3 px-4 py-3 border-b border-border cursor-pointer select-none"
         onClick={() => setExpanded((v) => !v)}
       >
         <span
@@ -219,7 +219,7 @@ function SceneCard({
           value={scene.texte_voix}
           onChange={(e) => onChange({ texte_voix: e.target.value })}
           rows={2}
-          className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+          className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors resize-none"
         />
       </div>
 
@@ -239,7 +239,7 @@ function SceneCard({
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-navy-700 pt-3">
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
           <div className="grid grid-cols-2 gap-3">
             {/* Text */}
             <div className="col-span-2">
@@ -248,7 +248,7 @@ function SceneCard({
                 type="text"
                 value={scene.text}
                 onChange={(e) => onChange({ text: e.target.value })}
-                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {/* Subtext */}
@@ -258,7 +258,7 @@ function SceneCard({
                 type="text"
                 value={scene.subtext}
                 onChange={(e) => onChange({ subtext: e.target.value })}
-                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {/* Highlight */}
@@ -270,7 +270,7 @@ function SceneCard({
                 type="text"
                 value={scene.highlight}
                 onChange={(e) => onChange({ highlight: e.target.value })}
-                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {/* Icon */}
@@ -280,7 +280,7 @@ function SceneCard({
                 type="text"
                 value={scene.icon}
                 onChange={(e) => onChange({ icon: e.target.value })}
-                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {/* Style */}
@@ -289,7 +289,7 @@ function SceneCard({
               <select
                 value={scene.style}
                 onChange={(e) => onChange({ style: e.target.value as MotionScene['style'] })}
-                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               >
                 {Object.entries(STYLE_LABELS).map(([id, { label }]) => (
                   <option key={id} value={id}>{label}</option>
@@ -302,7 +302,7 @@ function SceneCard({
               <select
                 value={scene.scene_type ?? 'text_hero'}
                 onChange={(e) => onChange({ scene_type: e.target.value as any })}
-                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               >
                 {Object.entries(SCENE_TYPE_LABELS).map(([id, label]) => (
                   <option key={id} value={id}>{label}</option>
@@ -317,13 +317,13 @@ function SceneCard({
                   type="color"
                   value={scene.accent_color || '#00CFFF'}
                   onChange={(e) => onChange({ accent_color: e.target.value })}
-                  className="w-9 h-9 rounded-lg border border-navy-700 cursor-pointer"
+                  className="w-9 h-9 rounded-lg border border-border cursor-pointer"
                 />
                 <input
                   type="text"
                   value={scene.accent_color || '#00CFFF'}
                   onChange={(e) => onChange({ accent_color: e.target.value })}
-                  className="flex-1 text-xs font-mono text-foreground bg-white border border-navy-700 rounded-lg px-2 py-2 focus:outline-none focus:border-blue-500"
+                  className="flex-1 text-xs font-mono text-foreground bg-white border border-border rounded-lg px-2 py-2 focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
@@ -336,7 +336,7 @@ function SceneCard({
                 max={12}
                 value={scene.duree_estimee}
                 onChange={(e) => onChange({ duree_estimee: parseInt(e.target.value) || 5 })}
-                className="w-full text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
           </div>
@@ -357,7 +357,7 @@ function SceneCard({
                         stats[i] = { ...stats[i], value: e.target.value }
                         onChange({ stats })
                       }}
-                      className="w-24 text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-500"
+                      className="w-24 text-sm font-body text-foreground bg-white border border-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-500"
                     />
                     <input
                       type="text"
@@ -368,7 +368,7 @@ function SceneCard({
                         stats[i] = { ...stats[i], label: e.target.value }
                         onChange({ stats })
                       }}
-                      className="flex-1 text-sm font-body text-foreground bg-white border border-navy-700 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-500"
+                      className="flex-1 text-sm font-body text-foreground bg-white border border-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 ))}
@@ -415,10 +415,10 @@ function VoicePicker({
           'w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left mb-2 transition-all',
           voiceId === ''
             ? 'border-blue-500 bg-blue-500/10'
-            : 'border-navy-700 bg-navy-800 hover:border-blue-500/40'
+            : 'border-border bg-muted hover:border-blue-500/40'
         )}
       >
-        <div className="w-8 h-8 rounded-full bg-navy-900 border border-navy-700 flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center shrink-0">
           <Mic2 size={14} className="text-[--text-muted]" />
         </div>
         <p className="text-sm font-display font-semibold text-foreground">Pas de voix off</p>
@@ -438,7 +438,7 @@ function VoicePicker({
                 'w-full flex items-center gap-3 p-2.5 rounded-xl border-2 text-left transition-all',
                 voiceId === v.id
                   ? 'border-blue-500 bg-blue-500/10'
-                  : 'border-navy-700 bg-navy-800 hover:border-blue-500/40'
+                  : 'border-border bg-muted hover:border-blue-500/40'
               )}
             >
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-200 flex items-center justify-center text-xs font-bold text-blue-500 shrink-0">
@@ -520,7 +520,7 @@ function GeneratingView({
 
       {!isError && (
         <div className="w-full max-w-sm">
-          <div className="h-1.5 rounded-full bg-navy-700 overflow-hidden">
+          <div className="h-1.5 rounded-full bg-border overflow-hidden">
             <div
               className="h-full bg-blue-500 rounded-full transition-all duration-700"
               style={{ width: `${isDone ? 100 : progress}%` }}
@@ -529,7 +529,7 @@ function GeneratingView({
           <div className="flex justify-between mt-3">
             {PIPELINE_STEPS.map((p) => (
               <div key={p.key} className="flex flex-col items-center gap-1">
-                <div className={cn('w-1.5 h-1.5 rounded-full transition-colors', progress >= p.pct ? 'bg-blue-500' : 'bg-navy-700')} />
+                <div className={cn('w-1.5 h-1.5 rounded-full transition-colors', progress >= p.pct ? 'bg-blue-500' : 'bg-border')} />
                 <span className="text-[9px] text-[--text-muted] text-center w-14 leading-tight hidden sm:block">{p.label}</span>
               </div>
             ))}
@@ -734,15 +734,15 @@ export function MotionStudio({
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* ── Sidebar ── */}
-      <aside className="w-52 bg-navy-800 border-r border-navy-700 flex flex-col shrink-0">
-        <div className="p-4 border-b border-navy-700">
+      <aside className="w-52 bg-muted border-r border-border flex flex-col shrink-0">
+        <div className="p-4 border-b border-border">
           <h2 className="font-display text-sm font-semibold text-foreground">Motion Design</h2>
         </div>
-        <div className="p-3 border-b border-navy-700">
+        <div className="p-3 border-b border-border">
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-2 w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-blue-500/40 hover:bg-blue-50 transition-all"
+            className="flex items-center gap-2 w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-blue-500/40 hover:bg-blue-50 transition-all"
           >
             <Plus size={16} className="text-blue-500" />
             Nouvelle vidéo
@@ -751,7 +751,7 @@ export function MotionStudio({
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-              <Video size={28} className="text-navy-700 mb-2" />
+              <Video size={28} className="text-[--text-muted] mb-2" />
               <p className="text-[--text-muted] font-body text-xs">Aucune session encore.</p>
             </div>
           ) : (
@@ -765,7 +765,7 @@ export function MotionStudio({
                     'w-full text-left px-3 py-2 rounded-xl text-xs font-body transition-all',
                     activeSession?.id === s.id
                       ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                      : 'text-foreground hover:bg-navy-900 border border-transparent'
+                      : 'text-foreground hover:bg-card border border-transparent'
                   )}
                 >
                   <p className="font-semibold truncate">{s.title ?? 'Sans titre'}</p>
@@ -808,7 +808,7 @@ export function MotionStudio({
                   onChange={(e) => setBrief(e.target.value)}
                   placeholder="Décrivez l'ambiance visuelle et le style de votre vidéo…"
                   rows={4}
-                  className="w-full border border-navy-700 rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-navy-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none"
+                  className="w-full border border-border rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-muted focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none"
                 />
               </div>
 
@@ -825,7 +825,7 @@ export function MotionStudio({
                   onChange={(e) => setScript(e.target.value)}
                   placeholder="Entrez ici le texte complet de votre voix off…"
                   rows={6}
-                  className="w-full border border-navy-700 rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-navy-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none"
+                  className="w-full border border-border rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-muted focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none"
                 />
                 <p className={cn('text-xs mt-1 text-right', script.length < 20 ? 'text-[--text-muted]' : 'text-emerald-600')}>
                   {script.length} caractères
@@ -846,7 +846,7 @@ export function MotionStudio({
                           'flex-1 py-2 rounded-xl border-2 text-xs font-body font-semibold transition-all',
                           format === f.id
                             ? 'border-blue-500 bg-blue-500/10 text-blue-500'
-                            : 'border-navy-700 text-[--text-muted] hover:border-blue-500/40'
+                            : 'border-border text-[--text-muted] hover:border-blue-500/40'
                         )}
                       >
                         {f.label}
@@ -866,7 +866,7 @@ export function MotionStudio({
                           'flex-1 py-2 rounded-xl border-2 text-xs font-body font-semibold transition-all',
                           duration === d.id
                             ? 'border-blue-500 bg-blue-500/10 text-blue-500'
-                            : 'border-navy-700 text-[--text-muted] hover:border-blue-500/40'
+                            : 'border-border text-[--text-muted] hover:border-blue-500/40'
                         )}
                       >
                         {d.label}
@@ -895,8 +895,8 @@ export function MotionStudio({
                   className="hidden"
                 />
                 {logoPreview ? (
-                  <div className="flex items-center gap-3 border border-navy-700 rounded-xl px-4 py-3 bg-navy-800">
-                    <img src={logoPreview} alt="Logo preview" className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-navy-700" />
+                  <div className="flex items-center gap-3 border border-border rounded-xl px-4 py-3 bg-muted">
+                    <img src={logoPreview} alt="Logo preview" className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-border" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-body text-foreground truncate">{logoFile?.name}</p>
                       <p className="text-xs text-[--text-muted]">{logoFile ? `${(logoFile.size / 1024).toFixed(0)} Ko` : ''}</p>
@@ -910,7 +910,7 @@ export function MotionStudio({
                   <button
                     type="button"
                     onClick={() => logoInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-navy-700 rounded-xl px-4 py-4 text-sm font-body text-[--text-muted] hover:border-blue-500/40 hover:text-blue-500 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl px-4 py-4 text-sm font-body text-[--text-muted] hover:border-blue-500/40 hover:text-blue-500 transition-colors"
                   >
                     <Upload size={16} />
                     Importer un logo
@@ -946,7 +946,7 @@ export function MotionStudio({
         {phase === 'board' && (
           <div className="flex flex-col h-full overflow-hidden">
             {/* Board topbar */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-navy-700 shrink-0">
+            <div className="flex items-center justify-between px-6 py-3 border-b border-border shrink-0">
               <button
                 type="button"
                 onClick={() => setPhase('input')}

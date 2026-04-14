@@ -62,7 +62,7 @@ function FilterPills({
             'px-2.5 py-1 rounded-lg font-mono text-xs transition-all duration-150',
             selected === opt
               ? 'bg-blue-500/15 border border-blue-500/40 text-blue-400'
-              : 'bg-navy-800 border border-navy-700 text-[--text-muted] hover:border-navy-600 hover:text-foreground',
+              : 'bg-muted border border-border text-[--text-muted] hover:border-border hover:text-foreground',
           )}
         >
           {opt}
@@ -108,7 +108,7 @@ function VoiceRow({
         'w-full flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 text-left',
         selected
           ? 'bg-blue-500/10 border border-blue-500/30'
-          : 'bg-navy-800/50 border border-navy-700/50 hover:bg-navy-800 hover:border-navy-600',
+          : 'bg-muted/50 border border-border/50 hover:bg-muted hover:border-border',
       )}
     >
       {/* Play/pause */}
@@ -118,7 +118,7 @@ function VoiceRow({
         disabled={!voice.previewUrl}
         className={cn(
           'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-          'bg-navy-700 hover:bg-navy-600 transition-colors',
+          'bg-border hover:bg-border transition-colors',
           'disabled:opacity-30 disabled:pointer-events-none',
         )}
         aria-label={playing ? 'Pause' : 'Écouter'}
@@ -216,7 +216,7 @@ export function VoicePickerModal({
       <div className="space-y-4">
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-navy-800 rounded-xl p-1">
+        <div className="flex gap-1 bg-muted rounded-xl p-1">
           {([['library', 'Bibliothèque publique'], ['cloned', 'Mes voix clonées']] as const).map(([key, label]) => (
             <button
               key={key}
@@ -225,7 +225,7 @@ export function VoicePickerModal({
               className={cn(
                 'flex-1 rounded-lg py-1.5 font-mono text-xs transition-all duration-150',
                 tab === key
-                  ? 'bg-navy-700 text-foreground shadow-sm'
+                  ? 'bg-border text-foreground shadow-sm'
                   : 'text-[--text-muted] hover:text-foreground',
               )}
             >
@@ -245,7 +245,7 @@ export function VoicePickerModal({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher une voix…"
-            className="w-full bg-navy-800 border border-navy-700 rounded-xl pl-9 pr-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="w-full bg-muted border border-border rounded-xl pl-9 pr-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
           />
         </div>
 
@@ -261,7 +261,7 @@ export function VoicePickerModal({
           {loading && (
             <div className="space-y-1.5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-14 rounded-xl bg-navy-800 animate-shimmer" />
+                <div key={i} className="h-14 rounded-xl bg-muted animate-shimmer" />
               ))}
             </div>
           )}
@@ -283,7 +283,7 @@ export function VoicePickerModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-navy-700/50">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/50">
           <Button variant="ghost" onClick={onClose}>Annuler</Button>
           <Button variant="primary" disabled={!localSel} onClick={handleConfirm}>
             Confirmer

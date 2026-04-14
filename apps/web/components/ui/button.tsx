@@ -33,7 +33,7 @@ const buttonVariants = cva(
     'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl',
     'transition-all duration-200 select-none',
     'focus-visible:outline-none focus-visible:ring-2',
-    'focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-900',
+    'focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
     'disabled:opacity-40 disabled:pointer-events-none',
     'active:scale-[0.97]',
   ].join(' '),
@@ -47,13 +47,13 @@ const buttonVariants = cva(
         ].join(' '),
         /** Surface sombre, bordure subtile */
         secondary: [
-          'bg-navy-800 border border-navy-600 text-foreground font-display',
-          'hover:bg-navy-700 hover:border-blue-500/50',
+          'bg-muted border border-border text-foreground font-display',
+          'hover:bg-border hover:border-blue-500/50',
         ].join(' '),
         /** Discret, sans fond */
         ghost: [
           'bg-transparent text-[--text-secondary] font-display',
-          'hover:bg-navy-800 hover:text-[--text-primary]',
+          'hover:bg-muted hover:text-[--text-primary]',
         ].join(' '),
         /** Destructif — rouge erreur */
         danger: [
@@ -62,7 +62,7 @@ const buttonVariants = cva(
         ].join(' '),
         /** Effet néon cyan→bleu→violet */
         electric: [
-          'bg-grad-electric text-navy-950 font-display font-bold',
+          'bg-grad-electric text-gray-950 font-display font-bold',
           'hover:brightness-110',
         ].join(' '),
       },

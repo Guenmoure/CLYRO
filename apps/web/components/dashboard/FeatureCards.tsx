@@ -95,9 +95,9 @@ export function FeatureCards() {
             key={feature.title}
             href={feature.href}
             className={cn(
-              'group relative overflow-hidden rounded-2xl border border-navy-700/60 bg-navy-900',
+              'group relative overflow-hidden rounded-2xl border border-border/60 bg-card',
               'p-6 transition-all duration-300',
-              'hover:border-navy-600 hover:-translate-y-0.5',
+              'hover:border-border hover:-translate-y-0.5',
               feature.hoverGlow,
             )}
           >

@@ -61,11 +61,11 @@ function StyleCard({
         'relative overflow-hidden rounded-2xl border-2 transition-all duration-200 shrink-0 w-56 snap-center text-left',
         selected
           ? 'border-blue-500 shadow-glow-blue'
-          : 'border-navy-700 hover:border-navy-500',
+          : 'border-border hover:border-border',
       )}
     >
       {/* Thumbnail / Video */}
-      <div className="aspect-video bg-navy-800 overflow-hidden relative">
+      <div className="aspect-video bg-muted overflow-hidden relative">
         {style.previewUrl ? (
           <video
             ref={videoRef}
@@ -81,14 +81,14 @@ function StyleCard({
           <img src={style.thumbnailUrl} alt={style.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="font-display text-2xl text-navy-600">
+            <span className="font-display text-2xl text-[--text-muted]">
               {style.name.charAt(0)}
             </span>
           </div>
         )}
 
         {/* Gradient overlay */}
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-navy-900/90 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/90 to-transparent" />
 
         {/* Name */}
         <p className="absolute bottom-0 left-0 right-0 pb-3 px-3 font-display text-sm text-foreground">
@@ -111,7 +111,7 @@ function StyleCard({
 
         {/* Locked overlay */}
         {locked && (
-          <div className="absolute inset-0 bg-navy-950/60 flex items-center justify-center">
+          <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
             <span className="font-mono text-xs text-[--text-muted]">Plan Pro requis</span>
           </div>
         )}
@@ -119,7 +119,7 @@ function StyleCard({
 
       {/* Description */}
       {style.description && (
-        <div className="px-3 py-2 bg-navy-900">
+        <div className="px-3 py-2 bg-card">
           <p className="font-body text-xs text-[--text-muted]">{style.description}</p>
         </div>
       )}

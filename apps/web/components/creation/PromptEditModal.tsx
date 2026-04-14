@@ -81,7 +81,7 @@ export function PromptEditModal({
             value={editedPrompt}
             onChange={e => setEditedPrompt(e.target.value)}
             rows={6}
-            className="w-full bg-navy-800 border border-navy-600 rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
             placeholder="Décris ce que tu veux générer…"
           />
           <p className="font-mono text-[10px] text-[--text-muted] text-right">
@@ -105,7 +105,7 @@ export function PromptEditModal({
                 onChange={e => setFeedback(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && feedback.trim() && handleImprove()}
                 placeholder="Ex : rends-le plus dramatique, ajoute une voix féminine…"
-                className="flex-1 bg-navy-800 border border-navy-600 rounded-xl px-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+                className="flex-1 bg-muted border border-border rounded-xl px-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
                 disabled={improving}
               />
               <Button
@@ -128,7 +128,7 @@ export function PromptEditModal({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-navy-700/50">
+      <div className="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-border/50">
         <Button variant="ghost" onClick={onClose} disabled={improving}>
           Annuler
         </Button>

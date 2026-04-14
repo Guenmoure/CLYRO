@@ -121,7 +121,7 @@ function ModuleSection({
 function EmptyState({ config }: { config: ModuleConfig }) {
   const Icon = config.icon
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-navy-700 bg-navy-900/50">
+    <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border bg-card/50">
       <div className={cn('rounded-2xl p-6 mb-4', config.iconBg)}>
         <Icon size={32} className={config.iconColor} />
       </div>

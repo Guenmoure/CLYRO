@@ -64,18 +64,18 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={hasError ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
             className={cn(
               'w-full h-10 rounded-xl font-body text-sm',
-              'bg-navy-800 text-foreground placeholder:text-[--text-muted]',
+              'bg-muted text-foreground placeholder:text-[--text-muted]',
               'border transition-colors duration-200',
               'outline-none ring-0',
               leftIcon  ? 'pl-10 pr-4' : 'px-4',
               rightIcon ? 'pr-10'      : '',
               // États
               !hasError && [
-                'border-navy-600',
-                'focus:border-blue-500 focus:bg-navy-700',
+                'border-border',
+                'focus:border-blue-500 focus:bg-border',
               ],
               hasError && 'border-error bg-error/5 focus:border-error',
-              'disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-navy-900',
+              'disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-card',
               className
             )}
             {...props}
@@ -136,9 +136,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           aria-describedby={hasError ? `${textareaId}-error` : hint ? `${textareaId}-hint` : undefined}
           className={cn(
             'w-full rounded-xl px-4 py-2.5 font-body text-sm resize-none',
-            'bg-navy-800 text-foreground placeholder:text-[--text-muted]',
+            'bg-muted text-foreground placeholder:text-[--text-muted]',
             'border transition-colors duration-200 outline-none',
-            !hasError && 'border-navy-600 focus:border-blue-500 focus:bg-navy-700',
+            !hasError && 'border-border focus:border-blue-500 focus:bg-border',
             hasError  && 'border-error bg-error/5 focus:border-error',
             'disabled:opacity-40 disabled:cursor-not-allowed',
             className

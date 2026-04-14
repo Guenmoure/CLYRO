@@ -61,7 +61,7 @@ export default function ProjectsPage() {
             <h1 className="text-2xl font-bold text-foreground">Projects</h1>
           </div>
           {!loading && total > 0 && (
-            <span className="text-xs text-[--text-muted] font-mono bg-navy-800 border border-navy-700 rounded-full px-3 py-1">
+            <span className="text-xs text-[--text-muted] font-mono bg-muted border border-border rounded-full px-3 py-1">
               {total} vidéo{total > 1 ? 's' : ''}
             </span>
           )}
@@ -71,21 +71,21 @@ export default function ProjectsPage() {
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-navy-800 border border-navy-700 rounded-xl p-4 flex items-center gap-4 animate-pulse">
-                <div className="w-14 h-14 bg-navy-900 rounded-lg shrink-0" />
+              <div key={i} className="bg-muted border border-border rounded-xl p-4 flex items-center gap-4 animate-pulse">
+                <div className="w-14 h-14 bg-card rounded-lg shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-navy-900 rounded w-1/3" />
-                  <div className="h-3 bg-navy-900 rounded w-1/2" />
+                  <div className="h-4 bg-card rounded w-1/3" />
+                  <div className="h-3 bg-card rounded w-1/2" />
                 </div>
-                <div className="h-6 bg-navy-900 rounded-full w-20" />
+                <div className="h-6 bg-card rounded-full w-20" />
               </div>
             ))}
           </div>
         ) : !videos.length ? (
           /* Empty state */
-          <div className="bg-navy-800 border border-navy-700 rounded-2xl p-16 text-center">
-            <div className="w-12 h-12 rounded-full bg-navy-900 border border-navy-700 flex items-center justify-center mx-auto mb-3">
-              <FolderOpen size={18} className="text-navy-600" />
+          <div className="bg-muted border border-border rounded-2xl p-16 text-center">
+            <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center mx-auto mb-3">
+              <FolderOpen size={18} className="text-[--text-muted]" />
             </div>
             <p className="text-sm font-semibold text-foreground mb-1">Aucune vidéo générée</p>
             <p className="text-xs text-[--text-muted]">
@@ -104,12 +104,12 @@ export default function ProjectsPage() {
             </div>
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between bg-navy-800 border border-navy-700 rounded-xl px-4 py-3">
+              <div className="flex items-center justify-between bg-muted border border-border rounded-xl px-4 py-3">
                 <button
                   type="button"
                   onClick={() => setPage((p) => p - 1)}
                   disabled={page === 0}
-                  className="text-xs font-medium text-purple-400 disabled:text-navy-600 disabled:cursor-not-allowed hover:text-purple-300 transition-colors"
+                  className="text-xs font-medium text-purple-400 disabled:text-[--text-muted] disabled:cursor-not-allowed hover:text-purple-300 transition-colors"
                 >
                   ← Précédent
                 </button>
@@ -118,7 +118,7 @@ export default function ProjectsPage() {
                   type="button"
                   onClick={() => setPage((p) => p + 1)}
                   disabled={!hasMore}
-                  className="text-xs font-medium text-purple-400 disabled:text-navy-600 disabled:cursor-not-allowed hover:text-purple-300 transition-colors"
+                  className="text-xs font-medium text-purple-400 disabled:text-[--text-muted] disabled:cursor-not-allowed hover:text-purple-300 transition-colors"
                 >
                   Suivant →
                 </button>

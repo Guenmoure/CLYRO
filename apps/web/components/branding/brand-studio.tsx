@@ -259,7 +259,7 @@ function Stepper({ current }: { current: BrandStudioStep }) {
                   ? "bg-purple-500/10 text-purple-500"
                   : active
                     ? "bg-purple-500 text-white shadow-sm"
-                    : "bg-navy-900 text-[--text-muted]",
+                    : "bg-card text-[--text-muted]",
               )}
             >
               {done ? (
@@ -273,7 +273,7 @@ function Stepper({ current }: { current: BrandStudioStep }) {
               <div
                 className={cn(
                   "w-4 h-px",
-                  i < currentIdx ? "bg-purple-500" : "bg-navy-700",
+                  i < currentIdx ? "bg-purple-500" : "bg-border",
                 )}
               />
             )}
@@ -409,7 +409,7 @@ function AnalystModal({
           </div>
           {/* Score bar */}
           <div className="ml-auto flex flex-col items-end gap-1">
-            <div className="w-20 h-2 bg-navy-700 rounded-full overflow-hidden">
+            <div className="w-20 h-2 bg-border rounded-full overflow-hidden">
               <div
                 className={cn(
                   "h-full rounded-full transition-all",
@@ -483,7 +483,7 @@ function AnalystModal({
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-navy-700 flex gap-3">
+        <div className="px-6 py-4 border-t border-border flex gap-3">
           <button
             type="button"
             onClick={onEdit}
@@ -524,7 +524,7 @@ function ContradictionPathsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden">
         {/* Header */}
-        <div className="bg-purple-50 flex items-center gap-3 px-6 py-5 border-b border-navy-700">
+        <div className="bg-purple-50 flex items-center gap-3 px-6 py-5 border-b border-border">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-100">
             <AlertTriangle size={20} className="text-purple-600" />
           </div>
@@ -539,7 +539,7 @@ function ContradictionPathsModal({
         </div>
 
         {/* Contradictions list */}
-        <div className="px-6 py-4 border-b border-navy-700 bg-purple-50/30">
+        <div className="px-6 py-4 border-b border-border bg-purple-50/30">
           <p className="font-mono text-[10px] uppercase tracking-wider text-purple-600 mb-2">
             Contradictions détectées
           </p>
@@ -562,7 +562,7 @@ function ContradictionPathsModal({
               <button
                 key={idx}
                 onClick={() => onSelectPath(path.resolution)}
-                className="group relative rounded-2xl border-2 border-navy-700 bg-white p-4 text-left transition-all hover:border-purple-400 hover:shadow-lg"
+                className="group relative rounded-2xl border-2 border-border bg-white p-4 text-left transition-all hover:border-purple-400 hover:shadow-lg"
               >
                 {/* Path label */}
                 <p className="font-display font-bold text-foreground group-hover:text-purple-600 transition-colors mb-2">
@@ -596,7 +596,7 @@ function ContradictionPathsModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-navy-700 flex gap-3 bg-gray-50">
+        <div className="px-6 py-4 border-t border-border flex gap-3 bg-gray-50">
           <button
             type="button"
             onClick={onEdit}
@@ -672,7 +672,7 @@ function BriefForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="ex: Celeste, Nøvak, Bloom…"
-            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
         <div>
@@ -684,7 +684,7 @@ function BriefForm({
             value={secteur}
             onChange={(e) => setSecteur(e.target.value)}
             placeholder="ex: Cosmétique, SaaS B2B, Restauration…"
-            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
       </div>
@@ -698,7 +698,7 @@ function BriefForm({
           value={cible}
           onChange={(e) => setCible(e.target.value)}
           placeholder="ex: Femmes 25–40 ans, CSP+, urbaines, passionnées de bien-être"
-          className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+          className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
         />
       </div>
 
@@ -718,7 +718,7 @@ function BriefForm({
                 setValeurs(next);
               }}
               placeholder={["Innovation", "Simplicité", "Confiance"][i]}
-              className="flex-1 bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+              className="flex-1 bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
             />
           ))}
         </div>
@@ -738,7 +738,7 @@ function BriefForm({
                 "relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-center transition-all",
                 ambiance === opt.id
                   ? "border-purple-500 bg-purple-500/5"
-                  : "border-navy-700 bg-navy-900 hover:border-purple-500/40",
+                  : "border-border bg-card hover:border-purple-500/40",
               )}
             >
               <span className="text-xl">{opt.emoji}</span>
@@ -768,7 +768,7 @@ function BriefForm({
             value={concurrents}
             onChange={(e) => setConcurrents(e.target.value)}
             placeholder="ex: Nike, Apple, Zara…"
-            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
         <div>
@@ -780,7 +780,7 @@ function BriefForm({
             value={references}
             onChange={(e) => setReferences(e.target.value)}
             placeholder="ex: Glossier, Notion, Oatly…"
-            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
         <div>
@@ -792,7 +792,7 @@ function BriefForm({
             value={couleursImp}
             onChange={(e) => setCouleursImp(e.target.value)}
             placeholder="#FF5733, #2C3E50…"
-            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
           {imposedHexes.map((hex) => (
             <WcagInline
@@ -817,7 +817,7 @@ function BriefForm({
             value={logoUrl}
             onChange={(e) => setLogoUrl(e.target.value)}
             placeholder="https://exemple.com/logo.png"
-            className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
           />
         </div>
       </div>
@@ -873,7 +873,7 @@ function DirectionCard({
         "relative text-left rounded-2xl border-2 overflow-hidden transition-all hover:shadow-lg",
         selected
           ? "border-purple-500 ring-2 ring-purple-500/20"
-          : "border-navy-700 hover:border-purple-500/40",
+          : "border-border hover:border-purple-500/40",
       )}
     >
       {selected && (
@@ -955,7 +955,7 @@ function HybridPanel({
   const opts = directions.map((d, i) => ({ value: i, label: d.name }));
 
   return (
-    <div className="bg-navy-900 border border-navy-700 rounded-2xl p-5 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
       <div className="flex items-center gap-2">
         <Sparkles size={14} className="text-purple-500" />
         <p className="font-display font-semibold text-sm text-foreground">
@@ -974,7 +974,7 @@ function HybridPanel({
           <select
             value={paletteFrom}
             onChange={(e) => setPaletteFrom(Number(e.target.value))}
-            className="w-full bg-white border border-navy-700 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
+            className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -990,7 +990,7 @@ function HybridPanel({
           <select
             value={typoFrom}
             onChange={(e) => setTypoFrom(Number(e.target.value))}
-            className="w-full bg-white border border-navy-700 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
+            className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -1006,7 +1006,7 @@ function HybridPanel({
           <select
             value={logoFrom}
             onChange={(e) => setLogoFrom(Number(e.target.value))}
-            className="w-full bg-white border border-navy-700 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
+            className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -1074,7 +1074,7 @@ function LogoConceptCard({
         "rounded-2xl border-2 overflow-hidden transition-all",
         selected
           ? "border-purple-500 ring-2 ring-purple-500/20"
-          : "border-navy-700",
+          : "border-border",
       )}
     >
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
@@ -1088,7 +1088,7 @@ function LogoConceptCard({
             "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
             selected
               ? "border-purple-500 bg-purple-500"
-              : "border-navy-700",
+              : "border-border",
           )}
         >
           {selected && <Check size={10} className="text-white" />}
@@ -1251,7 +1251,7 @@ function AssetCard({
         </div>
       </div>
       <div
-        className="relative rounded-2xl overflow-hidden border border-navy-700 bg-navy-900 aspect-video flex items-center justify-center group cursor-pointer"
+        className="relative rounded-2xl overflow-hidden border border-border bg-card aspect-video flex items-center justify-center group cursor-pointer"
         onClick={() => {
           if (url && !loading) setLightboxOpen(true);
         }}
@@ -1327,7 +1327,7 @@ function CharteSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white border border-navy-700 rounded-2xl p-5 space-y-3">
+    <div className="bg-white border border-border rounded-2xl p-5 space-y-3">
       <h3 className="font-display font-bold text-foreground text-sm">
         {title}
       </h3>
@@ -1821,7 +1821,7 @@ export function BrandStudio() {
         {/* ── STEP 2: Strategy ── */}
         {step === "strategy" && strategy && (
           <div className="space-y-6">
-            <div className="bg-navy-900 border border-navy-700 rounded-2xl p-5">
+            <div className="bg-card border border-border rounded-2xl p-5">
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">
                 Voix de marque
               </p>
@@ -1949,7 +1949,7 @@ export function BrandStudio() {
                 <img
                   src={referenceUrl}
                   alt="Référence"
-                  className="w-8 h-8 rounded-lg object-contain border border-navy-700"
+                  className="w-8 h-8 rounded-lg object-contain border border-border"
                 />
                 <p className="text-xs text-foreground flex-1">
                   Image de référence sélectionnée pour les assets
@@ -1994,7 +1994,7 @@ export function BrandStudio() {
                   <img
                     src={referenceUrl}
                     alt="ref"
-                    className="w-5 h-5 rounded object-contain border border-navy-700"
+                    className="w-5 h-5 rounded object-contain border border-border"
                   />
                   Référence active
                 </div>
@@ -2068,7 +2068,7 @@ export function BrandStudio() {
                 {Object.entries(charte.typography).map(([level, t]) => (
                   <div
                     key={level}
-                    className="flex items-start gap-4 py-2 border-b border-navy-700 last:border-0"
+                    className="flex items-start gap-4 py-2 border-b border-border last:border-0"
                   >
                     <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] w-16 pt-0.5 shrink-0">
                       {level}
@@ -2195,7 +2195,7 @@ export function BrandStudio() {
         {/* ── STEP 6: Export ── */}
         {step === "export" && brief && selectedDirection && (
           <div className="space-y-6 max-w-lg">
-            <div className="bg-navy-900 border border-navy-700 rounded-2xl p-5 space-y-3">
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-display font-bold text-lg"
@@ -2252,7 +2252,7 @@ export function BrandStudio() {
                   type="button"
                   onClick={handleDownloadZip}
                   disabled={!charte}
-                  className="flex items-center gap-3 flex-1 border border-navy-700 bg-white text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-navy-900 transition-colors disabled:opacity-40"
+                  className="flex items-center gap-3 flex-1 border border-border bg-white text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-card transition-colors disabled:opacity-40"
                 >
                   <Archive size={16} />
                   <div className="text-left">
@@ -2267,7 +2267,7 @@ export function BrandStudio() {
                   onClick={handleShareZip}
                   disabled={!charte || sharing}
                   title="Partager un lien de téléchargement"
-                  className="flex items-center justify-center gap-1.5 border border-navy-700 bg-white text-foreground font-display font-semibold text-sm px-3.5 rounded-xl hover:bg-navy-900 transition-colors disabled:opacity-40"
+                  className="flex items-center justify-center gap-1.5 border border-border bg-white text-foreground font-display font-semibold text-sm px-3.5 rounded-xl hover:bg-card transition-colors disabled:opacity-40"
                 >
                   {sharing ? (
                     <Loader2 size={16} className="animate-spin" />
@@ -2279,7 +2279,7 @@ export function BrandStudio() {
 
               {/* Share URL panel */}
               {shareUrl && (
-                <div className="flex items-center gap-2 px-3 py-2.5 bg-navy-900 border border-navy-700 rounded-xl">
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-xl">
                   <input
                     readOnly
                     value={shareUrl}
@@ -2311,7 +2311,7 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={handleExportJson}
-                className="flex items-center gap-3 w-full border border-navy-700 bg-white text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-navy-900 transition-colors"
+                className="flex items-center gap-3 w-full border border-border bg-white text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-card transition-colors"
               >
                 <Download size={16} />
                 <div className="text-left">

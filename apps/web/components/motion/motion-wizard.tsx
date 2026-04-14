@@ -91,7 +91,7 @@ function StepBrief({
           onChange={(e) => onUpdate('title', e.target.value)}
           placeholder="Ex : Lancement produit Bakolo — Janvier 2026"
           maxLength={200}
-          className="w-full bg-navy-800 border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple"
+          className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple"
         />
       </div>
       <div className="mb-5">
@@ -104,7 +104,7 @@ function StepBrief({
           placeholder="Décris ta pub : produit, message clé, public cible, ton souhaité, call-to-action..."
           maxLength={2000}
           rows={6}
-          className="w-full bg-navy-800 border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple resize-none"
+          className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple resize-none"
         />
       </div>
       <button
@@ -183,12 +183,12 @@ function StepBrand({
           </label>
           <div className="flex items-center gap-3">
             {brand.logo_url ? (
-              <div className="relative w-16 h-16 rounded-xl border border-border bg-navy-800 overflow-hidden flex items-center justify-center">
+              <div className="relative w-16 h-16 rounded-xl border border-border bg-muted overflow-hidden flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={brand.logo_url} alt="Logo" className="max-w-full max-h-full object-contain p-1" />
               </div>
             ) : (
-              <div className="w-16 h-16 rounded-xl border-2 border-dashed border-border bg-navy-800 flex items-center justify-center text-muted-foreground text-xs">
+              <div className="w-16 h-16 rounded-xl border-2 border-dashed border-border bg-muted flex items-center justify-center text-muted-foreground text-xs">
                 PNG/SVG
               </div>
             )}
@@ -204,7 +204,7 @@ function StepBrand({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="font-display font-semibold px-4 py-2 rounded-xl border border-border text-sm text-foreground hover:bg-navy-800 disabled:opacity-40"
+                className="font-display font-semibold px-4 py-2 rounded-xl border border-border text-sm text-foreground hover:bg-muted disabled:opacity-40"
               >
                 {uploading ? 'Upload…' : brand.logo_url ? 'Changer' : 'Choisir un fichier'}
               </button>
@@ -231,7 +231,7 @@ function StepBrand({
               type="color"
               value={brand.primary_color}
               onChange={(e) => onUpdate({ ...brand, primary_color: e.target.value })}
-              className="w-12 h-12 rounded-xl border border-border bg-navy-800 cursor-pointer"
+              className="w-12 h-12 rounded-xl border border-border bg-muted cursor-pointer"
             />
             <input
               type="text"
@@ -240,7 +240,7 @@ function StepBrand({
                 if (/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))
                   onUpdate({ ...brand, primary_color: e.target.value })
               }}
-              className="w-32 bg-navy-800 border border-border rounded-xl px-3 py-2 text-foreground font-mono text-sm focus:outline-none focus:border-clyro-purple"
+              className="w-32 bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-mono text-sm focus:outline-none focus:border-clyro-purple"
             />
             <span className={`text-xs font-mono px-2 py-1 rounded-lg ${wcagOk ? 'bg-green-900/40 text-green-400' : 'bg-amber-900/40 text-amber-400'}`}>
               {wcagOk ? `✓ WCAG AA (${contrastRatio.toFixed(1)}:1)` : `⚠ Contraste faible (${contrastRatio.toFixed(1)}:1 — min 4.5)`}
@@ -257,7 +257,7 @@ function StepBrand({
               type="color"
               value={brand.secondary_color ?? '#ffffff'}
               onChange={(e) => onUpdate({ ...brand, secondary_color: e.target.value })}
-              className="w-12 h-12 rounded-xl border border-border bg-navy-800 cursor-pointer"
+              className="w-12 h-12 rounded-xl border border-border bg-muted cursor-pointer"
             />
             <input
               type="text"
@@ -267,7 +267,7 @@ function StepBrand({
                   onUpdate({ ...brand, secondary_color: e.target.value || undefined })
               }}
               placeholder="#ffffff"
-              className="w-32 bg-navy-800 border border-border rounded-xl px-3 py-2 text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple"
+              className="w-32 bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple"
             />
           </div>
         </div>
@@ -280,12 +280,12 @@ function StepBrand({
             value={brand.font_family ?? ''}
             onChange={(e) => onUpdate({ ...brand, font_family: e.target.value || undefined })}
             placeholder="Ex : Syne, Inter, Poppins..."
-            className="w-full bg-navy-800 border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple"
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple"
           />
         </div>
       </div>
       <div className="flex gap-3">
-        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-navy-800 text-sm">
+        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">
           ← Retour
         </button>
         <button onClick={onNext} className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
@@ -320,7 +320,7 @@ function StepFormat({
               className={`border rounded-xl p-4 text-center transition-all ${
                 format === f.id
                   ? 'border-clyro-purple bg-clyro-purple/5 ring-1 ring-clyro-purple/30'
-                  : 'border-border bg-navy-800 hover:border-clyro-purple/40'
+                  : 'border-border bg-muted hover:border-clyro-purple/40'
               }`}
             >
               <p className="font-display font-bold text-foreground text-sm">{f.label}</p>
@@ -339,7 +339,7 @@ function StepFormat({
               className={`flex-1 py-2.5 rounded-xl border font-display font-semibold text-sm transition-all ${
                 duration === d.id
                   ? 'border-clyro-purple bg-clyro-purple/10 text-clyro-purple'
-                  : 'border-border bg-navy-800 text-muted-foreground hover:border-clyro-purple/40'
+                  : 'border-border bg-muted text-muted-foreground hover:border-clyro-purple/40'
               }`}
             >
               {d.label}
@@ -348,7 +348,7 @@ function StepFormat({
         </div>
       </div>
       <div className="flex gap-3">
-        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-navy-800 text-sm">
+        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">
           ← Retour
         </button>
         <button onClick={onNext} className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
@@ -377,7 +377,7 @@ function StepStyle({
           <button
             key={s.id}
             onClick={() => onSelect(s.id)}
-            className={`bg-navy-800 border rounded-xl p-5 text-left transition-all ${
+            className={`bg-muted border rounded-xl p-5 text-left transition-all ${
               selected === s.id
                 ? 'border-clyro-purple bg-clyro-purple/5 ring-1 ring-clyro-purple/30'
                 : 'border-border hover:border-clyro-purple/40'
@@ -390,7 +390,7 @@ function StepStyle({
         ))}
       </div>
       <div className="flex gap-3">
-        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-navy-800 text-sm">
+        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">
           ← Retour
         </button>
         <button
@@ -431,14 +431,14 @@ function StepVoice({
       {loading ? (
         <div className="space-y-2 mb-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-14 bg-navy-800 rounded-xl animate-pulse" />
+            <div key={i} className="h-14 bg-muted rounded-xl animate-pulse" />
           ))}
         </div>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto mb-4 pr-1">
           <button
             onClick={() => onSelect('', 'Pas de voix off')}
-            className={`w-full bg-navy-800 border rounded-xl px-4 py-3 text-left transition-all ${
+            className={`w-full bg-muted border rounded-xl px-4 py-3 text-left transition-all ${
               selectedId === '' ? 'border-clyro-purple bg-clyro-purple/5' : 'border-border hover:border-clyro-purple/40'
             }`}
           >
@@ -448,7 +448,7 @@ function StepVoice({
             <button
               key={v.id}
               onClick={() => onSelect(v.id, v.name)}
-              className={`w-full bg-navy-800 border rounded-xl px-4 py-3 text-left transition-all ${
+              className={`w-full bg-muted border rounded-xl px-4 py-3 text-left transition-all ${
                 selectedId === v.id ? 'border-clyro-purple bg-clyro-purple/5' : 'border-border hover:border-clyro-purple/40'
               }`}
             >
@@ -461,7 +461,7 @@ function StepVoice({
         </div>
       )}
       <div className="flex gap-3">
-        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-navy-800 text-sm">
+        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">
           ← Retour
         </button>
         <button onClick={onNext} className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
@@ -487,7 +487,7 @@ function StepConfirm({
   return (
     <div>
       <h2 className="font-display text-lg font-semibold text-foreground mb-4">Confirmer</h2>
-      <div className="bg-navy-800 border border-border rounded-xl p-5 space-y-3 mb-5">
+      <div className="bg-muted border border-border rounded-xl p-5 space-y-3 mb-5">
         <Row label="Titre"    value={state.title} />
         <Row label="Style"    value={styleLabel ?? ''} />
         <Row label="Format"   value={`${state.format} — ${formatLabel}`} />
@@ -499,7 +499,7 @@ function StepConfirm({
         La génération prend 2–5 minutes. Tu recevras un email quand ta vidéo est prête.
       </p>
       <div className="flex gap-3">
-        <button onClick={onBack} disabled={launching} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-navy-800 text-sm disabled:opacity-50">
+        <button onClick={onBack} disabled={launching} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm disabled:opacity-50">
           ← Retour
         </button>
         <button
@@ -541,7 +541,7 @@ function StepGenerating({ videoId, onReset }: { videoId: string; onReset: () => 
       <h2 className="font-display text-lg font-semibold text-foreground mb-6">
         {isError ? '❌ Erreur de génération' : isDone ? '✅ Publicité prête !' : '⏳ Génération en cours...'}
       </h2>
-      <div className="h-2 bg-navy-800 rounded-full mb-6 overflow-hidden">
+      <div className="h-2 bg-muted rounded-full mb-6 overflow-hidden">
         <div
           className="h-full bg-clyro-purple rounded-full transition-all duration-700"
           style={{ width: `${Math.max(progress, 5)}%` }}
@@ -588,7 +588,7 @@ function StepGenerating({ videoId, onReset }: { videoId: string; onReset: () => 
       )}
       {isDone && <p className="font-body text-sm text-muted-foreground mt-2">Redirection vers l&apos;historique...</p>}
       {isError && (
-        <button onClick={onReset} className="font-display font-semibold px-5 py-2.5 rounded-xl border border-border text-foreground hover:bg-navy-800 text-sm mt-2">
+        <button onClick={onReset} className="font-display font-semibold px-5 py-2.5 rounded-xl border border-border text-foreground hover:bg-muted text-sm mt-2">
           Recommencer
         </button>
       )}
@@ -671,7 +671,7 @@ export function MotionWizard() {
         </div>
       )}
 
-      <div className="bg-navy-900 border border-border rounded-xl p-6">
+      <div className="bg-card border border-border rounded-xl p-6">
         {step === 1 && (
           <StepBrief
             title={state.title}

@@ -59,7 +59,7 @@ export function GenerationOverlay({
       {/* Full-screen overlay */}
       <div
         className={cn(
-          'fixed inset-0 z-50 bg-navy-950/95 backdrop-blur-sm',
+          'fixed inset-0 z-50 bg-background/95 backdrop-blur-sm',
           'flex flex-col items-center justify-center gap-8 px-6',
           'animate-fade-up',
         )}
@@ -80,7 +80,7 @@ export function GenerationOverlay({
 
         {/* Progress bar */}
         <div className="w-80">
-          <div className="h-1 w-full bg-navy-800 rounded-full overflow-hidden">
+          <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
             <div
               className="h-full bg-grad-primary rounded-full transition-all duration-500 ease-out"
               style={{ width: `${pct}%` }}

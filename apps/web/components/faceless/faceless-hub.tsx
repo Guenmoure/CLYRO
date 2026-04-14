@@ -324,7 +324,7 @@ const PIPELINE_STEPS: Array<{ id: PipelineStep; label: string }> = [
 function StepIndicator({ current, savedState }: { current: PipelineStep; savedState?: 'saving' | 'saved' | null }) {
   const currentIdx = PIPELINE_STEPS.findIndex((s) => s.id === current)
   return (
-    <div className="flex items-center gap-1 px-6 py-3 border-b border-navy-700 bg-navy-800 shrink-0">
+    <div className="flex items-center gap-1 px-6 py-3 border-b border-border bg-muted shrink-0">
       {PIPELINE_STEPS.map((step, i) => {
         const done   = i < currentIdx
         const active = i === currentIdx
@@ -343,7 +343,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
               <span>{step.label}</span>
             </div>
             {i < PIPELINE_STEPS.length - 1 && (
-              <div className={cn('w-5 h-px', done ? 'bg-emerald-300' : 'bg-navy-700')} />
+              <div className={cn('w-5 h-px', done ? 'bg-emerald-300' : 'bg-border')} />
             )}
           </div>
         )
@@ -372,7 +372,7 @@ function StylePickerDropdown({ value, onChange, onClose }: {
   onClose: () => void
 }) {
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-[480px] bg-white border border-navy-700 rounded-2xl shadow-xl p-4 animate-fade-in">
+    <div className="absolute left-0 top-full mt-2 z-50 w-[480px] bg-white border border-border rounded-2xl shadow-xl p-4 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
         <p className="font-display text-sm font-semibold text-foreground">Style visuel</p>
         <button type="button" onClick={onClose} aria-label="Fermer" className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
@@ -383,9 +383,9 @@ function StylePickerDropdown({ value, onChange, onClose }: {
           return (
             <button key={s.id} type="button" onClick={() => { onChange(s.id); onClose() }}
               className={cn('relative rounded-xl overflow-hidden transition-all',
-                value === s.id ? 'ring-2 ring-blue-500 ring-offset-1' : 'hover:ring-1 hover:ring-navy-700')}>
+                value === s.id ? 'ring-2 ring-blue-500 ring-offset-1' : 'hover:ring-1 hover:ring-border')}>
               <div className="h-16 w-full relative"><Preview selected={value === s.id} /></div>
-              <div className="p-2 bg-navy-800">
+              <div className="p-2 bg-muted">
                 <p className="font-display font-semibold text-[11px] text-foreground truncate">{s.label}</p>
               </div>
               {s.badge && <span className="absolute top-1 right-1 font-mono text-[8px] uppercase tracking-wider bg-blue-500 text-white px-1 py-0.5 rounded-full">{s.badge}</span>}
@@ -423,7 +423,7 @@ function VoicePickerDropdown({ value, voices, onChange, onClose }: {
   }
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-white border border-navy-700 rounded-2xl shadow-xl p-3 animate-fade-in">
+    <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-white border border-border rounded-2xl shadow-xl p-3 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <p className="font-display text-sm font-semibold text-foreground">Voix off</p>
         <button type="button" onClick={onClose} aria-label="Fermer" className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
@@ -434,11 +434,11 @@ function VoicePickerDropdown({ value, voices, onChange, onClose }: {
       <div className="space-y-1 max-h-64 overflow-y-auto">
         <button type="button" onClick={() => { onChange(''); onClose() }}
           className={cn('w-full text-left px-3 py-2 rounded-xl text-sm font-body transition-colors',
-            !value ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-navy-900 text-[--text-muted]')}>
+            !value ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-card text-[--text-muted]')}>
           Aucune voix
         </button>
         {voices.map((v) => (
-          <div key={v.id} className={cn('flex items-center gap-2 rounded-xl transition-colors', value === v.id ? 'bg-blue-500/10' : 'hover:bg-navy-900')}>
+          <div key={v.id} className={cn('flex items-center gap-2 rounded-xl transition-colors', value === v.id ? 'bg-blue-500/10' : 'hover:bg-card')}>
             <button type="button" onClick={() => { onChange(v.id); onClose() }} className="flex-1 text-left px-3 py-2">
               <p className={cn('text-sm font-body font-medium', value === v.id ? 'text-blue-500' : 'text-foreground')}>{v.name}</p>
               {(v.gender || v.accent) && <p className="text-[11px] text-[--text-muted]">{[v.gender, v.accent].filter(Boolean).join(' · ')}</p>}
@@ -446,7 +446,7 @@ function VoicePickerDropdown({ value, voices, onChange, onClose }: {
             {v.previewUrl && (
               <button type="button" onClick={(e) => playPreview(e, v)} aria-label="Prévisualiser la voix"
                 className={cn('w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center mr-2 transition-all',
-                  playingId === v.id ? 'bg-blue-500 text-white' : 'bg-navy-900 border border-navy-700 text-[--text-muted] hover:text-blue-500')}>
+                  playingId === v.id ? 'bg-blue-500 text-white' : 'bg-card border border-border text-[--text-muted] hover:text-blue-500')}>
                 {playingId === v.id
                   ? <div className="w-2.5 h-2.5 flex gap-0.5 items-center"><div className="w-0.5 h-2.5 bg-white rounded" /><div className="w-0.5 h-2.5 bg-white rounded" /></div>
                   : <Play size={9} className="fill-current translate-x-px" />}
@@ -466,7 +466,7 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
   const filtered = activeCategory === 'all' ? STYLE_TEMPLATES : STYLE_TEMPLATES.filter((t) => t.category === activeCategory)
 
   return (
-    <div className="border-t border-navy-700 px-6 py-8 bg-navy-800/50">
+    <div className="border-t border-border px-6 py-8 bg-muted/50">
       <div className="max-w-2xl mx-auto">
         <p className="font-display text-base font-semibold text-foreground mb-4">Styles disponibles</p>
         <div className="flex flex-wrap gap-2 mb-5">
@@ -475,7 +475,7 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
               className={cn('px-3.5 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
                 activeCategory === cat.id
                   ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-                  : 'bg-navy-800 border-navy-700 text-[--text-muted] hover:border-blue-500/40 hover:text-foreground')}>
+                  : 'bg-muted border-border text-[--text-muted] hover:border-blue-500/40 hover:text-foreground')}>
               {cat.label}
             </button>
           ))}
@@ -489,7 +489,7 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
                 className={cn('relative rounded-2xl overflow-hidden text-left transition-all',
                   isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : 'hover:scale-[1.02] hover:shadow-card')}>
                 <div className="h-24 w-full relative"><Preview selected={isSelected} /></div>
-                <div className="p-2.5 bg-navy-800 border-t border-navy-700/50">
+                <div className="p-2.5 bg-muted border-t border-border/50">
                   <p className="font-display font-bold text-[11px] text-foreground">{t.label}</p>
                   <p className="font-body text-[10px] text-[--text-muted] mt-0.5 leading-tight">{t.desc}</p>
                 </div>
@@ -559,7 +559,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
           </div>
 
           {/* Description */}
-          <div className="rounded-2xl border border-navy-700 bg-navy-800 overflow-hidden">
+          <div className="rounded-2xl border border-border bg-muted overflow-hidden">
             <div className="px-4 pt-4 pb-2">
               <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2">Description du contenu</p>
               <textarea
@@ -573,13 +573,13 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
           </div>
 
           {/* Script / Audio */}
-          <div className="rounded-2xl border border-navy-700 bg-navy-800 overflow-hidden">
+          <div className="rounded-2xl border border-border bg-muted overflow-hidden">
             {/* Tab bar */}
             <div className="flex items-center gap-1 px-4 pt-3 mb-2">
               <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] flex-1">
                 {project.inputType === 'script' ? 'Script' : 'Audio'}
               </p>
-              <div className="flex items-center gap-1 bg-navy-900 border border-navy-700 rounded-xl p-0.5">
+              <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-0.5">
                 <button type="button" onClick={() => onChange({ inputType: 'script' })}
                   className={cn('px-3 py-1 rounded-lg text-xs font-mono transition-all', project.inputType === 'script' ? 'bg-white shadow-sm text-foreground' : 'text-[--text-muted] hover:text-foreground')}>
                   Script
@@ -604,7 +604,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               <div className="px-4 pb-4">
                 <label htmlFor="faceless-audio"
                   className={cn('flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed cursor-pointer transition-all',
-                    project.audioFile ? 'border-blue-500 bg-blue-500/10' : 'border-navy-700 hover:border-blue-500/50')}>
+                    project.audioFile ? 'border-blue-500 bg-blue-500/10' : 'border-border hover:border-blue-500/50')}>
                   <Upload size={18} className={cn('mb-2', project.audioFile ? 'text-blue-500' : 'text-[--text-muted]')} />
                   <p className="font-display text-sm font-semibold text-foreground">{project.audioFile ? project.audioFile.name : 'Importer un fichier audio'}</p>
                   <p className="text-xs text-[--text-muted] mt-0.5">MP3, WAV, M4A — max 50 MB</p>
@@ -634,7 +634,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                           key={ex.label}
                           type="button"
                           onClick={() => onChange({ script: ex.script, description: ex.description, style: ex.style, duration: ex.duration })}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg border border-navy-700 text-[10px] font-mono text-[--text-muted] hover:border-blue-500/40 hover:text-blue-500 transition-all"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg border border-border text-[10px] font-mono text-[--text-muted] hover:border-blue-500/40 hover:text-blue-500 transition-all"
                         >
                           <Sparkles size={9} /> {ex.label}
                         </button>
@@ -670,7 +670,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             <div ref={styleRef} className="relative">
               <button type="button" onClick={() => { setShowStylePicker((v) => !v); setShowVoicePicker(false) }}
                 className={cn('flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-body transition-all',
-                  project.style ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40')}>
+                  project.style ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-card border-border text-[--text-muted] hover:border-blue-500/40')}>
                 <span className="font-medium">{selectedStyle?.label ?? 'Style visuel'}</span>
                 <ChevronDown size={13} className={cn('transition-transform', showStylePicker && 'rotate-180')} />
               </button>
@@ -681,7 +681,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             <div ref={voiceRef} className="relative">
               <button type="button" onClick={() => { setShowVoicePicker((v) => !v); setShowStylePicker(false) }}
                 className={cn('flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-body transition-all',
-                  project.voiceId ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40')}>
+                  project.voiceId ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-card border-border text-[--text-muted] hover:border-blue-500/40')}>
                 <Mic2 size={14} />
                 <span className="font-medium">{selectedVoice?.name ?? 'Voix off'}</span>
                 <ChevronDown size={13} className={cn('transition-transform', showVoicePicker && 'rotate-180')} />
@@ -690,7 +690,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             </div>
 
             {/* Format */}
-            <div className="flex items-center gap-1 rounded-xl border border-navy-700 bg-navy-900 px-1.5 py-1">
+            <div className="flex items-center gap-1 rounded-xl border border-border bg-card px-1.5 py-1">
               {FORMATS.map((f) => (
                 <button key={f.id} type="button" title={f.desc} onClick={() => onChange({ format: f.id })}
                   className={cn('px-2.5 py-1 rounded-lg text-xs font-display font-semibold transition-all',
@@ -703,7 +703,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             {/* Title */}
             <input type="text" value={project.title} onChange={(e) => onChange({ title: e.target.value })}
               placeholder="Titre (auto si vide)"
-              className="ml-auto hidden sm:block flex-1 max-w-xs bg-navy-800 border border-navy-700 rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors" />
+              className="ml-auto hidden sm:block flex-1 max-w-xs bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors" />
           </div>
 
           {/* Generate row — separate from dropdowns to avoid click interception (P0 fix) */}
@@ -711,7 +711,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             <span />
             <button type="button" onClick={onNext} disabled={!canNext || loading}
               className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all shrink-0',
-                canNext && !loading ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-navy-900 border border-navy-700 text-[--text-muted] cursor-not-allowed')}>
+                canNext && !loading ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               Générer le storyboard
               {!loading && <ArrowRight size={13} />}
@@ -828,13 +828,13 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-700 shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
         <div>
           <h2 className="font-display text-base font-bold text-foreground">Storyboard</h2>
           <p className="font-body text-xs text-[--text-muted]">{scenes.length} scènes générées — modifie le script et les prompts avant de générer les images</p>
         </div>
         <button type="button" onClick={regenAll} disabled={generating}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-navy-700 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
           {generating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
           Tout régénérer
         </button>
@@ -851,13 +851,13 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
             onDrop={() => handleDrop(i)}
             onDragEnd={handleDragEnd}
             className={cn(
-              'rounded-2xl border bg-navy-800 overflow-hidden transition-all',
-              dragOverIndex === i && dragIndex !== i ? 'border-blue-500/60 ring-2 ring-blue-500/20' : 'border-navy-700',
+              'rounded-2xl border bg-muted overflow-hidden transition-all',
+              dragOverIndex === i && dragIndex !== i ? 'border-blue-500/60 ring-2 ring-blue-500/20' : 'border-border',
               dragIndex === i ? 'opacity-50' : '',
             )}
           >
             {/* Scene header */}
-            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-navy-700/60 bg-navy-900/40">
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border/60 bg-card/40">
               {/* Drag handle */}
               <GripVertical size={14} className="text-[--text-muted]/40 cursor-grab active:cursor-grabbing shrink-0" />
               <div className="flex items-center gap-1.5">
@@ -905,7 +905,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                 {editingId === scene.id ? (
                   <textarea value={scene.scriptText} onChange={(e) => updateScene(scene.id, { scriptText: e.target.value })}
                     rows={3} placeholder="Texte du script pour cette scène…"
-                    className="w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
+                    className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
                 ) : (
                   <p className="text-sm font-body text-foreground leading-relaxed">{scene.scriptText}</p>
                 )}
@@ -913,7 +913,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
 
               {/* Prompts */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-navy-900 rounded-xl p-3 border border-navy-700/60">
+                <div className="bg-card rounded-xl p-3 border border-border/60">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <div className="w-3 h-3 rounded bg-sky-200 flex items-center justify-center">
                       <span className="text-[8px]">🖼</span>
@@ -923,12 +923,12 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                   {editingId === scene.id ? (
                     <textarea value={scene.imagePrompt} onChange={(e) => updateScene(scene.id, { imagePrompt: e.target.value })}
                       rows={3} placeholder="Prompt image pour cette scène…"
-                      className="w-full bg-white border border-navy-700 rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
+                      className="w-full bg-white border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
                   ) : (
                     <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-3">{scene.imagePrompt}</p>
                   )}
                 </div>
-                <div className="bg-navy-900 rounded-xl p-3 border border-navy-700/60">
+                <div className="bg-card rounded-xl p-3 border border-border/60">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <div className="w-3 h-3 rounded bg-violet-200 flex items-center justify-center">
                       <span className="text-[8px]">🎬</span>
@@ -938,7 +938,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                   {editingId === scene.id ? (
                     <textarea value={scene.animationPrompt} onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
                       rows={3} placeholder="Prompt animation pour cette scène…"
-                      className="w-full bg-white border border-navy-700 rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
+                      className="w-full bg-white border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
                   ) : (
                     <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-3">{scene.animationPrompt}</p>
                   )}
@@ -950,15 +950,15 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
 
         {/* Add scene button */}
         <button type="button" onClick={addScene}
-          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-dashed border-navy-700/60 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all hover:bg-blue-500/10/20">
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-dashed border-border/60 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all hover:bg-blue-500/10/20">
           <Plus size={14} />
           Ajouter une scène
         </button>
       </div>
 
       {/* Footer navigation */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-navy-700 bg-navy-800 shrink-0">
-        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted shrink-0">
+        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
         <button type="button" onClick={onNext} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all">
@@ -1305,7 +1305,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-700 shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
         <div>
           <h2 className="font-display text-base font-bold text-foreground">Génération des images</h2>
           <p className="font-body text-xs text-[--text-muted]">{doneCnt}/{scenes.length} images générées</p>
@@ -1318,13 +1318,13 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
               'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-body transition-all',
               batchMode
                 ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-                : 'border-navy-700 text-[--text-muted] hover:text-foreground hover:border-blue-500/40'
+                : 'border-border text-[--text-muted] hover:text-foreground hover:border-blue-500/40'
             )}>
             {batchMode ? <Check size={12} /> : <Settings2 size={12} />}
             {batchMode ? 'Sélection active' : 'Sélection multiple'}
           </button>
           <button type="button" onClick={generateAll} disabled={generatingAll || allDone || scene0Phase === 'pending_validation'}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-navy-700 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all disabled:opacity-40">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all disabled:opacity-40">
             {generatingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
             {allDone ? 'Toutes générées'
               : scene0Phase === 'idle' ? 'Générer scène 0'
@@ -1400,7 +1400,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       <div className="flex-1 overflow-y-auto px-6 py-5">
         <div className="grid grid-cols-3 gap-4">
           {scenes.map((scene, i) => (
-            <div key={scene.id} className="rounded-2xl border border-navy-700 overflow-hidden bg-navy-800">
+            <div key={scene.id} className="rounded-2xl border border-border overflow-hidden bg-muted">
               {/* Image preview */}
               <div className={cn('h-36 relative bg-gradient-to-br', SCENE_COLORS[i % SCENE_COLORS.length])}>
                 {scene.imageStatus === 'generating' ? (
@@ -1506,7 +1506,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                     <textarea value={scene.imagePrompt}
                       onChange={(e) => updateScene(scene.id, { imagePrompt: e.target.value })}
                       placeholder="Prompt image…" rows={3}
-                      className="w-full bg-navy-900 border border-navy-700 rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none" />
+                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none" />
 
                     {/* Improve prompt panel */}
                     {improveResult && improvingId === null && (
@@ -1551,8 +1551,8 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-navy-700 bg-navy-800 shrink-0">
-        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted shrink-0">
+        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
         <div className="flex items-center gap-3">
@@ -1561,7 +1561,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
           )}
           <button type="button" onClick={onNext} disabled={!allDone}
             className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
-              allDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-navy-900 border border-navy-700 text-[--text-muted] cursor-not-allowed')}>
+              allDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
             Générer les clips <ArrowRight size={13} />
           </button>
         </div>
@@ -1701,13 +1701,13 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-navy-700 shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
         <div>
           <h2 className="font-display text-base font-bold text-foreground">Génération des clips</h2>
           <p className="font-body text-xs text-[--text-muted]">{doneCnt}/{scenes.length} clips · voix off {voiceStatus === 'done' ? '✓ prête' : 'en attente'}</p>
         </div>
         <button type="button" onClick={generateAll} disabled={generatingAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-navy-700 text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
           {generatingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
           Tout générer
         </button>
@@ -1716,7 +1716,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
         {/* Clips list */}
         {scenes.map((scene, i) => (
-          <div key={scene.id} className="rounded-2xl border border-navy-700 bg-navy-800 overflow-hidden">
+          <div key={scene.id} className="rounded-2xl border border-border bg-muted overflow-hidden">
             <div className="flex items-start gap-4 p-4">
               {/* Video thumbnail / preview */}
               <div className={cn('w-28 h-16 rounded-xl flex-shrink-0 relative overflow-hidden bg-gradient-to-br', SCENE_COLORS[i % SCENE_COLORS.length])}>
@@ -1758,7 +1758,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     scene.clipStatus === 'done' ? 'bg-emerald-50 text-emerald-600' :
                     scene.clipStatus === 'generating' ? 'bg-blue-50 text-blue-500' :
                     scene.clipStatus === 'error' ? 'bg-red-50 text-red-600 border border-red-200' :
-                    'bg-navy-900 text-[--text-muted] border border-navy-700')}>
+                    'bg-card text-[--text-muted] border border-border')}>
                     {scene.clipStatus === 'done' ? '✓ Prêt' :
                       scene.clipStatus === 'generating' ? 'Génération…' :
                       scene.clipStatus === 'error' ? '✕ Erreur — réessayer' :
@@ -1790,7 +1790,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                 {editingId === scene.id ? (
                   <textarea value={scene.animationPrompt} onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
                     rows={2} placeholder="Prompt animation…"
-                    className="w-full bg-navy-900 border border-navy-700 rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none" />
+                    className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none" />
                 ) : (
                   <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-2">{scene.animationPrompt}</p>
                 )}
@@ -1814,10 +1814,10 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
 
         {/* Voice-over section */}
         {voiceId && (
-          <div className="rounded-2xl border border-navy-700 bg-navy-800 overflow-hidden">
+          <div className="rounded-2xl border border-border bg-muted overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-3">
               <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
-                voiceStatus === 'done' ? 'bg-emerald-50' : voiceStatus === 'generating' ? 'bg-blue-50' : 'bg-navy-900 border border-navy-700')}>
+                voiceStatus === 'done' ? 'bg-emerald-50' : voiceStatus === 'generating' ? 'bg-blue-50' : 'bg-card border border-border')}>
                 {voiceStatus === 'generating' ? <Loader2 size={16} className="text-blue-500 animate-spin" /> : <Volume2 size={16} className={voiceStatus === 'done' ? 'text-emerald-600' : 'text-[--text-muted]'} />}
               </div>
               <div className="flex-1">
@@ -1828,7 +1828,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
               </div>
               {voiceStatus !== 'done' && (
                 <button type="button" onClick={generateVoice} disabled={voiceStatus === 'generating'}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-navy-700 text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
                   {voiceStatus === 'generating' ? <Loader2 size={11} className="animate-spin" /> : <Play size={11} />}
                   Générer la voix
                 </button>
@@ -1837,7 +1837,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
 
             {/* Audio player */}
             {voiceStatus === 'done' && videoId && (
-              <div className="px-4 py-3 border-t border-navy-700/60">
+              <div className="px-4 py-3 border-t border-border/60">
                 <p className="font-mono text-[9px] uppercase tracking-widest text-[--text-muted] mb-2">Lecture de la voix off</p>
                 <audio
                   controls
@@ -1852,7 +1852,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
             {/* Sync timeline */}
             {voiceStatus === 'done' && (
               <div className="px-4 pb-4">
-                <div className="bg-navy-900 rounded-xl p-3 border border-navy-700/60">
+                <div className="bg-card rounded-xl p-3 border border-border/60">
                   <p className="font-mono text-[9px] uppercase tracking-widest text-[--text-muted] mb-2">Synchronisation</p>
                   <div className="flex gap-1 h-8 items-center">
                     {scenes.map((_, i) => (
@@ -1873,8 +1873,8 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-navy-700 bg-navy-800 shrink-0">
-        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted shrink-0">
+        <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
         <div className="flex items-center gap-2">
@@ -1887,7 +1887,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
           )}
           <button type="button" onClick={onNext} disabled={!allClipsDone}
             className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
-              allClipsDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-navy-900 border border-navy-700 text-[--text-muted] cursor-not-allowed')}>
+              allClipsDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
             Assembler la vidéo <ArrowRight size={13} />
           </button>
         </div>
@@ -2009,7 +2009,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
               </button>
             )}
             <button type="button" onClick={onNew}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
               <Plus size={14} /> Nouvelle vidéo
             </button>
           </div>
@@ -2049,13 +2049,13 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
             </button>
             {onEditScenes && (
               <button type="button" onClick={onEditScenes}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
                 <Edit3 size={14} />
                 Modifier des scènes
               </button>
             )}
             <button type="button" onClick={onNew}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-navy-700 text-sm font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
               <Plus size={14} />
               Nouvelle vidéo
             </button>
@@ -2391,15 +2391,15 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside className="w-52 bg-navy-800 border-r border-navy-700 flex flex-col shrink-0">
-        <div className="p-4 border-b border-navy-700 flex items-center justify-between">
+      <aside className="w-52 bg-muted border-r border-border flex flex-col shrink-0">
+        <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold text-foreground">Faceless Video</h2>
           <Wand2 size={14} className="text-[--text-muted]" />
         </div>
 
-        <div className="p-3 border-b border-navy-700">
+        <div className="p-3 border-b border-border">
           <button type="button" onClick={() => setViewId(null)}
-            className="flex items-center gap-2 w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-blue-500/40 hover:bg-blue-50 transition-all">
+            className="flex items-center gap-2 w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-blue-500/40 hover:bg-blue-50 transition-all">
             <Plus size={15} className="text-blue-500" />
             Nouvelle vidéo
           </button>
@@ -2408,7 +2408,7 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-              <Video size={26} className="text-navy-700 mb-2" />
+              <Video size={26} className="text-[--text-muted] mb-2" />
               <p className="text-[--text-muted] font-body text-xs">Aucune vidéo.</p>
             </div>
           ) : (
@@ -2417,7 +2417,7 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
                 <button key={s.id} type="button" onClick={() => setViewId(s.id)}
                   title={s.title ?? 'Sans titre'}
                   className={cn('w-full text-left px-3 py-2.5 rounded-xl transition-all',
-                    viewId === s.id ? 'bg-blue-50' : 'hover:bg-navy-900')}>
+                    viewId === s.id ? 'bg-blue-50' : 'hover:bg-card')}>
                   <p className="font-body text-xs text-foreground truncate">{s.title ?? 'Sans titre'}</p>
                   <span className="font-mono text-[9px] text-[--text-muted]">
                     {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}

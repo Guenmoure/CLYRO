@@ -14,7 +14,7 @@ const badgeVariants = cva(
         error:   'bg-error/15   text-error   border-error/30',
         info:    'bg-blue-500/15 text-blue-300 border-blue-500/30',
         purple:  'bg-purple-500/15 text-purple-400 border-purple-500/30',
-        neutral: 'bg-navy-700 text-[--text-secondary] border-navy-600',
+        neutral: 'bg-muted text-[--text-secondary] border-border',
       },
     },
     defaultVariants: {

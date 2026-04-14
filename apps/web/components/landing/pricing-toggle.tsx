@@ -86,7 +86,7 @@ export function PricingToggle() {
           onClick={() => setAnnual(!annual)}
           className={cn(
             'relative w-11 h-6 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
-            annual ? 'bg-blue-500' : 'bg-navy-700'
+            annual ? 'bg-blue-500' : 'bg-border'
           )}
         >
           <span
@@ -132,7 +132,7 @@ export function PricingToggle() {
                 <p className="font-body text-sm text-[--text-secondary]">{plan.desc}</p>
               </div>
 
-              <div className="border-t border-navy-700/50 pt-6 mb-6 flex flex-col gap-3">
+              <div className="border-t border-border/50 pt-6 mb-6 flex flex-col gap-3">
                 {plan.features.map((f) => (
                   <div key={f} className="flex items-start gap-2.5">
                     <Check size={14} className="text-success shrink-0 mt-0.5" />

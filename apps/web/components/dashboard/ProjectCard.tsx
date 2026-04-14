@@ -82,12 +82,12 @@ function ContextMenu({
     return () => document.removeEventListener('mousedown', handler)
   }, [onClose])
 
-  const itemCls = 'flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-navy-700 hover:text-foreground transition-colors rounded-lg'
+  const itemCls = 'flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors rounded-lg'
 
   return (
     <div
       ref={ref}
-      className="absolute top-8 right-0 w-44 bg-navy-800 border border-navy-700 rounded-xl shadow-card overflow-hidden z-50"
+      className="absolute top-8 right-0 w-44 bg-card border border-border rounded-xl shadow-card overflow-hidden z-50"
     >
       <div className="p-1">
         {project.output_url && (
@@ -104,7 +104,7 @@ function ContextMenu({
           <Pencil size={13} /> Renommer
         </button>
       </div>
-      <div className="p-1 border-t border-navy-700">
+      <div className="p-1 border-t border-border">
         <button
           type="button"
           onClick={() => { onClose(); onDelete() }}
@@ -130,7 +130,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   const isError      = project.status === 'error'
 
   const ModuleIcon  = MODULE_ICONS[project.module ?? ''] ?? Video
-  const iconColor   = MODULE_ICON_COLORS[project.module ?? ''] ?? 'text-navy-600'
+  const iconColor   = MODULE_ICON_COLORS[project.module ?? ''] ?? 'text-[--text-muted]'
 
   async function handleDelete() {
     setDeleting(true)
@@ -149,13 +149,13 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   return (
     <div className={cn(
       'group relative rounded-2xl overflow-hidden',
-      'bg-navy-800 border border-navy-700',
-      'hover:border-navy-600 hover:shadow-card-hover',
+      'bg-muted border border-border',
+      'hover:border-border hover:shadow-card-hover',
       'transition-all duration-200',
       deleting && 'opacity-50 pointer-events-none',
     )}>
       {/* Thumbnail zone */}
-      <div className="relative aspect-video overflow-hidden bg-navy-900">
+      <div className="relative aspect-video overflow-hidden bg-card">
         {project.thumbnail_url ? (
           <Image
             src={project.thumbnail_url}
@@ -172,7 +172,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
 
         {/* Hover overlay */}
         {isDone && (
-          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-navy-950/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <button
               type="button"
               onClick={() => router.push(`/projects?id=${project.id}`)}
@@ -185,7 +185,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
 
         {/* Processing progress bar */}
         {isProcessing && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-navy-700">
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-border">
             <div className="h-full bg-grad-primary animate-shimmer rounded-full" style={{ width: '60%' }} />
           </div>
         )}
@@ -208,7 +208,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
               type="button"
               onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
               className={cn(
-                'w-7 h-7 rounded-lg bg-navy-950/60 backdrop-blur-sm border border-navy-700/50',
+                'w-7 h-7 rounded-lg bg-background/60 backdrop-blur-sm border border-border/50',
                 'flex items-center justify-center text-[--text-muted] hover:text-foreground',
                 'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
               )}

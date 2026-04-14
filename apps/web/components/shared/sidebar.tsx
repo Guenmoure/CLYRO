@@ -42,12 +42,12 @@ function UserMenu({ user, plan, onSignOut }: {
   const planLabel = plan === 'studio' ? 'Studio' : plan === 'pro' ? 'Pro' : 'Free plan'
 
   return (
-    <div ref={ref} className="relative w-full px-2 pt-2 border-t border-navy-700">
+    <div ref={ref} className="relative w-full px-2 pt-2 border-t border-border">
       {/* Avatar button */}
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="group flex flex-col items-center justify-center gap-1 w-full py-2.5 px-1 rounded-xl hover:bg-navy-800 transition-all duration-150"
+        className="group flex flex-col items-center justify-center gap-1 w-full py-2.5 px-1 rounded-xl hover:bg-muted transition-all duration-150"
         title={name}
       >
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-sm">
@@ -60,12 +60,12 @@ function UserMenu({ user, plan, onSignOut }: {
 
       {/* Dropdown — opens to the right of the sidebar */}
       {open && (
-        <div className="absolute left-full bottom-0 ml-2 w-[220px] bg-navy-800 border border-navy-700 rounded-2xl shadow-xl overflow-hidden z-50">
+        <div className="absolute left-full bottom-0 ml-2 w-[220px] bg-muted border border-border rounded-2xl shadow-xl overflow-hidden z-50">
 
           {/* User info */}
-          <div className="px-4 py-3 border-b border-navy-700">
+          <div className="px-4 py-3 border-b border-border">
             <p className="text-[11px] text-[--text-muted] truncate mb-2">{email}</p>
-            <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-navy-900 hover:bg-navy-700 cursor-pointer transition-colors">
+            <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-card hover:bg-border cursor-pointer transition-colors">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shrink-0">
                   <span className="font-bold text-white text-xs">{initials}</span>
@@ -85,15 +85,15 @@ function UserMenu({ user, plan, onSignOut }: {
             <MenuItem icon={<Settings size={15} />} label="Settings" onClick={() => setOpen(false)} href="/settings" />
           </div>
 
-          <div className="border-t border-navy-700 py-1.5">
+          <div className="border-t border-border py-1.5">
             <MenuItem icon={<HelpCircle size={15} />} label="Help" chevron onClick={() => setOpen(false)} href="mailto:support@clyro.app" />
           </div>
 
-          <div className="border-t border-navy-700 py-1.5">
+          <div className="border-t border-border py-1.5">
             <button
               type="button"
               onClick={() => { setOpen(false); onSignOut() }}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[--text-muted] hover:bg-navy-700 hover:text-foreground transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[--text-muted] hover:bg-border hover:text-foreground transition-colors"
             >
               <LogOut size={15} className="text-[--text-muted]" />
               Log out
@@ -117,7 +117,7 @@ function MenuItem({ icon, label, gold, chevron, href, onClick }: {
     'w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors',
     gold
       ? 'text-warning hover:bg-warning/10'
-      : 'text-[--text-muted] hover:bg-navy-700 hover:text-foreground'
+      : 'text-[--text-muted] hover:bg-border hover:text-foreground'
   )
   const inner = (
     <>
@@ -157,7 +157,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:flex w-[72px] bg-navy-900 border-r border-navy-700 flex-col items-center py-4 shrink-0 relative z-20">
+    <aside className="hidden md:flex w-[72px] bg-card border-r border-border flex-col items-center py-4 shrink-0 relative z-20">
 
       {/* Logo */}
       <Link
@@ -185,7 +185,7 @@ export function Sidebar() {
                 'group flex flex-col items-center justify-center gap-1 w-full py-2.5 px-1 rounded-xl transition-all duration-150',
                 isActive
                   ? 'bg-blue-500/10 text-blue-400'
-                  : 'text-[--text-muted] hover:bg-navy-800 hover:text-foreground'
+                  : 'text-[--text-muted] hover:bg-muted hover:text-foreground'
               )}
             >
               <Icon size={20} strokeWidth={isActive ? 2 : 1.6} className="shrink-0" />
@@ -204,8 +204,8 @@ export function Sidebar() {
       {user ? (
         <UserMenu user={user} plan={plan} onSignOut={handleSignOut} />
       ) : (
-        <div className="w-full px-2 pt-2 border-t border-navy-700">
-          <div className="w-8 h-8 rounded-full bg-navy-700 mx-auto animate-pulse" />
+        <div className="w-full px-2 pt-2 border-t border-border">
+          <div className="w-8 h-8 rounded-full bg-border mx-auto animate-pulse" />
         </div>
       )}
     </aside>

@@ -145,10 +145,10 @@ export function NotificationPanel() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-11 w-[360px] bg-navy-800 border border-navy-700 rounded-2xl shadow-xl overflow-hidden z-50">
+        <div className="absolute right-0 top-11 w-[360px] bg-card border border-border rounded-2xl shadow-xl overflow-hidden z-50">
 
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-navy-700">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-foreground">Notifications</span>
               {unread > 0 && (
@@ -167,7 +167,7 @@ export function NotificationPanel() {
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-navy-700 px-4">
+          <div className="flex border-b border-border px-4">
             {TABS.map(t => (
               <button
                 key={t.key}
@@ -185,10 +185,10 @@ export function NotificationPanel() {
           </div>
 
           {/* List */}
-          <div className="max-h-[400px] overflow-y-auto divide-y divide-navy-700">
+          <div className="max-h-[400px] overflow-y-auto divide-y divide-border">
             {filtered.length === 0 ? (
               <div className="py-12 text-center">
-                <Bell size={24} className="text-navy-600 mx-auto mb-2" />
+                <Bell size={24} className="text-[--text-muted] mx-auto mb-2" />
                 <p className="text-sm text-[--text-muted]">Aucune notification</p>
               </div>
             ) : (
@@ -197,7 +197,7 @@ export function NotificationPanel() {
                 return (
                   <div
                     key={n.id}
-                    className={`relative flex gap-3 px-4 py-3.5 ${!n.read ? 'bg-navy-900/50' : ''}`}
+                    className={`relative flex gap-3 px-4 py-3.5 ${!n.read ? 'bg-muted/50' : ''}`}
                   >
                     {!n.read && (
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-purple-500" />
@@ -240,7 +240,7 @@ export function NotificationPanel() {
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-3 border-t border-navy-700 text-center">
+          <div className="px-4 py-3 border-t border-border text-center">
             <a
               href="/settings"
               className="text-[11px] text-[--text-muted] hover:text-purple-400 transition-colors font-medium"

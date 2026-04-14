@@ -25,14 +25,14 @@ export function NewProjectCard({ feature, className }: NewProjectCardProps) {
       onClick={() => router.push(href)}
       className={cn(
         'group flex flex-col items-center justify-center gap-2',
-        'rounded-2xl border-2 border-dashed border-navy-600',
-        'hover:border-blue-500/50 hover:bg-navy-800/50',
+        'rounded-2xl border-2 border-dashed border-border',
+        'hover:border-blue-500/50 hover:bg-muted/50',
         'cursor-pointer transition-all duration-200',
         'aspect-[4/3] w-full',
         className,
       )}
     >
-      <div className="rounded-full bg-navy-800 group-hover:bg-blue-500/10 p-3 transition-colors duration-200">
+      <div className="rounded-full bg-muted group-hover:bg-blue-500/10 p-3 transition-colors duration-200">
         <Plus
           size={20}
           className="text-[--text-muted] group-hover:text-blue-400 transition-colors duration-200"

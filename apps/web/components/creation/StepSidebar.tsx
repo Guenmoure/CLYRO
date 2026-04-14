@@ -40,7 +40,7 @@ function StepIndicator({ index, status }: { index: number; status: 'done' | 'act
     )
   }
   return (
-    <span className="w-6 h-6 rounded-full bg-navy-800 border border-navy-600 flex items-center justify-center shrink-0">
+    <span className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
       <span className="font-mono text-xs text-[--text-muted]">{index + 1}</span>
     </span>
   )
@@ -69,7 +69,7 @@ function DesktopSidebar({
     : 'Non sauvegardé'
 
   return (
-    <aside className="hidden md:flex w-64 bg-navy-900 border-r border-navy-700/50 flex-col h-full py-6 px-4 shrink-0">
+    <aside className="hidden md:flex w-64 bg-card border-r border-border/50 flex-col h-full py-6 px-4 shrink-0">
 
       {/* Project name */}
       <div>
@@ -80,7 +80,7 @@ function DesktopSidebar({
             onChange={e => onProjectNameChange(e.target.value)}
             onBlur={stopEdit}
             onKeyDown={e => e.key === 'Enter' && stopEdit()}
-            className="w-full bg-navy-800 border border-blue-500 rounded-lg px-2 py-1 font-display text-sm text-foreground focus:outline-none"
+            className="w-full bg-muted border border-blue-500 rounded-lg px-2 py-1 font-display text-sm text-foreground focus:outline-none"
             autoFocus
           />
         ) : (
@@ -110,8 +110,8 @@ function DesktopSidebar({
                 disabled={!canClick}
                 className={cn(
                   'group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150',
-                  status === 'active' && 'bg-navy-800',
-                  canClick && status !== 'active' && 'hover:bg-navy-800/50 cursor-pointer',
+                  status === 'active' && 'bg-muted',
+                  canClick && status !== 'active' && 'hover:bg-muted/50 cursor-pointer',
                   !canClick && 'cursor-default',
                 )}
               >
@@ -130,7 +130,7 @@ function DesktopSidebar({
               {i < steps.length - 1 && (
                 <div className={cn(
                   'w-px h-4 ml-[22px] my-0',
-                  i < currentStep ? 'bg-success/40' : 'bg-navy-700',
+                  i < currentStep ? 'bg-success/40' : 'bg-border',
                 )} />
               )}
             </div>
@@ -157,7 +157,7 @@ function DesktopSidebar({
 
 function MobileStepper({ steps, currentStep, onStepClick }: Pick<StepSidebarProps, 'steps' | 'currentStep' | 'onStepClick'>) {
   return (
-    <div className="md:hidden flex items-center overflow-x-auto py-3 px-4 bg-navy-900 border-b border-navy-700/50 gap-2 no-scrollbar">
+    <div className="md:hidden flex items-center overflow-x-auto py-3 px-4 bg-card border-b border-border/50 gap-2 no-scrollbar">
       {steps.map((step, i) => {
         const status: 'done' | 'active' | 'upcoming' =
           i < currentStep ? 'done' : i === currentStep ? 'active' : 'upcoming'
@@ -174,7 +174,7 @@ function MobileStepper({ steps, currentStep, onStepClick }: Pick<StepSidebarProp
               )}
             </button>
             {i < steps.length - 1 && (
-              <div className={cn('h-px w-4', i < currentStep ? 'bg-success/40' : 'bg-navy-700')} />
+              <div className={cn('h-px w-4', i < currentStep ? 'bg-success/40' : 'bg-border')} />
             )}
           </div>
         )

@@ -34,7 +34,7 @@ export default async function DashboardPage() {
     console.error('[DashboardPage] Missing Supabase env vars')
     return (
       <div className="px-4 sm:px-6 py-16 max-w-2xl mx-auto">
-        <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6">
+        <div className="bg-muted border border-border rounded-2xl p-6">
           <p className="font-display text-sm text-foreground mb-1">Configuration manquante</p>
           <p className="font-body text-xs text-[--text-muted]">
             Les variables d&apos;environnement Supabase ne sont pas configurées.

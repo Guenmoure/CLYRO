@@ -55,7 +55,7 @@ function GenerationOverlay({
       {hasProgress && (
         <div className="w-full max-w-xs">
           {/* Track */}
-          <div className="h-0.5 w-full rounded-full bg-navy-700 overflow-hidden">
+          <div className="h-0.5 w-full rounded-full bg-border overflow-hidden">
             {/* Fill */}
             <div
               className="h-full rounded-full bg-grad-primary transition-all duration-300 ease-out"

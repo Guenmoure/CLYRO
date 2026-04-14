@@ -132,7 +132,7 @@ function StatusBadge({ status }: { status: string }) {
     visuals:    'bg-blue-500/10 text-blue-400',
     audio:      'bg-blue-500/10 text-blue-400',
     assembly:   'bg-blue-500/10 text-blue-400',
-    pending:    'bg-navy-900 text-[--text-muted]',
+    pending:    'bg-card text-[--text-muted]',
     error:      'bg-error/10 text-error',
   }
   const label: Record<string, string> = {
@@ -186,7 +186,7 @@ function StoryboardPanel({ scenes, onScenesChange }: {
         {scenes.map((scene, idx) => (
           <div
             key={scene.id}
-            className="bg-navy-900 border border-navy-700 rounded-xl p-3 flex flex-col gap-2"
+            className="bg-card border border-border rounded-xl p-3 flex flex-col gap-2"
           >
             {/* Header row */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -224,7 +224,7 @@ function StoryboardPanel({ scenes, onScenesChange }: {
                 value={scene.scene_type ?? ''}
                 onChange={(e) => handleTypeChange(idx, e.target.value as SceneType)}
                 aria-label={`Type de scène ${idx + 1}`}
-                className="flex-1 bg-navy-800 border border-navy-700 rounded-lg px-2 py-1 text-foreground font-body text-xs focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                className="flex-1 bg-muted border border-border rounded-lg px-2 py-1 text-foreground font-body text-xs focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
               >
                 <option value="">— Choisir —</option>
                 {SCENE_TYPE_OPTIONS.map((opt) => (
@@ -305,7 +305,7 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
                 <div className={cn('w-5 h-5 rounded-full border text-xs font-mono flex items-center justify-center transition-all',
                   done   ? 'bg-purple-500 border-purple-500 text-white'
                   : active ? 'border-purple-500 text-purple-500'
-                  : 'border-navy-700 text-[--text-muted]'
+                  : 'border-border text-[--text-muted]'
                 )}>
                   {done ? '✓' : '·'}
                 </div>
@@ -357,7 +357,7 @@ function DoneView({ session, onNew }: { session: VideoSession; onNew: () => void
         {session.output_url ? (
           <VideoPlayer url={session.output_url} title={session.title ?? undefined} />
         ) : (
-          <div className="flex items-center justify-center h-40 rounded-2xl bg-navy-900 border border-navy-700 text-[--text-muted] text-sm">
+          <div className="flex items-center justify-center h-40 rounded-2xl bg-card border border-border text-[--text-muted] text-sm">
             Vidéo non disponible
           </div>
         )}
@@ -438,7 +438,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
     <div className="flex flex-col h-full overflow-y-auto">
 
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 border-b border-navy-700">
+      <div className="px-8 pt-8 pb-6 border-b border-border">
         <h1 className="font-display text-2xl font-bold text-foreground">Nouvelle publicité Motion</h1>
         <p className="text-[--text-muted] text-sm mt-1">Brief créatif → visuels animés → voix off → rendu final.</p>
       </div>
@@ -459,7 +459,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 onClick={() => setStyle(s.id)}
                 className={cn(
                   'relative overflow-hidden rounded-xl border-2 transition-all text-left',
-                  style === s.id ? 'border-purple-500 ring-2 ring-purple-500/20' : 'border-transparent hover:border-navy-700'
+                  style === s.id ? 'border-purple-500 ring-2 ring-purple-500/20' : 'border-transparent hover:border-border'
                 )}
               >
                 {/* Gradient preview */}
@@ -490,7 +490,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 <button key={f.id} type="button" onClick={() => setFormat(f.id)}
                   title={f.desc}
                   className={cn('flex-1 py-2.5 rounded-xl border text-xs font-display font-semibold transition-all',
-                    format === f.id ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40'
+                    format === f.id ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-card border-border text-[--text-muted] hover:border-blue-500/40'
                   )}>
                   {f.label}
                   <p className="font-body font-normal text-[10px] mt-0.5 opacity-70">{f.desc}</p>
@@ -504,7 +504,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
               {DURATIONS.map((d) => (
                 <button key={d.id} type="button" onClick={() => setDuration(d.id)}
                   className={cn('flex-1 py-2.5 rounded-xl border text-xs font-display font-semibold transition-all',
-                    duration === d.id ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40'
+                    duration === d.id ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-card border-border text-[--text-muted] hover:border-blue-500/40'
                   )}>
                   {d.label}
                 </button>
@@ -515,7 +515,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
             <label htmlFor="voice-select" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Voix off</label>
             <select id="voice-select" value={voiceId} onChange={(e) => setVoiceId(e.target.value)}
               aria-label="Sélectionner une voix off"
-              className="w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-foreground font-body text-sm focus:outline-none focus:border-blue-500 appearance-none">
+              className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm focus:outline-none focus:border-blue-500 appearance-none">
               <option value="">Aucune voix</option>
               {voices.map((v) => <option key={v.id} value={v.id}>{v.name}{v.gender ? ` · ${v.gender}` : ''}</option>)}
             </select>
@@ -534,7 +534,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
               onClick={() => setMusicTrackId('')}
               className={cn(
                 'px-3 py-2 rounded-xl border text-xs font-body transition-all',
-                musicTrackId === '' ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-navy-900 border-navy-700 text-[--text-muted] hover:border-blue-500/40'
+                musicTrackId === '' ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-card border-border text-[--text-muted] hover:border-blue-500/40'
               )}
             >
               Aucune
@@ -546,7 +546,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 onClick={() => setMusicTrackId(t.id)}
                 className={cn(
                   'px-3 py-2 rounded-xl border text-left transition-all',
-                  musicTrackId === t.id ? 'bg-blue-500/10 border-blue-500' : 'bg-navy-900 border-navy-700 hover:border-blue-500/40'
+                  musicTrackId === t.id ? 'bg-blue-500/10 border-blue-500' : 'bg-card border-border hover:border-blue-500/40'
                 )}
               >
                 <p className={cn('text-xs font-display font-semibold', musicTrackId === t.id ? 'text-blue-500' : 'text-foreground')}>{t.label}</p>
@@ -563,7 +563,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
             {/* Couleur principale */}
             <div>
               <label htmlFor="brand-color" className="font-mono text-[11px] text-[--text-muted] mb-1.5 block">Couleur principale</label>
-              <div className="flex items-center gap-2 bg-navy-900 border border-navy-700 rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">
                 <input id="brand-color" type="color" value={color} onChange={(e) => setColor(e.target.value)}
                   title="Couleur principale de la marque"
                   aria-label="Couleur principale de la marque"
@@ -576,7 +576,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
               <label className="font-mono text-[11px] text-[--text-muted] mb-1.5 block">Logo (optionnel)</label>
               <div className="flex items-center gap-2">
                 {logoUrl ? (
-                  <div className="relative w-10 h-10 rounded-xl border border-navy-700 bg-navy-900 overflow-hidden flex items-center justify-center shrink-0">
+                  <div className="relative w-10 h-10 rounded-xl border border-border bg-card overflow-hidden flex items-center justify-center shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain p-1" />
                     <button
@@ -589,7 +589,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                     </button>
                   </div>
                 ) : (
-                  <div className="w-10 h-10 rounded-xl border-2 border-dashed border-navy-700 bg-navy-900 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl border-2 border-dashed border-border bg-card flex items-center justify-center shrink-0">
                     <ImageIcon size={14} className="text-[--text-muted]" />
                   </div>
                 )}
@@ -605,7 +605,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                   type="button"
                   onClick={() => logoFileRef.current?.click()}
                   disabled={logoUploading}
-                  className="flex items-center gap-1.5 bg-navy-900 border border-navy-700 rounded-xl px-3 py-2 text-xs text-[--text-muted] hover:text-foreground hover:border-blue-500 transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-xs text-[--text-muted] hover:text-foreground hover:border-blue-500 transition-colors disabled:opacity-40"
                 >
                   {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
                   {logoUploading ? 'Import…' : logoUrl ? 'Changer' : 'Importer'}
@@ -621,11 +621,11 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
             <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Titre de la publicité</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="ex: Lancement produit — Janvier 2026" maxLength={200}
-              className="w-full bg-navy-900 border border-navy-700 rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500" />
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500" />
           </div>
           <div>
             <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Brief créatif</label>
-            <div className="relative border border-navy-700 rounded-2xl bg-navy-900 focus-within:border-blue-500 transition-colors">
+            <div className="relative border border-border rounded-2xl bg-card focus-within:border-blue-500 transition-colors">
               <textarea value={brief} onChange={(e) => setBrief(e.target.value)}
                 placeholder="Produit, message clé, public cible, ton, call-to-action…&#10;&#10;ex : Application SaaS de gestion de projet pour PME. Message : gagnez 2h par jour. CTA : Essayez gratuitement." maxLength={2000} rows={5}
                 className="w-full bg-transparent px-4 pt-4 pb-14 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none rounded-2xl" />
@@ -692,13 +692,13 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* Sidebar */}
-      <aside className="w-64 bg-navy-800 border-r border-navy-700 flex flex-col shrink-0">
-        <div className="p-4 border-b border-navy-700">
+      <aside className="w-64 bg-muted border-r border-border flex flex-col shrink-0">
+        <div className="p-4 border-b border-border">
           <h2 className="font-display text-sm font-semibold text-foreground">Motion Design</h2>
         </div>
-        <div className="p-3 border-b border-navy-700">
+        <div className="p-3 border-b border-border">
           <button type="button" onClick={handleReset}
-            className="flex items-center gap-2 w-full bg-navy-900 border border-navy-700 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-purple-500/40 hover:bg-purple-50 transition-all">
+            className="flex items-center gap-2 w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-purple-500/40 hover:bg-purple-50 transition-all">
             <Plus size={16} className="text-purple-500" />
             Nouvelle vidéo
           </button>
@@ -706,7 +706,7 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-              <Wand2 size={28} className="text-navy-700 mb-2" />
+              <Wand2 size={28} className="text-[--text-muted] mb-2" />
               <p className="text-[--text-muted] font-body text-xs">Aucune session. Créez votre première publicité !</p>
             </div>
           ) : (
@@ -719,7 +719,7 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
                     type="button"
                     onClick={() => handleSessionClick(s)}
                     className={cn('w-full text-left px-3 py-2.5 rounded-xl transition-all',
-                      isCurrent ? 'bg-purple-50' : 'hover:bg-navy-900'
+                      isCurrent ? 'bg-purple-50' : 'hover:bg-card'
                     )}>
                     <div className="flex items-center gap-1.5">
                       {inProgress && <Loader2 size={10} className="shrink-0 text-purple-500 animate-spin" />}
