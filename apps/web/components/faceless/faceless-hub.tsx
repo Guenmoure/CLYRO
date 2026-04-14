@@ -13,6 +13,8 @@ import { ProgressBar } from '@/components/ui/progress-bar'
 import { startFacelessGeneration, getPublicVoices, updateVideoMetadata, regenerateFacelessScene, regenerateFacelessClip, reassembleFacelessVideo } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import type { FacelessStyle, VideoFormat, VideoDuration } from '@clyro/shared'
+import { ContentTemplateGallery } from './ContentTemplateGallery'
+import { buildTemplateDescription, type ContentTemplate } from '@/lib/faceless-content-templates'
 
 // ── Template catalogue ─────────────────────────────────────────────────────────
 
@@ -214,6 +216,7 @@ interface ProjectState {
   finalVideoUrl?: string
   masterSeed?: number    // deterministic seed for visual consistency across scenes
   styleReference?: string // URL of first HD image for style consistency injection
+  contentTemplateId?: string  // selected channel-style template (e.g. tmpl_easyway_actually)
 }
 
 // ── Mock helpers ───────────────────────────────────────────────────────────────
@@ -725,8 +728,27 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
         </div>
       </div>
 
-      {/* Template gallery */}
+      {/* Visual style gallery (cinematique, animation 2D, etc.) */}
       <TemplateGallery selected={project.style} onSelect={(s) => onChange({ style: s })} />
+
+      {/* Content templates — channel-style frameworks (EasyWay, Aura Vasta…) */}
+      <ContentTemplateGallery
+        selectedTemplateId={project.contentTemplateId ?? null}
+        onSelect={(template: ContentTemplate) => {
+          onChange({
+            contentTemplateId: template.id,
+            description: buildTemplateDescription(template),
+            style: template.fal_style as FacelessStyle,
+            // Pre-fill title only if user hasn't typed one yet
+            title: project.title.trim() ? project.title : template.name,
+          })
+          // Smooth scroll back to the top so the user sees the auto-filled fields
+          if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }
+          toast.success(`Template "${template.name}" appliqué — édite la description et écris ton script`)
+        }}
+      />
     </div>
   )
 }
