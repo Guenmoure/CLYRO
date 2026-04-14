@@ -3,24 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import {
-  LayoutGrid, Video, Sparkles, Palette, History, Mic,
-  Settings, HelpCircle, LogOut, Zap,
-} from 'lucide-react'
+import { Settings, HelpCircle, LogOut, Zap } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 
-// ── Nav items (mirror of the previous Sidebar) ────────────────────────────────
-
-const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard',       icon: LayoutGrid, exact: true },
-  { href: '/faceless',  label: 'Faceless Videos', icon: Video },
-  { href: '/motion',    label: 'Motion Design',   icon: Sparkles },
-  { href: '/brand',     label: 'Brand Kit',       icon: Palette },
-  { href: '/projects',  label: 'Historique',      icon: History },
-  { href: '/voices',    label: 'Mes voix',        icon: Mic },
-] as const
+// ── Account items (workspace nav is in the RightSidebar) ──────────────────────
 
 const ACCOUNT_ITEMS = [
   { href: '/settings', label: 'Paramètres', icon: Settings },
@@ -123,26 +111,9 @@ export function FloatingUserCard() {
             </div>
           </div>
 
-          {/* Workspace nav */}
+          {/* Account nav (workspace nav lives in the right sidebar) */}
           <div className="p-2">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] px-2 py-1.5">
-              Workspace
-            </p>
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.href}
-                href={item.href}
-                label={item.label}
-                icon={item.icon}
-                active={pathname === item.href || (!('exact' in item && item.exact) && pathname.startsWith(item.href + '/'))}
-                onClick={() => setOpen(false)}
-              />
-            ))}
-          </div>
-
-          {/* Account nav */}
-          <div className="p-2 border-t border-border/50">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] px-2 py-1.5">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] px-2 py-1.5">
               Compte
             </p>
             {ACCOUNT_ITEMS.map((item) => (
@@ -184,7 +155,7 @@ export function FloatingUserCard() {
         </div>
         <div className="text-left min-w-0">
           <p className="font-display text-xs text-foreground truncate max-w-[140px]">{name || 'Compte'}</p>
-          <p className="font-mono text-[10px] text-[--text-muted] uppercase tracking-wider">
+          <p className="font-mono text-[11px] text-[--text-muted] uppercase tracking-wider">
             {planLabel}
           </p>
         </div>
