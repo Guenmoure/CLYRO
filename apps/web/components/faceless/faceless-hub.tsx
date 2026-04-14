@@ -728,9 +728,6 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
         </div>
       </div>
 
-      {/* Visual style gallery (cinematique, animation 2D, etc.) */}
-      <TemplateGallery selected={project.style} onSelect={(s) => onChange({ style: s })} />
-
       {/* Content templates — channel-style frameworks (EasyWay, Aura Vasta…) */}
       <ContentTemplateGallery
         selectedTemplateId={project.contentTemplateId ?? null}
