@@ -7,8 +7,7 @@ import {
 import type { Database } from '@/lib/database.types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { ProjectSections } from './ProjectSections'
+import ProjectSectionsClient from './ProjectSectionsClient'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Dashboard — CLYRO' }
@@ -184,9 +183,9 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      {/* ── Project sections (client component for realtime) ────────── */}
+      {/* ── Project sections (client-only, no SSR) ────────── */}
       {!fetchErr && user && (
-        <ProjectSections
+        <ProjectSectionsClient
           userId={user.id}
           videos={(videos ?? []) as VideoRow[]}
           modules={MODULES as unknown as typeof MODULES}
