@@ -95,7 +95,7 @@ function NavItem({
     <>
       <Icon
         size={18}
-        className={cn('shrink-0', isActive ? 'text-blue-400' : 'text-[--text-muted] group-hover:text-[--text-secondary]')}
+        className={cn('shrink-0', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-[--text-muted] group-hover:text-[--text-secondary]')}
       />
       {!collapsed && (
         <span className="font-body text-sm truncate">{label}</span>

@@ -340,10 +340,10 @@
 @layer base {
   /* ── LIGHT MODE (défaut — .dark absent) ─────────────────────── */
   :root {
-    /* Surfaces */
+    /* Surfaces — hiérarchie visible : background > card > muted > border */
     --background:             #FFFFFF;
     --foreground:             #0F1427;
-    --card:                   #F8FAFF;
+    --card:                   #F0F4FF;   /* +distinguishable from white */
     --card-foreground:        #0F1427;
     --popover:                #FFFFFF;
     --popover-foreground:     #0F1427;
@@ -353,8 +353,8 @@
     --primary-foreground:     #FFFFFF;
     --secondary:              #9B5CF6;
     --secondary-foreground:   #FFFFFF;
-    --muted:                  #EEF2FF;
-    --muted-foreground:       #64748B;
+    --muted:                  #E2E9FF;   /* visible medium layer */
+    --muted-foreground:       #475569;
     --accent:                 #38E8FF;
     --accent-foreground:      #0F1427;
 
@@ -363,16 +363,16 @@
     --destructive-foreground: #FFFFFF;
 
     /* Structurel */
-    --border:                 #E2E8F0;
-    --input:                  #F8FAFF;
+    --border:                 #B8C8E0;   /* darker — visible as bg-border */
+    --input:                  #F0F4FF;
     --ring:                   #3B8EF0;
     --radius:                 0.75rem;
 
-    /* Textes */
-    --text-primary:           #0F1427;
-    --text-secondary:         #475569;
-    --text-muted:             #94A3B8;
-    --text-disabled:          #CBD5E1;
+    /* Textes — contraste WCAG AA garanti sur fond blanc */
+    --text-primary:           #0F1427;   /* 18:1 ✓ */
+    --text-secondary:         #374151;   /* 10.7:1 ✓ */
+    --text-muted:             #64748B;   /* 5.7:1 ✓  (était #94A3B8 = 2.8:1 ✗) */
+    --text-disabled:          #94A3B8;   /* 2.8:1 — disabled only */
   }
 
   /* ── DARK MODE — darkMode: 'class' de Tailwind (.dark sur <html>) ── */
@@ -535,5 +535,5 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: var(--text-muted);
 }

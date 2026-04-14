@@ -160,7 +160,7 @@ export function NotificationPanel() {
             <button
               type="button"
               onClick={markAllRead}
-              className="text-[11px] text-purple-400 hover:text-purple-300 font-medium transition-colors"
+              className="text-[11px] text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium transition-colors"
             >
               Tout marquer lu
             </button>
@@ -175,7 +175,7 @@ export function NotificationPanel() {
                 onClick={() => setTab(t.key)}
                 className={`text-xs font-medium py-2.5 mr-5 border-b-2 transition-colors ${
                   tab === t.key
-                    ? 'border-purple-500 text-purple-400'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                     : 'border-transparent text-[--text-muted] hover:text-[--text-secondary]'
                 }`}
               >
@@ -218,7 +218,7 @@ export function NotificationPanel() {
                       {n.cta && (
                         <a
                           href={n.cta.href}
-                          className="inline-block mt-2 text-[11px] font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                          className="inline-block mt-2 text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
                         >
                           {n.cta.label} →
                         </a>
@@ -243,7 +243,7 @@ export function NotificationPanel() {
           <div className="px-4 py-3 border-t border-border text-center">
             <a
               href="/settings"
-              className="text-[11px] text-[--text-muted] hover:text-purple-400 transition-colors font-medium"
+              className="text-[11px] text-[--text-muted] hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
             >
               Gérer les préférences de notification
             </a>

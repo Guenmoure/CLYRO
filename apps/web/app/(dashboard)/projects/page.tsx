@@ -90,9 +90,9 @@ export default function ProjectsPage() {
             <p className="text-sm font-semibold text-foreground mb-1">Aucune vidéo générée</p>
             <p className="text-xs text-[--text-muted]">
               Crée ta première vidéo depuis{' '}
-              <a href="/faceless" className="text-purple-400 hover:underline font-medium">Faceless</a>
+              <a href="/faceless" className="text-purple-600 dark:text-purple-400 hover:underline font-medium">Faceless</a>
               {' '}ou{' '}
-              <a href="/motion" className="text-purple-400 hover:underline font-medium">Motion</a>.
+              <a href="/motion" className="text-purple-600 dark:text-purple-400 hover:underline font-medium">Motion</a>.
             </p>
           </div>
         ) : (
@@ -109,7 +109,7 @@ export default function ProjectsPage() {
                   type="button"
                   onClick={() => setPage((p) => p - 1)}
                   disabled={page === 0}
-                  className="text-xs font-medium text-purple-400 disabled:text-[--text-muted] disabled:cursor-not-allowed hover:text-purple-300 transition-colors"
+                  className="text-xs font-medium text-purple-600 dark:text-purple-400 disabled:text-[--text-muted] disabled:cursor-not-allowed hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
                 >
                   ← Précédent
                 </button>
@@ -118,7 +118,7 @@ export default function ProjectsPage() {
                   type="button"
                   onClick={() => setPage((p) => p + 1)}
                   disabled={!hasMore}
-                  className="text-xs font-medium text-purple-400 disabled:text-[--text-muted] disabled:cursor-not-allowed hover:text-purple-300 transition-colors"
+                  className="text-xs font-medium text-purple-600 dark:text-purple-400 disabled:text-[--text-muted] disabled:cursor-not-allowed hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
                 >
                   Suivant →
                 </button>
