@@ -324,7 +324,7 @@ const PIPELINE_STEPS: Array<{ id: PipelineStep; label: string }> = [
 function StepIndicator({ current, savedState }: { current: PipelineStep; savedState?: 'saving' | 'saved' | null }) {
   const currentIdx = PIPELINE_STEPS.findIndex((s) => s.id === current)
   return (
-    <div className="flex items-center gap-1 px-6 py-3 border-b border-border bg-muted shrink-0">
+    <div className="glass glass-border-b flex items-center gap-1 px-6 py-3 shrink-0 sticky top-0 z-10 rounded-b-2xl">
       {PIPELINE_STEPS.map((step, i) => {
         const done   = i < currentIdx
         const active = i === currentIdx
@@ -549,13 +549,17 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      <div className="flex flex-col items-center justify-center flex-1 px-6 py-8 min-h-[480px]">
-        <div className="w-full max-w-2xl space-y-5">
+      <div className="flex flex-col items-center justify-start flex-1 px-6 pt-12 pb-8 min-h-[480px]">
+        <div className="w-full max-w-2xl space-y-6">
 
           {/* Headline */}
-          <div className="text-center">
-            <h1 className="font-display text-2xl font-bold text-foreground mb-1">Crée ta vidéo Faceless</h1>
-            <p className="font-body text-sm text-[--text-muted]">Décris le contenu, colle ton script, choisis ton style — l'IA fait le reste scène par scène.</p>
+          <div className="text-center space-y-2">
+            <h1 className="font-display text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
+              Crée ta vidéo Faceless
+            </h1>
+            <p className="font-body text-sm md:text-base text-[--text-secondary] max-w-xl mx-auto">
+              Décris le contenu, colle ton script, choisis ton style — l&apos;IA fait le reste scène par scène.
+            </p>
           </div>
 
           {/* Description */}
@@ -2391,15 +2395,15 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside className="w-52 bg-muted border-r border-border flex flex-col shrink-0">
-        <div className="p-4 border-b border-border flex items-center justify-between">
+      <aside className="glass glass-border-r w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
+        <div className="p-4 glass-border-b flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold text-foreground">Faceless Video</h2>
           <Wand2 size={14} className="text-[--text-muted]" />
         </div>
 
-        <div className="p-3 border-b border-border">
+        <div className="p-3 glass-border-b">
           <button type="button" onClick={() => setViewId(null)}
-            className="flex items-center gap-2 w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-blue-500/40 hover:bg-blue-50 transition-all">
+            className="flex items-center gap-2 w-full bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-blue-500/10 hover:border-blue-500/40 transition-all">
             <Plus size={15} className="text-blue-500" />
             Nouvelle vidéo
           </button>
@@ -2417,7 +2421,7 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
                 <button key={s.id} type="button" onClick={() => setViewId(s.id)}
                   title={s.title ?? 'Sans titre'}
                   className={cn('w-full text-left px-3 py-2.5 rounded-xl transition-all',
-                    viewId === s.id ? 'bg-blue-50' : 'hover:bg-card')}>
+                    viewId === s.id ? 'bg-blue-500/15 border border-blue-500/30' : 'hover:bg-white/40 dark:hover:bg-white/5')}>
                   <p className="font-body text-xs text-foreground truncate">{s.title ?? 'Sans titre'}</p>
                   <span className="font-mono text-[9px] text-[--text-muted]">
                     {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
