@@ -2,14 +2,14 @@
 
 import { useCallback, useState } from 'react'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, Video, Sparkles, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ProjectCard, type VideoProject } from '@/components/dashboard/ProjectCard'
 import { NewProjectCard } from '@/components/dashboard/NewProjectCard'
 import { RealtimeProjects } from '@/components/dashboard/RealtimeProjects'
 import { cn } from '@/lib/utils'
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// ── Module config (client-side only — icons are functions, not serialisable) ───
 
 interface ModuleConfig {
   key:       'faceless' | 'motion' | 'brand'
@@ -21,10 +21,39 @@ interface ModuleConfig {
   newHref:   string
 }
 
+const MODULES: readonly ModuleConfig[] = [
+  {
+    key:       'faceless',
+    label:     'Faceless Videos',
+    icon:      Video,
+    iconColor: 'text-blue-400',
+    iconBg:    'bg-blue-500/10',
+    href:      '/faceless',
+    newHref:   '/faceless/new',
+  },
+  {
+    key:       'motion',
+    label:     'Motion Design',
+    icon:      Sparkles,
+    iconColor: 'text-purple-400',
+    iconBg:    'bg-purple-500/10',
+    href:      '/motion',
+    newHref:   '/motion/new',
+  },
+  {
+    key:       'brand',
+    label:     'Brand Kit',
+    icon:      Palette,
+    iconColor: 'text-cyan-400',
+    iconBg:    'bg-cyan-400/10',
+    href:      '/brand',
+    newHref:   '/brand',
+  },
+] as const
+
 interface ProjectSectionsProps {
   userId: string
   videos: VideoProject[]
-  modules: readonly ModuleConfig[]
 }
 
 // ── Section ────────────────────────────────────────────────────────────────────
@@ -111,7 +140,7 @@ function EmptyState({ config }: { config: ModuleConfig }) {
 
 // ── ProjectSections ────────────────────────────────────────────────────────────
 
-export function ProjectSections({ userId, videos, modules }: ProjectSectionsProps) {
+export function ProjectSections({ userId, videos }: ProjectSectionsProps) {
   const [projects, setProjects] = useState<VideoProject[]>(videos)
 
   const handleUpdate = useCallback((id: string, patch: Partial<VideoProject>) => {
@@ -126,7 +155,7 @@ export function ProjectSections({ userId, videos, modules }: ProjectSectionsProp
     <>
       <RealtimeProjects userId={userId} onUpdate={handleUpdate} />
 
-      {modules.map((mod) => {
+      {MODULES.map((mod) => {
         const modProjects = projects.filter(p => p.module === mod.key)
         return (
           <ModuleSection

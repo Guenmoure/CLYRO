@@ -2,7 +2,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import {
-  Plus, Zap, ArrowRight, Video, Sparkles, Palette, AlertCircle, RefreshCw,
+  Plus, Zap, ArrowRight, AlertCircle, RefreshCw,
 } from 'lucide-react'
 import type { Database } from '@/lib/database.types'
 import { Button } from '@/components/ui/button'
@@ -21,38 +21,6 @@ interface Profile {
   plan: string
   credits: number
 }
-
-// ── Module config ──────────────────────────────────────────────────────────────
-
-const MODULES = [
-  {
-    key:       'faceless',
-    label:     'Faceless Videos',
-    icon:      Video,
-    iconColor: 'text-blue-400',
-    iconBg:    'bg-blue-500/10',
-    href:      '/faceless',
-    newHref:   '/faceless/new',
-  },
-  {
-    key:       'motion',
-    label:     'Motion Design',
-    icon:      Sparkles,
-    iconColor: 'text-purple-400',
-    iconBg:    'bg-purple-500/10',
-    href:      '/motion',
-    newHref:   '/motion/new',
-  },
-  {
-    key:       'brand',
-    label:     'Brand Kit',
-    icon:      Palette,
-    iconColor: 'text-cyan-400',
-    iconBg:    'bg-cyan-400/10',
-    href:      '/brand',
-    newHref:   '/brand',
-  },
-] as const
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
@@ -208,7 +176,6 @@ export default async function DashboardPage() {
         <ProjectSectionsClient
           userId={userId}
           videos={videos ?? []}
-          modules={MODULES as unknown as typeof MODULES}
         />
       )}
     </div>
