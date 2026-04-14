@@ -327,7 +327,7 @@ const PIPELINE_STEPS: Array<{ id: PipelineStep; label: string }> = [
 function StepIndicator({ current, savedState }: { current: PipelineStep; savedState?: 'saving' | 'saved' | null }) {
   const currentIdx = PIPELINE_STEPS.findIndex((s) => s.id === current)
   return (
-    <div className="glass glass-border-b flex items-center gap-1 px-6 py-3 shrink-0 sticky top-0 z-10 rounded-b-2xl">
+    <div className="glass glass-border-b flex items-center gap-1 px-6 py-3 shrink-0 z-10 rounded-b-2xl">
       {PIPELINE_STEPS.map((step, i) => {
         const done   = i < currentIdx
         const active = i === currentIdx
@@ -552,7 +552,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      <div className="flex flex-col items-center justify-start flex-1 px-6 pt-12 pb-8 min-h-[480px]">
+      <div className="flex flex-col items-center justify-start px-6 pt-12 pb-8">
         <div className="w-full max-w-2xl space-y-6">
 
           {/* Headline */}
@@ -2292,10 +2292,10 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full">
       <StepIndicator current={project.step} savedState={savedState} />
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
         {project.step === 'setup' && (
           <SetupStep
             project={project}
