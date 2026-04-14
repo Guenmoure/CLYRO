@@ -2,11 +2,13 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import {
-  Plus, Zap, ArrowRight, AlertCircle, RefreshCw,
+  Zap, ArrowRight, AlertCircle, RefreshCw,
 } from 'lucide-react'
 import type { Database } from '@/lib/database.types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { HeroBanner } from '@/components/dashboard/HeroBanner'
+import { FeatureCards } from '@/components/dashboard/FeatureCards'
 import ProjectSectionsClient from './ProjectSectionsClient'
 
 export const dynamic = 'force-dynamic'
@@ -111,22 +113,17 @@ export default async function DashboardPage() {
   console.log('[DashboardPage] Rendering JSX')
 
   return (
-    <div className="px-4 sm:px-6 py-8 max-w-7xl mx-auto space-y-10">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-6xl mx-auto space-y-10">
 
-      {/* ── Welcome header ─────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl text-foreground">
-            Bonjour, {firstName} 👋
-          </h1>
-          <p className="font-body text-sm text-[--text-secondary] mt-1">
-            Voici un aperçu de ton espace CLYRO.
-          </p>
-        </div>
-        <Button variant="primary" size="md" leftIcon={<Plus size={16} />} asChild>
-          <Link href="/faceless/new">Nouveau projet</Link>
-        </Button>
+      {/* ── Greeting (subtle, no big block) ─────────────────────────── */}
+      <div className="flex items-center justify-between">
+        <p className="font-body text-sm text-[--text-secondary]">
+          Bonjour <span className="text-foreground font-medium">{firstName}</span> · prêt à créer ?
+        </p>
       </div>
+
+      {/* ── Hero carousel ──────────────────────────────────────────── */}
+      <HeroBanner />
 
       {/* ── Plan banner — Starter only ─────────────────────────────── */}
       {isStarter && (
@@ -151,6 +148,9 @@ export default async function DashboardPage() {
         </Card>
       )}
 
+      {/* ── Feature cards ──────────────────────────────────────────── */}
+      <FeatureCards />
+
       {/* ── Fetch error banner ─────────────────────────────────────── */}
       {errorMsg && (
         <Card variant="elevated" className="flex items-center gap-4 py-5 px-6">
@@ -171,7 +171,7 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      {/* ── Project sections (client-only, no SSR) ────────── */}
+      {/* ── Recent / Drafts (client-only, no SSR) ────────────────── */}
       {!errorMsg && (
         <ProjectSectionsClient
           userId={userId}
