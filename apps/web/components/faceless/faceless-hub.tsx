@@ -1572,7 +1572,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
 // ── Step 4 — Clips + Voice-over ────────────────────────────────────────────────
 
-function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, onReassembled }: {
+function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, onReassembled, style }: {
   scenes: SceneData[]
   onScenesChange: (scenes: SceneData[] | ((prev: SceneData[]) => SceneData[])) => void
   voiceId: string
@@ -1580,6 +1580,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
   onNext: () => void
   videoId?: string
   onReassembled?: (outputUrl: string) => void
+  style?: string
 }) {
   const [generatingAll,  setGeneratingAll]  = useState(false)
   const [voiceStatus,    setVoiceStatus]    = useState<'idle' | 'generating' | 'done'>('idle')
@@ -1618,16 +1619,22 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             imageUrl: scene.imageUrl,
-            animationPrompt: scene.animationPrompt,
+            animationPrompt: scene.animationPrompt || 'smooth cinematic camera movement, natural motion',
             duration: '5',
+            style,
           }),
         })
-        if (!res.ok) throw new Error('Clip generation failed')
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+          throw new Error(errBody.error ?? `Clip generation failed (HTTP ${res.status})`)
+        }
         const data = await res.json() as { videoUrl: string; model: string }
         updateScene(id, { clipStatus: 'done', clipUrl: data.videoUrl })
       }
-    } catch {
-      toast.error(`Erreur clip scène ${scene.index + 1}`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error(`[generateClip scene=${id}]`, msg, err)
+      toast.error(`Scène ${scene.index + 1} : ${msg}`)
       updateScene(id, { clipStatus: 'error' })
     }
   }
@@ -1726,6 +1733,13 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                       <Play size={11} className="text-white fill-white" />
                     </div>
                   </div>
+                ) : scene.clipStatus === 'error' ? (
+                  <button type="button" aria-label="Réessayer le clip" onClick={() => generateClip(scene.id)}
+                    className="absolute inset-0 flex items-center justify-center bg-red-500/20 hover:bg-red-500/30 transition-colors group">
+                    <div className="w-7 h-7 rounded-full border-2 border-red-300 group-hover:border-red-100 flex items-center justify-center transition-all">
+                      <RefreshCw size={11} className="text-red-200 group-hover:text-white transition-colors" />
+                    </div>
+                  </button>
                 ) : (
                   <button type="button" aria-label="Générer le clip" onClick={() => generateClip(scene.id)}
                     className="absolute inset-0 flex items-center justify-center hover:bg-white/10 transition-colors group">
@@ -1743,8 +1757,12 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                   <span className={cn('font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full',
                     scene.clipStatus === 'done' ? 'bg-emerald-50 text-emerald-600' :
                     scene.clipStatus === 'generating' ? 'bg-blue-50 text-blue-500' :
+                    scene.clipStatus === 'error' ? 'bg-red-50 text-red-600 border border-red-200' :
                     'bg-navy-900 text-[--text-muted] border border-navy-700')}>
-                    {scene.clipStatus === 'done' ? '✓ Prêt' : scene.clipStatus === 'generating' ? 'Génération…' : 'En attente'}
+                    {scene.clipStatus === 'done' ? '✓ Prêt' :
+                      scene.clipStatus === 'generating' ? 'Génération…' :
+                      scene.clipStatus === 'error' ? '✕ Erreur — réessayer' :
+                      'En attente'}
                   </span>
                   {scene.audioDuration && scene.duree_estimee && scene.audioDuration > scene.duree_estimee * 1.2 && (
                     <span className="font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 flex items-center gap-1">
@@ -2285,6 +2303,7 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
             onScenesChange={handleScenesChange}
             voiceId={project.voiceId}
             videoId={project.videoId}
+            style={project.style ?? undefined}
             onBack={() => patch({ step: 'images' })}
             onNext={goToFinal}
             onReassembled={(outputUrl) => {
