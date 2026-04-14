@@ -14,6 +14,7 @@ import { Card }     from '@/components/ui/card'
 import { SpinnerAI } from '@/components/ui/spinner'
 import { MobileMenu }     from '@/components/landing/mobile-menu'
 import { PricingToggle }  from '@/components/landing/pricing-toggle'
+import { ThemeToggle }    from '@/components/ui/theme-toggle'
 
 export const metadata: Metadata = {
   title: 'CLYRO — Génération vidéo par IA en moins de 10 minutes',
@@ -68,7 +69,7 @@ const NAV_LINKS = [
 
 function Header() {
   return (
-    <header className="fixed top-0 w-full z-50 bg-navy-950/80 backdrop-blur-md border-b border-navy-700/40">
+    <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link href="/" className="font-display text-xl font-bold shrink-0">
@@ -91,6 +92,7 @@ function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-2 shrink-0">
+          <ThemeToggle />
           <Link href="/login" className="hidden sm:block">
             <Button variant="ghost" size="sm">Connexion</Button>
           </Link>
@@ -161,7 +163,7 @@ function HeroSection() {
                     <span className="font-body text-sm text-[--text-secondary]">Génération en cours...</span>
                     <span className="font-mono text-xs text-[--text-muted]">Scène 3 / 6</span>
                   </div>
-                  <div className="h-1 bg-navy-700 rounded-full overflow-hidden">
+                  <div className="h-1 bg-border rounded-full overflow-hidden">
                     <div className="h-full w-1/2 bg-grad-primary rounded-full" />
                   </div>
                 </div>
@@ -176,10 +178,10 @@ function HeroSection() {
                 ].map((scene) => (
                   <div
                     key={scene.label}
-                    className="relative aspect-video bg-navy-700 rounded-xl overflow-hidden flex items-center justify-center"
+                    className="relative aspect-video bg-border rounded-xl overflow-hidden flex items-center justify-center"
                   >
                     {scene.done && (
-                      <div className="absolute inset-0 bg-navy-800/60 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-muted/60 flex items-center justify-center">
                         <Play size={20} className="text-foreground/60" />
                       </div>
                     )}
@@ -216,7 +218,7 @@ const STATS = [
 
 function SocialProof() {
   return (
-    <section className="bg-navy-900 border-y border-navy-700/50 py-8">
+    <section className="bg-card border-y border-border/50 py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
           {STATS.map((stat, i) => (
@@ -226,7 +228,7 @@ function SocialProof() {
                 <div className="font-body text-sm text-[--text-muted] mt-0.5">{stat.label}</div>
               </div>
               {i < STATS.length - 1 && (
-                <div className="hidden md:block h-10 w-px bg-navy-600" aria-hidden="true" />
+                <div className="hidden md:block h-10 w-px bg-border" aria-hidden="true" />
               )}
             </div>
           ))}
@@ -264,7 +266,7 @@ const PROBLEMS = [
 
 function ProblemSection() {
   return (
-    <section id="fonctionnalites" className="bg-navy-950 py-24 px-4 sm:px-6">
+    <section id="fonctionnalites" className="bg-background py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeader
           label="Le problème"
@@ -296,7 +298,7 @@ function ModuleMockup({ slots }: { slots: string[] }) {
     <Card variant="glass" padding="md" className="w-full">
       <div className="grid grid-cols-2 gap-2">
         {slots.map((label, i) => (
-          <div key={i} className="aspect-video bg-navy-700 rounded-lg flex items-center justify-center">
+          <div key={i} className="aspect-video bg-border rounded-lg flex items-center justify-center">
             <span className="font-mono text-xs text-[--text-muted]">{label}</span>
           </div>
         ))}
@@ -346,7 +348,7 @@ const MODULES = [
 
 function SolutionSection() {
   return (
-    <section className="bg-navy-900 py-24 px-4 sm:px-6">
+    <section className="bg-card py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeader
           label="La solution CLYRO"
@@ -416,7 +418,7 @@ const STEPS = [
 
 function HowItWorks() {
   return (
-    <section className="bg-navy-950 py-24 px-4 sm:px-6">
+    <section className="bg-background py-24 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
         <SectionHeader
           label="Comment ça marche"
@@ -427,14 +429,14 @@ function HowItWorks() {
         <div className="flex flex-col md:flex-row gap-8 relative">
           {/* Connector line — desktop */}
           <div
-            className="hidden md:block absolute top-12 left-[calc(16.66%+2rem)] right-[calc(16.66%+2rem)] h-px border-t border-dashed border-navy-600"
+            className="hidden md:block absolute top-12 left-[calc(16.66%+2rem)] right-[calc(16.66%+2rem)] h-px border-t border-dashed border-border"
             aria-hidden="true"
           />
 
           {STEPS.map((step) => (
             <div key={step.num} className="flex-1 flex flex-col items-center text-center relative z-10">
               <div className="font-mono text-4xl font-bold gradient-text mb-4">{step.num}</div>
-              <div className="w-14 h-14 flex items-center justify-center bg-navy-800 rounded-2xl text-[--text-secondary] mb-4">
+              <div className="w-14 h-14 flex items-center justify-center bg-muted rounded-2xl text-[--text-secondary] mb-4">
                 {step.icon}
               </div>
               <h3 className="font-display text-lg font-semibold text-foreground mb-2">{step.title}</h3>
@@ -460,7 +462,7 @@ const VIDEO_STYLES = [
 
 function StylesSection() {
   return (
-    <section id="styles" className="bg-navy-900 py-24 px-4 sm:px-6">
+    <section id="styles" className="bg-card py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeader
           label="6 styles disponibles"
@@ -471,9 +473,9 @@ function StylesSection() {
           {VIDEO_STYLES.map((style) => (
             <Card key={style.name} variant="elevated" hoverable className="group cursor-pointer p-0 overflow-hidden">
               {/* Thumbnail placeholder */}
-              <div className="relative aspect-video bg-navy-700 overflow-hidden">
+              <div className="relative aspect-video bg-border overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                     <Play size={16} className="text-[--text-secondary] ml-0.5" />
                   </div>
                 </div>
@@ -496,7 +498,7 @@ function StylesSection() {
 
 function PricingSection() {
   return (
-    <section id="tarifs" className="bg-navy-950 py-24 px-4 sm:px-6">
+    <section id="tarifs" className="bg-background py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeader
           label="Tarifs"
@@ -532,7 +534,7 @@ const FAQS = [
 
 function FaqSection() {
   return (
-    <section id="faq" className="bg-navy-900 py-24 px-4 sm:px-6">
+    <section id="faq" className="bg-card py-24 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto">
         <SectionHeader
           label="Questions fréquentes"
@@ -544,7 +546,7 @@ function FaqSection() {
           {FAQS.map((faq) => (
             <details
               key={faq.q}
-              className="group bg-navy-800 border border-navy-700/50 rounded-xl overflow-hidden"
+              className="group bg-muted border border-border/50 rounded-xl overflow-hidden"
             >
               <summary className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer list-none select-none">
                 <span className="font-display text-sm font-semibold text-foreground">{faq.q}</span>
@@ -568,7 +570,7 @@ function FaqSection() {
 
 function CtaSection() {
   return (
-    <section className="bg-navy-900 py-24 px-4 sm:px-6 relative overflow-hidden">
+    <section className="bg-background py-24 px-4 sm:px-6 relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-grad-glow-blue opacity-60" />
       <div className="pointer-events-none absolute inset-0 bg-grad-glow-purple opacity-40" />
 
@@ -615,7 +617,7 @@ const FOOTER_COLS = [
 
 function Footer() {
   return (
-    <footer className="bg-navy-950 border-t border-navy-700/50 py-12 px-4 sm:px-6">
+    <footer className="bg-card border-t border-border/50 py-12 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           {/* Col 1 — Brand */}
@@ -632,7 +634,7 @@ function Footer() {
                 <a
                   key={i}
                   href="#"
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[--text-muted] hover:text-foreground hover:bg-navy-800 transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
                   aria-label="Réseau social"
                 >
                   <Icon size={16} />
@@ -660,7 +662,7 @@ function Footer() {
           ))}
         </div>
 
-        <div className="border-t border-navy-700/30 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="border-t border-border/30 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="font-mono text-xs text-[--text-muted]">
             © 2026 CLYRO. Tous droits réservés.
           </p>
@@ -677,7 +679,7 @@ function Footer() {
 
 export default function LandingPage() {
   return (
-    <main className="bg-navy-950 text-foreground min-h-screen">
+    <main className="bg-background text-foreground min-h-screen">
       <Header />
       <HeroSection />
       <SocialProof />

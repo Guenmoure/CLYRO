@@ -338,45 +338,44 @@
    ============================================================ */
 
 @layer base {
-  /* CLYRO est dark-first : la class 'dark' est toujours présente sur <html>.
-     Les variables sont définies ici une seule fois pour les deux contextes. */
+  /* ── LIGHT MODE (défaut — .dark absent) ─────────────────────── */
   :root {
     /* Surfaces */
-    --background:             #060810;
-    --foreground:             #F1F5FF;
-    --card:                   #0A0D1A;
-    --card-foreground:        #F1F5FF;
-    --popover:                #0F1427;
-    --popover-foreground:     #F1F5FF;
+    --background:             #FFFFFF;
+    --foreground:             #0F1427;
+    --card:                   #F8FAFF;
+    --card-foreground:        #0F1427;
+    --popover:                #FFFFFF;
+    --popover-foreground:     #0F1427;
 
     /* Accents */
     --primary:                #3B8EF0;
-    --primary-foreground:     #F1F5FF;
+    --primary-foreground:     #FFFFFF;
     --secondary:              #9B5CF6;
-    --secondary-foreground:   #F1F5FF;
-    --muted:                  #0F1427;
-    --muted-foreground:       #94A3B8;
+    --secondary-foreground:   #FFFFFF;
+    --muted:                  #EEF2FF;
+    --muted-foreground:       #64748B;
     --accent:                 #38E8FF;
-    --accent-foreground:      #060810;
+    --accent-foreground:      #0F1427;
 
     /* Sémantiques */
     --destructive:            #EF4444;
-    --destructive-foreground: #F1F5FF;
+    --destructive-foreground: #FFFFFF;
 
     /* Structurel */
-    --border:                 #151C38;
-    --input:                  #0F1427;
+    --border:                 #E2E8F0;
+    --input:                  #F8FAFF;
     --ring:                   #3B8EF0;
     --radius:                 0.75rem;
 
     /* Textes */
-    --text-primary:           #F1F5FF;
-    --text-secondary:         #94A3B8;
-    --text-muted:             #64748B;
-    --text-disabled:          #475569;
+    --text-primary:           #0F1427;
+    --text-secondary:         #475569;
+    --text-muted:             #94A3B8;
+    --text-disabled:          #CBD5E1;
   }
 
-  /* Miroir .dark — darkMode: 'class' de Tailwind requiert ce bloc */
+  /* ── DARK MODE — darkMode: 'class' de Tailwind (.dark sur <html>) ── */
   .dark {
     --background:             #060810;
     --foreground:             #F1F5FF;
@@ -398,6 +397,10 @@
     --input:                  #0F1427;
     --ring:                   #3B8EF0;
     --radius:                 0.75rem;
+    --text-primary:           #F1F5FF;
+    --text-secondary:         #94A3B8;
+    --text-muted:             #64748B;
+    --text-disabled:          #475569;
   }
 }
 
@@ -527,10 +530,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1E2A4A;   /* navy-600 */
+  background: var(--border);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #151C38;   /* navy-700 */
+  background: var(--muted-foreground);
 }

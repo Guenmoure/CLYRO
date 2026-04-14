@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { NotificationPanel } from '@/components/shared/notification-panel'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 // ── Breadcrumb map ─────────────────────────────────────────────────────────────
 
@@ -112,7 +113,7 @@ function UserDropdown() {
       'flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition-colors',
       danger
         ? 'text-error hover:bg-error/10'
-        : 'text-[--text-secondary] hover:bg-navy-700 hover:text-foreground',
+        : 'text-[--text-secondary] hover:bg-muted hover:text-foreground',
     )
     const content = (
       <>
@@ -146,9 +147,9 @@ function UserDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 w-56 bg-navy-800 border border-navy-700/50 rounded-xl shadow-card overflow-hidden z-50">
+        <div className="absolute right-0 top-10 w-56 bg-card border border-border/50 rounded-xl shadow-card overflow-hidden z-50">
           {/* User info */}
-          <div className="px-3 py-3 border-b border-navy-700/50">
+          <div className="px-3 py-3 border-b border-border/50">
             <p className="font-body text-sm text-foreground font-semibold truncate">{name}</p>
             <p className="font-mono text-xs text-[--text-muted] truncate mt-0.5">{email}</p>
           </div>
@@ -159,7 +160,7 @@ function UserDropdown() {
             {menuItem(<Settings size={14} />, 'Paramètres', '/settings')}
           </div>
 
-          <div className="p-1.5 border-t border-navy-700/50">
+          <div className="p-1.5 border-t border-border/50">
             {menuItem(<LogOut size={14} />, 'Déconnexion', undefined, true, handleSignOut)}
           </div>
         </div>
@@ -216,13 +217,13 @@ interface TopBarProps {
 
 export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   return (
-    <header className="h-14 shrink-0 bg-navy-900/80 backdrop-blur-md border-b border-navy-700/50 px-4 sm:px-6 flex items-center justify-between gap-4 z-20">
+    <header className="h-14 shrink-0 bg-card/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 flex items-center justify-between gap-4 z-20">
       {/* Left: hamburger + breadcrumb */}
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onMobileMenuToggle}
-          className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg hover:bg-navy-800 text-[--text-muted] hover:text-foreground transition-colors"
+          className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted text-[--text-muted] hover:text-foreground transition-colors"
           aria-label="Ouvrir le menu"
         >
           <Menu size={18} />
@@ -234,6 +235,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
       <div className="flex items-center gap-2 sm:gap-3">
         <PlanChip />
         <NotificationPanel />
+        <ThemeToggle />
         <UserDropdown />
       </div>
     </header>
