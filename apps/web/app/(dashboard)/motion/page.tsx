@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import type { Database } from '@/lib/database.types'
 import { MotionStudio } from '@/components/motion/motion-studio'
 
+export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Motion Design — CLYRO' }
 
 export default async function MotionPage() {

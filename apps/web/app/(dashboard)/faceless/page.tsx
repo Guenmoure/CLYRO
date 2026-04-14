@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import type { Database } from '@/lib/database.types'
 import { FacelessHub } from '@/components/faceless/faceless-hub'
 
+export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Faceless Video — CLYRO' }
 
 export default async function FacelessPage() {

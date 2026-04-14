@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import type { Database } from '@/lib/database.types'
 import { BrandHub } from '@/components/brand/brand-hub'
 
+export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Brand Kit — CLYRO' }
 
 export default async function BrandPage() {
