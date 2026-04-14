@@ -22,7 +22,7 @@ const IMAGE_SIZE_TO_ASPECT_RATIO: Record<string, string> = {
   'square_hd': '1:1',
   'portrait_16_9': '9:16',
 }
-const TIMEOUT_IMAGE_MS = 120_000  // flux/dev: 20-90s depending on queue load
+const TIMEOUT_IMAGE_MS = 180_000  // flux/dev: 20-90s + queue wait; 3 min for parallel jobs
 const TIMEOUT_VIDEO_MS = 150_000  // kling: up to 120s for Pro quality
 
 // Configuration par style
@@ -259,23 +259,37 @@ export async function generateSceneImages(
 ): Promise<Array<{ sceneId: string; imageUrl: string; promptUsed: string }>> {
   if (scenes.length === 0) return []
 
-  const settled = await Promise.allSettled(
-    scenes.map(async (scene, idx) => {
-      const seed = masterSeed !== undefined ? masterSeed + idx : undefined
-      const { imageUrl: falUrl, promptUsed } = await generateSceneImage(
-        scene.description_visuelle,
-        style,
-        seed,
-        brand
-      )
-      let imageUrl = falUrl
-      if (persist) {
-        const storagePath = `${persist.userId}/${persist.videoId}/scenes/scene-${scene.id}.jpg`
-        imageUrl = await uploadFalUrlToStorage(falUrl, storagePath, 'videos')
-      }
-      return { sceneId: scene.id, imageUrl, promptUsed }
-    })
-  )
+  // Concurrency limit: max 2 simultaneous fal.ai jobs to avoid queue timeouts.
+  // fal.ai accepts all requests but queues them — too many parallel jobs means
+  // later ones wait in queue and hit the TIMEOUT_IMAGE_MS before starting.
+  const CONCURRENCY = 2
+
+  const results: Array<PromiseSettledResult<{ sceneId: string; imageUrl: string; promptUsed: string }>> = []
+
+  for (let i = 0; i < scenes.length; i += CONCURRENCY) {
+    const batch = scenes.slice(i, i + CONCURRENCY)
+    const batchSettled = await Promise.allSettled(
+      batch.map(async (scene, batchIdx) => {
+        const idx = i + batchIdx
+        const seed = masterSeed !== undefined ? masterSeed + idx : undefined
+        const { imageUrl: falUrl, promptUsed } = await generateSceneImage(
+          scene.description_visuelle,
+          style,
+          seed,
+          brand
+        )
+        let imageUrl = falUrl
+        if (persist) {
+          const storagePath = `${persist.userId}/${persist.videoId}/scenes/scene-${scene.id}.jpg`
+          imageUrl = await uploadFalUrlToStorage(falUrl, storagePath, 'videos')
+        }
+        return { sceneId: scene.id, imageUrl, promptUsed }
+      })
+    )
+    results.push(...batchSettled)
+  }
+
+  const settled = results
 
   const failed = settled.filter((r) => r.status === 'rejected')
   if (failed.length > 0) {
