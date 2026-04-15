@@ -43,7 +43,7 @@ const NAV_SECTIONS = [
   {
     label: 'Compte',
     items: [
-      { href: '/settings',           label: 'Paramètres', icon: Settings },
+      // Paramètres retiré — accessible via le menu utilisateur (dropdown bas-gauche).
       { href: 'mailto:support@clyro.app', label: 'Aide', icon: HelpCircle, external: true },
     ],
   },
