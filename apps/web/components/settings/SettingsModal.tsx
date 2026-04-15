@@ -11,7 +11,11 @@ import { AccountSection } from './sections/AccountSection'
 import { PreferencesSection } from './sections/PreferencesSection'
 import { PlanBillingSection } from './sections/PlanBillingSection'
 import { ConnectionsSection } from './sections/ConnectionsSection'
-import { ComingSoonSection } from './sections/ComingSoonSection'
+import { UsageHistorySection } from './sections/UsageHistorySection'
+import { GeneralSection } from './sections/GeneralSection'
+import { PersonalizationSection } from './sections/PersonalizationSection'
+import { SecuritySection } from './sections/SecuritySection'
+import { ApiSection } from './sections/ApiSection'
 
 // ── Sections definition ───────────────────────────────────────────────────────
 
@@ -147,12 +151,12 @@ function SectionContent({ active }: { active: SettingsSectionId }) {
   switch (active) {
     case 'account':         return <AccountSection />
     case 'preferences':     return <PreferencesSection />
+    case 'personalization': return <PersonalizationSection />
+    case 'general':         return <GeneralSection />
     case 'billing':         return <PlanBillingSection />
+    case 'usage':           return <UsageHistorySection />
+    case 'security':        return <SecuritySection />
+    case 'api':             return <ApiSection />
     case 'connections':     return <ConnectionsSection />
-    case 'personalization': return <ComingSoonSection title="Personnalisation" description="Définis tes préférences de création (longueur de script par défaut, style visuel préféré, voix par défaut) pour démarrer plus vite." />
-    case 'general':         return <ComingSoonSection title="Paramètres généraux"  description="Gestion du workspace : nom, logo, description, équipe. Bientôt disponible." />
-    case 'usage':           return <ComingSoonSection title="Usage & Historique" description="Graphique d'utilisation, historique détaillé de tes générations, export CSV. Bientôt disponible." />
-    case 'security':        return <ComingSoonSection title="Sécurité" description="Authentification 2FA, sessions actives, logs de connexion. Bientôt disponible." />
-    case 'api':             return <ComingSoonSection title="API" description="Clés API pour intégrer Clyro dans tes workflows et automatiser tes générations. Bientôt disponible." />
   }
 }
