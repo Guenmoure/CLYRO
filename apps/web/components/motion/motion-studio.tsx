@@ -734,25 +734,33 @@ export function MotionStudio({
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* ── Sidebar ── */}
-      <aside className="w-52 bg-muted border-r border-border flex flex-col shrink-0">
-        <div className="p-4 border-b border-border">
+      <aside className="glass glass-border-r w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
+        <div className="p-4 glass-border-b">
           <h2 className="font-display text-sm font-semibold text-foreground">Motion Design</h2>
         </div>
-        <div className="p-3 border-b border-border">
+        <div className="p-3 glass-border-b">
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-2 w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:border-blue-500/40 hover:bg-blue-50 transition-all"
+            className="flex items-center gap-2 w-full bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-purple-500/10 hover:border-purple-500/40 transition-all"
           >
-            <Plus size={16} className="text-blue-500" />
+            <Plus size={16} className="text-purple-500" />
             Nouvelle vidéo
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-              <Video size={28} className="text-[--text-muted] mb-2" />
-              <p className="text-[--text-muted] font-body text-xs">Aucune session encore.</p>
+            <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8 gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/15 to-pink-500/15 blur-xl" />
+                <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-border flex items-center justify-center">
+                  <Video size={22} className="text-purple-500" />
+                </div>
+              </div>
+              <p className="font-display text-sm font-semibold text-foreground">Aucune session</p>
+              <p className="text-[--text-secondary] font-body text-xs max-w-[180px]">
+                Crée ta première vidéo Motion pour la voir ici.
+              </p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -764,8 +772,8 @@ export function MotionStudio({
                   className={cn(
                     'w-full text-left px-3 py-2 rounded-xl text-xs font-body transition-all',
                     activeSession?.id === s.id
-                      ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                      : 'text-foreground hover:bg-card border border-transparent'
+                      ? 'bg-purple-500/15 border border-purple-500/30 text-foreground'
+                      : 'text-foreground hover:bg-white/40 dark:hover:bg-white/5 border border-transparent'
                   )}
                 >
                   <p className="font-semibold truncate">{s.title ?? 'Sans titre'}</p>
@@ -788,7 +796,7 @@ export function MotionStudio({
             <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
 
               {/* Header */}
-              <div>
+              <div className="text-center">
                 <h1 className="font-display text-2xl font-bold text-foreground">Créer une vidéo Motion</h1>
                 <p className="text-sm text-[--text-muted] mt-1">
                   Décrivez l'ambiance visuelle, entrez votre script — Claude génère le storyboard.
@@ -796,46 +804,46 @@ export function MotionStudio({
               </div>
 
               {/* Brief */}
-              <div>
-                <label className="block text-sm font-body font-semibold text-foreground mb-1.5">
-                  Brief visuel <span className="text-red-400">*</span>
-                </label>
-                <p className="text-xs text-[--text-muted] mb-2">
-                  Style, ambiance, couleurs, émotion recherchée. Ex: "Vidéo dark tech pour une startup IA, tons bleu-violet, rythme dynamique."
-                </p>
+              <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">BRIEF VISUEL</p>
+                  <span className="text-red-400 text-[10px]">·</span>
+                  <span className="font-mono text-[10px] text-[--text-muted] opacity-60">Style, ambiance, couleurs, émotion recherchée</span>
+                </div>
                 <textarea
                   value={brief}
                   onChange={(e) => setBrief(e.target.value)}
                   placeholder="Décrivez l'ambiance visuelle et le style de votre vidéo…"
                   rows={4}
-                  className="w-full border border-border rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-muted focus:outline-none focus:border-blue-500 focus:bg-muted/60 transition-colors resize-none"
+                  className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none px-4 py-3"
                 />
               </div>
 
               {/* Script */}
-              <div>
-                <label className="block text-sm font-body font-semibold text-foreground mb-1.5">
-                  Script voix off <span className="text-red-400">*</span>
-                </label>
-                <p className="text-xs text-[--text-muted] mb-2">
-                  Le texte exact qui sera lu par la voix off. Claude le découpera en scènes.
-                </p>
+              <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">SCRIPT VOIX OFF</p>
+                  <span className="text-red-400 text-[10px]">·</span>
+                  <span className="font-mono text-[10px] text-[--text-muted] opacity-60">Le texte exact qui sera découpé en scènes</span>
+                </div>
                 <textarea
                   value={script}
                   onChange={(e) => setScript(e.target.value)}
                   placeholder="Entrez ici le texte complet de votre voix off…"
                   rows={6}
-                  className="w-full border border-border rounded-xl px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-muted] bg-muted focus:outline-none focus:border-blue-500 focus:bg-muted/60 transition-colors resize-none"
+                  className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none px-4 py-3"
                 />
-                <p className={cn('text-xs mt-1 text-right', script.length < 20 ? 'text-[--text-muted]' : 'text-emerald-600')}>
-                  {script.length} caractères
-                </p>
+                <div className="px-4 pb-2.5">
+                  <p className={cn('text-[10px] font-mono text-right', script.length < 20 ? 'text-[--text-muted]' : 'text-emerald-600')}>
+                    {script.length} caractères
+                  </p>
+                </div>
               </div>
 
               {/* Format + Duration */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-body font-semibold text-foreground mb-2">Format</label>
+                  <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2 block">Format</label>
                   <div className="flex gap-2">
                     {FORMATS.map((f) => (
                       <button
@@ -855,7 +863,7 @@ export function MotionStudio({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-body font-semibold text-foreground mb-2">Durée</label>
+                  <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2 block">Durée</label>
                   <div className="flex gap-2">
                     {DURATIONS.map((d) => (
                       <button
@@ -881,8 +889,8 @@ export function MotionStudio({
 
               {/* Logo upload */}
               <div>
-                <label className="block text-sm font-body font-semibold text-foreground mb-1.5">
-                  Logo <span className="text-[--text-muted] font-normal">(optionnel)</span>
+                <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
+                  Logo <span className="normal-case">(optionnel)</span>
                 </label>
                 <p className="text-xs text-[--text-muted] mb-2">
                   Votre logo sera incrusté dans la vidéo si fourni. PNG ou SVG transparent recommandé.
