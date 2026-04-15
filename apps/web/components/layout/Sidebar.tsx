@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Zap, LayoutGrid, Video, Sparkles, Palette, History, Mic,
-  Settings, HelpCircle, ChevronRight, LogOut,
+  Settings, HelpCircle, ChevronRight, ChevronUp, LogOut, Gem, Code2,
 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
+import { SettingsModal, type SettingsSectionId } from '@/components/settings/SettingsModal'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ const NAV_SECTIONS = [
       { href: '/faceless',  label: 'Faceless Videos',icon: Video },
       { href: '/motion',    label: 'Motion Design',  icon: Sparkles },
       { href: '/brand',     label: 'Brand Kit',      icon: Palette },
-      { href: '/projects',  label: 'Historique',     icon: History },
+      { href: '/projects',  label: 'Projets',        icon: History },
       { href: '/voices',    label: 'Mes voix',       icon: Mic },
     ],
   },
@@ -128,6 +128,12 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
   const [plan, setPlan]       = useState<string>('free')
   const [initials, setInitials] = useState('?')
 
+  // Dropdown + modal state
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsSection, setSettingsSection] = useState<SettingsSectionId>('account')
+  const cardRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -148,47 +154,176 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
     load()
   }, [supabase])
 
-  const planBadge = plan === 'pro' || plan === 'studio'
-    ? <Badge variant="purple">{plan === 'studio' ? 'Studio' : 'Pro'}</Badge>
-    : <Badge variant="neutral">Starter</Badge>
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return
+    function handler(e: MouseEvent) {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) setDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [dropdownOpen])
+
+  function openSettings(section: SettingsSectionId) {
+    setSettingsSection(section)
+    setDropdownOpen(false)
+    setSettingsOpen(true)
+  }
+
+  const planLabel = plan === 'pro' ? 'Pro' : plan === 'studio' ? 'Studio' : 'Plan gratuit'
 
   return (
-    <div className={cn(
-      'relative group border-t border-border/50 mt-auto pt-3',
-      collapsed ? 'px-2' : 'px-3',
-    )}>
-      <div className={cn(
-        'flex items-center gap-3 py-2 rounded-xl hover:bg-muted transition-colors cursor-pointer',
-        collapsed ? 'justify-center px-0' : 'px-2',
-      )}>
-        {/* Avatar */}
+    <div
+      ref={cardRef}
+      className={cn(
+        'relative border-t border-white/[0.07] dark:border-white/[0.06] mt-auto pt-3',
+        collapsed ? 'px-2' : 'px-3',
+      )}
+    >
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={() => setDropdownOpen((v) => !v)}
+        aria-expanded={dropdownOpen}
+        aria-haspopup="menu"
+        className={cn(
+          'group flex items-center gap-3 py-2 rounded-xl w-full transition-colors',
+          collapsed ? 'justify-center px-0' : 'px-2',
+          dropdownOpen ? 'bg-muted' : 'hover:bg-muted',
+        )}
+      >
         <div className="w-8 h-8 rounded-full bg-grad-primary flex items-center justify-center shrink-0">
           <span className="font-mono text-xs font-bold text-white">{initials}</span>
         </div>
-        {/* Info (only expanded) */}
         {!collapsed && name && (
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 text-left">
             <p className="font-body text-sm text-foreground truncate leading-none mb-0.5">{name}</p>
-            {planBadge}
+            <p className="font-mono text-[10px] text-[--text-secondary] truncate">{planLabel}</p>
           </div>
         )}
-        {/* Sign out (only expanded) */}
-        {!collapsed && (
-          <button
-            type="button"
-            onClick={onSignOut}
-            title="Déconnexion"
-            className="shrink-0 text-[--text-muted] hover:text-error transition-colors"
-          >
-            <LogOut size={14} />
-          </button>
-        )}
-        {/* Tooltip in collapsed mode */}
-        {collapsed && (
-          <NavTooltip label={name ?? email.split('@')[0] ?? 'Compte'} />
-        )}
-      </div>
+        {!collapsed && <ChevronUp size={14} className={cn('shrink-0 text-[--text-muted] transition-transform', dropdownOpen && 'rotate-180')} />}
+        {collapsed && <NavTooltip label={name ?? email.split('@')[0] ?? 'Compte'} />}
+      </button>
+
+      {/* Dropdown — HeyGen-style */}
+      {dropdownOpen && (
+        <div
+          role="menu"
+          className={cn(
+            'absolute z-50 rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-fade-up',
+            collapsed
+              ? 'left-full ml-2 bottom-0 w-64'
+              : 'left-2 right-2 bottom-full mb-2',
+          )}
+        >
+          {/* Header: email + profile */}
+          <div className="px-4 pt-3 pb-3 border-b border-border">
+            <p className="font-body text-xs text-[--text-secondary] truncate mb-2">{email}</p>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-grad-primary flex items-center justify-center shrink-0">
+                <span className="font-mono text-sm font-bold text-white">{initials}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-sm font-semibold text-foreground truncate">{name ?? 'Utilisateur'}</p>
+                <p className="font-mono text-[11px] text-[--text-secondary]">{planLabel}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Main actions */}
+          <div className="p-2 space-y-0.5">
+            <DropdownItem
+              icon={<Gem size={15} className="text-amber-500" />}
+              label="Améliorer mon plan"
+              onClick={() => openSettings('billing')}
+              primary
+            />
+            <DropdownItem
+              icon={<Settings size={15} />}
+              label="Paramètres"
+              onClick={() => openSettings('account')}
+            />
+          </div>
+
+          {/* Secondary — Help */}
+          <div className="p-2 space-y-0.5 border-t border-border">
+            <DropdownItem
+              icon={<Code2 size={15} />}
+              label="Développeurs"
+              onClick={() => openSettings('api')}
+              trailing={<ChevronRight size={13} className="text-[--text-muted]" />}
+            />
+            <DropdownItem
+              icon={<HelpCircle size={15} />}
+              label="Aide"
+              href="mailto:support@clyro.app"
+              external
+              trailing={<ChevronRight size={13} className="text-[--text-muted]" />}
+            />
+          </div>
+
+          {/* Log out */}
+          <div className="p-2 border-t border-border">
+            <DropdownItem
+              icon={<LogOut size={15} />}
+              label="Déconnexion"
+              onClick={onSignOut}
+              danger
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Settings modal */}
+      <SettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        initialSection={settingsSection}
+      />
     </div>
+  )
+}
+
+// ── DropdownItem ────────────────────────────────────────────────────────────
+
+function DropdownItem({
+  icon, label, onClick, href, external, primary, danger, trailing,
+}: {
+  icon: React.ReactNode
+  label: string
+  onClick?: () => void
+  href?: string
+  external?: boolean
+  primary?: boolean
+  danger?: boolean
+  trailing?: React.ReactNode
+}) {
+  const className = cn(
+    'flex items-center gap-3 w-full rounded-lg px-3 py-2 text-sm font-body transition-colors',
+    danger
+      ? 'text-error hover:bg-error/10'
+      : primary
+        ? 'text-foreground font-semibold hover:bg-muted'
+        : 'text-foreground hover:bg-muted',
+  )
+  const content = (
+    <>
+      <span className={cn('shrink-0', danger ? 'text-error' : 'text-[--text-secondary]')}>{icon}</span>
+      <span className="flex-1 text-left truncate">{label}</span>
+      {trailing}
+    </>
+  )
+  if (href) {
+    return (
+      <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} className={className}>
+        {content}
+      </a>
+    )
+  }
+  return (
+    <button type="button" onClick={onClick} className={className} role="menuitem">
+      {content}
+    </button>
   )
 }
 
@@ -214,8 +349,8 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
 
       <aside
         className={cn(
-          'fixed left-0 top-0 h-full z-40',
-          'bg-card border-r border-border/50',
+          'fixed inset-y-3 left-3 z-40',
+          'glass rounded-2xl',
           'flex flex-col',
           'transition-all duration-300 ease-in-out',
           collapsed ? 'w-[72px]' : 'w-60',
@@ -225,7 +360,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
       >
         {/* Header */}
         <div className={cn(
-          'flex items-center h-14 border-b border-border/50 shrink-0 relative',
+          'flex items-center h-14 border-b border-white/[0.07] dark:border-white/[0.06] shrink-0 relative',
           collapsed ? 'justify-center px-0' : 'px-5',
         )}>
           <Link href="/dashboard">

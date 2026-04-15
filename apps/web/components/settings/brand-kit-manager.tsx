@@ -261,7 +261,7 @@ function BrandKitCard({
           <div>
             <p className="font-display font-semibold text-gray-900 dark:text-white text-sm">{kit.name}</p>
             {kit.is_default && (
-              <span className="font-mono text-[9px] uppercase tracking-wider text-clyro-primary">Par défaut</span>
+              <span className="font-mono text-[11px] uppercase tracking-wider text-clyro-primary">Par défaut</span>
             )}
           </div>
         </div>
