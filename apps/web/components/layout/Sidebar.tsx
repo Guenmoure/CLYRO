@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import {
-  Zap, LayoutGrid, Video, Sparkles, Palette, History, Mic,
+  LayoutGrid, Video, Sparkles, Palette, History, Mic,
   Settings, HelpCircle, ChevronRight, ChevronUp, LogOut, Gem, Code2,
 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
@@ -382,23 +382,6 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
               className={cn('text-[--text-muted] transition-transform duration-300', !collapsed && 'rotate-180')}
             />
           </button>
-        </div>
-
-        {/* CTA "Nouveau projet" */}
-        <div className={cn('px-2 pt-4 pb-2 shrink-0', collapsed && 'flex justify-center')}>
-          <div className="relative group">
-            <Link
-              href="/faceless/new"
-              className={cn(
-                'flex items-center gap-3 rounded-xl bg-grad-primary text-white font-display font-semibold text-sm hover:opacity-90 transition-opacity',
-                collapsed ? 'w-10 h-10 justify-center' : 'px-3 py-2.5',
-              )}
-            >
-              <Zap size={16} className="shrink-0" />
-              {!collapsed && <span>Nouveau projet</span>}
-            </Link>
-            {collapsed && <NavTooltip label="Nouveau projet" />}
-          </div>
         </div>
 
         {/* Nav sections */}
