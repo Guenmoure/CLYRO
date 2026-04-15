@@ -65,38 +65,44 @@ export function SettingsModal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out" />
+        <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 data-[state=open]:animate-fade-in" />
+
+        {/* Content is a full-viewport flex wrapper — no transforms on it, so the
+            inner box is perfectly centered regardless of window size. */}
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[min(96vw,1100px)] h-[min(90vh,760px)] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row focus:outline-none data-[state=open]:animate-fade-up"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 focus:outline-none"
           aria-describedby={undefined}
         >
           <Dialog.Title className="sr-only">Paramètres</Dialog.Title>
 
-          {/* Left sidebar nav */}
-          <aside className="shrink-0 w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-muted/30 overflow-y-auto">
-            <nav className="p-4 space-y-5">
-              <SectionGroup label="Profil" items={PROFILE_SECTIONS} active={active} onSelect={setActive} />
-              <SectionGroup label="Workspace" items={WORKSPACE_SECTIONS} active={active} onSelect={setActive} />
-            </nav>
-          </aside>
+          {/* Actual modal box — animation lives HERE, not on the wrapper */}
+          <div className="w-full h-full max-w-[1100px] max-h-[760px] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fade-up">
+            {/* Left sidebar nav */}
+            <aside className="shrink-0 w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-muted/30 overflow-y-auto">
+              <nav className="p-4 space-y-5">
+                <SectionGroup label="Profil" items={PROFILE_SECTIONS} active={active} onSelect={setActive} />
+                <SectionGroup label="Workspace" items={WORKSPACE_SECTIONS} active={active} onSelect={setActive} />
+              </nav>
+            </aside>
 
-          {/* Right content */}
-          <main className="flex-1 overflow-y-auto relative">
-            {/* Close button */}
-            <Dialog.Close asChild>
-              <button
-                type="button"
-                aria-label="Fermer"
-                className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors z-10"
-              >
-                <X size={18} />
-              </button>
-            </Dialog.Close>
+            {/* Right content */}
+            <main className="flex-1 overflow-y-auto relative">
+              {/* Close button */}
+              <Dialog.Close asChild>
+                <button
+                  type="button"
+                  aria-label="Fermer"
+                  className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors z-10"
+                >
+                  <X size={18} />
+                </button>
+              </Dialog.Close>
 
-            <div className="px-8 py-8">
-              <SectionContent active={active} />
-            </div>
-          </main>
+              <div className="px-8 py-8">
+                <SectionContent active={active} />
+              </div>
+            </main>
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
