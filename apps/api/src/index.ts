@@ -11,6 +11,7 @@ import { logger } from './lib/logger'
 import { healthRouter } from './routes/health'
 import { pipelineFacelessRouter } from './routes/pipeline/faceless'
 import { pipelineMotionRouter } from './routes/pipeline/motion'
+import { studioRouter } from './routes/pipeline/studio'
 import { videosRouter } from './routes/videos'
 import { voicesRouter } from './routes/voices'
 import { checkoutRouter } from './routes/checkout'
@@ -21,6 +22,7 @@ import { generatePdfRouter } from './routes/generate-pdf'
 import { generateRouter } from './routes/generate'
 import { stripeWebhookRouter } from './routes/webhooks/stripe'
 import { monerooWebhookRouter } from './routes/webhooks/moneroo'
+import { heygenWebhookRouter } from './routes/webhooks/heygen'
 import { hmacMiddleware } from './middleware/hmac'
 import { internalRouter } from './routes/internal'
 
@@ -151,6 +153,8 @@ app.use('/api/v1', healthRouter)
 // Webhooks (pas d'authMiddleware, signature vérification dans les routes)
 app.use('/webhook', stripeWebhookRouter)
 app.use('/webhook', monerooWebhookRouter)
+// HeyGen webhook needs raw body for signature verification
+app.use('/webhook', express.raw({ type: 'application/json', limit: '2mb' }), heygenWebhookRouter)
 
 // Routes internes inter-services (HMAC-SHA256)
 app.use('/api/internal', hmacMiddleware, internalRouter)
@@ -159,6 +163,7 @@ app.use('/api/internal', hmacMiddleware, internalRouter)
 app.use('/api/v1', apiLimiter)
 app.use('/api/v1/pipeline', pipelineLimiter, pipelineFacelessRouter)
 app.use('/api/v1/pipeline', pipelineLimiter, pipelineMotionRouter)
+app.use('/api/v1/pipeline/studio', pipelineLimiter, studioRouter)
 app.use('/api/v1', videosRouter)
 app.use('/api/v1/voices/clone', voiceCloneLimiter)
 app.use('/api/v1', voicesRouter)

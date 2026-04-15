@@ -25,12 +25,14 @@ async function getAuthToken(): Promise<string> {
     error,
   } = await supabase.auth.getSession()
 
-  if (session?.access_token) {
+  // Only use cached token if it has at least 60 seconds left before expiry
+  const nowSec = Math.floor(Date.now() / 1000)
+  if (session?.access_token && (!session.expires_at || session.expires_at > nowSec + 60)) {
     return session.access_token
   }
 
-  // 2. Session absente ou expirée → tenter un refresh silencieux
-  console.warn('[getAuthToken] Session manquante ou expirée, tentative de refresh…')
+  // 2. Token absent ou expiré → refresh silencieux
+  console.warn('[getAuthToken] Token absent ou expiré, tentative de refresh…')
   const {
     data: { session: refreshed },
     error: refreshError,
@@ -348,3 +350,88 @@ export function subscribeToVideoStatus(
 
   return eventSource
 }
+
+// ---- F5 Studio ----
+
+export interface StudioAnalyzePayload {
+  inputType: 'script' | 'youtube_url'
+  value: string
+  language?: string
+  title?: string
+  avatarId?: string
+  voiceId?: string
+  format?: '16_9' | '9_16' | 'both'
+}
+
+export async function analyzeStudio(payload: StudioAnalyzePayload) {
+  return apiFetch<{
+    projectId: string
+    suggestedTitle: string
+    totalDurationEst: number
+    sceneCount: number
+  }>('/api/v1/pipeline/studio/analyze', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function generateAllStudioScenes(projectId: string) {
+  return apiFetch<{ projectId: string; status: string }>(
+    '/api/v1/pipeline/studio/generate-all',
+    { method: 'POST', body: JSON.stringify({ projectId }) },
+  )
+}
+
+export async function regenerateStudioScene(payload: {
+  projectId: string
+  sceneId: string
+  feedback?: string
+  newScript?: string
+  newType?: string
+}) {
+  return apiFetch<{ status: string }>(
+    '/api/v1/pipeline/studio/regenerate-scene',
+    { method: 'POST', body: JSON.stringify(payload) },
+  )
+}
+
+export async function reorderStudioScenes(projectId: string, sceneIds: string[]) {
+  return apiFetch<{ success: boolean }>(
+    '/api/v1/pipeline/studio/reorder',
+    { method: 'PATCH', body: JSON.stringify({ projectId, sceneIds }) },
+  )
+}
+
+export async function addStudioScene(payload: {
+  projectId: string
+  afterIndex: number
+  type?: string
+  script?: string
+  hint?: string
+}) {
+  return apiFetch<{ sceneId: string }>(
+    '/api/v1/pipeline/studio/add-scene',
+    { method: 'POST', body: JSON.stringify(payload) },
+  )
+}
+
+export async function deleteStudioScene(sceneId: string) {
+  return apiFetch<{ success: boolean }>(
+    `/api/v1/pipeline/studio/scene/${sceneId}`,
+    { method: 'DELETE' },
+  )
+}
+
+export async function getStudioAvatars() {
+  return apiFetch<{
+    stock: Array<{ avatar_id: string; avatar_name: string; gender: string; preview_image_url: string }>
+    personal: Array<{ avatar_id: string; avatar_name: string; gender: string; preview_image_url: string }>
+  }>('/api/v1/pipeline/studio/avatars')
+}
+
+export async function getStudioProject(projectId: string) {
+  return apiFetch<{ project: unknown; scenes: unknown[] }>(
+    `/api/v1/pipeline/studio/projects/${projectId}`,
+  )
+}
+
