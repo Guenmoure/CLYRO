@@ -422,23 +422,23 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* Sidebar */}
-      <aside className="w-56 glass-heavy glass-border-r flex flex-col shrink-0">
+      <aside className="glass glass-border-r w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
         <div className="p-4 glass-border-b">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-0.5">Module</p>
-          <h1 className="font-display text-sm font-bold text-gray-900 dark:text-white">Brand Kit</h1>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-0.5">Module</p>
+          <h1 className="font-display text-sm font-bold text-foreground">Brand Kit</h1>
         </div>
 
         {/* Tab switcher */}
         <div className="p-2 glass-border-b">
-          <div className="flex gap-1 p-1 glass rounded-xl">
+          <div className="flex gap-1 p-1 rounded-xl bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10">
             <button
               type="button"
               onClick={() => { setSidebarTab('kits'); setShowCreate(false) }}
               className={cn(
                 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-mono transition-all',
                 sidebarTab === 'kits'
-                  ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-400 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-[--text-muted] hover:text-foreground'
               )}
             >
               <Palette size={11} /> Kits
@@ -449,8 +449,8 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
               className={cn(
                 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-mono transition-all',
                 sidebarTab === 'studio'
-                  ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-400 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-[--text-muted] hover:text-foreground'
               )}
             >
               <Sparkles size={11} /> Studio
@@ -462,7 +462,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
           <>
             <div className="p-3 glass-border-b">
               <button type="button" onClick={() => { setActiveId(null); setShowCreate(true) }}
-                className="flex items-center gap-2 w-full glass glass-hover rounded-xl px-3 py-2.5 text-sm font-body text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-all">
+                className="flex items-center gap-2 w-full bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-cyan-500/10 hover:border-cyan-500/40 transition-all">
                 <Plus size={15} className="text-clyro-accent" />
                 Nouveau brand kit
               </button>
@@ -471,20 +471,20 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {kits.length === 0 && !showCreate && (
                 <div className="px-3 py-8 text-center">
-                  <Palette size={24} className="mx-auto mb-2 text-gray-300 dark:text-white/15" />
-                  <p className="font-body text-xs text-gray-400 dark:text-white/30">Crée ton premier brand kit</p>
+                  <Palette size={24} className="mx-auto mb-2 text-[--text-muted]" />
+                  <p className="font-body text-xs text-[--text-muted]">Crée ton premier brand kit</p>
                 </div>
               )}
               {kits.map((kit) => (
                 <button key={kit.id} type="button" onClick={() => { setActiveId(kit.id); setShowCreate(false) }}
                   className={cn(
                     'w-full text-left px-3 py-2.5 rounded-xl transition-all group',
-                    activeId === kit.id ? 'glass-pill' : 'glass-hover'
+                    activeId === kit.id ? 'bg-cyan-500/15 border border-cyan-500/30' : 'hover:bg-white/40 dark:hover:bg-white/5'
                   )}>
                   <div className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-md shrink-0" style={{ background: kit.primary_color }} />
                     <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-medium text-gray-800 dark:text-white/80 truncate">{kit.name}</p>
+                      <p className="font-body text-sm font-medium text-foreground truncate">{kit.name}</p>
                       {kit.is_default && (
                         <p className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">★ Défaut</p>
                       )}
