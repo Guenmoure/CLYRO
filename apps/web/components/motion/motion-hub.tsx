@@ -141,7 +141,7 @@ function StatusBadge({ status }: { status: string }) {
     pending: 'En attente', error: 'Erreur',
   }
   return (
-    <span className={cn('font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full', map[status] ?? map.pending)}>
+    <span className={cn('font-mono text-[11px] uppercase tracking-wider px-1.5 py-0.5 rounded-full', map[status] ?? map.pending)}>
       {label[status] ?? status}
     </span>
   )
@@ -154,7 +154,7 @@ function SceneTypeBadge({ sceneType }: { sceneType?: string }) {
   const colorClass = SCENE_TYPE_COLORS[sceneType as SceneType] ?? 'bg-slate-100 text-slate-700'
   const option = SCENE_TYPE_OPTIONS.find((o) => o.value === sceneType)
   return (
-    <span className={cn('font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full', colorClass)}>
+    <span className={cn('font-mono text-[11px] uppercase tracking-wider px-1.5 py-0.5 rounded-full', colorClass)}>
       {option?.label ?? sceneType}
     </span>
   )
@@ -192,7 +192,7 @@ function StoryboardPanel({ scenes, onScenesChange }: {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-mono text-[11px] text-[--text-muted] shrink-0">#{idx + 1}</span>
               <SceneTypeBadge sceneType={scene.scene_type} />
-              <span className="font-mono text-[10px] text-[--text-muted] ml-auto shrink-0">
+              <span className="font-mono text-[11px] text-[--text-muted] ml-auto shrink-0">
                 {scene.duree_estimee}s
               </span>
             </div>
@@ -215,7 +215,7 @@ function StoryboardPanel({ scenes, onScenesChange }: {
             <div className="flex items-center gap-2">
               <label
                 htmlFor={`scene-type-${idx}`}
-                className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] shrink-0"
+                className="font-mono text-[11px] uppercase tracking-wider text-[--text-muted] shrink-0"
               >
                 Type
               </label>
@@ -449,7 +449,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
         <div>
           <div className="flex items-center gap-2 mb-3">
             <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">Style visuel</p>
-            {!style && <span className="font-mono text-[10px] text-red-400 uppercase tracking-wider">· Requis</span>}
+            {!style && <span className="font-mono text-[11px] text-red-400 uppercase tracking-wider">· Requis</span>}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {MOTION_STYLES.map((s) => (
@@ -473,7 +473,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 </div>
                 {style === s.id && (
                   <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
-                    <span className="text-white text-[10px]">✓</span>
+                    <span className="text-white text-[11px]">✓</span>
                   </div>
                 )}
               </button>
@@ -493,7 +493,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                     format === f.id ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-card border-border text-[--text-muted] hover:border-blue-500/40'
                   )}>
                   {f.label}
-                  <p className="font-body font-normal text-[10px] mt-0.5 opacity-70">{f.desc}</p>
+                  <p className="font-body font-normal text-[11px] mt-0.5 opacity-70">{f.desc}</p>
                 </button>
               ))}
             </div>
@@ -550,7 +550,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 )}
               >
                 <p className={cn('text-xs font-display font-semibold', musicTrackId === t.id ? 'text-blue-500' : 'text-foreground')}>{t.label}</p>
-                <p className="text-[10px] font-body text-[--text-muted] mt-0.5">{t.mood}</p>
+                <p className="text-[11px] font-body text-[--text-muted] mt-0.5">{t.mood}</p>
               </button>
             ))}
           </div>
@@ -705,9 +705,17 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-              <Wand2 size={28} className="text-[--text-muted] mb-2" />
-              <p className="text-[--text-muted] font-body text-xs">Aucune session. Créez votre première publicité !</p>
+            <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8 gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/15 to-pink-500/15 blur-xl" />
+                <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-border flex items-center justify-center">
+                  <Wand2 size={22} className="text-purple-500" />
+                </div>
+              </div>
+              <p className="font-display text-sm font-semibold text-foreground">Aucune session</p>
+              <p className="text-[--text-secondary] font-body text-xs max-w-[180px]">
+                Crée ta première publicité Motion pour la voir ici.
+              </p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -727,7 +735,7 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
                       <StatusBadge status={s.status} />
-                      <span className="font-mono text-[10px] text-[--text-muted]">
+                      <span className="font-mono text-[11px] text-[--text-muted]">
                         {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                       </span>
                     </div>

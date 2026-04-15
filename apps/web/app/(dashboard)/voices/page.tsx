@@ -40,14 +40,14 @@ function FiltersBar({
   return (
     <div className="flex flex-wrap gap-3">
       <div className="relative flex-1 min-w-48">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/25 pointer-events-none" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
         <input
           type="text"
           value={filters.search}
           onChange={(e) => onFilter('search', e.target.value)}
           placeholder="Rechercher une voix…"
           aria-label="Rechercher une voix"
-          className="w-full glass rounded-xl pl-9 pr-4 py-2.5 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/40 transition-all duration-200"
+          className="w-full glass rounded-xl pl-9 pr-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-secondary] focus:outline-none focus:border-clyro-primary/40 transition-all duration-200"
         />
       </div>
 
@@ -56,7 +56,7 @@ function FiltersBar({
         onChange={(e) => onFilter('language', e.target.value)}
         title="Filtrer par langue"
         aria-label="Filtrer par langue"
-        className="bg-white dark:bg-card border border-gray-200 dark:border-border/[0.06] rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/70 font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
+        className="bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
       >
         <option value="">🌐 Toutes les langues</option>
         {options.languages.map((l) => (
@@ -69,7 +69,7 @@ function FiltersBar({
         onChange={(e) => onFilter('gender', e.target.value)}
         title="Filtrer par genre"
         aria-label="Filtrer par genre"
-        className="bg-white dark:bg-card border border-gray-200 dark:border-border/[0.06] rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/70 font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
+        className="bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
       >
         <option value="">Genre</option>
         {options.genders.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -80,7 +80,7 @@ function FiltersBar({
         onChange={(e) => onFilter('useCase', e.target.value)}
         title="Filtrer par utilisation"
         aria-label="Filtrer par utilisation"
-        className="bg-white dark:bg-card border border-gray-200 dark:border-border/[0.06] rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/70 font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
+        className="bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm focus:outline-none focus:border-clyro-primary/40 appearance-none transition-all"
       >
         <option value="">Utilisation</option>
         {options.useCases.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -117,13 +117,13 @@ function PublicVoiceCard({ voice, onToggleFavorite }: {
             {voice.languageFlag && (
               <span className="text-base leading-none">{voice.languageFlag}</span>
             )}
-            <p className="font-display font-semibold text-gray-900 dark:text-white text-sm truncate">{voice.name}</p>
+            <p className="font-display font-semibold text-foreground text-sm truncate">{voice.name}</p>
           </div>
-          <p className="font-mono text-xs text-gray-500 dark:text-white/40">
+          <p className="font-mono text-xs text-[--text-secondary]">
             {[voice.language, voice.gender, voice.useCase].filter(Boolean).join(' · ')}
           </p>
           {voice.description && (
-            <p className="font-body text-xs text-gray-500 dark:text-white/40 mt-1 line-clamp-2">{voice.description}</p>
+            <p className="font-body text-xs text-[--text-secondary] mt-1 line-clamp-2">{voice.description}</p>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -255,8 +255,8 @@ function PersonalVoiceCard({ voice, onDeleted }: { voice: ClonedVoice; onDeleted
             <Mic2 size={16} className="text-clyro-primary" />
           </div>
           <div>
-            <p className="font-display font-semibold text-gray-900 dark:text-white text-sm">{voice.name}</p>
-            <p className="font-mono text-xs text-gray-500 dark:text-white/40 mt-0.5">
+            <p className="font-display font-semibold text-foreground text-sm">{voice.name}</p>
+            <p className="font-mono text-xs text-[--text-secondary] mt-0.5">
               Clonée · {new Date(voice.created_at).toLocaleDateString('fr-FR')}
             </p>
           </div>
@@ -350,10 +350,13 @@ export default function VoicesPage() {
     <div className="flex-1 overflow-y-auto px-8 py-8">
       <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
 
-        <div className="flex items-end justify-between">
+        <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <p className="font-mono text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest mb-1">Audio</p>
-            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">Voice Library</h1>
+            <p className="font-mono text-[11px] font-semibold text-[--text-secondary] uppercase tracking-widest mb-1">Audio</p>
+            <h1 className="font-display text-3xl font-bold text-foreground">Mes voix</h1>
+            <p className="font-body text-sm text-[--text-secondary] mt-1">
+              Bibliothèque publique ElevenLabs et tes voix clonées personnelles.
+            </p>
           </div>
           {tab === 'personal' && (
             <button
@@ -375,8 +378,8 @@ export default function VoicesPage() {
               className={cn(
                 'font-display font-semibold text-sm px-4 py-2 rounded-lg transition-all duration-200',
                 tab === id
-                  ? 'glass-pill text-gray-900 dark:text-white'
-                  : 'text-gray-500 dark:text-white/40 hover:text-gray-900 dark:hover:text-white/80'
+                  ? 'glass-pill text-foreground'
+                  : 'text-[--text-secondary] hover:text-foreground'
               )}
             >
               {label}
@@ -411,7 +414,7 @@ export default function VoicesPage() {
               </div>
             ) : publicVoices.length === 0 ? (
               <div className="glass rounded-xl p-10 text-center">
-                <p className="text-gray-400 dark:text-white/40 font-body text-sm">Aucune voix trouvée pour ces filtres.</p>
+                <p className="text-[--text-secondary] font-body text-sm">Aucune voix trouvée pour ces filtres.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -430,16 +433,23 @@ export default function VoicesPage() {
                 <div key={i} className="h-16 glass rounded-xl animate-pulse" />
               ))
             ) : personalVoices.length === 0 ? (
-              <div className="glass rounded-xl p-12 text-center">
-                <Mic2 size={32} className="text-gray-300 dark:text-white/20 mx-auto mb-3" />
-                <p className="font-display font-semibold text-gray-900 dark:text-white mb-1">Aucune voix clonée</p>
-                <p className="font-body text-sm text-gray-500 dark:text-white/50 mb-4">Clone ta voix pour l&apos;utiliser dans tes vidéos.</p>
+              <div className="flex flex-col items-center justify-center py-16 px-8 text-center rounded-2xl border border-dashed border-border bg-muted/30">
+                <div className="relative mb-5">
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-500/20 to-blue-500/20 blur-2xl" />
+                  <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-500/15 to-blue-500/15 border border-border flex items-center justify-center">
+                    <Mic2 size={36} className="text-emerald-500" />
+                  </div>
+                </div>
+                <p className="font-display text-xl font-bold text-foreground mb-2">Aucune voix clonée</p>
+                <p className="font-body text-sm text-[--text-secondary] mb-5 max-w-sm">
+                  Enregistre ou importe 30 secondes d&apos;audio de ta voix, nous la clonons avec ElevenLabs et tu pourras l&apos;utiliser sur toutes tes vidéos.
+                </p>
                 <button
                   type="button"
                   onClick={() => setShowCloneModal(true)}
-                  className="bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 text-sm"
+                  className="inline-flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 text-sm shadow-md hover:shadow-lg transition-all"
                 >
-                  + Cloner ma voix
+                  <Plus size={14} /> Cloner ma voix
                 </button>
               </div>
             ) : (

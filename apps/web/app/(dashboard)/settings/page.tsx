@@ -1,55 +1,140 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { ProfileForm } from '@/components/settings/profile-form'
-import { Shield, CreditCard, ChevronRight } from 'lucide-react'
+import { Shield, CreditCard, ChevronRight, User, Bell, Loader2, Check } from 'lucide-react'
+import { createBrowserClient } from '@/lib/supabase'
+import { toast } from '@/components/ui/toast'
 
 export default function SettingsPage() {
-  return (
-    <div className="flex-1 overflow-y-auto px-8 py-8">
-      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+  const [resetting, setResetting] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
 
+  async function handlePasswordReset() {
+    if (resetting || resetSent) return
+    setResetting(true)
+    try {
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.email) {
+        toast.error('Impossible de récupérer ton email')
+        return
+      }
+      const { error } = await supabase.auth.resetPasswordForEmail(session.user.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (error) throw error
+      setResetSent(true)
+      toast.success('Email de réinitialisation envoyé')
+      setTimeout(() => setResetSent(false), 10_000)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de l\'envoi')
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-background px-6 py-8">
+      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+
+        {/* Page header */}
         <div>
-          <p className="font-mono text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest mb-1">Account</p>
-          <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold mb-1">Compte</p>
+          <h1 className="font-display text-3xl font-bold text-foreground">Paramètres</h1>
+          <p className="font-body text-sm text-[--text-secondary] mt-1">
+            Gère ton profil, ton abonnement et tes préférences.
+          </p>
         </div>
 
         {/* Profile */}
-        <div className="glass glass-heavy rounded-2xl p-6">
-          <h2 className="font-display font-semibold text-gray-900 dark:text-white mb-5">Profile</h2>
-          <ProfileForm />
-        </div>
-
-        {/* Billing */}
-        <Link href="/settings/billing"
-          className="flex items-center justify-between glass glass-heavy rounded-2xl p-6 hover:border-clyro-primary/40 card-hover transition-all group">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-clyro-primary/15 border border-clyro-primary/20 flex items-center justify-center">
-              <CreditCard size={18} className="text-clyro-primary" />
+        <section className="rounded-2xl border border-border bg-card overflow-hidden">
+          <header className="flex items-center gap-3 px-6 py-4 border-b border-border">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+              <User size={16} className="text-blue-500" />
             </div>
             <div>
-              <h2 className="font-display font-semibold text-gray-900 dark:text-white">Abonnement & Crédits</h2>
-              <p className="font-body text-sm text-gray-500 dark:text-white/50 mt-0.5">Gérer votre plan, vos crédits et moyens de paiement.</p>
+              <h2 className="font-display font-semibold text-foreground">Profil</h2>
+              <p className="font-body text-xs text-[--text-secondary]">Nom affiché et informations personnelles</p>
             </div>
+          </header>
+          <div className="p-6">
+            <ProfileForm />
           </div>
-          <ChevronRight size={18} className="text-gray-400 dark:text-white/30 group-hover:text-clyro-primary transition-colors duration-200" />
+        </section>
+
+        {/* Billing — clickable card with interactive hover */}
+        <Link
+          href="/settings/billing"
+          className="card-interactive flex items-center gap-4 rounded-2xl border border-border bg-card px-6 py-5 group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
+            <CreditCard size={18} className="text-purple-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-display font-semibold text-foreground">Abonnement & crédits</h2>
+            <p className="font-body text-sm text-[--text-secondary] mt-0.5">
+              Gérer ton plan, tes crédits et tes moyens de paiement.
+            </p>
+          </div>
+          <ChevronRight
+            size={18}
+            className="text-[--text-secondary] group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0"
+          />
         </Link>
 
         {/* Security */}
-        <div className="glass glass-heavy rounded-2xl p-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-10 h-10 rounded-xl glass flex items-center justify-center">
-              <Shield size={18} className="text-gray-400 dark:text-white/50" />
+        <section className="rounded-2xl border border-border bg-card overflow-hidden">
+          <header className="flex items-center gap-3 px-6 py-4 border-b border-border">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <Shield size={16} className="text-emerald-500" />
             </div>
-            <h2 className="font-display font-semibold text-gray-900 dark:text-white">Sécurité</h2>
+            <div>
+              <h2 className="font-display font-semibold text-foreground">Sécurité</h2>
+              <p className="font-body text-xs text-[--text-secondary]">Mot de passe et accès au compte</p>
+            </div>
+          </header>
+          <div className="p-6 space-y-4">
+            <p className="font-body text-sm text-[--text-secondary]">
+              Ton mot de passe peut être réinitialisé via un lien sécurisé envoyé par email. Le lien reste valide 1h.
+            </p>
+            <button
+              type="button"
+              onClick={handlePasswordReset}
+              disabled={resetting || resetSent}
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 font-body text-sm font-medium transition-all ${
+                resetSent
+                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 cursor-default'
+                  : 'bg-muted border border-border text-foreground hover:bg-border hover:border-border disabled:opacity-60'
+              }`}
+            >
+              {resetting ? (
+                <><Loader2 size={13} className="animate-spin" /> Envoi en cours…</>
+              ) : resetSent ? (
+                <><Check size={13} /> Email envoyé</>
+              ) : (
+                <>Envoyer le lien de réinitialisation →</>
+              )}
+            </button>
           </div>
-          <p className="text-gray-500 dark:text-white/50 text-sm font-body mb-4">
-            Changement de mot de passe via un lien envoyé par email.
-          </p>
-          <button className="font-body text-sm text-clyro-primary hover:text-clyro-primary/70 transition-colors duration-200 font-medium">
-            Envoyer un lien de réinitialisation →
-          </button>
-        </div>
+        </section>
+
+        {/* Notifications (placeholder — could become a full section later) */}
+        <section className="rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+            <Bell size={15} className="text-amber-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-body text-sm text-foreground">Notifications par email</p>
+            <p className="font-body text-xs text-[--text-secondary] mt-0.5">
+              Bientôt disponible — choisis quels événements déclenchent un email.
+            </p>
+          </div>
+          <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-muted border border-border text-[--text-muted]">
+            Bientôt
+          </span>
+        </section>
 
       </div>
     </div>
