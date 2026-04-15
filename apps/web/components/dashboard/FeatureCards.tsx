@@ -19,8 +19,8 @@ interface Feature {
 const FEATURES: Feature[] = [
   {
     category: 'AI Studio',
-    title: 'Vidéo Faceless',
-    description: 'Crée des vidéos sans visage à partir d\'un script. Voix off, images IA, montage automatique.',
+    title: 'Faceless Video',
+    description: 'Turn a script into a faceless video. AI voiceover, AI visuals, auto-edited.',
     href: '/faceless/new',
     icon: Video,
     iconColor: 'text-blue-400',
@@ -31,7 +31,7 @@ const FEATURES: Feature[] = [
   {
     category: 'Animation',
     title: 'Motion Design',
-    description: 'Anime tes images statiques en clips dynamiques avec Kling, Wan ou Runway.',
+    description: 'Animate your static images into dynamic clips with Kling, Wan or Runway.',
     href: '/motion/new',
     icon: Sparkles,
     iconColor: 'text-purple-400',
@@ -40,9 +40,9 @@ const FEATURES: Feature[] = [
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(155,92,246,0.3)]',
   },
   {
-    category: 'Identité visuelle',
+    category: 'Visual identity',
     title: 'Brand Kit',
-    description: 'Logo, palette, typographie, charte. Construis ton identité de marque en quelques clics.',
+    description: 'Logo, color palette, typography, guidelines. Build your brand identity in a few clicks.',
     href: '/brand',
     icon: Palette,
     iconColor: 'text-cyan-400',
@@ -51,9 +51,9 @@ const FEATURES: Feature[] = [
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(56,232,255,0.3)]',
   },
   {
-    category: 'Voix',
-    title: 'Mes voix',
-    description: 'Clone ta voix une seule fois et utilise-la sur toutes tes créations.',
+    category: 'Voice',
+    title: 'My Voices',
+    description: 'Clone your voice once and use it across every creation you make.',
     href: '/voices',
     icon: Mic2,
     iconColor: 'text-emerald-400',
@@ -62,9 +62,9 @@ const FEATURES: Feature[] = [
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(34,197,94,0.3)]',
   },
   {
-    category: 'Visuels',
-    title: 'Bibliothèque',
-    description: 'Tous tes assets visuels, brand kits et prompts à portée de main.',
+    category: 'Assets',
+    title: 'Library',
+    description: 'All your visual assets, brand kits and prompts within reach.',
     href: '/projects',
     icon: ImageIcon,
     iconColor: 'text-amber-400',
@@ -74,8 +74,8 @@ const FEATURES: Feature[] = [
   },
   {
     category: 'Archive',
-    title: 'Historique',
-    description: 'Tous tes projets passés, prêts à être édités, dupliqués ou exportés.',
+    title: 'History',
+    description: 'All your past projects, ready to edit, duplicate or export.',
     href: '/history',
     icon: History,
     iconColor: 'text-pink-400',

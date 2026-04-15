@@ -37,12 +37,12 @@ function formatRelativeDate(dateStr: string): string {
   const days  = Math.floor(diff / 86_400_000)
   const hours = Math.floor(diff / 3_600_000)
   const mins  = Math.floor(diff / 60_000)
-  if (days > 30)  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-  if (days > 1)   return `il y a ${days} jours`
-  if (days === 1) return 'hier'
-  if (hours > 0)  return `il y a ${hours}h`
-  if (mins > 0)   return `il y a ${mins} min`
-  return "à l'instant"
+  if (days > 30)  return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+  if (days > 1)   return `${days} days ago`
+  if (days === 1) return 'yesterday'
+  if (hours > 0)  return `${hours}h ago`
+  if (mins > 0)   return `${mins}m ago`
+  return 'just now'
 }
 
 const PROCESSING_STATUSES = new Set(['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly'])
@@ -80,13 +80,13 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
       <div className="flex items-center justify-center">
         <div className="inline-flex items-center gap-1 rounded-full border border-border bg-card p-1">
           <TabButton
-            label="Récents"
+            label="Recent"
             count={recentCount}
             active={tab === 'recent'}
             onClick={() => setTab('recent')}
           />
           <TabButton
-            label="En cours"
+            label="In progress"
             count={draftCount}
             active={tab === 'drafts'}
             onClick={() => setTab('drafts')}
@@ -118,7 +118,7 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
             href="/projects"
             className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2 text-sm font-body text-[--text-secondary] hover:text-foreground hover:border-border transition-all"
           >
-            Voir tous les projets
+            See all projects
           </Link>
         </div>
       )}
@@ -148,7 +148,7 @@ function TabButton({ label, count, active, onClick }: {
       {label}
       {count > 0 && (
         <span className={cn(
-          'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-mono',
+          'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-mono',
           active ? 'bg-background/10 text-gray-950' : 'bg-muted text-[--text-muted]',
         )}>
           {count}
@@ -220,10 +220,10 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="font-display text-sm text-foreground truncate">
-          {project.title ?? 'Projet sans titre'}
+          {project.title ?? 'Untitled project'}
         </p>
         <div className="flex items-center gap-2 mt-1">
-          <span className={cn('inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded', moduleColor)}>
+          <span className={cn('inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded', moduleColor)}>
             <ModuleIcon size={9} />
             {moduleLabel}
           </span>
@@ -323,19 +323,19 @@ function EmptyState({ tab }: { tab: 'recent' | 'drafts' }) {
         <FolderOpen size={28} className="text-[--text-muted]" />
       </div>
       <p className="font-display text-sm text-foreground">
-        {tab === 'recent' ? 'Aucun projet pour l\'instant' : 'Aucun projet en cours'}
+        {tab === 'recent' ? 'No projects yet' : 'No projects in progress'}
       </p>
       <p className="font-body text-xs text-[--text-muted] mt-2 max-w-xs">
         {tab === 'recent'
-          ? 'Crée ton premier projet en moins de 5 minutes.'
-          : 'Tes projets en cours de génération apparaîtront ici.'}
+          ? 'Create your first project in under 5 minutes.'
+          : 'Projects being generated will show up here.'}
       </p>
       {tab === 'recent' && (
         <Link
           href="/faceless/new"
           className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-4 py-2 font-display text-sm font-semibold text-white hover:opacity-90 transition-opacity"
         >
-          Créer mon premier projet
+          Create my first project
         </Link>
       )}
     </div>

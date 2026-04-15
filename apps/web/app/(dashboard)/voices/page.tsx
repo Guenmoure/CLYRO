@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Mic2, Search, Star, Play, Pause, Plus, Trash2 } from 'lucide-react'
+import {
+  Mic2, Search, Star, Play, Pause, Plus, Trash2, X,
+  SlidersHorizontal, FolderPlus, Folder,
+} from 'lucide-react'
 import {
   getPublicVoices,
   getVoiceFilters,
@@ -319,8 +322,9 @@ export default function VoicesPage() {
         search:   filters.search   || undefined,
       })
       setPublicVoices(voices)
-    } catch {
-      toast.error('Impossible de charger les voix')
+    } catch (err) {
+      console.error('[voices/public]', err)
+      toast.error(err instanceof Error ? err.message : 'Impossible de charger les voix')
     } finally {
       setLoadingPublic(false)
     }
@@ -333,7 +337,10 @@ export default function VoicesPage() {
     setLoadingPersonal(true)
     getVoices()
       .then(({ personal }) => setPersonalVoices(personal as ClonedVoice[]))
-      .catch(() => toast.error('Impossible de charger les voix clonées'))
+      .catch((err) => {
+        console.error('[voices/personal]', err)
+        toast.error(err instanceof Error ? err.message : 'Impossible de charger les voix clonées')
+      })
       .finally(() => setLoadingPersonal(false))
   }, [tab])
 
@@ -345,32 +352,75 @@ export default function VoicesPage() {
   }
 
   const favoriteVoices = publicVoices.filter((v) => v.isFavorite)
+  const searchValue = filters.search
+  const activeFilterCount =
+    (filters.gender ? 1 : 0) + (filters.language ? 1 : 0) + (filters.useCase ? 1 : 0)
+  const hasFiltersOpen = tab === 'public'
+  const [folders, setFolders]       = useState<string[]>([])
+  const [showFilters, setShowFilters] = useState(false)
 
   return (
-    <div className="flex-1 overflow-y-auto px-8 py-8">
-      <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+    <div className="flex-1 overflow-y-auto bg-background px-6 py-8">
+      <div className="max-w-6xl mx-auto space-y-8">
 
-        <div className="flex items-end justify-between flex-wrap gap-3">
-          <div>
-            <p className="font-mono text-[11px] font-semibold text-[--text-secondary] uppercase tracking-widest mb-1">Audio</p>
-            <h1 className="font-display text-3xl font-bold text-foreground">Mes voix</h1>
-            <p className="font-body text-sm text-[--text-secondary] mt-1">
-              Bibliothèque publique ElevenLabs et tes voix clonées personnelles.
-            </p>
+        {/* ── Header row — Projects-style compact toolbar ─────────────────── */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="font-display text-2xl font-bold text-foreground shrink-0">Voices</h1>
+
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
+              placeholder="Search voices and folders"
+              aria-label="Search voices"
+              className="w-full pl-10 pr-9 py-2.5 glass rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:ring-1 focus:ring-blue-500/40 transition-all"
+            />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => setFilters((p) => ({ ...p, search: '' }))}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[--text-muted] hover:text-foreground"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
+
+          {/* Filters */}
+          {hasFiltersOpen && (
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              className={cn(
+                'glass rounded-xl px-4 py-2.5 font-body text-sm flex items-center gap-2 text-foreground shrink-0 transition-colors',
+                showFilters ? 'ring-1 ring-blue-500/40' : 'hover:bg-white/5',
+              )}
+            >
+              <SlidersHorizontal size={15} />
+              Filters
+              <span className="text-[--text-muted]">{activeFilterCount}</span>
+            </button>
+          )}
+
+          {/* Clone voice CTA (only in personal tab) */}
           {tab === 'personal' && (
             <button
               type="button"
               onClick={() => setShowCloneModal(true)}
-              className="flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 text-sm"
+              className="flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 text-sm shrink-0"
             >
-              <Plus size={14} /> Clone a voice
+              <Plus size={14} /> Clone voice
             </button>
           )}
         </div>
 
+        {/* ── Tabs: Public / Personal ─────────────────────────────────────── */}
         <div className="flex gap-1 glass rounded-xl p-1 w-fit">
-          {([['public', 'Public Library'], ['personal', 'My Voices']] as const).map(([id, label]) => (
+          {([['public', 'Public library'], ['personal', 'My voices']] as const).map(([id, label]) => (
             <button
               key={id}
               type="button"
@@ -387,17 +437,64 @@ export default function VoicesPage() {
           ))}
         </div>
 
-        {tab === 'public' && (
-          <div className="space-y-4">
+        {/* ── Filters panel (public only, collapsible) ───────────────────── */}
+        {tab === 'public' && showFilters && (
+          <div className="rounded-2xl border border-border bg-card p-4">
             <FiltersBar
               filters={filters}
               options={filterOptions}
               onFilter={(k, v) => setFilters((p) => ({ ...p, [k]: v }))}
             />
+          </div>
+        )}
+
+        {/* ── Folders section (personal tab only) ────────────────────────── */}
+        {tab === 'personal' && (
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="font-display text-base font-semibold text-foreground">Folders</h2>
+              <button
+                type="button"
+                aria-label="New folder"
+                onClick={() => setFolders((prev) => [...prev, `Folder ${prev.length + 1}`])}
+                className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors"
+              >
+                <FolderPlus size={14} />
+              </button>
+              <button
+                type="button"
+                aria-label="Delete selected folder"
+                className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-error transition-colors"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+
+            {folders.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {folders.map((name) => (
+                  <div
+                    key={name}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors font-body text-sm text-foreground cursor-pointer select-none"
+                  >
+                    <Folder size={16} className="text-[--text-muted]" />
+                    {name}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[--text-muted] font-mono">No folders yet.</p>
+            )}
+          </section>
+        )}
+
+        {/* ── Content: Public tab ─────────────────────────────────────────── */}
+        {tab === 'public' && (
+          <div className="space-y-6">
             {favoriteVoices.length > 0 && (
               <div>
                 <p className="font-mono text-xs text-yellow-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                  <Star size={11} fill="currentColor" /> Favoris
+                  <Star size={11} fill="currentColor" /> Favorites
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                   {favoriteVoices.map((v) => (
@@ -414,7 +511,7 @@ export default function VoicesPage() {
               </div>
             ) : publicVoices.length === 0 ? (
               <div className="glass rounded-xl p-10 text-center">
-                <p className="text-[--text-secondary] font-body text-sm">Aucune voix trouvée pour ces filtres.</p>
+                <p className="text-[--text-secondary] font-body text-sm">No voices match these filters.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -426,6 +523,7 @@ export default function VoicesPage() {
           </div>
         )}
 
+        {/* ── Content: Personal tab ───────────────────────────────────────── */}
         {tab === 'personal' && (
           <div className="space-y-3">
             {loadingPersonal ? (
@@ -440,16 +538,16 @@ export default function VoicesPage() {
                     <Mic2 size={36} className="text-emerald-500" />
                   </div>
                 </div>
-                <p className="font-display text-xl font-bold text-foreground mb-2">Aucune voix clonée</p>
+                <p className="font-display text-xl font-bold text-foreground mb-2">No cloned voices yet</p>
                 <p className="font-body text-sm text-[--text-secondary] mb-5 max-w-sm">
-                  Enregistre ou importe 30 secondes d&apos;audio de ta voix, nous la clonons avec ElevenLabs et tu pourras l&apos;utiliser sur toutes tes vidéos.
+                  Record or upload 30 seconds of your voice, we clone it via ElevenLabs and you can use it on all your videos.
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowCloneModal(true)}
                   className="inline-flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 text-sm shadow-md hover:shadow-lg transition-all"
                 >
-                  <Plus size={14} /> Cloner ma voix
+                  <Plus size={14} /> Clone my voice
                 </button>
               </div>
             ) : (

@@ -22,7 +22,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
           type="button"
           onClick={onMobileMenuToggle}
           className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted text-[--text-muted] hover:text-foreground transition-colors"
-          aria-label="Ouvrir le menu"
+          aria-label="Open menu"
         >
           <Menu size={18} />
         </button>

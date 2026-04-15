@@ -36,15 +36,15 @@ const NAV_SECTIONS = [
       { href: '/faceless',  label: 'Faceless Videos',icon: Video },
       { href: '/motion',    label: 'Motion Design',  icon: Sparkles },
       { href: '/brand',     label: 'Brand Kit',      icon: Palette },
-      { href: '/projects',  label: 'Projets',        icon: History },
-      { href: '/voices',    label: 'Mes voix',       icon: Mic },
+      { href: '/projects',  label: 'Projects',       icon: History },
+      { href: '/voices',    label: 'Voices',         icon: Mic },
     ],
   },
   {
-    label: 'Compte',
+    label: 'Account',
     items: [
-      // Paramètres retiré — accessible via le menu utilisateur (dropdown bas-gauche).
-      { href: 'mailto:support@clyro.app', label: 'Aide', icon: HelpCircle, external: true },
+      // Settings removed — accessible via the user dropdown (bottom-left card).
+      { href: 'mailto:support@clyro.app', label: 'Help', icon: HelpCircle, external: true },
     ],
   },
 ]
@@ -170,7 +170,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
     setSettingsOpen(true)
   }
 
-  const planLabel = plan === 'pro' ? 'Pro' : plan === 'studio' ? 'Studio' : 'Plan gratuit'
+  const planLabel = plan === 'pro' ? 'Pro' : plan === 'studio' ? 'Studio' : 'Free plan'
 
   return (
     <div
@@ -224,7 +224,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
                 <span className="font-mono text-sm font-bold text-white">{initials}</span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-display text-sm font-semibold text-foreground truncate">{name ?? 'Utilisateur'}</p>
+                <p className="font-display text-sm font-semibold text-foreground truncate">{name ?? 'User'}</p>
                 <p className="font-mono text-[11px] text-[--text-secondary]">{planLabel}</p>
               </div>
             </div>
@@ -234,13 +234,13 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
           <div className="p-2 space-y-0.5">
             <DropdownItem
               icon={<Gem size={15} className="text-amber-500" />}
-              label="Améliorer mon plan"
+              label="Upgrade plan"
               onClick={() => openSettings('billing')}
               primary
             />
             <DropdownItem
               icon={<Settings size={15} />}
-              label="Paramètres"
+              label="Settings"
               onClick={() => openSettings('account')}
             />
           </div>
@@ -249,13 +249,13 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
           <div className="p-2 space-y-0.5 border-t border-border">
             <DropdownItem
               icon={<Code2 size={15} />}
-              label="Développeurs"
+              label="Developers"
               onClick={() => openSettings('api')}
               trailing={<ChevronRight size={13} className="text-[--text-muted]" />}
             />
             <DropdownItem
               icon={<HelpCircle size={15} />}
-              label="Aide"
+              label="Help"
               href="mailto:support@clyro.app"
               external
               trailing={<ChevronRight size={13} className="text-[--text-muted]" />}
@@ -266,7 +266,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
           <div className="p-2 border-t border-border">
             <DropdownItem
               icon={<LogOut size={15} />}
-              label="Déconnexion"
+              label="Log out"
               onClick={onSignOut}
               danger
             />
@@ -375,7 +375,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
             type="button"
             onClick={() => onToggle(!collapsed)}
             className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-muted border border-border rounded-full items-center justify-center shadow-card hover:bg-border transition-colors z-10"
-            aria-label={collapsed ? 'Étendre la sidebar' : 'Réduire la sidebar'}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <ChevronRight
               size={13}

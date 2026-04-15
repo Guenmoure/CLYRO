@@ -35,9 +35,9 @@ export default async function DashboardPage() {
     return (
       <div className="px-4 sm:px-6 py-16 max-w-2xl mx-auto">
         <div className="bg-muted border border-border rounded-2xl p-6">
-          <p className="font-display text-sm text-foreground mb-1">Configuration manquante</p>
+          <p className="font-display text-sm text-foreground mb-1">Missing configuration</p>
           <p className="font-body text-xs text-[--text-muted]">
-            Les variables d&apos;environnement Supabase ne sont pas configurées.
+            Supabase environment variables aren&apos;t set on this deployment.
           </p>
         </div>
       </div>
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
       {/* ── Greeting (subtle, no big block) ─────────────────────────── */}
       <div className="flex items-center justify-between">
         <p className="font-body text-sm text-[--text-secondary]">
-          Bonjour <span className="text-foreground font-medium">{firstName}</span> · prêt à créer ?
+          Hi <span className="text-foreground font-medium">{firstName}</span> · ready to create?
         </p>
       </div>
 
@@ -132,16 +132,16 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-2.5 min-w-0">
             <Zap className="text-warning shrink-0" size={14} />
             <p className="font-body text-xs text-[--text-secondary] truncate">
-              <span className="text-foreground font-medium">Plan Starter</span>
+              <span className="text-foreground font-medium">Starter plan</span>
               <span className="mx-2 text-[--text-muted]">·</span>
-              {credits} crédit{credits !== 1 ? 's' : ''} restant{credits !== 1 ? 's' : ''} ce mois
+              {credits} credit{credits !== 1 ? 's' : ''} left this month
             </p>
           </div>
           <Link
             href="/settings?tab=billing"
             className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-blue-500 hover:text-blue-400 transition-colors"
           >
-            Passer au Pro
+            Upgrade to Pro
             <ArrowRight size={12} />
           </Link>
         </div>
@@ -158,14 +158,14 @@ export default async function DashboardPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-display text-sm text-foreground">
-              Impossible de charger tes projets
+              Can&apos;t load your projects right now
             </p>
             <p className="font-body text-xs text-[--text-muted] mt-1 font-mono">
               {errorMsg}
             </p>
           </div>
           <Button variant="secondary" size="sm" leftIcon={<RefreshCw size={14} />} asChild>
-            <Link href="/dashboard">Réessayer</Link>
+            <Link href="/dashboard">Retry</Link>
           </Button>
         </Card>
       )}

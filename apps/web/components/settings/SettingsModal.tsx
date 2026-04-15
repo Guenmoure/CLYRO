@@ -30,18 +30,18 @@ interface SettingsNavItem {
 }
 
 const PROFILE_SECTIONS: SettingsNavItem[] = [
-  { id: 'account',         label: 'Compte',         icon: User      },
-  { id: 'preferences',     label: 'Préférences',    icon: Settings2 },
-  { id: 'personalization', label: 'Personnalisation', icon: BookOpen },
+  { id: 'account',         label: 'Account',         icon: User      },
+  { id: 'preferences',     label: 'Preferences',     icon: Settings2 },
+  { id: 'personalization', label: 'Personalization', icon: BookOpen  },
 ]
 
 const WORKSPACE_SECTIONS: SettingsNavItem[] = [
-  { id: 'general',     label: 'Général',          icon: Cog        },
-  { id: 'billing',     label: 'Plan & Facturation', icon: CreditCard },
-  { id: 'usage',       label: 'Usage & Historique', icon: Activity },
-  { id: 'security',    label: 'Sécurité',         icon: Lock       },
-  { id: 'api',         label: 'API',              icon: Code       },
-  { id: 'connections', label: 'Connexions',       icon: Plug       },
+  { id: 'general',     label: 'General',         icon: Cog        },
+  { id: 'billing',     label: 'Plan & Billing',  icon: CreditCard },
+  { id: 'usage',       label: 'Usage & History', icon: Activity   },
+  { id: 'security',    label: 'Security',        icon: Lock       },
+  { id: 'api',         label: 'API',             icon: Code       },
+  { id: 'connections', label: 'Connections',     icon: Plug       },
 ]
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
@@ -73,14 +73,14 @@ export function SettingsModal({
           className="fixed inset-0 z-50 flex items-center justify-center p-4 focus:outline-none"
           aria-describedby={undefined}
         >
-          <Dialog.Title className="sr-only">Paramètres</Dialog.Title>
+          <Dialog.Title className="sr-only">Settings</Dialog.Title>
 
           {/* Actual modal box — animation lives HERE, not on the wrapper */}
           <div className="w-full h-full max-w-[1100px] max-h-[760px] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fade-up">
             {/* Left sidebar nav */}
             <aside className="shrink-0 w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-muted/30 overflow-y-auto">
               <nav className="p-4 space-y-5">
-                <SectionGroup label="Profil" items={PROFILE_SECTIONS} active={active} onSelect={setActive} />
+                <SectionGroup label="Profile" items={PROFILE_SECTIONS} active={active} onSelect={setActive} />
                 <SectionGroup label="Workspace" items={WORKSPACE_SECTIONS} active={active} onSelect={setActive} />
               </nav>
             </aside>
@@ -91,7 +91,7 @@ export function SettingsModal({
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  aria-label="Fermer"
+                  aria-label="Close"
                   className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors z-10"
                 >
                   <X size={18} />
