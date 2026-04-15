@@ -63,7 +63,7 @@ function SectionHeader({ label, labelVariant, title, subtitle, titleGradient }: 
 const NAV_LINKS = [
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
   { label: 'Styles',          href: '#styles' },
-  { label: 'Tarifs',          href: '#tarifs' },
+  { label: 'Tarifs',          href: '/pricing' },
   { label: 'FAQ',             href: '#faq' },
 ]
 
@@ -580,6 +580,15 @@ function PricingSection() {
           title="Simple. Transparent. Sans surprise."
         />
         <PricingToggle />
+        <div className="mt-10 text-center">
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 font-display text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+          >
+            Voir le détail complet des tarifs
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
       </div>
     </section>
   )

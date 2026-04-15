@@ -98,9 +98,9 @@ export function FloatingUserCard() {
                 <Badge variant="purple">{planLabel}</Badge>
               ) : (
                 <>
-                  <Badge variant="warning">{planLabel} · {credits} crédit{credits !== 1 ? 's' : ''}</Badge>
+                  <Badge variant="warning">{planLabel} · {credits} credit{credits !== 1 ? 's' : ''}</Badge>
                   <Link
-                    href="/settings?tab=billing"
+                    href="/pricing"
                     onClick={() => setOpen(false)}
                     className="ml-auto inline-flex items-center gap-1 rounded-lg bg-grad-primary text-white px-2 py-1 text-[11px] font-display font-semibold hover:opacity-90 transition-opacity"
                   >

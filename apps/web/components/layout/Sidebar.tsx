@@ -235,7 +235,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
             <DropdownItem
               icon={<Gem size={15} className="text-amber-500" />}
               label="Upgrade plan"
-              onClick={() => openSettings('billing')}
+              href="/pricing"
               primary
             />
             <DropdownItem

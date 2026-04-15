@@ -51,15 +51,15 @@ export function PlanBillingSection() {
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Plan & Facturation</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">Plan & Billing</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Gère ton abonnement, tes crédits et tes moyens de paiement.
+          Manage your subscription, credits, and payment methods.
         </p>
       </div>
 
       {/* Current plan card */}
       <section className="space-y-3">
-        <p className="font-body text-sm font-semibold text-foreground">Ton plan</p>
+        <p className="font-body text-sm font-semibold text-foreground">Your plan</p>
         <div className={cn('relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br', meta.color)}>
           <div className="relative p-6 flex items-center justify-between gap-4 bg-card/70 backdrop-blur-sm">
             <div className="flex-1 min-w-0 space-y-2">
@@ -69,17 +69,17 @@ export function PlanBillingSection() {
               </div>
               <p className="font-body text-sm text-[--text-secondary] max-w-md">
                 {isPaid
-                  ? 'Génération illimitée, export HD 1080p, vidéos longues jusqu\'à 5 minutes.'
-                  : 'Passe au Pro pour générer en illimité, exporter en 1080p et créer des vidéos jusqu\'à 5 minutes.'}
+                  ? 'Unlimited generation, 1080p HD export, long videos up to 5 minutes.'
+                  : 'Upgrade to Pro to generate unlimited, export in 1080p and create videos up to 5 minutes.'}
               </p>
               <div className="inline-flex items-center gap-2 rounded-full bg-background/60 px-3 py-1 text-xs font-mono text-foreground">
                 <Zap size={11} className="text-warning" />
-                {plan.credits} crédit{plan.credits !== 1 ? 's' : ''} restant{plan.credits !== 1 ? 's' : ''}
+                {plan.credits} credit{plan.credits !== 1 ? 's' : ''} left
               </div>
             </div>
             {!isPaid && (
               <Link
-                href="/settings/billing"
+                href="/pricing"
                 className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-display font-semibold hover:opacity-90 transition-opacity shadow-sm"
               >
                 <Zap size={13} /> Upgrade
@@ -96,32 +96,32 @@ export function PlanBillingSection() {
           <button
             type="button"
             disabled
-            title="Bientôt disponible"
+            title="Coming soon"
             className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-1.5 text-xs font-body font-medium text-[--text-secondary] hover:bg-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Acheter un add-on
+            Buy an add-on
           </button>
         </div>
         <div className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-muted/30 px-4 py-6">
           <Package size={18} className="text-[--text-muted] shrink-0" />
-          <p className="font-body text-sm text-[--text-secondary]">Aucun add-on actif.</p>
+          <p className="font-body text-sm text-[--text-secondary]">No active add-ons.</p>
         </div>
       </section>
 
       {/* Billing history (stub) */}
       <section className="space-y-3">
-        <p className="font-body text-sm font-semibold text-foreground">Historique de facturation</p>
+        <p className="font-body text-sm font-semibold text-foreground">Billing history</p>
         <div className="rounded-xl border border-border bg-card px-4 py-8 text-center">
-          <p className="font-body text-sm text-[--text-secondary]">Aucune facture pour l&apos;instant.</p>
+          <p className="font-body text-sm text-[--text-secondary]">No invoices yet.</p>
         </div>
       </section>
 
-      {/* Full billing link */}
+      {/* See full pricing */}
       <Link
-        href="/settings/billing"
+        href="/pricing"
         className="inline-flex items-center gap-2 font-body text-sm text-blue-500 hover:text-blue-600 transition-colors"
       >
-        Gérer l&apos;abonnement en détail
+        See all plans & pricing
         <ArrowRight size={13} />
       </Link>
     </div>

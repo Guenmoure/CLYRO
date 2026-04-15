@@ -138,7 +138,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <Link
-            href="/settings?tab=billing"
+            href="/pricing"
             className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-blue-500 hover:text-blue-400 transition-colors"
           >
             Upgrade to Pro
