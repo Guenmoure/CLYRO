@@ -53,6 +53,16 @@ services:
       - key: RESEND_API_KEY
         sync: false
 
+      # — HeyGen (F5 AI Avatar Studio) —
+      - key: HEYGEN_API_KEY
+        sync: false        # key depuis https://app.heygen.com/settings/api
+      - key: HEYGEN_WEBHOOK_SECRET
+        sync: false        # shared secret HeyGen pour la vérif HMAC des webhooks
+
+      # — F5 Studio pipeline (optionnel, a des valeurs par défaut) —
+      - key: PIPELINE_TIMEOUT_MS
+        sync: false        # watchdog du pipeline — défaut 1800000 (30 min)
+
       # — URLs (remplir après déploiement Vercel) —
       - key: FRONTEND_URL
         sync: false        # ex: https://app.clyro.app

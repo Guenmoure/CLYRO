@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import {
-  Video, Sparkles, Palette, Mic2, Image as ImageIcon, History,
+  Video, Sparkles, Palette, Mic2, Image as ImageIcon, History, Film,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +17,17 @@ interface Feature {
 }
 
 const FEATURES: Feature[] = [
+  {
+    category: 'AI Avatar',
+    title: 'Avatar Studio',
+    description: 'Script or YouTube URL → video with your AI avatar + typed scenes + timeline editor.',
+    href: '/studio/new',
+    icon: Film,
+    iconColor: 'text-rose-400',
+    iconBg: 'bg-rose-500/10',
+    iconRing: 'ring-rose-500/30',
+    hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(251,113,133,0.3)]',
+  },
   {
     category: 'AI Studio',
     title: 'Faceless Video',
