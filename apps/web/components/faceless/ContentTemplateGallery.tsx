@@ -79,8 +79,7 @@ export function ContentTemplateGallery({
               Choisis un template inspiré
             </h3>
             <p className="font-body text-sm text-[--text-secondary] mt-1 max-w-xl">
-              {CONTENT_TEMPLATES.length} formats prêts à l&apos;emploi, copiés des meilleures chaînes YouTube faceless.
-              Sélection → description, style et structure pré-remplis.
+              Des formats éprouvés, inspirés de chaînes YouTube faceless qui cartonnent. Sélectionne-en un et la description, le style et la structure se remplissent tout seuls.
             </p>
           </div>
 
