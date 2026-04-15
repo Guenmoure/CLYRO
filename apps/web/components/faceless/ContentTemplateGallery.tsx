@@ -203,10 +203,10 @@ function TemplateCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        'group relative text-left rounded-2xl border bg-card overflow-hidden transition-all duration-200',
+        'group relative text-left rounded-2xl border bg-card overflow-hidden',
         selected
           ? 'border-blue-500 ring-2 ring-blue-500/30'
-          : 'border-border hover:border-border hover:-translate-y-0.5 hover:shadow-lg',
+          : 'card-interactive border-border',
       )}
     >
       {/* Visual header — gradient based on style */}

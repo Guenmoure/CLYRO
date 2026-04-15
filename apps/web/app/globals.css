@@ -529,6 +529,28 @@
 }
 
 /* ============================================================
+   Card interactivity — standardized hover for all clickable cards
+   Use .card-interactive on any clickable card/button that shouldn't
+   opt into the full Card component. Ensures visual consistency with
+   <Card variant="interactive" />
+   ============================================================ */
+.card-interactive {
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+.card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: var(--border);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+:root.dark .card-interactive:hover {
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.card-interactive:active {
+  transform: translateY(0);
+  transition-duration: 100ms;
+}
+
+/* ============================================================
    Scrollbar Custom — dark CLYRO style
    ============================================================ */
 ::-webkit-scrollbar {

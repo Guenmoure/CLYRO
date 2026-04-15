@@ -125,27 +125,26 @@ export default async function DashboardPage() {
       {/* ── Hero carousel ──────────────────────────────────────────── */}
       <HeroBanner />
 
-      {/* ── Plan banner — Starter only ─────────────────────────────── */}
+      {/* ── Plan banner — Starter only — demoted to info strip, no primary CTA ──
+           (The HeroBanner above already has the primary CTA; this is just a nudge.) */}
       {isStarter && (
-        <Card variant="gradient" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 px-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-warning/15 rounded-xl p-2 shrink-0">
-              <Zap className="text-warning" size={18} />
-            </div>
-            <div>
-              <p className="font-display text-sm text-foreground">
-                Tu es sur le plan Starter
-              </p>
-              <p className="font-body text-xs text-[--text-secondary] mt-0.5">
-                Il te reste {credits} crédit{credits !== 1 ? 's' : ''} ce mois.
-                Passe au Pro pour une création illimitée.
-              </p>
-            </div>
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/50 px-4 py-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Zap className="text-warning shrink-0" size={14} />
+            <p className="font-body text-xs text-[--text-secondary] truncate">
+              <span className="text-foreground font-medium">Plan Starter</span>
+              <span className="mx-2 text-[--text-muted]">·</span>
+              {credits} crédit{credits !== 1 ? 's' : ''} restant{credits !== 1 ? 's' : ''} ce mois
+            </p>
           </div>
-          <Button variant="primary" size="sm" rightIcon={<ArrowRight size={13} />} asChild>
-            <Link href="/settings?tab=billing">Passer au Pro — 19€/mois</Link>
-          </Button>
-        </Card>
+          <Link
+            href="/settings?tab=billing"
+            className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-blue-500 hover:text-blue-400 transition-colors"
+          >
+            Passer au Pro
+            <ArrowRight size={12} />
+          </Link>
+        </div>
       )}
 
       {/* ── Feature cards ──────────────────────────────────────────── */}

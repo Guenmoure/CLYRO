@@ -577,6 +577,8 @@ export default function BrandNewPage() {
     <>
       <WizardLayout
         featureTitle="Brand Kit"
+        featureHref="/brand"
+        currentPageLabel="Nouveau kit"
         steps={STEPS}
         currentStep={currentStep}
         projectName={projectName}

@@ -4,6 +4,7 @@ import { ArrowLeft, Save } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Breadcrumbs } from '@/components/shared/breadcrumbs'
 import { StepSidebar, type WizardStep } from './StepSidebar'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -11,6 +12,10 @@ import { StepSidebar, type WizardStep } from './StepSidebar'
 interface WizardLayoutProps {
   /** Feature title shown in the top bar (e.g. "Faceless Videos") */
   featureTitle: string
+  /** Parent route for the feature (e.g. "/faceless") — used in breadcrumb */
+  featureHref?: string
+  /** Label of the current step/page (defaults to "Nouveau") */
+  currentPageLabel?: string
   steps: WizardStep[]
   currentStep: number
   projectName: string
@@ -38,11 +43,15 @@ interface WizardLayoutProps {
 
 function WizardTopBar({
   featureTitle,
+  featureHref,
+  currentPageLabel = 'Nouveau projet',
   onBack,
   onSave,
   isSaving,
 }: {
   featureTitle: string
+  featureHref?: string
+  currentPageLabel?: string
   onBack?: () => void
   onSave?: () => void | Promise<void>
   isSaving?: boolean
@@ -59,17 +68,22 @@ function WizardTopBar({
 
   return (
     <header className="h-14 shrink-0 flex items-center justify-between px-4 border-b border-border/50 bg-card">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"
           onClick={handleBack}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-secondary] hover:text-foreground hover:bg-muted transition-colors shrink-0"
           aria-label="Retour"
         >
           <ArrowLeft size={16} />
         </button>
-        <div className="h-4 w-px bg-border" />
-        <p className="font-display text-sm text-foreground">{featureTitle}</p>
+        <div className="h-4 w-px bg-border shrink-0" />
+        <Breadcrumbs
+          items={[
+            { label: featureTitle, href: featureHref },
+            { label: currentPageLabel },
+          ]}
+        />
       </div>
 
       {onSave && (
@@ -155,6 +169,8 @@ function WizardBottomBar({
 
 export function WizardLayout({
   featureTitle,
+  featureHref,
+  currentPageLabel,
   steps,
   currentStep,
   projectName,
@@ -190,6 +206,8 @@ export function WizardLayout({
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <WizardTopBar
           featureTitle={featureTitle}
+          featureHref={featureHref}
+          currentPageLabel={currentPageLabel}
           onBack={onBack}
           onSave={onSave}
           isSaving={isSaving}

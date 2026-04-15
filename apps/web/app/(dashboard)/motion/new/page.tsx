@@ -482,6 +482,8 @@ export default function MotionNewPage() {
     <>
       <WizardLayout
         featureTitle="Motion Design"
+        featureHref="/motion"
+        currentPageLabel="Nouvelle vidéo"
         steps={STEPS}
         currentStep={currentStep}
         projectName={projectName}

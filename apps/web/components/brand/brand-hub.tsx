@@ -91,7 +91,7 @@ function BrandKitForm({
 
       <div className="flex gap-4">
         <div className="flex-1">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5">Couleur principale</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5">Couleur principale</p>
           <div className="flex items-center gap-2">
             <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)}
               className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
@@ -99,7 +99,7 @@ function BrandKitForm({
           </div>
         </div>
         <div className="flex-1">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5">Secondaire</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5">Secondaire</p>
           <div className="flex items-center gap-2">
             <input type="color" value={secondaryColor || '#ffffff'} onChange={(e) => setSecondaryColor(e.target.value)}
               className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
@@ -201,7 +201,7 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
                   : 'glass glass-hover border-transparent text-gray-500 dark:text-white/40'
               )}>
               <span>{p.emoji}</span> {p.label}
-              <span className="font-mono text-[9px] text-gray-400 dark:text-white/25">{p.ratio}</span>
+              <span className="font-mono text-[11px] text-gray-400 dark:text-white/25">{p.ratio}</span>
             </button>
           ))}
         </div>
@@ -263,7 +263,7 @@ function AssetGallery({ assets, onDelete }: { assets: BrandAsset[]; onDelete: (i
             </button>
           </div>
           <div className="p-2">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-gray-400 dark:text-white/30">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-gray-400 dark:text-white/30">
               {asset.platform ?? asset.type}
             </span>
           </div>
@@ -331,7 +331,7 @@ function KitPanel({ kit, onUpdate, onDelete }: {
               <span className="w-4 h-4 rounded-full border border-white/10 shadow-sm" style={{ background: kit.primary_color }} />
               {kit.secondary_color && <span className="w-4 h-4 rounded-full border border-white/10 shadow-sm" style={{ background: kit.secondary_color }} />}
               {kit.font_family && <span className="font-mono text-[11px] text-gray-400 dark:text-white/30">{kit.font_family}</span>}
-              {kit.is_default && <span className="font-mono text-[9px] text-clyro-primary uppercase tracking-wider">★ Défaut</span>}
+              {kit.is_default && <span className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">★ Défaut</span>}
             </div>
           </div>
         </div>
@@ -360,13 +360,13 @@ function KitPanel({ kit, onUpdate, onDelete }: {
 
       {/* Generator */}
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">Générateur IA</p>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">Générateur IA</p>
         <AssetGenerator kit={kit} onGenerated={handleGenerated} />
       </div>
 
       {/* Gallery */}
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">
           Assets générés · {assets.length}
         </p>
         {loadingAssets ? (
@@ -424,7 +424,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
       {/* Sidebar */}
       <aside className="w-56 glass-heavy glass-border-r flex flex-col shrink-0">
         <div className="p-4 glass-border-b">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-0.5">Module</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-0.5">Module</p>
           <h1 className="font-display text-sm font-bold text-gray-900 dark:text-white">Brand Kit</h1>
         </div>
 
@@ -486,7 +486,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-sm font-medium text-gray-800 dark:text-white/80 truncate">{kit.name}</p>
                       {kit.is_default && (
-                        <p className="font-mono text-[9px] text-clyro-primary uppercase tracking-wider">★ Défaut</p>
+                        <p className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">★ Défaut</p>
                       )}
                     </div>
                   </div>
@@ -498,7 +498,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
 
         {sidebarTab === 'studio' && (
           <div className="flex-1 p-3 flex flex-col gap-2">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mt-1 px-1">Identity Studio</p>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mt-1 px-1">Identity Studio</p>
             <p className="font-body text-xs text-gray-400 dark:text-white/30 px-1 leading-relaxed">
               Brief → 3 directions → Visuels IA → Charte graphique → Export
             </p>
@@ -523,7 +523,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
             {showCreate && (
               <div className="flex flex-col h-full overflow-y-auto px-8 py-8">
                 <div className="max-w-lg">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">Nouveau brand kit</p>
+                  <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">Nouveau brand kit</p>
                   <div className="glass glass-heavy rounded-2xl p-6">
                     <BrandKitForm
                       onSave={handleSaved}
@@ -544,23 +544,50 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
             )}
 
             {!activeKit && !showCreate && (
-              <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
-                <div className="w-16 h-16 rounded-2xl bg-clyro-accent/10 border border-clyro-accent/20 flex items-center justify-center">
-                  <Palette size={28} className="text-clyro-accent" />
+              <div className="flex flex-col items-center justify-center h-full gap-6 text-center px-8 py-12 max-w-lg mx-auto">
+                {/* Decorative icon cluster */}
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/20 via-blue-500/15 to-purple-500/20 blur-2xl" />
+                  <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400/15 via-blue-500/10 to-purple-500/15 border border-border flex items-center justify-center shadow-lg">
+                    <Palette size={40} className="text-clyro-accent" />
+                  </div>
+                  {/* Tiny decorative chips */}
+                  <div className="absolute -top-2 -right-2 w-8 h-8 rounded-xl bg-blue-500 shadow-lg" />
+                  <div className="absolute -bottom-2 -left-2 w-6 h-6 rounded-lg bg-purple-500 shadow-lg" />
                 </div>
-                <div>
-                  <h2 className="font-display font-bold text-gray-900 dark:text-white mb-1">Crée ton Brand Kit</h2>
-                  <p className="font-body text-sm text-gray-500 dark:text-white/40 max-w-xs">
-                    Définis ta charte graphique et génère des logos, posts réseaux sociaux et autres assets visuels avec l'IA.
+
+                <div className="space-y-2">
+                  <h2 className="font-display text-2xl font-bold text-foreground">
+                    Crée ton Brand Kit
+                  </h2>
+                  <p className="font-body text-sm text-[--text-secondary] max-w-sm">
+                    Définis ta charte graphique (couleurs, typos, logo) et génère en un clic des posts, bannières, logos et assets visuels cohérents avec ton identité.
                   </p>
                 </div>
-                <div className="flex gap-3">
+
+                {/* Feature hints */}
+                <div className="grid grid-cols-3 gap-2 w-full max-w-md">
+                  <div className="rounded-xl border border-border bg-muted/50 px-3 py-2 text-left">
+                    <p className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted] mb-0.5">Logos</p>
+                    <p className="font-body text-xs text-foreground">SVG exportables</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/50 px-3 py-2 text-left">
+                    <p className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted] mb-0.5">Posts</p>
+                    <p className="font-body text-xs text-foreground">IG · LinkedIn · X</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/50 px-3 py-2 text-left">
+                    <p className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted] mb-0.5">Charte</p>
+                    <p className="font-body text-xs text-foreground">PDF + ZIP</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 justify-center">
                   <button type="button" onClick={() => setShowCreate(true)}
-                    className="bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
-                    <Plus size={15} /> Créer un kit
+                    className="bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 transition-opacity flex items-center gap-2 shadow-md hover:shadow-lg">
+                    <Plus size={15} /> Créer mon premier kit
                   </button>
                   <button type="button" onClick={() => setSidebarTab('studio')}
-                    className="glass glass-hover text-gray-700 dark:text-white/70 font-display font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                    className="glass glass-hover text-foreground font-display font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
                     <Sparkles size={15} /> Identity Studio
                   </button>
                 </div>

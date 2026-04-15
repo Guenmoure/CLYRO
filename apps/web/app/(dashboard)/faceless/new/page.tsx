@@ -487,6 +487,8 @@ export default function FacelessNewPage() {
     <>
       <WizardLayout
         featureTitle="Faceless Videos"
+        featureHref="/faceless"
+        currentPageLabel="Nouvelle vidéo"
         steps={STEPS}
         currentStep={currentStep}
         projectName={projectName}
