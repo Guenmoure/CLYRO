@@ -11,8 +11,8 @@ import { Badge } from '@/components/ui/badge'
 // ── Account items (workspace nav is in the RightSidebar) ──────────────────────
 
 const ACCOUNT_ITEMS = [
-  { href: '/settings', label: 'Paramètres', icon: Settings },
-  { href: 'mailto:support@clyro.app', label: 'Aide', icon: HelpCircle, external: true as const },
+  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: 'mailto:support@clyro.app', label: 'Help', icon: HelpCircle, external: true as const },
 ] as const
 
 // ── FloatingUserCard ──────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ export function FloatingUserCard() {
         .select('full_name, plan, credits')
         .eq('id', session.user.id)
         .maybeSingle()
-      const n = data?.full_name ?? session.user.email?.split('@')[0] ?? 'Utilisateur'
+      const n = data?.full_name ?? session.user.email?.split('@')[0] ?? 'User'
       setName(n)
       setPlan(data?.plan ?? 'free')
       setCredits(data?.credits ?? 0)
@@ -114,7 +114,7 @@ export function FloatingUserCard() {
           {/* Account nav (workspace nav lives in the right sidebar) */}
           <div className="p-2">
             <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] px-2 py-1.5">
-              Compte
+              Account
             </p>
             {ACCOUNT_ITEMS.map((item) => (
               <NavLink
@@ -133,7 +133,7 @@ export function FloatingUserCard() {
               className="flex items-center gap-3 w-full px-2 py-2 rounded-lg text-sm font-body text-error hover:bg-error/10 transition-colors"
             >
               <LogOut size={15} />
-              Déconnexion
+              Sign out
             </button>
           </div>
         </div>
@@ -143,7 +143,7 @@ export function FloatingUserCard() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label="Menu utilisateur"
+        aria-label="User menu"
         className={cn(
           'group relative flex items-center gap-3 rounded-2xl border border-border/60 bg-card/90 backdrop-blur-xl px-3 py-2.5 shadow-lg',
           'hover:border-border hover:shadow-xl hover:bg-card transition-all duration-200',
@@ -154,7 +154,7 @@ export function FloatingUserCard() {
           <span className="font-mono text-sm font-bold text-white">{initials}</span>
         </div>
         <div className="text-left min-w-0">
-          <p className="font-display text-xs text-foreground truncate max-w-[140px]">{name || 'Compte'}</p>
+          <p className="font-display text-xs text-foreground truncate max-w-[140px]">{name || 'Account'}</p>
           <p className="font-mono text-[11px] text-[--text-muted] uppercase tracking-wider">
             {planLabel}
           </p>

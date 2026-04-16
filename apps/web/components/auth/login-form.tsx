@@ -31,7 +31,7 @@ export function LoginForm() {
       router.push('/dashboard')
       router.refresh()
     } catch {
-      setError('Une erreur est survenue. Veuillez réessayer.')
+      setError('An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -63,13 +63,13 @@ export function LoginForm() {
         className="w-full flex items-center justify-center gap-3 glass glass-hover text-white/80 font-body font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50"
       >
         <GoogleIcon />
-        Continuer avec Google
+        Continue with Google
       </button>
 
       {/* Divider */}
       <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-white/10" />
-        <span className="font-mono text-xs text-white/30 uppercase tracking-widest">ou</span>
+        <span className="font-mono text-xs text-white/30 uppercase tracking-widest">or</span>
         <div className="flex-1 h-px bg-white/10" />
       </div>
 
@@ -81,13 +81,13 @@ export function LoginForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="ton@email.com"
+            placeholder="your@email.com"
             required
             className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
           />
         </div>
         <div>
-          <label className="label-mono block mb-2">Mot de passe</label>
+          <label className="label-mono block mb-2">Password</label>
           <input
             type="password"
             value={password}
@@ -109,7 +109,7 @@ export function LoginForm() {
           disabled={loading}
           className="w-full bg-grad-primary text-white font-display font-semibold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {loading ? 'Connexion...' : 'Se connecter'}
+          {loading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
     </div>

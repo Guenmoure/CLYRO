@@ -31,7 +31,7 @@ interface StyleTemplate {
 
 const TEMPLATE_CATEGORIES: Array<{ id: TemplateCategory; label: string }> = [
   { id: 'all',        label: 'Tous les styles' },
-  { id: 'cinematic',  label: 'Cinématique'     },
+  { id: 'cinematic',  label: 'Cinematic'     },
   { id: 'animation',  label: 'Animation'       },
   { id: 'handmade',   label: 'Fait main'       },
   { id: '3d',         label: '3D & VFX'        },
@@ -169,14 +169,14 @@ function PreviewAnimation2d({ selected: _s }: { selected: boolean }) {
 }
 
 const STYLE_TEMPLATES: StyleTemplate[] = [
-  { id: 'cinematique',     label: 'Cinématique',    desc: 'Lumière dramatique, 8K',          category: 'cinematic', preview: PreviewCinematic    },
+  { id: 'cinematique',     label: 'Cinematic',    desc: 'Dramatic lighting, 8K',          category: 'cinematic', preview: PreviewCinematic    },
   { id: 'stock-vo',        label: 'Stock + VO',      desc: 'Documentaire National Geo',       category: 'cinematic', preview: PreviewStockVo      },
   { id: 'whiteboard',      label: 'Whiteboard',      desc: 'Marqueur sur tableau blanc',      category: 'handmade',  preview: PreviewWhiteboard   },
-  { id: 'stickman',        label: 'Bonshommes',      desc: 'Stickman & formes géo',           category: 'handmade',  badge: 'New', preview: PreviewStickman    },
+  { id: 'stickman',        label: 'Bonshommes',      desc: 'Stickman 'Stickman 'Stickman 'Stickman & formes géo' geo shapes' geo shapes' geo shapes',           category: 'handmade',  badge: 'New', preview: PreviewStickman    },
   { id: 'flat-design',     label: 'Flat Design',     desc: 'Illustration plate, couleurs vives', category: 'animation', badge: 'New', preview: PreviewFlatDesign  },
   { id: '3d-pixar',        label: '3D Pixar',        desc: 'Claymation style Pixar',          category: '3d',        badge: 'New', preview: Preview3dPixar     },
-  { id: 'motion-graphics', label: 'Motion Graphics', desc: 'Formes géo, typo animée',         category: '3d',        preview: PreviewMotionGraphics },
-  { id: 'animation-2d',    label: 'Animation 2D',    desc: 'Dessin animé vectoriel',          category: 'animation', preview: PreviewAnimation2d  },
+  { id: 'motion-graphics', label: 'Motion Graphics', desc: 'Geo shapes, animated type',         category: '3d',        preview: PreviewMotionGraphics },
+  { id: 'animation-2d',    label: 'Animation 2D',    desc: 'Vector animation',          category: 'animation', preview: PreviewAnimation2d  },
 ]
 
 // ── Pipeline types ─────────────────────────────────────────────────────────────
@@ -253,21 +253,21 @@ const EXAMPLE_SCRIPTS: Array<{ label: string; style: FacelessStyle; duration: Vi
     label: 'Science & espace',
     style: 'cinematique',
     duration: '30s',
-    description: 'Vidéo éducative sur les trous noirs, narration scientifique, animations spatiales épiques.',
+    description: 'Educational video about black holes, scientific narration, epic space animations.',
     script: `Les trous noirs sont les objets les plus mystérieux de l'univers. Là où la gravité devient si intense que même la lumière ne peut s'échapper. Ils se forment quand une étoile géante s'effondre sur elle-même à la fin de sa vie. À l'horizon des événements, le temps lui-même se fige. Les scientifiques estiment qu'au cœur de chaque galaxie se trouve un trou noir supermassif. Celui au centre de notre Voie Lactée fait 4 millions de fois la masse du Soleil. En 2019, l'humanité a capturé pour la première fois une image réelle d'un trou noir — à 55 millions d'années-lumière. Une fenêtre ouverte sur les confins de la physique moderne.`,
   },
   {
     label: 'Motivation & mindset',
     style: 'motion-graphics',
     duration: '30s',
-    description: 'Contenu motivationnel avec un message fort sur la discipline et le succès.',
+    description: 'Motivational content with a strong message about discipline and success.',
     script: `La réussite ne vient pas du talent. Elle vient de la constance. Chaque matin où tu te lèves avant les autres, tu creuses l'écart. Chaque fois que tu choisis le travail plutôt que le confort, tu construis ton avenir. Les gens qui réussissent ne sont pas plus intelligents. Ils sont plus réguliers. Ils font ce que les autres évitent. La discipline, c'est choisir entre ce que tu veux maintenant et ce que tu veux le plus. Commence aujourd'hui. Pas demain. Maintenant.`,
   },
   {
     label: 'Tutoriel produit',
     style: 'flat-design',
     duration: '15s',
-    description: 'Présentation produit SaaS claire et concise, style explicatif moderne.',
+    description: 'Clear and concise SaaS product presentation, modern explanatory style.',
     script: `Vous perdez des heures chaque semaine à gérer vos tâches manuellement. Notre solution automatise tout en 3 clics. Connectez vos outils existants en quelques secondes. Visualisez l'avancement de votre équipe en temps réel. Recevez des rapports automatiques chaque vendredi. Plus de 10 000 équipes ont déjà gagné 5 heures par semaine. Essayez gratuitement pendant 14 jours.`,
   },
 ]
@@ -321,7 +321,7 @@ const PIPELINE_STEPS: Array<{ id: PipelineStep; label: string }> = [
   { id: 'storyboard', label: 'Storyboard'  },
   { id: 'images',     label: 'Images'      },
   { id: 'clips',      label: 'Clips'       },
-  { id: 'final',      label: 'Vidéo'       },
+  { id: 'final',      label: 'Video'       },
 ]
 
 function StepIndicator({ current, savedState }: { current: PipelineStep; savedState?: 'saving' | 'saved' | null }) {
@@ -558,7 +558,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
           {/* Headline */}
           <div className="text-center space-y-2">
             <h1 className="font-display text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
-              Crée ta vidéo Faceless
+              Create your Faceless video
             </h1>
             <p className="font-body text-sm md:text-base text-[--text-secondary] max-w-xl mx-auto">
               Décris le contenu, colle ton script, choisis ton style — l&apos;IA fait le reste scène par scène.
@@ -572,7 +572,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               <textarea
                 value={project.description}
                 onChange={(e) => onChange({ description: e.target.value })}
-                placeholder="Décris ta vidéo : personnages, ambiance, message principal... Ex : une vidéo éducative sur les trous noirs avec un narrateur scientifique et des animations spatiales."
+                placeholder="Describe your video: characters, mood, main message... E.g.: educational video about black holes with scientific narrator and epic space animations."
                 rows={3}
                 className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-secondary] focus:outline-none resize-none"
               />
@@ -609,7 +609,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                     onNext()
                   }
                 }}
-                placeholder="Colle ou écris ton script complet ici. L'IA le découpera automatiquement en scènes. ⌘↵ pour lancer la génération."
+                placeholder="Paste or write your complete script here. AI will automatically split it into scenes. ⌘↵ to launch generation."
                 maxLength={8000}
                 rows={6}
                 className="w-full bg-transparent px-4 pb-3 text-foreground font-body text-sm placeholder:text-[--text-secondary] focus:outline-none resize-none"
@@ -730,9 +730,9 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               )}
               aria-live="polite"
             >
-              {!project.style ? '→ Sélectionne un style visuel ci-dessous' :
+              {!project.style ? '→ Select a visual style below' :
                 project.inputType === 'script'
-                  ? '→ Colle un script (min. 20 caractères)'
+                  ? '→ Paste a script (min. 20 characters)'
                   : '→ Importe un fichier audio'}
             </p>
             <button type="button" onClick={onNext} disabled={!canNext || loading}
@@ -740,7 +740,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all shrink-0',
                 canNext && !loading ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-sm hover:shadow-md' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-              Générer le storyboard
+              Generate storyboard
               {!loading && <ArrowRight size={13} />}
             </button>
           </div>
@@ -796,7 +796,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
   function deleteScene(id: string) {
     onScenesChange((prev) => prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, index: i })))
     if (editingId === id) setEditingId(null)
-    toast.success('Scène supprimée')
+    toast.success('Scene deleted')
   }
 
   function mergeWithNext(id: string) {
@@ -812,7 +812,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
     onScenesChange(
       [...scenes.slice(0, idx), merged, ...scenes.slice(idx + 2)].map((s, i) => ({ ...s, index: i }))
     )
-    toast.success('Scènes fusionnées')
+    toast.success('Scenes merged')
   }
 
   function handleDragStart(i: number) { setDragIndex(i) }
@@ -840,10 +840,10 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
       if (!res.ok) throw new Error('Prompt regen failed')
       const data = await res.json() as { imagePrompt: string; animationPrompt: string }
       updateScene(id, { imageStatus: 'idle', imagePrompt: data.imagePrompt, animationPrompt: data.animationPrompt })
-      toast.success('Prompts régénérés')
+      toast.success('Prompts regenerated')
     } catch {
       updateScene(id, { imageStatus: 'idle' })
-      toast.error('Erreur lors de la régénération des prompts')
+      toast.error('Prompt regeneration error')
     }
   }
 
@@ -851,7 +851,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
     setGenerating(true)
     await Promise.all(scenes.map((s) => regenScene(s.id)))
     setGenerating(false)
-    toast.success('Storyboard régénéré')
+    toast.success('Storyboard regenerated')
   }
 
   function addScene() {
@@ -865,7 +865,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
       clipStatus: 'idle',
     }
     onScenesChange((prev) => [...prev, newScene])
-    toast.success('Nouvelle scène ajoutée')
+    toast.success('New scene added')
   }
 
   return (
@@ -926,7 +926,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               {/* Merge with next */}
               {i < scenes.length - 1 && (
                 <button type="button" onClick={() => mergeWithNext(scene.id)}
-                  title="Fusionner avec la scène suivante"
+                  title="Merge with next scene"
                   className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[--text-muted] hover:text-amber-600 transition-all">
                   <Merge size={11} />
                 </button>
@@ -934,7 +934,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               {/* Delete */}
               {scenes.length > 1 && (
                 <button type="button" onClick={() => deleteScene(scene.id)}
-                  title="Supprimer cette scène"
+                  title="Delete this scene"
                   className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[--text-muted] hover:text-red-500 transition-all">
                   <Trash2 size={11} />
                 </button>
@@ -947,7 +947,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                 <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5">Script de la scène</p>
                 {editingId === scene.id ? (
                   <textarea value={scene.scriptText} onChange={(e) => updateScene(scene.id, { scriptText: e.target.value })}
-                    rows={3} placeholder="Texte du script pour cette scène…"
+                    rows={3} placeholder="Script text for this scene…"
                     className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
                 ) : (
                   <p className="text-sm font-body text-foreground leading-relaxed">{scene.scriptText}</p>
@@ -965,7 +965,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                   </div>
                   {editingId === scene.id ? (
                     <textarea value={scene.imagePrompt} onChange={(e) => updateScene(scene.id, { imagePrompt: e.target.value })}
-                      rows={3} placeholder="Prompt image pour cette scène…"
+                      rows={3} placeholder="Image prompt for this scene…"
                       className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
                   ) : (
                     <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-3">{scene.imagePrompt}</p>
@@ -980,7 +980,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                   </div>
                   {editingId === scene.id ? (
                     <textarea value={scene.animationPrompt} onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
-                      rows={3} placeholder="Prompt animation pour cette scène…"
+                      rows={3} placeholder="Animation prompt for this scene…"
                       className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
                   ) : (
                     <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-3">{scene.animationPrompt}</p>
@@ -1005,7 +1005,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
           <ArrowLeft size={14} /> Retour
         </button>
         <button type="button" onClick={onNext} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all">
-          Générer les images <ArrowRight size={13} />
+          Generate images <ArrowRight size={13} />
         </button>
       </div>
     </div>
@@ -1129,7 +1129,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       const data = await res.json() as { improvedPrompt: string; explanation: string; keyChanges: string[] }
       setImproveResult(data)
     } catch {
-      toast.error('Erreur amélioration prompt')
+      toast.error('Prompt improvement error')
     } finally {
       setImprovingId(null)
     }
@@ -1148,7 +1148,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       ? [...(scene.imageHistory ?? []).slice(-2), scene.imageUrl]
       : scene.imageHistory ?? []
 
-    updateScene(id, { imageStatus: 'generating', streamLog: 'Génération du draft…', imageHistory: history, qualityHint: undefined })
+    updateScene(id, { imageStatus: 'generating', streamLog: 'Draft generation…', imageHistory: history, qualityHint: undefined })
 
     try {
       // Calculate deterministic seed: masterSeed + sceneIndex for visual consistency
@@ -1187,7 +1187,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
             imageStatus: 'done',
             imageUrl: previewData.imageUrl,
             qualityHint: 'draft',
-            streamLog: 'Draft prêt — amélioration HD en cours…',
+            streamLog: 'Draft ready - HD enhancement in progress…',
           })
         }
       } else {
@@ -1196,7 +1196,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       }
 
       // ── Phase 2 : flux/dev HD (blocking fal.run — reliable on Vercel) ────
-      updateScene(id, { streamLog: 'Génération HD en cours…' })
+      updateScene(id, { streamLog: 'HD generation in progress…' })
       const hdRes = await fetch('/api/stream-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1234,7 +1234,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error(`[generateImage] Scene ${scene.index}:`, msg)
-      toast.error(`Erreur image scène ${scene.index + 1}: ${msg.slice(0, 120)}`)
+      toast.error(`Scene ${scene.index + 1}: ${msg.slice(0, 120)}`)
       updateScene(id, { imageStatus: 'error', streamLog: undefined, qualityHint: undefined })
     }
   }
@@ -1260,7 +1260,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
     const scene0 = scenesRef.current.find((s) => s.index === 0)
     if (!scene0?.imageUrl) {
       console.error('[validateScene0] scene0 imageUrl missing. scene0:', JSON.stringify(scene0 ? { id: scene0.id, index: scene0.index, imageStatus: scene0.imageStatus, imageUrl: scene0.imageUrl?.slice(0, 50) } : null))
-      toast.error('Scène 0 pas encore générée — réessayez dans quelques secondes')
+      toast.error('Scene 0 not yet generated - try again in a few seconds')
       return
     }
     // Capture style reference from scene 0 HD image
@@ -1278,7 +1278,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       .then((tokens) => {
         if (tokens?.style_prompt_suffix) {
           setStyleTokens(tokens)
-          toast.success('Tokens visuels extraits — cohérence renforcée')
+          toast.success('Visual tokens extracted - consistency enhanced')
         }
       })
       .catch(() => {
@@ -1286,7 +1286,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       })
 
     setScene0Phase('validated')
-    toast.success('Scène 0 validée — style de référence capturé')
+    toast.success('Scene 0 validated - reference style captured')
   }
 
   async function generateRemaining() {
@@ -1297,7 +1297,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       new Promise<void>((resolve) => setTimeout(() => generateImage(s.id).then(resolve).catch(resolve), i * 300))
     ))
     setGeneratingAll(false)
-    toast.success('Toutes les images générées !')
+    toast.success('All images generated!')
   }
 
   async function generateAll() {
@@ -1318,7 +1318,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       new Promise<void>((resolve) => setTimeout(() => generateImage(s.id).then(resolve).catch(resolve), i * 300))
     ))
     setGeneratingAll(false)
-    toast.success('Toutes les images générées !')
+    toast.success('All images generated!')
   }
 
   async function regenerateSelected() {
@@ -1364,16 +1364,16 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                 : 'border-border text-[--text-muted] hover:text-foreground hover:border-blue-500/40'
             )}>
             {batchMode ? <Check size={12} /> : <Settings2 size={12} />}
-            {batchMode ? 'Sélection active' : 'Sélection multiple'}
+            {batchMode ? 'Active selection' : 'Multiple selection'}
           </button>
           <button type="button" onClick={generateAll} disabled={generatingAll || allDone || scene0Phase === 'pending_validation'}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all disabled:opacity-40">
             {generatingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            {allDone ? 'Toutes générées'
-              : scene0Phase === 'idle' ? 'Générer scène 0'
-              : scene0Phase === 'pending_validation' ? 'Validez scène 0 ↑'
-              : generatingAll ? 'Génération…'
-              : 'Générer restantes'}
+            {allDone ? 'All generated'
+              : scene0Phase === 'idle' ? 'Generate scene 0'
+              : scene0Phase === 'pending_validation' ? 'Validate scene 0 ↑'
+              : generatingAll ? 'Generating…'
+              : 'Generate remaining'}
           </button>
         </div>
       </div>
@@ -1425,7 +1425,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
         <div className="px-6 py-2.5 bg-emerald-50 border-b border-emerald-200 flex items-center gap-3 shrink-0">
           <Check size={14} className="text-emerald-600" />
           <p className="text-xs text-emerald-700 flex-1">
-            Scène 0 validée — style de référence capturé. {localStyleRef ? 'Les scènes suivantes utiliseront ce style.' : ''}
+            Scene 0 validated - reference style captured. {localStyleRef ? 'Following scenes will use this style.' : ''}
           </p>
           <button
             type="button"
@@ -1434,7 +1434,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-display font-semibold hover:bg-emerald-700 transition-all disabled:opacity-50"
           >
             {generatingAll ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
-            Générer les {scenes.filter((s) => s.index > 0 && s.imageStatus !== 'done').length} scènes restantes
+            Generate the {scenes.filter((s) => s.index > 0 && s.imageStatus !== 'done').length} remaining scenes
           </button>
         </div>
       )}
@@ -1468,7 +1468,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                 ) : scene.imageStatus === 'error' ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                     <X size={18} className="text-red-300" />
-                    <p className="font-mono text-[11px] text-red-300 uppercase tracking-wider">Erreur</p>
+                    <p className="font-mono text-[11px] text-red-300 uppercase tracking-wider">Error</p>
                   </div>
                 ) : (
                   <button type="button" onClick={() => generateImage(scene.id)}
@@ -1476,7 +1476,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                     <div className="w-10 h-10 rounded-full border-2 border-white/30 group-hover:border-white/60 flex items-center justify-center transition-all">
                       <Play size={14} className="text-white/60 group-hover:text-white transition-colors" />
                     </div>
-                    <p className="font-mono text-[11px] text-white/40 group-hover:text-white/70 uppercase tracking-widest transition-colors">Générer</p>
+                    <p className="font-mono text-[11px] text-white/40 group-hover:text-white/70 uppercase tracking-widest transition-colors">Generate</p>
                   </button>
                 )}
 
@@ -1525,7 +1525,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                         after: scene.imageUrl!,
                       })}
                       className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-purple-500/80 flex items-center justify-center transition-all"
-                      title="Comparer avant/après"
+                      title="Compare before/after"
                     >
                       <ArrowLeft size={8} className="translate-x-px" />
                       <ArrowRight size={8} className="-translate-x-px" />
@@ -1605,7 +1605,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
           <button type="button" onClick={onNext} disabled={!allDone}
             className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
               allDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
-            Générer les clips <ArrowRight size={13} />
+            Generate clips <ArrowRight size={13} />
           </button>
         </div>
       </div>
@@ -1717,9 +1717,9 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       const data = await reassembleFacelessVideo(videoId)
       setHasRegenerated(false)
       onReassembled?.(data.output_url)
-      toast.success('Vidéo réassemblée avec succès !')
+      toast.success('Video successfully reassembled!')
     } catch {
-      toast.error('Erreur lors de la réassemblage')
+      toast.error('Reassembly error')
     } finally {
       setReassembling(false)
     }
@@ -1735,7 +1735,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
     await Promise.all(pending.map((s) => generateClip(s.id)))
     if (voiceId) setVoiceStatus('done')
     setGeneratingAll(false)
-    toast.success('Clips générés !')
+    toast.success('Clips generated!')
   }
 
   const allClipsDone = scenes.every((s) => s.clipStatus === 'done')
@@ -1747,7 +1747,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
         <div>
           <h2 className="font-display text-base font-bold text-foreground">Génération des clips</h2>
-          <p className="font-body text-xs text-[--text-muted]">{doneCnt}/{scenes.length} clips · voix off {voiceStatus === 'done' ? '✓ prête' : 'en attente'}</p>
+          <p className="font-body text-xs text-[--text-muted]">{doneCnt}/{scenes.length} clips · voix off {voiceStatus === 'done' ? '✓ ready' : 'en attente'}</p>
         </div>
         <button type="button" onClick={generateAll} disabled={generatingAll}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
@@ -1784,7 +1784,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     </div>
                   </button>
                 ) : (
-                  <button type="button" aria-label="Générer le clip" onClick={() => generateClip(scene.id)}
+                  <button type="button" aria-label="Generate clip" onClick={() => generateClip(scene.id)}
                     className="absolute inset-0 flex items-center justify-center hover:bg-white/10 transition-colors group">
                     <div className="w-7 h-7 rounded-full border-2 border-white/30 group-hover:border-white/70 flex items-center justify-center transition-all">
                       <Film size={11} className="text-white/50 group-hover:text-white transition-colors" />
@@ -1802,9 +1802,9 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     scene.clipStatus === 'generating' ? 'bg-blue-50 text-blue-500' :
                     scene.clipStatus === 'error' ? 'bg-red-50 text-red-600 border border-red-200' :
                     'bg-card text-[--text-muted] border border-border')}>
-                    {scene.clipStatus === 'done' ? '✓ Prêt' :
-                      scene.clipStatus === 'generating' ? 'Génération…' :
-                      scene.clipStatus === 'error' ? '✕ Erreur — réessayer' :
+                    {scene.clipStatus === 'done' ? '✓ Ready' :
+                      scene.clipStatus === 'generating' ? 'Generating…' :
+                      scene.clipStatus === 'error' ? '✕ Error - Retry' :
                       'En attente'}
                   </span>
                   {scene.audioDuration && scene.duree_estimee && scene.audioDuration > scene.duree_estimee * 1.2 && (
@@ -1866,7 +1866,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
               <div className="flex-1">
                 <p className="font-display text-sm font-semibold text-foreground">Voix off</p>
                 <p className="text-xs font-body text-[--text-muted]">
-                  {voiceStatus === 'done' ? 'Générée et synchronisée sur les scènes' : voiceStatus === 'generating' ? 'Synthèse en cours…' : 'Sera générée en parallèle des clips'}
+                  {voiceStatus === 'done' ? 'Generated and synced to scenes' : voiceStatus === 'generating' ? 'Synthesis in progress…' : 'Will generate in parallel with clips'}
                 </p>
               </div>
               {voiceStatus !== 'done' && (
@@ -1925,7 +1925,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
             <button type="button" onClick={handleReassemble} disabled={reassembling}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white font-display font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50">
               {reassembling ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-              {reassembling ? 'Assemblage…' : 'Réassembler'}
+              {reassembling ? 'Assemblage…' : 'Reassemble'}
             </button>
           )}
           <button type="button" onClick={onNext} disabled={!allClipsDone}
@@ -1944,12 +1944,12 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
 const STATUS_LABELS: Record<string, string> = {
   pending:    'En attente…',
   processing: 'Traitement en cours…',
-  storyboard: 'Génération du storyboard…',
-  visuals:    'Génération des images & clips…',
-  audio:      'Génération de la voix off…',
-  assembly:   'Assemblage de la vidéo…',
-  done:       'Vidéo prête !',
-  error:      'Erreur lors de la génération',
+  storyboard: 'Storyboard generation…',
+  visuals:    'Generating images 'Generating images 'Generating images 'Génération des images & clips…' clips…' clips…' clips…',
+  audio:      'Voiceover generation…',
+  assembly:   'Assembling video…',
+  done:       'Video ready!',
+  error:      'Generation error',
 }
 
 function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
@@ -2016,7 +2016,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
       document.body.removeChild(a)
       URL.revokeObjectURL(blobUrl)
     } catch {
-      toast.error('Erreur lors du téléchargement')
+      toast.error('Download error')
     } finally {
       setDownloading(false)
     }
@@ -2030,10 +2030,10 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
             <Loader2 size={28} className="text-blue-500 animate-spin" />
           </div>
           <h2 className="font-display text-xl font-bold text-foreground">
-            {STATUS_LABELS[status] ?? 'Génération en cours…'}
+            {STATUS_LABELS[status] ?? 'Generating…'}
           </h2>
           <p className="font-body text-sm text-[--text-muted]">
-            {project.title || 'Vidéo Faceless'} · {project.scenes.length} scènes · {project.duration}
+            {project.title || 'Faceless video'} · {project.scenes.length} scènes · {project.duration}
           </p>
           <ProgressBar value={progress} showLabel status={status} message={STATUS_LABELS[status] ?? 'En cours…'} />
         </div>
@@ -2042,7 +2042,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
           <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
             <X size={26} className="text-red-500" />
           </div>
-          <h2 className="font-display text-xl font-bold text-foreground">Erreur de génération</h2>
+          <h2 className="font-display text-xl font-bold text-foreground">Generation error</h2>
           <p className="font-body text-sm text-[--text-muted]">La génération a échoué. Vérifie les logs du serveur.</p>
           <div className="flex items-center gap-3 justify-center">
             {onRetry && (
@@ -2064,7 +2064,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
           </div>
           <div>
             <h2 className="font-display text-2xl font-bold text-foreground mb-1">Votre vidéo est prête !</h2>
-            <p className="font-body text-sm text-[--text-muted]">{project.title || 'Vidéo Faceless'} · {project.scenes.length} scènes · {project.duration}</p>
+            <p className="font-body text-sm text-[--text-muted]">{project.title || 'Faceless video'} · {project.scenes.length} scènes · {project.duration}</p>
           </div>
 
           <div className={cn('w-full rounded-2xl overflow-hidden aspect-video bg-gradient-to-br', SCENE_COLORS[0], 'flex items-center justify-center')}>
@@ -2088,7 +2088,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download size={15} />
-              {downloading ? 'Téléchargement…' : 'Télécharger'}
+              {downloading ? 'Downloading…' : 'Download'}
             </button>
             {onEditScenes && (
               <button type="button" onClick={onEditScenes}
@@ -2180,7 +2180,7 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          script: project.script || project.description || 'Introduction du sujet. Développement des idées principales. Conclusion et appel à l\'action.',
+          script: project.script || project.description || 'Introduction. Development of main ideas. Conclusion and call to \'action.',
           description: project.description || undefined,
           style: project.style ?? 'cinematique',
           duration: project.duration,
@@ -2210,8 +2210,8 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
       const masterSeed = Math.floor(Math.random() * 2147483647)
       patch({ scenes, step: 'storyboard', masterSeed })
     } catch {
-      toast.error('Erreur lors de la génération du storyboard')
-      const scenes = splitScriptToScenes(project.script || project.description || 'Introduction. Développement. Conclusion.')
+      toast.error('Storyboard generation error')
+      const scenes = splitScriptToScenes(project.script || project.description || 'Introduction. Development. Conclusion.')
       const masterSeed = Math.floor(Math.random() * 2147483647)
       patch({ scenes, step: 'storyboard', masterSeed })
     } finally {
@@ -2262,7 +2262,7 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
       }
 
       const { video_id, script_condensed } = await startFacelessGeneration({
-        title: project.title || 'Vidéo Faceless',
+        title: project.title || 'Faceless video',
         style: project.style ?? 'cinematique',
         input_type: project.inputType,
         format: project.format,
@@ -2283,15 +2283,15 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
       }
 
       patch({ videoId: video_id, step: 'final' })
-      onGenerated(project.title || project.script.slice(0, 60) || 'Nouvelle vidéo', video_id)
+      onGenerated(project.title || project.script.slice(0, 60) || 'New video', video_id)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error('[goToFinal] Pipeline start failed:', msg, err)
       // Si session expirée → message explicite pour que l'utilisateur se reconnecte
-      if (msg.includes('Session expirée') || msg.includes('reconnecter')) {
-        toast.error('Session expirée — veuillez vous reconnecter puis relancer la génération')
+      if (msg.includes('Session expired') || msg.includes('reconnecter')) {
+        toast.error('Session expired - please reconnect and restart generation')
       } else {
-        toast.error(`Erreur génération : ${msg}`)
+        toast.error(`Generation error: ${msg}`)
       }
     } finally {
       setLoading(false)
@@ -2390,7 +2390,7 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
   async function handleSessionDownload(session: VideoSession) {
     // IDs locaux (local-timestamp) = session pas encore en DB, pas de URL disponible
     if (!session.output_url && session.id.startsWith('local-')) {
-      toast.error('Vidéo en cours de sauvegarde, réessaie dans quelques secondes')
+      toast.error('Video saving, try again in a few seconds')
       return
     }
     setDownloading(true)
@@ -2408,7 +2408,7 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
       document.body.removeChild(a)
       URL.revokeObjectURL(blobUrl)
     } catch {
-      toast.error('Erreur lors du téléchargement')
+      toast.error('Download error')
     } finally {
       setDownloading(false)
     }
@@ -2478,7 +2478,7 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
           <div className="flex flex-col items-center justify-center h-full px-8 max-w-xl mx-auto gap-4">
             <div className="w-full">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-lg font-bold text-foreground">{viewSession.title ?? 'Vidéo'}</h2>
+                <h2 className="font-display text-lg font-bold text-foreground">{viewSession.title ?? 'Video'}</h2>
                 <button type="button" onClick={() => setViewId(null)} className="text-xs font-mono text-blue-500 hover:underline">+ Nouvelle vidéo</button>
               </div>
               {viewSession.output_url
@@ -2500,7 +2500,7 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
                 disabled={downloading}
                 className="mt-4 flex items-center justify-center gap-2 w-full px-5 py-2.5 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Download size={15} /> {downloading ? 'Téléchargement…' : 'Télécharger'}
+                <Download size={15} /> {downloading ? 'Downloading…' : 'Download'}
               </button>
             </div>
           </div>

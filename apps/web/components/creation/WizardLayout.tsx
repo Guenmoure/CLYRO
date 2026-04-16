@@ -46,7 +46,7 @@ interface WizardLayoutProps {
 function WizardTopBar({
   featureTitle,
   featureHref,
-  currentPageLabel = 'Nouveau projet',
+  currentPageLabel = 'New project',
   onBack,
   onSave,
   isSaving,
@@ -75,7 +75,7 @@ function WizardTopBar({
           type="button"
           onClick={handleBack}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-secondary] hover:text-foreground hover:bg-muted transition-colors shrink-0"
-          aria-label="Retour"
+          aria-label="Back"
         >
           <ArrowLeft size={16} />
         </button>
@@ -96,7 +96,7 @@ function WizardTopBar({
           onClick={() => onSave()}
           leftIcon={<Save size={12} />}
         >
-          Sauvegarder
+          Save
         </Button>
       )}
     </header>
@@ -110,7 +110,7 @@ function WizardBottomBar({
   canNext,
   onPrev,
   onNext,
-  nextLabel = 'Suivant',
+  nextLabel = 'Next',
   isNextLoading,
   currentStep,
   totalSteps,
@@ -134,7 +134,7 @@ function WizardBottomBar({
         disabled={!canPrev}
         onClick={onPrev}
       >
-        Précédent
+        Previous
       </Button>
 
       {/* Step dots */}

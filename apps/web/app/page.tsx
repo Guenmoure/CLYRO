@@ -17,13 +17,13 @@ import { PricingToggle }  from '@/components/landing/pricing-toggle'
 import { ThemeToggle }    from '@/components/ui/theme-toggle'
 
 export const metadata: Metadata = {
-  title: 'CLYRO — Génération vidéo par IA en moins de 10 minutes',
+  title: 'CLYRO — AI Video Generation in Less Than 10 Minutes',
   description:
-    'De ton script à ta vidéo en moins de 10 minutes. Sans caméra, sans monteur, sans agence. Faceless videos, motion design et brand kit — entièrement par IA.',
+    'From script to video in less than 10 minutes. No camera, no editor, no agency. Faceless videos, motion design and brand kit — entirely AI-powered.',
   keywords: ['AI video', 'faceless videos', 'motion graphics', 'brand kit', 'video generation'],
   openGraph: {
-    title: 'CLYRO — Génération vidéo par IA',
-    description: 'De ton script à ta vidéo en moins de 10 minutes.',
+    title: 'CLYRO — AI Video Generation',
+    description: 'From script to video in less than 10 minutes.',
     type: 'website',
   },
 }
@@ -61,9 +61,9 @@ function SectionHeader({ label, labelVariant, title, subtitle, titleGradient }: 
 // ── 1. HEADER ─────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { label: 'Fonctionnalités', href: '#fonctionnalites' },
+  { label: 'Features', href: '#fonctionnalites' },
   { label: 'Styles',          href: '#styles' },
-  { label: 'Tarifs',          href: '/pricing' },
+  { label: 'Pricing',          href: '/pricing' },
   { label: 'FAQ',             href: '#faq' },
 ]
 
@@ -94,10 +94,10 @@ function Header() {
         <div className="flex items-center gap-2 shrink-0">
           <ThemeToggle />
           <Link href="/login" className="hidden sm:block">
-            <Button variant="ghost" size="sm">Connexion</Button>
+            <Button variant="ghost" size="sm">Sign in</Button>
           </Link>
           <Link href="/signup">
-            <Button variant="primary" size="sm">Commencer gratuitement</Button>
+            <Button variant="primary" size="sm">Get started free</Button>
           </Link>
           <MobileMenu />
         </div>
@@ -117,38 +117,38 @@ function HeroSection() {
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-24 text-center w-full">
         <Badge variant="info" dot className="mb-8 inline-flex">
-          Génération vidéo par IA
+          AI Video Generation
         </Badge>
 
         <h1 className="font-display text-5xl md:text-7xl font-bold leading-tight text-foreground">
-          De ton{' '}
-          <span className="gradient-text">script à ta vidéo</span>
+          From your{' '}
+          <span className="gradient-text">script to video</span>
           <br />
-          en moins de 10 minutes.
+          in less than 10 minutes.
         </h1>
 
         <p className="font-body text-lg md:text-xl text-[--text-secondary] max-w-2xl mx-auto mt-6 leading-relaxed">
-          Sans caméra. Sans monteur. Sans agence.
+          No camera. No editor. No agency.
           <br />
-          CLYRO génère tes vidéos faceless, tes motion designs
-          et ton identité visuelle — entièrement par IA.
+          CLYRO generates your faceless videos, motion designs,
+          and brand identity — entirely AI-powered.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link href="/signup">
             <Button variant="primary" size="lg" rightIcon={<ArrowRight size={18} />}>
-              Créer ma première vidéo gratuitement
+              Create your first video free
             </Button>
           </Link>
           <a href="#fonctionnalites">
             <Button variant="secondary" size="lg" leftIcon={<Play size={16} />}>
-              Voir une démo
+              Watch demo
             </Button>
           </a>
         </div>
 
         <p className="font-mono text-xs text-[--text-muted] mt-5">
-          ✓ 3 vidéos gratuites à l'inscription · ✓ Sans carte bancaire · ✓ Résultat en moins de 5 minutes
+          ✓ 3 free videos on signup · ✓ No credit card required · ✓ Results in under 5 minutes
         </p>
 
         {/* Hero mockup */}
@@ -160,8 +160,8 @@ function HeroSection() {
                 <SpinnerAI size="md" />
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-body text-sm text-[--text-secondary]">Génération en cours...</span>
-                    <span className="font-mono text-xs text-[--text-muted]">Scène 3 / 6</span>
+                    <span className="font-body text-sm text-[--text-secondary]">Generating...</span>
+                    <span className="font-mono text-xs text-[--text-muted]">Scene 3 / 6</span>
                   </div>
                   <div className="h-1 bg-border rounded-full overflow-hidden">
                     <div className="h-full w-1/2 bg-grad-primary rounded-full" />
@@ -172,9 +172,9 @@ function HeroSection() {
               {/* Scene thumbnails */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Scène 1', done: true },
-                  { label: 'Scène 2', done: true },
-                  { label: 'Scène 3', active: true },
+                  { label: 'Scene 1', done: true },
+                  { label: 'Scene 2', done: true },
+                  { label: 'Scene 3', active: true },
                 ].map((scene) => (
                   <div
                     key={scene.label}
@@ -210,10 +210,10 @@ function HeroSection() {
 // ── 3. SOCIAL PROOF ───────────────────────────────────────────────────────────
 
 const STATS = [
-  { value: '2 000+', label: 'vidéos générées' },
-  { value: '500+',   label: 'créateurs actifs' },
-  { value: '<5 min', label: 'temps de génération moyen' },
-  { value: '4.8/5',  label: 'note moyenne' },
+  { value: '2 000+', label: 'videos generated' },
+  { value: '500+',   label: 'active creators' },
+  { value: '<5 min', label: 'average generation time' },
+  { value: '4.8/5',  label: 'average rating' },
 ]
 
 function SocialProof() {
@@ -240,22 +240,22 @@ const PROBLEMS = [
     icon: <Clock size={22} />,
     iconColor: 'text-error',
     iconBg:    'bg-error/10',
-    title:     'Des heures de montage',
-    text:      'Trouver les visuels, monter, ajuster, exporter... Une vidéo de 2 minutes = une journée de travail.',
+    title:     'Hours of editing',
+    text:      'Finding visuals, editing, adjusting, exporting... A 2-minute video = a full day of work.',
   },
   {
     icon: <DollarSign size={22} />,
     iconColor: 'text-warning',
     iconBg:    'bg-warning/10',
-    title:     'Des agences hors de prix',
-    text:      'Une vidéo professionnelle coûte entre 500€ et 5 000€. Inatteignable pour scaler sa production de contenu.',
+    title:     'Agency costs are sky-high',
+    text:      'A professional video costs $500-$5,000. Unaffordable for scaling content production.',
   },
   {
     icon: <Frown size={22} />,
     iconColor: 'text-purple-400',
     iconBg:    'bg-purple-500/10',
-    title:     'Des résultats inconsistants',
-    text:      "Changer de freelance, d'outil ou de style à chaque vidéo. Aucune cohérence de marque sur la durée.",
+    title:     'Inconsistent results',
+    text:      "Switching freelancers, tools, or styles with every video. No brand consistency over time.",
   },
 ]
 
@@ -264,10 +264,10 @@ function ProblemSection() {
     <section id="fonctionnalites" className="bg-background py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeader
-          label="Le problème"
+          label="The problem"
           labelVariant="error"
-          title="La création vidéo prend trop de temps"
-          subtitle="Les créateurs passent 80% de leur temps à produire, pas à créer."
+          title="Video creation takes too much time"
+          subtitle="Creators spend 80% of their time producing, not creating."
         />
 
         <div className="grid md:grid-cols-3 gap-6">
@@ -305,36 +305,36 @@ function ModuleMockup({ slots }: { slots: string[] }) {
 const MODULES = [
   {
     badge:       { label: 'Module 1', variant: 'purple' as const },
-    title:       'Vidéos faceless animées',
-    desc:        "Colle ton script, choisis ton style parmi 6 univers visuels, sélectionne une voix — CLYRO génère ta vidéo complète avec scènes animées, voix off et sous-titres karaoke.",
+    title:       'Animated faceless videos',
+    desc:        "Paste your script, choose from 6 visual styles, select a voice — CLYRO generates your complete video with animated scenes, voiceovers, and karaoke subtitles.",
     features:    [
-      '6 styles : Animation 2D, Cinématique, Whiteboard...',
-      'Sous-titres karaoke synchronisés automatiquement',
-      'Re-génération scène par scène si besoin',
+      '6 styles: 2D Animation, Cinematic, Whiteboard, and more',
+      'Karaoke subtitles auto-synced',
+      'Regenerate scenes individually as needed',
     ],
     reverse:     false,
-    mockupSlots: ['Scène 1', 'Scène 2', 'Scène 3', 'Scène 4'],
+    mockupSlots: ['Scene 1', 'Scene 2', 'Scene 3', 'Scene 4'],
   },
   {
     badge:       { label: 'Module 2', variant: 'info' as const },
-    title:       'Motion design style After Effects',
-    desc:        "Crée des ads, des présentations produit et des teasers animés. Définis ton brief, CLYRO génère un storyboard structuré et rend ta vidéo avec animations pro.",
+    title:       'After Effects-style motion design',
+    desc:        "Create ads, product presentations, and animated teasers. Define your brief, CLYRO generates a structured storyboard and renders your video with professional animations.",
     features:    [
-      'Formats 9:16, 1:1, 16:9 — prêts pour toutes les plateformes',
-      "Assets visuels générés selon l'ambiance de ta marque",
-      'Thumbnail auto-généré pour les ads',
+      '9:16, 1:1, 16:9 formats — ready for all platforms',
+      "Visual assets generated to match your brand feel",
+      'Auto-generated thumbnails for ads',
     ],
     reverse:     true,
     mockupSlots: ['Intro', 'Slide 1', 'Slide 2', 'Outro'],
   },
   {
-    badge:       { label: 'Nouveau', variant: 'purple' as const, dot: true },
-    title:       'Identité visuelle complète',
-    desc:        "En 15 minutes, CLYRO génère ton logo, ta palette, tes typographies, tes mockups et une charte graphique PDF professionnelle — depuis un simple brief textuel.",
+    badge:       { label: 'New', variant: 'purple' as const, dot: true },
+    title:       'Complete brand identity',
+    desc:        "In 15 minutes, CLYRO generates your logo, color palette, typefaces, mockups, and professional brand guidelines PDF — from a simple text brief.",
     features:    [
-      '3 directions créatives au choix avec hybridation possible',
-      'Vérification WCAG automatique de tes couleurs',
-      'Export brand kit ZIP (logos PNG/SVG, palette ASE, PDF charte)',
+      '3 creative directions to choose from with blending options',
+      'Automatic WCAG color compliance verification',
+      'Brand kit ZIP export (PNG/SVG logos, ASE palette, brand PDF)',
     ],
     reverse:     false,
     mockupSlots: ['Direction A', 'Direction B', 'Direction C', 'Export'],
@@ -346,8 +346,8 @@ function SolutionSection() {
     <section className="bg-card py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeader
-          label="La solution CLYRO"
-          title={<>Trois outils. <span className="gradient-text">Un seul workflow.</span></>}
+          label="The CLYRO solution"
+          title={<>Three tools. <span className="gradient-text">One workflow.</span></>}
         />
 
         <div className="flex flex-col gap-20">
@@ -373,7 +373,7 @@ function SolutionSection() {
                     </li>
                   ))}
                 </ul>
-                <Button variant="secondary" size="md">Voir un exemple →</Button>
+                <Button variant="secondary" size="md">See example →</Button>
               </div>
 
               {/* Mockup */}
@@ -394,20 +394,20 @@ const STEPS = [
   {
     num:   '01',
     icon:  <FileText size={24} />,
-    title: 'Écris ou colle ton script',
-    text:  'Quelques mots ou 10 000 caractères. CLYRO découpe intelligemment en scènes visuelles cohérentes.',
+    title: 'Write or paste your script',
+    text:  'A few words or 10,000 characters. CLYRO intelligently breaks it into coherent visual scenes.',
   },
   {
     num:   '02',
     icon:  <Cpu size={24} />,
-    title: "L'IA génère tout",
-    text:  'Images, animations, voix off, sous-titres karaoke. En parallèle, en quelques minutes.',
+    title: "AI generates everything",
+    text:  'Images, animations, voiceovers, karaoke subtitles. All in parallel, in minutes.',
   },
   {
     num:   '03',
     icon:  <Download size={24} />,
-    title: 'Télécharge et publie',
-    text:  "MP4 prêt à être uploadé sur YouTube, TikTok ou Instagram. Sans aucun montage supplémentaire.",
+    title: 'Download and publish',
+    text:  "MP4 ready to upload to YouTube, TikTok, or Instagram. No additional editing needed.",
   },
 ]
 
@@ -416,9 +416,9 @@ function HowItWorks() {
     <section className="bg-background py-24 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
         <SectionHeader
-          label="Comment ça marche"
+          label="How it works"
           labelVariant="neutral"
-          title="Prêt en 3 étapes"
+          title="Ready in 3 steps"
         />
 
         <div className="grid md:grid-cols-3 gap-8 relative">
@@ -452,7 +452,7 @@ function HowItWorks() {
 const VIDEO_STYLES = [
   {
     name: 'Animation 2D',
-    desc: 'Personnages cartoon animés',
+    desc: 'Animated cartoon characters',
     preview: (
       <div className="absolute inset-0 bg-gradient-to-br from-orange-500/30 to-yellow-500/15 flex items-center justify-center">
         <div className="w-10 h-10 rounded-full border-2 border-orange-400/60 flex items-center justify-center">
@@ -468,8 +468,8 @@ const VIDEO_STYLES = [
     ),
   },
   {
-    name: 'Stock + Voix Off',
-    desc: 'Images réalistes professionnelles',
+    name: 'Stock + Voiceover',
+    desc: 'Professional realistic images',
     preview: (
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 to-slate-900/70">
         {/* Cinematic bars */}
@@ -484,8 +484,8 @@ const VIDEO_STYLES = [
     ),
   },
   {
-    name: 'Minimaliste',
-    desc: 'Typographie épurée et impactante',
+    name: 'Minimalist',
+    desc: 'Clean and impactful typography',
     preview: (
       <div className="absolute inset-0 bg-white dark:bg-zinc-900 flex flex-col items-center justify-center gap-1.5 px-4">
         <div className="w-16 h-2 rounded bg-foreground/80" />
@@ -495,8 +495,8 @@ const VIDEO_STYLES = [
     ),
   },
   {
-    name: 'Infographie',
-    desc: 'Données visualisées en mouvement',
+    name: 'Infographics',
+    desc: 'Data visualized in motion',
     preview: (
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/50 to-teal-900/40 flex items-end justify-center gap-1.5 pb-4 px-4">
         <div className="flex-1 rounded-t bg-emerald-400/30 h-[55%]" />
@@ -509,7 +509,7 @@ const VIDEO_STYLES = [
   },
   {
     name: 'Whiteboard',
-    desc: 'Explication dessinée en direct',
+    desc: 'Live drawing explanations',
     preview: (
       <div className="absolute inset-0 bg-zinc-50 dark:bg-zinc-100 flex items-center justify-center p-4">
         <svg viewBox="0 0 80 50" className="w-full h-full opacity-50" stroke="#374151" fill="none" strokeWidth="1.5" strokeLinecap="round">
@@ -523,8 +523,8 @@ const VIDEO_STYLES = [
     ),
   },
   {
-    name: 'Cinématique',
-    desc: 'Plans épiques, ambiance premium',
+    name: 'Cinematic',
+    desc: 'Epic shots, premium feel',
     preview: (
       <div className="absolute inset-0 bg-gradient-to-br from-amber-900/50 to-zinc-900/80 flex items-center justify-center">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-amber-300/70 blur-[3px]" />
@@ -540,8 +540,8 @@ function StylesSection() {
     <section id="styles" className="bg-card py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeader
-          label="6 styles disponibles"
-          title="Un style pour chaque contenu"
+          label="6 styles available"
+          title="A style for every type of content"
         />
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -575,9 +575,9 @@ function PricingSection() {
     <section id="tarifs" className="bg-background py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <SectionHeader
-          label="Tarifs"
+          label="Pricing"
           labelVariant="neutral"
-          title="Simple. Transparent. Sans surprise."
+          title="Simple. Transparent. No surprises."
         />
         <PricingToggle />
         <div className="mt-10 text-center">
@@ -585,7 +585,7 @@ function PricingSection() {
             href="/pricing"
             className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 font-display text-sm font-semibold text-foreground hover:bg-muted transition-colors"
           >
-            Voir le détail complet des tarifs
+            View full pricing details
             <span aria-hidden="true">→</span>
           </Link>
         </div>
@@ -598,20 +598,20 @@ function PricingSection() {
 
 const FAQS = [
   {
-    q: "Combien de temps prend la génération d'une vidéo ?",
-    a: "Pour une vidéo Faceless de 30 secondes (5–6 scènes), comptez 3 à 5 minutes de génération. Le Motion Design est légèrement plus rapide car il n'utilise pas d'animation image-to-video.",
+    q: "How long does it take to generate a video?",
+    a: "For a 30-second Faceless video (5–6 scenes), expect 3 to 5 minutes of generation time. Motion Design is slightly faster since it doesn't use image-to-video animation.",
   },
   {
-    q: "Est-ce que je peux modifier les scènes après génération ?",
-    a: "Oui. CLYRO permet de régénérer chaque scène individuellement sans relancer toute la vidéo. Tu peux éditer le prompt, demander une amélioration par l'IA, ou comparer jusqu'à 3 versions d'une même scène.",
+    q: "Can I edit scenes after generation?",
+    a: "Yes. CLYRO lets you regenerate each scene individually without re-running the entire video. You can edit the prompt, ask for AI improvements, or compare up to 3 versions of the same scene.",
   },
   {
-    q: "Les vidéos générées m'appartiennent-elles ?",
-    a: "Oui, entièrement. Tous les droits sur les vidéos générées t'appartiennent. CLYRO n'utilise pas tes créations pour entraîner ses modèles.",
+    q: "Do I own the generated videos?",
+    a: "Yes, completely. You own all rights to your generated videos. CLYRO doesn't use your creations to train its models.",
   },
   {
-    q: "Puis-je utiliser ma propre voix ?",
-    a: "Oui, avec le clonage vocal. Upload un échantillon de 30 secondes minimum, et CLYRO génère toutes tes voix off avec ta propre voix. Disponible à partir du plan Pro.",
+    q: "Can I use my own voice?",
+    a: "Yes, with voice cloning. Upload a 30-second sample minimum, and CLYRO generates all your voiceovers with your own voice. Available in the Pro plan and above.",
   },
 ]
 
@@ -620,9 +620,9 @@ function FaqSection() {
     <section id="faq" className="bg-card py-24 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto">
         <SectionHeader
-          label="Questions fréquentes"
+          label="Frequently asked questions"
           labelVariant="neutral"
-          title="Tout ce que tu dois savoir"
+          title="Everything you need to know"
         />
 
         <div className="flex flex-col gap-3">
@@ -659,21 +659,21 @@ function CtaSection() {
 
       <div className="relative z-10 max-w-3xl mx-auto text-center">
         <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
-          Crée ta première vidéo{' '}
-          <span className="gradient-text">maintenant.</span>
+          Create your first video{' '}
+          <span className="gradient-text">now.</span>
         </h2>
         <p className="font-body text-lg text-[--text-secondary] mt-4">
-          3 vidéos gratuites. Sans carte bancaire. Résultat en moins de 5 minutes.
+          3 free videos. No credit card. Results in under 5 minutes.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link href="/signup">
             <Button variant="primary" size="lg" rightIcon={<ArrowRight size={18} />}>
-              Créer mon compte gratuitement
+              Create free account
             </Button>
           </Link>
           <a href="#fonctionnalites">
-            <Button variant="ghost" size="lg">Voir une démo →</Button>
+            <Button variant="ghost" size="lg">Watch demo →</Button>
           </a>
         </div>
       </div>
@@ -685,16 +685,16 @@ function CtaSection() {
 
 const FOOTER_COLS = [
   {
-    title: 'Produit',
-    links: ['Faceless Videos', 'Motion Design', 'Brand Kit', 'Tarifs', 'API'],
+    title: 'Product',
+    links: ['Faceless Videos', 'Motion Design', 'Brand Kit', 'Pricing', 'API'],
   },
   {
-    title: 'Ressources',
-    links: ['Documentation', 'Exemples vidéos', 'Blog', 'Changelog', 'Status'],
+    title: 'Resources',
+    links: ['Documentation', 'Video examples', 'Blog', 'Changelog', 'Status'],
   },
   {
-    title: 'Légal',
-    links: ['Politique de confidentialité', 'CGU', 'Mentions légales', 'Contact'],
+    title: 'Legal',
+    links: ['Privacy policy', 'Terms of service', 'Legal notice', 'Contact'],
   },
 ]
 
@@ -710,7 +710,7 @@ function Footer() {
               <span className="gradient-text">RO</span>
             </Link>
             <p className="font-body text-sm text-[--text-muted] mt-2 mb-5">
-              De ton script à ta vidéo en 10 minutes.
+              From script to video in 10 minutes.
             </p>
             <div className="flex items-center gap-3">
               {[Twitter, Instagram, Youtube, Linkedin].map((Icon, i) => (
@@ -718,7 +718,7 @@ function Footer() {
                   key={i}
                   href="#"
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
-                  aria-label="Réseau social"
+                  aria-label="Social network"
                 >
                   <Icon size={16} />
                 </a>
@@ -747,10 +747,10 @@ function Footer() {
 
         <div className="border-t border-border/30 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="font-mono text-xs text-[--text-muted]">
-            © 2026 CLYRO. Tous droits réservés.
+            © 2026 CLYRO. All rights reserved.
           </p>
           <p className="font-mono text-xs text-[--text-muted]">
-            Fait avec IA · Hébergé en Europe
+            Powered by AI · Hosted in Europe
           </p>
         </div>
       </div>

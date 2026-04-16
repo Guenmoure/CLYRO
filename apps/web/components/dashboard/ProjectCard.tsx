@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import {
-  Video, Sparkles, Palette, MoreVertical, Play,
-  Download, Pencil, Trash2, ExternalLink,
+  Video, Sparkles, Palette, MoreVertical,
+  Copy, Download, FilePlus, Users, Pencil,
+  FolderInput, Trash2, Gem, Camera,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +21,8 @@ export interface VideoProject {
   output_url: string | null
   thumbnail_url?: string | null
   created_at: string
+  duration_seconds?: number | null
+  created_by?: string | null
 }
 
 interface ProjectCardProps {
@@ -42,14 +44,8 @@ const MODULE_ICON_COLORS: Record<string, string> = {
   brand:    'text-cyan-400',
 }
 
-const MODULE_BADGE_VARIANTS = {
-  faceless: 'info',
-  motion:   'purple',
-  brand:    'neutral',
-} as const
-
 function formatRelativeDate(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
+  const diff  = Date.now() - new Date(dateStr).getTime()
   const days  = Math.floor(diff / 86_400_000)
   const hours = Math.floor(diff / 3_600_000)
   const mins  = Math.floor(diff / 60_000)
@@ -59,6 +55,16 @@ function formatRelativeDate(dateStr: string): string {
   if (hours > 0)  return `Il y a ${hours}h`
   if (mins > 0)   return `Il y a ${mins} min`
   return "À l'instant"
+}
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  if (m >= 60) {
+    const h = Math.floor(m / 60)
+    return `${h}h ${m % 60}min`
+  }
+  return s > 0 ? `${m}min ${s}s` : `${m}min`
 }
 
 // ── Context menu ───────────────────────────────────────────────────────────────
@@ -82,35 +88,62 @@ function ContextMenu({
     return () => document.removeEventListener('mousedown', handler)
   }, [onClose])
 
-  const itemCls = 'flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors rounded-lg'
+  function copyId() {
+    navigator.clipboard.writeText(project.id).catch(() => null)
+    onClose()
+  }
+
+  const item = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left'
 
   return (
     <div
       ref={ref}
-      className="absolute top-8 right-0 w-44 bg-card border border-border rounded-xl shadow-card overflow-hidden z-50"
+      className="absolute top-9 right-0 w-52 bg-card border border-border rounded-2xl shadow-xl overflow-hidden z-50"
     >
-      <div className="p-1">
-        {project.output_url && (
-          <a href={project.output_url} target="_blank" rel="noopener noreferrer" onClick={onClose} className={itemCls}>
-            <ExternalLink size={13} /> Ouvrir
+      {/* Header */}
+      <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
+        Created by {project.created_by ?? 'Molnim'}
+      </p>
+
+      {/* Actions */}
+      <div className="py-1">
+        <button type="button" onClick={copyId} className={item}>
+          <Copy size={14} /> Copy ID
+        </button>
+        {project.output_url ? (
+          <a href={project.output_url} download onClick={onClose} className={item}>
+            <Download size={14} /> Download
           </a>
+        ) : (
+          <button type="button" disabled onClick={onClose} className={cn(item, 'opacity-40 cursor-not-allowed')}>
+            <Download size={14} /> Download
+          </button>
         )}
-        {project.output_url && (
-          <a href={project.output_url} download onClick={onClose} className={itemCls}>
-            <Download size={13} /> Télécharger
-          </a>
-        )}
-        <button type="button" onClick={onClose} className={itemCls}>
-          <Pencil size={13} /> Renommer
+        <button type="button" onClick={onClose} className={item}>
+          <FilePlus size={14} /> Edit as New
+        </button>
+        <button type="button" onClick={onClose} className={item}>
+          <Users size={14} />
+          <span className="flex-1">Collaborate</span>
+          <Gem size={13} className="text-warning" />
+        </button>
+        <button type="button" onClick={onClose} className={item}>
+          <Pencil size={14} /> Rename
+        </button>
+        <button type="button" onClick={onClose} className={item}>
+          <FolderInput size={14} /> Move
         </button>
       </div>
-      <div className="p-1 border-t border-border">
+
+      {/* Divider + Trash */}
+      <div className="border-t border-border" />
+      <div className="py-1">
         <button
           type="button"
           onClick={() => { onClose(); onDelete() }}
-          className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-error hover:bg-error/10 transition-colors rounded-lg"
+          className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error hover:bg-error/10 transition-colors w-full text-left"
         >
-          <Trash2 size={13} /> Supprimer
+          <Trash2 size={14} /> Trash
         </button>
       </div>
     </div>
@@ -120,17 +153,19 @@ function ContextMenu({
 // ── ProjectCard ────────────────────────────────────────────────────────────────
 
 export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
-  const router = useRouter()
-  const [menuOpen, setMenuOpen]   = useState(false)
-  const [deleting, setDeleting]   = useState(false)
-  const [deleted, setDeleted]     = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleted,  setDeleted]  = useState(false)
 
-  const isDone       = project.status === 'done'
   const isProcessing = ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly'].includes(project.status)
   const isError      = project.status === 'error'
 
-  const ModuleIcon  = MODULE_ICONS[project.module ?? ''] ?? Video
-  const iconColor   = MODULE_ICON_COLORS[project.module ?? ''] ?? 'text-[--text-muted]'
+  const ModuleIcon = MODULE_ICONS[project.module ?? ''] ?? Video
+  const iconColor  = MODULE_ICON_COLORS[project.module ?? ''] ?? 'text-[--text-muted]'
+
+  const moduleLabel = project.module
+    ? project.module.charAt(0).toUpperCase() + project.module.slice(1) + ' Video'
+    : 'Video'
 
   async function handleDelete() {
     setDeleting(true)
@@ -149,16 +184,13 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   return (
     <div className={cn(
       'group relative rounded-2xl overflow-hidden',
-      'bg-muted border border-border',
+      'bg-card border border-border/60',
       'hover:border-border hover:shadow-card-hover',
       'transition-all duration-200',
-      // Module color left-border stripe
-      project.module === 'faceless' && 'border-l-2 border-l-blue-500/50',
-      project.module === 'motion'   && 'border-l-2 border-l-purple-500/50',
-      project.module === 'brand'    && 'border-l-2 border-l-cyan-500/50',
       deleting && 'opacity-50 pointer-events-none',
     )}>
-      {/* Thumbnail zone */}
+
+      {/* Thumbnail */}
       <div className="relative aspect-video overflow-hidden bg-card">
         {project.thumbnail_url ? (
           <Image
@@ -166,77 +198,55 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
             alt={project.title ?? 'Projet'}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 50vw, 25vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <ModuleIcon size={32} className={cn(iconColor, 'opacity-30')} />
+            <ModuleIcon size={36} className={cn(iconColor, 'opacity-25')} />
           </div>
         )}
 
-        {/* Hover overlay */}
-        {isDone && (
-          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button
-              type="button"
-              onClick={() => router.push(`/projects?id=${project.id}`)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white font-display font-semibold text-xs rounded-lg hover:bg-blue-400 transition-colors"
-            >
-              <Play size={12} /> Ouvrir
-            </button>
-          </div>
-        )}
-
-        {/* Processing progress bar */}
-        {isProcessing && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-border">
-            <div className="h-full bg-grad-primary animate-shimmer rounded-full" style={{ width: '60%' }} />
-          </div>
-        )}
-
-        {/* Done accent */}
-        {isDone && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-success" />
-        )}
-
-        {/* Status badge (top-left) */}
+        {/* Status badge — top-left */}
         <div className="absolute top-2 left-2">
           {isProcessing && <Badge variant="info" dot>En cours</Badge>}
           {isError && <Badge variant="error">Erreur</Badge>}
         </div>
 
-        {/* More button (top-right) */}
-        <div className="absolute top-2 right-2">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
-              className={cn(
-                'w-7 h-7 rounded-lg bg-background/60 backdrop-blur-sm border border-border/50',
-                'flex items-center justify-center text-[--text-muted] hover:text-foreground',
-                'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-              )}
-            >
-              <MoreVertical size={13} />
-            </button>
-            {menuOpen && (
-              <ContextMenu
-                project={project}
-                onClose={() => setMenuOpen(false)}
-                onDelete={handleDelete}
-              />
-            )}
+        {/* Duration chip — bottom-right */}
+        {project.duration_seconds != null && (
+          <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white font-mono text-xs px-2 py-0.5 rounded-md flex items-center gap-1">
+            <Camera size={11} />
+            {formatDuration(project.duration_seconds)}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Info zone */}
-      <div className="px-3 py-3">
-        <p className="font-display text-sm text-foreground truncate leading-snug">
+      {/* MoreVertical button — outside thumbnail to avoid overflow-hidden clip */}
+      <div className="absolute top-2 right-2 z-10">
+        <button
+          type="button"
+          aria-label="Options du projet"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
+          className="w-7 h-7 rounded-lg bg-background/70 backdrop-blur-sm border border-border/50 flex items-center justify-center text-[--text-muted] hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-200"
+        >
+          <MoreVertical size={13} />
+        </button>
+        {menuOpen && (
+          <ContextMenu
+            project={project}
+            onClose={() => setMenuOpen(false)}
+            onDelete={handleDelete}
+          />
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="px-3 py-2.5">
+        <p className="font-display text-sm font-semibold text-foreground truncate leading-snug">
           {project.title ?? 'Sans titre'}
         </p>
         <p className="font-mono text-xs text-[--text-muted] mt-0.5">
-          {formatRelativeDate(project.created_at)}
+          {formatRelativeDate(project.created_at)} · {moduleLabel}
         </p>
       </div>
     </div>

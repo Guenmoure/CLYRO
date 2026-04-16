@@ -10,10 +10,10 @@ type Duration = '15s' | '30s' | '60s' | '90s'
 type Format = '9:16' | '1:1' | '16:9'
 
 const STYLES = [
-  { id: 'cinematique',  label: 'Cinématique',  color: 'bg-amber-500/15 border-amber-500/40 text-amber-500'  },
-  { id: 'animation-2d', label: 'Animation 2D', color: 'bg-pink-500/15 border-pink-500/40 text-pink-500'     },
-  { id: 'minimaliste',  label: 'Minimaliste',  color: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500' },
-  { id: 'infographie',  label: 'Infographie',  color: 'bg-blue-500/15 border-blue-500/40 text-blue-500'     },
+  { id: 'cinematique',  label: 'Cinematic',  color: 'bg-amber-500/15 border-amber-500/40 text-amber-500'  },
+  { id: 'animation-2d', label: '2D Animation', color: 'bg-pink-500/15 border-pink-500/40 text-pink-500'     },
+  { id: 'minimaliste',  label: 'Minimalist',  color: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500' },
+  { id: 'infographie',  label: 'Infographic',  color: 'bg-blue-500/15 border-blue-500/40 text-blue-500'     },
   { id: 'stock-vo',     label: 'Stock VO',     color: 'bg-slate-500/15 border-slate-500/40 text-slate-500'  },
   { id: 'whiteboard',   label: 'Whiteboard',   color: 'bg-gray-500/15 border-gray-500/40 text-gray-500'     },
 ] as const
@@ -21,8 +21,8 @@ const STYLES = [
 const DURATIONS: Duration[] = ['15s', '30s', '60s', '90s']
 const FORMATS: Array<{ id: Format; label: string; ratio: string }> = [
   { id: '9:16', label: 'Vertical', ratio: 'aspect-[9/16] w-6' },
-  { id: '1:1',  label: 'Carré',    ratio: 'aspect-square w-8'   },
-  { id: '16:9', label: 'Paysage',  ratio: 'aspect-video w-12'   },
+  { id: '1:1',  label: 'Square',    ratio: 'aspect-square w-8'   },
+  { id: '16:9', label: 'Landscape',  ratio: 'aspect-video w-12'   },
 ]
 
 export function PersonalizationSection() {
@@ -51,27 +51,27 @@ export function PersonalizationSection() {
 
   function save<T>(key: string, value: T, label: string) {
     localStorage.setItem(key, String(value))
-    toast.success(`${label} mis à jour`)
+    toast.success(`${label} updated`)
   }
 
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Personnalisation</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">Personalization</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Tes préférences par défaut pour gagner du temps à chaque nouvelle création.
+          Your default preferences to save time on every new creation.
         </p>
       </div>
 
       {/* Default voice */}
-      <Field icon={Mic2} label="Voix par défaut" description="Appliquée automatiquement au démarrage d'un nouveau projet.">
+      <Field icon={Mic2} label="Default voice" description="Applied automatically when starting a new project.">
         <select
           value={defaultVoice}
           onChange={(e) => { setDefaultVoice(e.target.value); save('clyro_default_voice', e.target.value, 'Voix') }}
           disabled={loadingVoices}
           className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer disabled:opacity-60"
         >
-          <option value="">— Aucune (choisir à chaque fois)</option>
+          <option value="">— None (choose each time)</option>
           {voices.map((v) => (
             <option key={v.id} value={v.id}>
               {v.languageFlag ?? '🌐'}  {v.name} {v.accent ? `· ${v.accent}` : ''}
@@ -81,7 +81,7 @@ export function PersonalizationSection() {
       </Field>
 
       {/* Default style */}
-      <Field icon={Palette} label="Style visuel par défaut" description="Le style qui sera pré-sélectionné quand tu crées une vidéo Faceless.">
+      <Field icon={Palette} label="Default visual style" description="The style that will be pre-selected when you create a Faceless video.">
         <div className="flex flex-wrap gap-2">
           {STYLES.map((s) => {
             const active = defaultStyle === s.id
@@ -105,7 +105,7 @@ export function PersonalizationSection() {
       </Field>
 
       {/* Default duration */}
-      <Field icon={Clock} label="Durée par défaut" description="Longueur cible de tes vidéos.">
+      <Field icon={Clock} label="Default duration" description="Target length of your videos.">
         <div className="inline-flex items-center gap-1 rounded-full border border-border bg-background p-1">
           {DURATIONS.map((d) => {
             const active = defaultDuration === d
@@ -127,7 +127,7 @@ export function PersonalizationSection() {
       </Field>
 
       {/* Default format */}
-      <Field icon={Film} label="Format par défaut" description="Ratio d'aspect utilisé à la création.">
+      <Field icon={Film} label="Default format" description="Aspect ratio used when creating.">
         <div className="flex items-end gap-3">
           {FORMATS.map((f) => {
             const active = defaultFormat === f.id
@@ -154,7 +154,7 @@ export function PersonalizationSection() {
       </Field>
 
       {/* Auto-advance */}
-      <Field label="Avancement automatique" description="Passer à l'étape suivante dès que la génération d'une étape est terminée.">
+      <Field label="Auto-advance" description="Move to the next step as soon as a step finishes generating.">
         <button
           type="button"
           onClick={() => { const next = !autoAdvance; setAutoAdvance(next); save('clyro_auto_advance', next, 'Avancement automatique') }}

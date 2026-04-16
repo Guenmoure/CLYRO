@@ -26,7 +26,7 @@ export function Navbar() {
             <span className="text-clyro-cyan">C</span>
             <span className="text-gray-900 dark:text-white">LYRO</span>
           </span>
-          <span className="font-mono text-[9px] uppercase tracking-wider glass-blue px-1.5 py-0.5 rounded-full text-clyro-blue">
+          <span className="font-mono text-[11px] uppercase tracking-wider glass-blue px-1.5 py-0.5 rounded-full text-clyro-blue">
             Beta
           </span>
         </Link>

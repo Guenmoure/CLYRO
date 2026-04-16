@@ -2,28 +2,28 @@ import { Plus } from 'lucide-react'
 
 const QUESTIONS = [
   {
-    q: "Qu'est-ce qu'un crédit exactement ?",
-    a: "Un crédit est une unité de génération abstraite. Il masque la complexité du coût GPU réel derrière un nombre simple. La consommation dépend du mode d'animation (Storyboard, Fast, Pro) et de la durée de ta vidéo. Voir le calculateur ci-dessus pour les détails.",
+    q: "What exactly is a credit?",
+    a: "A credit is an abstract generation unit. It hides the complexity of real GPU costs behind a simple number. Consumption depends on animation mode (Storyboard, Fast, Pro) and your video duration. See the calculator above for details.",
   },
   {
-    q: "Que se passe-t-il si j'utilise tous mes crédits ?",
-    a: "Tu reçois une notification quand il te reste 20% de crédits. À 0, la génération est bloquée et tu es invité à acheter un top-up ou à attendre le renouvellement mensuel. Tes projets en cours ne sont pas supprimés.",
+    q: "What happens if I use all my credits?",
+    a: "You'll get a notification when you have 20% credits left. At 0, generation is blocked and you're prompted to buy a top-up or wait for monthly renewal. Your in-progress projects are not deleted.",
   },
   {
-    q: "Les crédits non utilisés expirent-ils ?",
-    a: "Non, jamais. Les crédits mensuels non consommés passent automatiquement au mois suivant (roll-over). Les crédits achetés en top-up s'accumulent sans date limite. Tu construis un stock au fil du temps.",
+    q: "Do unused credits expire?",
+    a: "No, never. Unused monthly credits automatically roll over to the next month. Top-up credits accumulate with no expiration date. You build up a balance over time.",
   },
   {
-    q: "Puis-je changer de plan à tout moment ?",
-    a: "Oui. Upgrade immédiat (les nouveaux crédits sont disponibles immédiatement). Downgrade à la prochaine date de renouvellement. Annulation : ton plan reste actif jusqu'à la fin de la période payée, puis passe automatiquement en Free.",
+    q: "Can I change plans anytime?",
+    a: "Yes. Upgrade is immediate (new credits available right away). Downgrade takes effect at your next renewal date. Cancellation: your plan stays active until the end of your paid period, then automatically switches to Free.",
   },
   {
-    q: "La qualité Pro Animation vaut-elle vraiment les crédits supplémentaires ?",
-    a: "Pour les scènes avec des personnages animés complexes, oui clairement. Pour les plans larges, les fonds et les contenus textuels, Fast Animation donne des résultats quasi-identiques pour 3× moins de crédits. Notre recommandation : commence en Fast et utilise Pro sélectivement pour les scènes clés.",
+    q: "Is Pro Animation quality really worth the extra credits?",
+    a: "For scenes with complex animated characters, yes definitely. For wide shots, backgrounds, and text content, Fast Animation delivers nearly identical results for 3x fewer credits. Our recommendation: start with Fast and use Pro selectively for key scenes.",
   },
   {
-    q: "Le Mobile Money est-il disponible pour tous les plans ?",
-    a: "Le paiement Mobile Money (Orange Money, Wave, MTN, Moov) est disponible à partir du plan Studio. Pour les autres plans, le paiement se fait par carte bancaire internationale via Stripe.",
+    q: "Is Mobile Money available for all plans?",
+    a: "Mobile Money payment (Orange Money, Wave, MTN, Moov) is available starting with the Studio plan. For other plans, payment is by international bank card via Stripe.",
   },
 ]
 
@@ -33,10 +33,10 @@ export function PricingFAQ() {
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-10 space-y-3">
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-            Questions fréquentes
+            Frequently asked questions
           </h2>
           <p className="font-body text-[--text-secondary]">
-            Tout ce qu&apos;il faut savoir sur la tarification CLYRO.
+            Everything you need to know about CLYRO pricing.
           </p>
         </div>
 

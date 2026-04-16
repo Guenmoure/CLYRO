@@ -19,20 +19,20 @@ import { createBrowserClient } from '@/lib/supabase'
 
 const STEPS = [
   { id: 'brief',    label: 'Brief' },
-  { id: 'visuals',  label: 'Identité visuelle' },
+  { id: 'visuals',  label: 'Visual identity' },
   { id: 'logo',     label: 'Logo' },
   { id: 'assets',   label: 'Assets' },
-  { id: 'preview',  label: 'Prévisualisation' },
+  { id: 'preview',  label: 'Preview' },
   { id: 'export',   label: 'Export' },
 ]
 
 const CONTEXTUAL_HELP = [
-  'Décris ton entreprise, ton secteur et tes valeurs de marque.',
-  'Choisis tes couleurs et ta typographie.',
-  'Upload ton logo ou génère-en un via IA.',
-  'Sélectionne les types d\'assets à générer.',
-  'Revois l\'ensemble de ton identité avant l\'export.',
-  'Génère et exporte ton kit de marque complet.',
+  "Describe your business, sector and brand values.",
+  "Choose your colors and typography.",
+  "Upload your logo or generate one with AI.",
+  "Select asset types to\'assets à générer.',
+  "Review your\'ensemble de ton identité avant l\'export.',
+  "Generate and export your complete brand kit.",
 ]
 
 const PRESET_PALETTES = [
@@ -47,10 +47,10 @@ const PRESET_PALETTES = [
 const FONTS = ['Inter', 'Poppins', 'Montserrat', 'Playfair Display', 'DM Sans', 'Space Grotesk']
 
 const ASSET_TYPES = [
-  { id: 'logo',         label: 'Logo IA',           desc: 'Logo généré par intelligence artificielle' },
-  { id: 'social_post',  label: 'Post Instagram',     desc: 'Visuels carrés 1080×1080 px' },
-  { id: 'banner',       label: 'Bannière LinkedIn',  desc: 'Format 1584×396 px' },
-  { id: 'thumbnail',    label: 'Miniature YouTube',  desc: 'Format 1280×720 px' },
+  { id: 'logo',         label: 'AI Logo',           desc: 'AI-generated logo' },
+  { id: 'social_post',  label: 'Instagram post',     desc: 'Square visuals 1080×1080 px' },
+  { id: 'banner',       label: 'LinkedIn banner',  desc: 'Format 1584×396 px' },
+  { id: 'thumbnail',    label: 'YouTube thumbnail',  desc: 'Format 1280×720 px' },
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -72,41 +72,41 @@ function StepBrief({
 }) {
   return (
     <div className="space-y-5">
-      <SectionTitle>Ton entreprise</SectionTitle>
-      <SectionSub>Ces informations guideront l&apos;IA pour créer une identité cohérente.</SectionSub>
+      <SectionTitle>Your business</SectionTitle>
+      <SectionSub>This information will guide AI to create a cohesive identity.</SectionSub>
 
       <div className="space-y-2">
-        <label htmlFor="brand-name" className="font-mono text-xs text-[--text-muted]">Nom de la marque *</label>
+        <label htmlFor="brand-name" className="font-mono text-xs text-[--text-muted]">Brand name *</label>
         <input
           id="brand-name"
           type="text"
           value={name}
           onChange={e => onChange('name', e.target.value)}
-          placeholder="Ex: CLYRO, Acme Corp, Studio Nova…"
+          placeholder="E.g.: CLYRO, Acme Corp, Studio Nova…"
           className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="brand-industry" className="font-mono text-xs text-[--text-muted]">Secteur d&apos;activité</label>
+        <label htmlFor="brand-industry" className="font-mono text-xs text-[--text-muted]">Business sector</label>
         <input
           id="brand-industry"
           type="text"
           value={industry}
           onChange={e => onChange('industry', e.target.value)}
-          placeholder="Ex: Tech SaaS, Mode, Restauration, Conseil…"
+          placeholder="E.g.: Tech SaaS, Fashion, Restaurants, Consulting…"
           className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="brand-values" className="font-mono text-xs text-[--text-muted]">Valeurs & tonalité</label>
+        <label htmlFor="brand-values" className="font-mono text-xs text-[--text-muted]">Values >Valeurs & tonalité< tone</label>
         <textarea
           id="brand-values"
           value={values}
           onChange={e => onChange('values', e.target.value)}
           rows={5}
-          placeholder="Ex: Innovation, confiance, accessibilité. Ton : moderne et chaleureux. Cible : entrepreneurs 25-40 ans…"
+          placeholder="E.g.: Innovation, trust, accessibility. Tone: modern and warm. Target: entrepreneurs 25-40 years…"
           className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
         />
       </div>
@@ -128,8 +128,8 @@ function StepVisuals({
   return (
     <div className="space-y-7">
       <div>
-        <SectionTitle>Palettes prédéfinies</SectionTitle>
-        <SectionSub>Choisis une palette ou personnalise les couleurs ci-dessous.</SectionSub>
+        <SectionTitle>Preset palettes</SectionTitle>
+        <SectionSub>Choose a palette or customize colors below.</SectionSub>
         <div className="flex gap-3 flex-wrap">
           {PRESET_PALETTES.map(p => (
             <button
@@ -155,28 +155,28 @@ function StepVisuals({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="font-mono text-xs text-[--text-muted]">Couleur principale</label>
+          <label className="font-mono text-xs text-[--text-muted]">Primary color</label>
           <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={primaryColor}
               onChange={e => onPrimaryChange(e.target.value)}
-              title="Couleur principale"
-              aria-label="Couleur principale"
+              title="Primary color"
+              aria-label="Primary color"
               className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
             />
             <span className="font-mono text-sm text-foreground">{primaryColor.toUpperCase()}</span>
           </div>
         </div>
         <div className="space-y-2">
-          <label className="font-mono text-xs text-[--text-muted]">Couleur secondaire</label>
+          <label className="font-mono text-xs text-[--text-muted]">Secondary color</label>
           <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={secondaryColor}
               onChange={e => onSecondaryChange(e.target.value)}
-              title="Couleur secondaire"
-              aria-label="Couleur secondaire"
+              title="Secondary color"
+              aria-label="Secondary color"
               className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
             />
             <span className="font-mono text-sm text-foreground">{secondaryColor.toUpperCase()}</span>
@@ -185,7 +185,7 @@ function StepVisuals({
       </div>
 
       <div className="space-y-2">
-        <label className="font-mono text-xs text-[--text-muted]">Typographie</label>
+        <label className="font-mono text-xs text-[--text-muted]">Typography</label>
         <div className="flex gap-2 flex-wrap">
           {FONTS.map(f => (
             <button
@@ -231,7 +231,7 @@ function StepLogo({
   return (
     <div className="space-y-6">
       <SectionTitle>Logo</SectionTitle>
-      <SectionSub>Upload ton logo existant ou génère-en un nouveau via IA.</SectionSub>
+      <SectionSub>Upload your existing logo or generate a new one with AI.</SectionSub>
 
       {/* Mode toggle */}
       <div className="flex gap-2 bg-muted rounded-xl p-1">
@@ -248,7 +248,7 @@ function StepLogo({
             )}
           >
             {mode === 'upload' ? <Upload size={13} /> : <Sparkles size={13} />}
-            {mode === 'upload' ? 'Uploader' : 'Générer via IA'}
+            {mode === 'upload' ? 'Upload' : 'Generate with AI'}
           </button>
         ))}
       </div>
@@ -272,18 +272,18 @@ function StepLogo({
             disabled={uploading}
           />
           {uploading ? (
-            <p className="font-mono text-xs text-[--text-muted]">Upload en cours…</p>
+            <p className="font-mono text-xs text-[--text-muted]">Uploading…</p>
           ) : logoUrl ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoUrl} alt="Logo uploadé" className="max-h-24 object-contain" />
-              <p className="font-mono text-xs text-success">Logo uploadé — cliquer pour changer</p>
+              <img src={logoUrl} alt="Uploaded logo" className="max-h-24 object-contain" />
+              <p className="font-mono text-xs text-success">Uploaded logo — click to change</p>
             </>
           ) : (
             <>
               <Upload size={24} className="text-[--text-muted]" />
               <div className="text-center">
-                <p className="font-display text-sm text-foreground">Glisser-déposer ou cliquer</p>
+                <p className="font-display text-sm text-foreground">Drag and drop or click</p>
                 <p className="font-mono text-xs text-[--text-muted]">PNG, SVG, JPG · Max 5 Mo</p>
               </div>
             </>
@@ -292,14 +292,14 @@ function StepLogo({
       ) : (
         <div className="space-y-3">
           <label htmlFor="logo-prompt" className="font-mono text-xs text-[--text-muted]">
-            Décris ton logo idéal
+            Describe your ideal logo
           </label>
           <textarea
             id="logo-prompt"
             value={logoPrompt}
             onChange={e => onLogoPromptChange(e.target.value)}
             rows={4}
-            placeholder="Ex: Logo minimaliste avec un éclair stylisé, style tech moderne, couleurs bleu électrique et violet…"
+            placeholder="E.g.: Minimalist logo with stylized lightning, modern tech style, electric blue and purple colors…"
             className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
           />
           <p className="font-body text-xs text-[--text-muted]">
@@ -321,8 +321,8 @@ function StepAssets({
 }) {
   return (
     <div className="space-y-4">
-      <SectionTitle>Assets à générer</SectionTitle>
-      <SectionSub>Sélectionne les formats que tu veux créer avec ton identité de marque.</SectionSub>
+      <SectionTitle>Assets to generate</SectionTitle>
+      <SectionSub>Select the formats you want to create with your brand identity.</SectionSub>
 
       <div className="space-y-2">
         {ASSET_TYPES.map(asset => {
@@ -366,8 +366,8 @@ function StepPreview({
 }) {
   return (
     <div className="space-y-5">
-      <SectionTitle>Prévisualisation</SectionTitle>
-      <SectionSub>Aperçu de ton identité de marque avant génération.</SectionSub>
+      <SectionTitle>Preview</SectionTitle>
+      <SectionSub>Preview of your brand identity before generation.</SectionSub>
 
       {/* Brand card preview */}
       <div className="rounded-2xl border border-border overflow-hidden">
@@ -423,7 +423,7 @@ function StepExport({
 
   return (
     <div className="space-y-5">
-      <SectionTitle>Prêt à exporter</SectionTitle>
+      <SectionTitle>Ready to export</SectionTitle>
       <SectionSub>
         L&apos;IA va générer ton Brand Kit complet et tous les assets sélectionnés.
       </SectionSub>
@@ -460,7 +460,7 @@ export default function BrandNewPage() {
   const router = useRouter()
 
   const [currentStep,    setCurrentStep]    = useState(0)
-  const [projectName,    setProjectName]    = useState('Nouveau Brand Kit')
+  const [projectName,    setProjectName]    = useState('New Brand Kit')
   const [lastSaved,      setLastSaved]      = useState<Date | null>(null)
 
   // Brief
@@ -491,7 +491,7 @@ export default function BrandNewPage() {
     if (field === 'name')     setBrandName(v)
     if (field === 'industry') setIndustry(v)
     if (field === 'values')   setValues(v)
-    if (field === 'name')     setProjectName(v || 'Nouveau Brand Kit')
+    if (field === 'name')     setProjectName(v || 'New Brand Kit')
   }
 
   function toggleAsset(id: string) {
@@ -505,7 +505,7 @@ export default function BrandNewPage() {
     try {
       const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Non authentifié')
+      if (!user) throw new Error('Not authenticated')
       const url = await uploadBrandLogo(file, user.id)
       setLogoUrl(url)
     } catch {
@@ -591,7 +591,7 @@ export default function BrandNewPage() {
         canNext={canNext()}
         onPrev={() => setCurrentStep(s => s - 1)}
         onNext={handleNext}
-        nextLabel={isLastStep ? 'Générer le Brand Kit' : 'Suivant'}
+        nextLabel={isLastStep ? 'Generate Brand Kit' : 'Suivant'}
         isNextLoading={generating && isLastStep}
       >
         <div className="max-w-2xl mx-auto px-6 py-8">

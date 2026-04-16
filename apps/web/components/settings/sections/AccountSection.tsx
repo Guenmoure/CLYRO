@@ -51,9 +51,9 @@ export function AccountSection() {
         .update({ full_name: full })
         .eq('id', userId)
       if (error) throw error
-      toast.success('Profil mis à jour')
+      toast.success('Profile updated')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur de sauvegarde')
+      toast.error(err instanceof Error ? err.message : 'Save error')
     } finally {
       setSaving(false)
     }
@@ -68,10 +68,10 @@ export function AccountSection() {
       })
       if (error) throw error
       setResetSent(true)
-      toast.success('Email envoyé')
+      toast.success('Email sent')
       setTimeout(() => setResetSent(false), 10_000)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : 'Error')
     } finally {
       setResetting(false)
     }
@@ -84,14 +84,14 @@ export function AccountSection() {
   return (
     <div className="max-w-2xl space-y-8">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Compte</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">Account</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Gère tes informations personnelles et ta sécurité.
+          Manage your personal information and security.
         </p>
       </div>
 
       {/* Avatar */}
-      <Field label="Photo de profil">
+      <Field label="Profile photo">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-grad-primary flex items-center justify-center shrink-0 shadow-sm">
             <span className="font-mono text-xl font-bold text-white">{initials}</span>
@@ -100,34 +100,34 @@ export function AccountSection() {
             <button
               type="button"
               disabled
-              title="Bientôt disponible"
+              title="Coming soon"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-body font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Camera size={13} /> Uploader une photo
+              <Camera size={13} /> Upload photo
             </button>
-            <p className="font-body text-xs text-[--text-muted]">Max 4 Mo · Bientôt disponible.</p>
+            <p className="font-body text-xs text-[--text-muted]">Max 4 MB · Coming soon.</p>
           </div>
         </div>
       </Field>
 
       {/* Name */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Prénom">
+        <Field label="First name">
           <input
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-            placeholder="Ton prénom"
+            placeholder="Your first name"
           />
         </Field>
-        <Field label="Nom">
+        <Field label="Last name">
           <input
             type="text"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-            placeholder="Ton nom"
+            placeholder="Your last name"
           />
         </Field>
       </div>
@@ -139,7 +139,7 @@ export function AccountSection() {
           disabled={saving}
           className="inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-foreground dark:text-gray-950 text-white px-5 py-2.5 text-sm font-display font-semibold hover:opacity-90 disabled:opacity-60 transition-all"
         >
-          {saving ? <><Loader2 size={13} className="animate-spin" /> Sauvegarde…</> : 'Enregistrer'}
+          {saving ? <><Loader2 size={13} className="animate-spin" /> Saving…</> : 'Save'}
         </button>
       </div>
 
@@ -149,15 +149,15 @@ export function AccountSection() {
         <button
           type="button"
           disabled
-          title="Bientôt disponible"
+          title="Coming soon"
           className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-body font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Changer l&apos;email
+          Change email
         </button>
       </Field>
 
       {/* Password */}
-      <Field label="Mot de passe">
+      <Field label="Password">
         <button
           type="button"
           onClick={handlePasswordReset}
@@ -169,29 +169,29 @@ export function AccountSection() {
           }`}
         >
           {resetting ? (
-            <><Loader2 size={13} className="animate-spin" /> Envoi…</>
+            <><Loader2 size={13} className="animate-spin" /> Sending…</>
           ) : resetSent ? (
-            <><Check size={13} /> Email envoyé</>
+            <><Check size={13} /> Email sent</>
           ) : (
-            'Changer le mot de passe'
+            'Change password'
           )}
         </button>
         <p className="font-body text-xs text-[--text-muted] mt-2">
-          Un lien sécurisé sera envoyé à <span className="font-mono">{email}</span>. Valide 1h.
+          A secure link will be sent to <span className="font-mono">{email}</span>. Valid for 1 hour.
         </p>
       </Field>
 
       {/* 2FA (stub) */}
-      <Field label="Authentification à 2 facteurs">
+      <Field label="Two-factor authentication">
         <div className="flex items-center gap-3">
           <div className="relative inline-flex items-center">
             <div className="w-10 h-5 rounded-full bg-muted border border-border" />
             <div className="absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-background shadow" />
           </div>
-          <span className="font-body text-sm text-[--text-muted]">Désactivée</span>
+          <span className="font-body text-sm text-[--text-muted]">Disabled</span>
         </div>
         <p className="font-body text-xs text-[--text-muted] mt-2">
-          La 2FA n&apos;est pas encore activable sur ton compte.
+          2FA is not yet available on your account.
         </p>
       </Field>
     </div>

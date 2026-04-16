@@ -8,9 +8,9 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
-  { label: 'Fonctionnalités', href: '#fonctionnalites' },
+  { label: 'Features', href: '#features' },
   { label: 'Styles', href: '#styles' },
-  { label: 'Tarifs', href: '#tarifs' },
+  { label: 'Pricing', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
 ]
 
@@ -22,7 +22,7 @@ export function MobileMenu() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Ouvrir le menu"
+        aria-label="Open menu"
         className="flex items-center justify-center w-9 h-9 rounded-xl text-[--text-secondary] hover:text-foreground hover:bg-muted transition-colors md:hidden"
       >
         <Menu size={20} />
@@ -51,7 +51,7 @@ export function MobileMenu() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer le menu"
+                aria-label="Close menu"
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
               >
                 <X size={16} />
@@ -73,14 +73,14 @@ export function MobileMenu() {
 
             <div className="mt-auto flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="font-body text-xs text-[--text-muted]">Apparence</span>
+                <span className="font-body text-xs text-[--text-muted]">Appearance</span>
                 <ThemeToggle />
               </div>
               <Link href="/login">
-                <Button variant="secondary" fullWidth>Connexion</Button>
+                <Button variant="secondary" fullWidth>Sign in</Button>
               </Link>
               <Link href="/signup">
-                <Button variant="primary" fullWidth>Commencer gratuitement</Button>
+                <Button variant="primary" fullWidth>Get started free</Button>
               </Link>
             </div>
           </div>

@@ -36,23 +36,23 @@ export function SecuritySection() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
     if (newPassword.length < 8) {
-      toast.error('Le mot de passe doit faire au moins 8 caractères')
+      toast.error('Password must be at least 8 characters')
       return
     }
     if (newPassword !== confirmPass) {
-      toast.error('Les mots de passe ne correspondent pas')
+      toast.error('Passwords do not match')
       return
     }
     setSaving(true)
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
-      toast.success('Mot de passe changé')
+      toast.success('Password changed')
       setNewPassword('')
       setConfirmPass('')
       setShowForm(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : 'Error')
     } finally {
       setSaving(false)
     }
@@ -67,10 +67,10 @@ export function SecuritySection() {
       })
       if (error) throw error
       setResetSent(true)
-      toast.success('Email envoyé')
+      toast.success('Email sent')
       setTimeout(() => setResetSent(false), 10_000)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : 'Error')
     } finally {
       setResetting(false)
     }
@@ -85,9 +85,9 @@ export function SecuritySection() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Sécurité</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">Security</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Mot de passe, authentification et sessions actives.
+          Password, authentication and active sessions.
         </p>
       </div>
 
@@ -98,9 +98,9 @@ export function SecuritySection() {
             <Shield size={16} className="text-emerald-500" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-display font-semibold text-foreground">Mot de passe</p>
+            <p className="font-display font-semibold text-foreground">Password</p>
             <p className="font-body text-xs text-[--text-secondary]">
-              Compte associé à <span className="font-mono">{email}</span>
+              Account associated with <span className="font-mono">{email}</span>
             </p>
           </div>
         </header>
@@ -113,7 +113,7 @@ export function SecuritySection() {
                 onClick={() => setShowForm(true)}
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-body font-medium text-foreground hover:bg-muted transition-colors"
               >
-                Changer le mot de passe
+                Change password
               </button>
               <button
                 type="button"
@@ -126,16 +126,16 @@ export function SecuritySection() {
                     : 'bg-background border-border text-[--text-secondary] hover:text-foreground disabled:opacity-60',
                 )}
               >
-                {resetting ? <><Loader2 size={13} className="animate-spin" /> Envoi…</> :
-                  resetSent ? <><Check size={13} /> Email envoyé</> :
-                  <><Mail size={13} /> Recevoir un lien par email</>}
+                {resetting ? <><Loader2 size={13} className="animate-spin" /> Sending…</> :
+                  resetSent ? <><Check size={13} /> Email sent</> :
+                  <><Mail size={13} /> Receive link via email</>}
               </button>
             </div>
           ) : (
             <form onSubmit={handleChangePassword} className="space-y-3">
               <div>
                 <label htmlFor="new-pass" className="font-body text-xs font-semibold text-foreground mb-1.5 block">
-                  Nouveau mot de passe
+                  New password
                 </label>
                 <input
                   id="new-pass"
@@ -144,7 +144,7 @@ export function SecuritySection() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Au moins 8 caractères"
+                  placeholder="At least 8 characters"
                   minLength={8}
                   required
                 />
@@ -159,7 +159,7 @@ export function SecuritySection() {
               </div>
               <div>
                 <label htmlFor="confirm-pass" className="font-body text-xs font-semibold text-foreground mb-1.5 block">
-                  Confirmer
+                  Confirm
                 </label>
                 <input
                   id="confirm-pass"
@@ -168,7 +168,7 @@ export function SecuritySection() {
                   value={confirmPass}
                   onChange={(e) => setConfirmPass(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Retape le même mot de passe"
+                  placeholder="Retype the same password"
                   required
                 />
               </div>
@@ -178,14 +178,14 @@ export function SecuritySection() {
                   disabled={saving}
                   className="inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-foreground dark:text-gray-950 text-white px-4 py-2 text-sm font-display font-semibold hover:opacity-90 disabled:opacity-60 transition-all"
                 >
-                  {saving ? <><Loader2 size={13} className="animate-spin" /> Sauvegarde…</> : 'Sauvegarder'}
+                  {saving ? <><Loader2 size={13} className="animate-spin" /> Saving…</> : 'Save'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setNewPassword(''); setConfirmPass('') }}
                   className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-[--text-secondary] hover:text-foreground transition-colors"
                 >
-                  Annuler
+                  Cancel
                 </button>
               </div>
             </form>
@@ -201,14 +201,14 @@ export function SecuritySection() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-display font-semibold text-foreground">
-              Authentification à deux facteurs
+              Two-factor authentication
             </p>
             <p className="font-body text-xs text-[--text-secondary]">
-              Une couche de sécurité supplémentaire via une app d&apos;authentification.
+              An extra layer of security via an authentication app.
             </p>
           </div>
           <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-muted border border-border text-[--text-muted] shrink-0">
-            Bientôt
+            Coming soon
           </span>
         </header>
         <div className="p-5 flex items-center gap-3">
@@ -216,7 +216,7 @@ export function SecuritySection() {
             <div className="w-11 h-6 rounded-full bg-muted border border-border" />
             <div className="absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-background shadow" />
           </div>
-          <p className="font-body text-sm text-[--text-secondary]">La 2FA sera activable très bientôt depuis cet écran.</p>
+          <p className="font-body text-sm text-[--text-secondary]">2FA will be activatable very soon from this screen.</p>
         </div>
       </section>
 
@@ -224,9 +224,9 @@ export function SecuritySection() {
       <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
         <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
         <div className="space-y-1 min-w-0">
-          <p className="font-body text-sm text-foreground font-medium">Conseil</p>
+          <p className="font-body text-sm text-foreground font-medium">Tip</p>
           <p className="font-body text-xs text-[--text-secondary]">
-            Utilise un mot de passe unique + un gestionnaire (1Password, Bitwarden). Ne réutilise jamais le mot de passe d&apos;un autre service.
+            Use a unique password + a password manager (1Password, Bitwarden). Never reuse a password from another service.
           </p>
         </div>
       </div>
@@ -235,9 +235,9 @@ export function SecuritySection() {
       <div className="rounded-2xl border border-dashed border-border bg-muted/30 px-5 py-4 flex items-start gap-3">
         <ShieldCheck size={18} className="text-[--text-muted] shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="font-body text-sm text-foreground">Sessions actives</p>
+          <p className="font-body text-sm text-foreground">Active sessions</p>
           <p className="font-body text-xs text-[--text-secondary] mt-0.5">
-            Liste des appareils connectés et révocation à distance. Bientôt disponible.
+            List of connected devices and remote revocation. Coming soon.
           </p>
         </div>
       </div>
@@ -256,7 +256,7 @@ function getPasswordStrength(pass: string): { percent: number; label: string; co
   if (/[0-9]/.test(pass)) score += 20
   if (/[^A-Za-z0-9]/.test(pass)) score += 25
 
-  if (score < 40) return { percent: 25,  label: 'Faible', color: 'bg-error',   textColor: 'text-error'   }
-  if (score < 70) return { percent: 60,  label: 'Moyen',  color: 'bg-amber-500', textColor: 'text-amber-500' }
-  return           { percent: 100, label: 'Fort',   color: 'bg-emerald-500', textColor: 'text-emerald-500' }
+  if (score < 40) return { percent: 25,  label: 'Weak', color: 'bg-error',   textColor: 'text-error'   }
+  if (score < 70) return { percent: 60,  label: 'Fair',  color: 'bg-amber-500', textColor: 'text-amber-500' }
+  return           { percent: 100, label: 'Strong',   color: 'bg-emerald-500', textColor: 'text-emerald-500' }
 }

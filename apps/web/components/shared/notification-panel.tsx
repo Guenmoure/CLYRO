@@ -20,45 +20,45 @@ const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: '1',
     type: 'payment_failed',
-    title: 'Paiement échoué',
-    body: "Le renouvellement de ton abonnement **Creator** n'a pas pu être traité. Vérifie ta carte.",
-    time: 'Il y a 2h',
+    title: 'Payment failed',
+    body: "Your **Creator** subscription renewal could not be processed. Verify your card.",
+    time: '2h ago',
     read: false,
-    cta: { label: 'Voir mon plan', href: '/settings' },
+    cta: { label: 'View my plan', href: '/settings' },
   },
   {
     id: '2',
     type: 'update',
-    title: 'Nouveau — ElevenLabs v2.5',
-    body: 'La synthèse vocale est maintenant 2× plus rapide avec le modèle eleven_turbo_v2_5.',
-    time: 'Il y a 1j',
+    title: 'New — ElevenLabs v2.5',
+    body: 'Voice synthesis is now 2× faster with the eleven_turbo_v2_5 model.',
+    time: '1d ago',
     read: false,
   },
   {
     id: '3',
     type: 'success',
-    title: 'Vidéo prête',
-    body: 'Ta vidéo **"Motivation 60s"** a été générée avec succès.',
-    time: 'Il y a 2j',
+    title: 'Video ready',
+    body: 'Your video **"Motivation 60s"** has been generated successfully.',
+    time: '2d ago',
     read: true,
-    cta: { label: 'Voir la vidéo', href: '/projects' },
+    cta: { label: 'View video', href: '/projects' },
   },
   {
     id: '4',
     type: 'info',
-    title: 'Mise à jour CLYRO v1.2',
-    body: 'Dark mode, pipeline voix, et nouveau hub Faceless disponibles.',
-    time: 'Il y a 3j',
+    title: 'CLYRO v1.2 Update',
+    body: 'Dark mode, voice pipeline, and new Faceless hub now available.',
+    time: '3d ago',
     read: true,
   },
   {
     id: '5',
     type: 'payment_failed',
-    title: 'Paiement échoué',
-    body: "Deuxième tentative de débit échouée sur ton abonnement **Creator**.",
-    time: 'Il y a 4j',
+    title: 'Payment failed',
+    body: "Second payment attempt failed on your **Creator** subscription.",
+    time: '4d ago',
     read: true,
-    cta: { label: 'Mettre à jour', href: '/settings' },
+    cta: { label: 'Update', href: '/settings' },
   },
 ]
 
@@ -86,9 +86,9 @@ const TYPE_META: Record<NotifType, { icon: React.ReactNode; color: string; bg: s
 }
 
 const TABS: { key: Tab; label: string; types?: NotifType[] }[] = [
-  { key: 'all',      label: 'Toutes' },
-  { key: 'updates',  label: 'Mises à jour', types: ['update', 'info', 'success'] },
-  { key: 'payments', label: 'Paiements',    types: ['payment_failed'] },
+  { key: 'all',      label: 'All' },
+  { key: 'updates',  label: 'Updates', types: ['update', 'info', 'success'] },
+  { key: 'payments', label: 'Payments',    types: ['payment_failed'] },
 ]
 
 function renderBody(text: string) {
@@ -99,11 +99,38 @@ function renderBody(text: string) {
   )
 }
 
+const STORAGE_KEY = 'clyro:notifs:dismissed'
+const READ_KEY    = 'clyro:notifs:read'
+
+function loadDismissed(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')) } catch { return new Set() }
+}
+function saveDismissed(ids: Set<string>) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids])) } catch {}
+}
+function loadRead(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(READ_KEY) ?? '[]')) } catch { return new Set() }
+}
+function saveRead(ids: Set<string>) {
+  try { localStorage.setItem(READ_KEY, JSON.stringify([...ids])) } catch {}
+}
+
 export function NotificationPanel() {
   const [open, setOpen]   = useState(false)
   const [tab, setTab]     = useState<Tab>('all')
-  const [notifs, setNotifs] = useState(MOCK_NOTIFICATIONS)
+  const [notifs, setNotifs] = useState<Notification[]>([])
   const ref = useRef<HTMLDivElement>(null)
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    const dismissed = loadDismissed()
+    const read      = loadRead()
+    setNotifs(
+      MOCK_NOTIFICATIONS
+        .filter(n => !dismissed.has(n.id))
+        .map(n => ({ ...n, read: n.read || read.has(n.id) }))
+    )
+  }, [])
 
   const unread = notifs.filter(n => !n.read).length
 
@@ -121,11 +148,21 @@ export function NotificationPanel() {
   }, [open])
 
   function markAllRead() {
-    setNotifs(prev => prev.map(n => ({ ...n, read: true })))
+    setNotifs(prev => {
+      const updated = prev.map(n => ({ ...n, read: true }))
+      saveRead(new Set(updated.map(n => n.id)))
+      return updated
+    })
   }
 
   function dismiss(id: string) {
-    setNotifs(prev => prev.filter(n => n.id !== id))
+    setNotifs(prev => {
+      const next = prev.filter(n => n.id !== id)
+      const dismissed = loadDismissed()
+      dismissed.add(id)
+      saveDismissed(dismissed)
+      return next
+    })
   }
 
   return (
@@ -141,7 +178,7 @@ export function NotificationPanel() {
         {unread > 0 && (
           <span
             className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-error text-white text-[10px] font-mono font-bold flex items-center justify-center shadow ring-2 ring-background"
-            aria-label={`${unread} notifications non lues`}
+            aria-label={`${unread} unread notifications`}
           >
             {unread > 9 ? '9+' : unread}
           </span>
@@ -167,7 +204,7 @@ export function NotificationPanel() {
               onClick={markAllRead}
               className="text-[11px] text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium transition-colors"
             >
-              Tout marquer lu
+              Mark all as read
             </button>
           </div>
 
@@ -194,7 +231,7 @@ export function NotificationPanel() {
             {filtered.length === 0 ? (
               <div className="py-12 text-center">
                 <Bell size={24} className="text-[--text-muted] mx-auto mb-2" />
-                <p className="text-sm text-[--text-muted]">Aucune notification</p>
+                <p className="text-sm text-[--text-muted]">No notifications</p>
               </div>
             ) : (
               filtered.map(n => {
@@ -233,7 +270,7 @@ export function NotificationPanel() {
                     <button
                       type="button"
                       onClick={() => dismiss(n.id)}
-                      aria-label="Supprimer"
+                      aria-label="Delete"
                       className="shrink-0 mt-0.5 text-[--text-muted] hover:text-foreground transition-colors"
                     >
                       <X size={12} />
@@ -250,7 +287,7 @@ export function NotificationPanel() {
               href="/settings"
               className="text-[11px] text-[--text-muted] hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
             >
-              Gérer les préférences de notification
+              Manage notification preferences
             </a>
           </div>
         </div>

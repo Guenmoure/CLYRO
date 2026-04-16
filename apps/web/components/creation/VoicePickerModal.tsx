@@ -38,9 +38,9 @@ interface VoicePickerModalProps {
 
 // ── Filter pills ───────────────────────────────────────────────────────────────
 
-const GENDER_OPTIONS  = ['Tous', 'Male', 'Female', 'Neutral']
-const ACCENT_OPTIONS  = ['Tous', 'FR', 'EN-US', 'EN-GB', 'ES', 'DE', 'PT', 'IT']
-const USECASE_OPTIONS = ['Tous', 'Narration', 'Commercial', 'News', 'Social', 'Conversational']
+const GENDER_OPTIONS  = ['All', 'Male', 'Female', 'Neutral']
+const ACCENT_OPTIONS  = ['All', 'FR', 'EN-US', 'EN-GB', 'ES', 'DE', 'PT', 'IT']
+const USECASE_OPTIONS = ['All', 'Narration', 'Commercial', 'News', 'Social', 'Conversational']
 
 function FilterPills({
   options,
@@ -121,7 +121,7 @@ function VoiceRow({
           'bg-border hover:bg-border transition-colors',
           'disabled:opacity-30 disabled:pointer-events-none',
         )}
-        aria-label={playing ? 'Pause' : 'Écouter'}
+        aria-label={playing ? 'Pause' : 'Listen'}
       >
         {playing
           ? <Pause size={13} className="text-blue-400" />
@@ -147,13 +147,13 @@ function VoiceRow({
         </div>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {voice.language && (
-            <Badge variant="neutral" className="text-[10px] py-0">{voice.language}</Badge>
+            <Badge variant="neutral" className="text-[11px] py-0">{voice.language}</Badge>
           )}
           {voice.gender && (
-            <span className="font-mono text-[10px] text-[--text-muted] capitalize">{voice.gender}</span>
+            <span className="font-mono text-[11px] text-[--text-muted] capitalize">{voice.gender}</span>
           )}
           {voice.useCase && (
-            <span className="font-mono text-[10px] text-[--text-muted]">{voice.useCase}</span>
+            <span className="font-mono text-[11px] text-[--text-muted]">{voice.useCase}</span>
           )}
         </div>
       </div>
@@ -192,9 +192,9 @@ export function VoicePickerModal({
 
   const filtered = voices.filter(v => {
     if (search && !v.name.toLowerCase().includes(search.toLowerCase())) return false
-    if (gender  !== 'Tous' && v.gender?.toLowerCase() !== gender.toLowerCase())  return false
-    if (accent  !== 'Tous' && v.accent?.toUpperCase()  !== accent)               return false
-    if (useCase !== 'Tous' && v.useCase !== useCase)                              return false
+    if (gender  !== 'All' && v.gender?.toLowerCase() !== gender.toLowerCase())  return false
+    if (accent  !== 'All' && v.accent?.toUpperCase()  !== accent)               return false
+    if (useCase !== 'All' && v.useCase !== useCase)                              return false
     return true
   })
 
@@ -210,14 +210,14 @@ export function VoicePickerModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Choisir une voix"
+      title="Choose a voice"
       size="xl"
     >
       <div className="space-y-4">
 
         {/* Tabs */}
         <div className="flex gap-1 bg-muted rounded-xl p-1">
-          {([['library', 'Bibliothèque publique'], ['cloned', 'Mes voix clonées']] as const).map(([key, label]) => (
+          {([['library', 'Public library'], ['cloned', 'My cloned voices']] as const).map(([key, label]) => (
             <button
               key={key}
               type="button"
@@ -231,7 +231,7 @@ export function VoicePickerModal({
             >
               {label}
               {key === 'cloned' && clonedVoices.length > 0 && (
-                <span className="ml-1.5 text-[10px] text-blue-400">({clonedVoices.length})</span>
+                <span className="ml-1.5 text-[11px] text-blue-400">({clonedVoices.length})</span>
               )}
             </button>
           ))}
@@ -244,7 +244,7 @@ export function VoicePickerModal({
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Rechercher une voix…"
+            placeholder="Search for a voice…"
             className="w-full bg-muted border border-border rounded-xl pl-9 pr-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
           />
         </div>
@@ -268,7 +268,7 @@ export function VoicePickerModal({
 
           {!loading && filtered.length === 0 && (
             <div className="py-10 text-center">
-              <p className="font-mono text-sm text-[--text-muted]">Aucune voix trouvée</p>
+              <p className="font-mono text-sm text-[--text-muted]">No voices found</p>
             </div>
           )}
 
@@ -284,9 +284,9 @@ export function VoicePickerModal({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/50">
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!localSel} onClick={handleConfirm}>
-            Confirmer
+            Confirm
           </Button>
         </div>
 

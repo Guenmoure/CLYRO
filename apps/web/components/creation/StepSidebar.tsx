@@ -9,28 +9,28 @@ import { Card } from '@/components/ui/card'
 
 function formatRelativeSave(date: Date): string {
   const diffMin = Math.round((Date.now() - date.getTime()) / 60_000)
-  if (diffMin < 1) return "à l'instant"
-  if (diffMin === 1) return 'il y a 1 min'
-  if (diffMin < 60)  return `il y a ${diffMin} min`
-  return `il y a ${Math.round(diffMin / 60)}h`
+  if (diffMin < 1) return "just now"
+  if (diffMin === 1) return '1 min ago'
+  if (diffMin < 60)  return `${diffMin} min ago`
+  return `${Math.round(diffMin / 60)}h ago`
 }
 
 function AutoSaveIndicator({ lastSaved, isSaving }: { lastSaved?: Date | null; isSaving?: boolean }) {
   if (!lastSaved && !isSaving) {
-    return <p className="font-mono text-[11px] text-[--text-muted] mt-1">Non sauvegardé</p>
+    return <p className="font-mono text-[11px] text-[--text-muted] mt-1">Not saved</p>
   }
   return (
     <div className="flex items-center gap-1.5 mt-1" aria-live="polite">
       {isSaving ? (
         <>
           <Cloud size={11} className="text-blue-400 animate-pulse" strokeWidth={1.8} />
-          <span className="font-mono text-[11px] text-[--text-muted]">Sauvegarde…</span>
+          <span className="font-mono text-[11px] text-[--text-muted]">Saving…</span>
         </>
       ) : lastSaved ? (
         <>
           <Check size={11} className="text-success shrink-0" strokeWidth={2.2} />
           <span className="font-mono text-[11px] text-[--text-muted]">
-            Brouillon sauvegardé{' '}
+            Draft saved{' '}
             <span className="opacity-60">{formatRelativeSave(lastSaved)}</span>
           </span>
         </>
@@ -120,7 +120,7 @@ function DesktopSidebar({
             onClick={startEdit}
             className="w-full text-left font-display text-sm text-foreground hover:text-blue-400 transition-colors truncate"
           >
-            {projectName || 'Nouveau projet'}
+            {projectName || 'New project'}
           </button>
         )}
         <AutoSaveIndicator lastSaved={lastSaved} isSaving={isSaving} />

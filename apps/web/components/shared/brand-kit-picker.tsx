@@ -45,9 +45,9 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
     return (
       <div className={cn('flex items-center gap-2 text-sm font-body text-gray-400 dark:text-white/30', className)}>
         <Palette size={14} />
-        Aucun brand kit —{' '}
+        No brand kits —{' '}
         <Link href="/settings/brand" className="text-clyro-primary hover:underline">
-          en créer un
+          create one
         </Link>
       </div>
     )
@@ -55,7 +55,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
 
   return (
     <div className={cn('flex flex-wrap gap-2', className)}>
-      {/* "Aucun" option */}
+      {/* "None" option */}
       <button
         type="button"
         onClick={() => onChange(null)}
@@ -66,7 +66,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
             : 'glass glass-hover border-transparent text-gray-400 dark:text-white/30'
         )}
       >
-        Aucun
+        None
       </button>
 
       {kits.map((kit) => (
@@ -93,7 +93,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
           )}
           {kit.name}
           {kit.is_default && (
-            <span className="font-mono text-[9px] text-clyro-primary uppercase tracking-wider">★</span>
+            <span className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">★</span>
           )}
         </button>
       ))}
@@ -103,7 +103,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
         className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass glass-hover text-xs font-body text-gray-400 dark:text-white/30 hover:text-gray-700 dark:hover:text-white/60 transition-all border border-dashed border-gray-200 dark:border-white/[0.06]"
       >
         <Plus size={11} />
-        Nouveau
+        New
       </Link>
     </div>
   )

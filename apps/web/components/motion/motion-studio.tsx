@@ -17,7 +17,7 @@ import {
   Plus, ArrowLeft, Wand2, Upload, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { startMotionGeneration, getVoices } from '@/lib/api'
+import { startMotionGeneration, getPublicVoices } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import { toast } from '@/components/ui/toast'
 import { VideoPlayer } from '@/components/ui/video-player'
@@ -41,7 +41,7 @@ const DURATIONS: Array<{ id: VideoDuration; label: string }> = [
 
 const STYLE_LABELS: Record<string, { label: string; color: string }> = {
   hero:        { label: 'Accroche',  color: '#00CFFF' },
-  feature:     { label: 'Point clé', color: '#9B59FF' },
+  feature:     { label: 'Key point', color: '#9B59FF' },
   stats:       { label: 'Stats',     color: '#00C896' },
   'text-focus': { label: 'Citation', color: '#FFB347' },
   outro:       { label: 'Outro',     color: '#FF6B6B' },
@@ -58,10 +58,10 @@ const SCENE_TYPE_LABELS: Record<string, string> = {
 
 const PIPELINE_STEPS = [
   { key: 'storyboard', label: 'Analyse du brief',  pct: 20 },
-  { key: 'visuals',    label: 'Génération visuels', pct: 55 },
+  { key: 'visuals',    label: 'Generating visuals', pct: 55 },
   { key: 'audio',      label: 'Voix off',           pct: 75 },
   { key: 'assembly',   label: 'Assemblage',         pct: 92 },
-  { key: 'done',       label: 'Vidéo prête !',      pct: 100 },
+  { key: 'done',       label: 'Video ready!',      pct: 100 },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ function SceneCard({
           type="button"
           onClick={(e) => { e.stopPropagation(); onRegenerate() }}
           className="shrink-0 p-1.5 rounded-lg text-[--text-muted] hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
-          title="Regénérer cette scène"
+          title="Regenerate this scene"
         >
           <RefreshCw size={13} />
         </button>
@@ -235,7 +235,7 @@ function SceneCard({
         >
           ▶
         </span>
-        {expanded ? 'Masquer les paramètres Remotion' : 'Modifier les paramètres Remotion'}
+        {expanded ? 'Hide Remotion settings' : 'Edit Remotion settings'}
       </button>
 
       {expanded && (
@@ -329,7 +329,7 @@ function SceneCard({
             </div>
             {/* Duration */}
             <div>
-              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Durée (s)</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Duration (s)</label>
               <input
                 type="number"
                 min={2}
@@ -397,7 +397,7 @@ function VoicePicker({
   const [preview, setPreview] = useState<HTMLAudioElement | null>(null)
 
   useEffect(() => {
-    getVoices().then((r) => setVoices(r.public as VoiceItem[])).catch(() => setVoices([]))
+    getPublicVoices().then(({ voices }) => setVoices(voices as VoiceItem[])).catch(() => setVoices([]))
       .finally(() => setLoading(false))
   }, [])
 
@@ -514,7 +514,7 @@ function GeneratingView({
       <div className="text-center">
         <h3 className="font-display font-bold text-xl text-foreground">{title}</h3>
         <p className="text-sm text-[--text-muted] mt-1">
-          {isError ? errorMessage : isDone ? 'Votre vidéo est prête !' : step.label}
+          {isError ? errorMessage : isDone ? 'Your video is ready!' : step.label}
         </p>
       </div>
 
@@ -596,11 +596,11 @@ export function MotionStudio({
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      toast.error('Le fichier doit être une image (PNG, SVG, JPG)')
+      toast.error('File must be an image (PNG, SVG, JPG)')
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Le fichier ne doit pas dépasser 5 Mo')
+      toast.error('File must not exceed 5 MB')
       return
     }
     setLogoFile(file)
@@ -627,11 +627,11 @@ export function MotionStudio({
         body: JSON.stringify({ brief, script, format, duration }),
       })
       const data = await res.json() as { scenes?: MotionScene[]; error?: string }
-      if (!res.ok || data.error) throw new Error(data.error ?? 'Erreur de génération')
+      if (!res.ok || data.error) throw new Error(data.error ?? 'Generation error')
       setScenes(data.scenes ?? [])
       setPhase('board')
     } catch (e) {
-      setGenError(e instanceof Error ? e.message : 'Erreur inconnue')
+      setGenError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
       setGenLoading(false)
     }
@@ -658,7 +658,7 @@ export function MotionStudio({
         setScenes((prev) => prev.map((s) => s.index === index ? newScene : s))
       }
     } catch {
-      toast.error('Erreur lors de la régénération de la scène')
+      toast.error('Scene regeneration error')
     }
   }, [scenes, brief, format])
 
@@ -681,7 +681,7 @@ export function MotionStudio({
         const uploadRes = await fetch('/api/upload-logo', { method: 'POST', body: formData })
         const uploadData = await uploadRes.json() as { url?: string; error?: string }
         if (!uploadRes.ok || uploadData.error) {
-          toast.error(uploadData.error ?? 'Erreur upload logo')
+          toast.error(uploadData.error ?? 'Logo upload error')
         } else {
           logoUrl = uploadData.url
         }
@@ -709,7 +709,7 @@ export function MotionStudio({
       ])
       onVideoCreated?.(res.video_id, title)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Erreur de lancement')
+      toast.error(e instanceof Error ? e.message : 'Launch error')
     } finally {
       setLaunching(false)
     }
@@ -759,7 +759,7 @@ export function MotionStudio({
               </div>
               <p className="font-display text-sm font-semibold text-foreground">Aucune session</p>
               <p className="text-[--text-secondary] font-body text-xs max-w-[180px]">
-                Crée ta première vidéo Motion pour la voir ici.
+                Create your first Motion video pour la voir ici.
               </p>
             </div>
           ) : (
@@ -778,7 +778,7 @@ export function MotionStudio({
                 >
                   <p className="font-semibold truncate">{s.title ?? 'Sans titre'}</p>
                   <p className="text-[--text-muted] mt-0.5 truncate">
-                    {s.status === 'done' ? '✓ Prête' : s.status}
+                    {s.status === 'done' ? '✓ Ready' : s.status}
                   </p>
                 </button>
               ))}
@@ -797,7 +797,7 @@ export function MotionStudio({
 
               {/* Header */}
               <div className="text-center">
-                <h1 className="font-display text-2xl font-bold text-foreground">Créer une vidéo Motion</h1>
+                <h1 className="font-display text-2xl font-bold text-foreground">Create a Motion video<</h1>
                 <p className="text-sm text-[--text-muted] mt-1">
                   Décrivez l'ambiance visuelle, entrez votre script — Claude génère le storyboard.
                 </p>
@@ -813,7 +813,7 @@ export function MotionStudio({
                 <textarea
                   value={brief}
                   onChange={(e) => setBrief(e.target.value)}
-                  placeholder="Décrivez l'ambiance visuelle et le style de votre vidéo…"
+                  placeholder='"Describe 'visual mood and style of your video…"
                   rows={4}
                   className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none px-4 py-3"
                 />
@@ -943,7 +943,7 @@ export function MotionStudio({
               >
                 {genLoading
                   ? <><Loader2 size={16} className="animate-spin" /> Génération du storyboard…</>
-                  : <><Sparkles size={16} /> Générer le storyboard</>
+                  : <><Sparkles size={16} /> Generate storyboard</>
                 }
               </button>
             </div>

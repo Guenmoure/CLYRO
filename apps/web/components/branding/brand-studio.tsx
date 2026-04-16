@@ -189,56 +189,56 @@ const AMBIANCE_OPTIONS: Array<{
   {
     id: "luxe",
     label: "Luxe",
-    desc: "Élégant, raffiné, intemporel",
+    desc: "Elegant, refined, timeless",
     emoji: "✨",
   },
   {
     id: "accessible",
     label: "Accessible",
-    desc: "Chaleureux, humain, inclusif",
+    desc: "Warm, human, inclusive",
     emoji: "🤝",
   },
-  { id: "tech", label: "Tech", desc: "Moderne, innovant, épuré", emoji: "⚡" },
+  { id: "tech", label: "Tech", desc: "Modern, innovative, refined", emoji: "⚡" },
   {
     id: "naturel",
-    label: "Naturel",
-    desc: "Organique, durable, authentique",
+    label: "Natural",
+    desc: "Organic, sustainable, authentic",
     emoji: "🌿",
   },
   {
     id: "fun",
     label: "Fun",
-    desc: "Coloré, expressif, irrévérencieux",
+    desc: "Colorful, expressive, irreverent",
     emoji: "🎉",
   },
   {
     id: "corporate",
     label: "Corporate",
-    desc: "Professionnel, fiable, structuré",
+    desc: "Professional, reliable, structured",
     emoji: "🏢",
   },
 ];
 
 const STEPS: Array<{ key: BrandStudioStep; label: string }> = [
   { key: "brief", label: "Brief" },
-  { key: "strategy", label: "Stratégie" },
+  { key: "strategy", label: "Strategy" },
   { key: "logos", label: "Logos" },
-  { key: "assets", label: "Visuels" },
-  { key: "charte", label: "Charte" },
+  { key: "assets", label: "Visuals" },
+  { key: "charte", label: "Guidelines" },
   { key: "export", label: "Export" },
 ];
 
 const ASSET_LABELS: Record<string, string> = {
-  mockup_business_card: "Carte de visite",
-  mockup_social_post: "Post social media",
-  mockup_letterhead: "En-tête courrier",
-  mockup_email_header: "Bannière email",
+  mockup_business_card: "Business card",
+  mockup_social_post: "Social media post",
+  mockup_letterhead: "Letterhead",
+  mockup_email_header: "Email banner",
   lifestyle_mockup: "Lifestyle mockup",
-  pattern_url: "Pattern textile",
-  brand_banner: "Bannière web",
-  illustration_url: "Illustration éditoriale",
-  mockup_packaging: "Packaging / Boîte",
-  og_image_url: "Image OG / Meta",
+  pattern_url: "Textile pattern",
+  brand_banner: "Web banner",
+  illustration_url: "Editorial illustration",
+  mockup_packaging: "Packaging / Box",
+  og_image_url: "OG / Meta image",
 };
 
 // ── Stepper ───────────────────────────────────────────────────────────────────
@@ -306,7 +306,7 @@ function ColorSwatch({
         title={hex}
       />
       {label && (
-        <span className="font-mono text-[9px] text-[--text-muted]">{label}</span>
+        <span className="font-mono text-[11px] text-[--text-muted]">{label}</span>
       )}
     </div>
   );
@@ -334,8 +334,8 @@ function WcagInline({
     <div className="mt-1 space-y-2">
       <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 border border-amber-200 rounded-lg">
         <AlertTriangle size={11} className="text-amber-500 shrink-0" />
-        <p className="text-[10px] text-amber-700">
-          Contraste faible ({result.ratio.toFixed(1)}:1 — WCAG AA exige 4.5:1).
+        <p className="text-[11px] text-amber-700">
+          Low contrast ({result.ratio.toFixed(1)}:1 — WCAG AA requires 4.5:1).
         </p>
       </div>
       {onApply && (
@@ -346,19 +346,19 @@ function WcagInline({
             title={suggestedColor}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-green-700 font-medium">
-              Couleur suggérée
+            <p className="text-[11px] text-green-700 font-medium">
+              Suggested color
             </p>
-            <p className="text-[9px] text-green-600">
+            <p className="text-[11px] text-green-600">
               {suggestedColor} ({suggestedRatio.toFixed(1)}:1)
             </p>
           </div>
           <button
             type="button"
             onClick={() => onApply(suggestedColor)}
-            className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-[9px] font-medium rounded transition-colors shrink-0"
+            className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-[11px] font-medium rounded transition-colors shrink-0"
           >
-            Utiliser
+            Apply
           </button>
         </div>
       )}
@@ -401,7 +401,7 @@ function AnalystModal({
           </div>
           <div>
             <p className="font-display font-bold text-foreground">
-              {analysis.is_ready ? "Brief validé" : "Brief incomplet"}
+              {analysis.is_ready ? "Brief validated" : "Brief incomplete"}
             </p>
             <p className="text-xs text-[--text-muted]">
               Score : {analysis.brief_score}/100
@@ -426,7 +426,7 @@ function AnalystModal({
             analysis.clarification_questions &&
             analysis.clarification_questions.length > 0 && (
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-red-500 mb-2">
+                <p className="font-mono text-[11px] uppercase tracking-wider text-red-500 mb-2">
                   Questions de clarification
                 </p>
                 <ul className="space-y-2">
@@ -441,7 +441,7 @@ function AnalystModal({
             )}
           {analysis.contradictions.length > 0 && (
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-wider text-red-500 mb-2">
+              <p className="font-mono text-[11px] uppercase tracking-wider text-red-500 mb-2">
                 Contradictions détectées
               </p>
               <ul className="space-y-1">
@@ -455,7 +455,7 @@ function AnalystModal({
           )}
           {analysis.questions.length > 0 && (
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-wider text-amber-500 mb-2">
+              <p className="font-mono text-[11px] uppercase tracking-wider text-amber-500 mb-2">
                 Questions à clarifier
               </p>
               <ul className="space-y-1">
@@ -469,7 +469,7 @@ function AnalystModal({
           )}
           {analysis.suggestions.length > 0 && (
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-wider text-blue-500 mb-2">
+              <p className="font-mono text-[11px] uppercase tracking-wider text-blue-500 mb-2">
                 Suggestions
               </p>
               <ul className="space-y-1">
@@ -498,8 +498,8 @@ function AnalystModal({
           >
             <ChevronRight size={14} />
             {analysis.is_ready
-              ? "Générer la stratégie"
-              : "Continuer quand même"}
+              ? "Generate strategy"
+              : "Continue anyway"}
           </button>
         </div>
       </div>
@@ -540,7 +540,7 @@ function ContradictionPathsModal({
 
         {/* Contradictions list */}
         <div className="px-6 py-4 border-b border-border bg-purple-50/30">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-purple-600 mb-2">
+          <p className="font-mono text-[11px] uppercase tracking-wider text-purple-600 mb-2">
             Contradictions détectées
           </p>
           <ul className="space-y-1">
@@ -554,7 +554,7 @@ function ContradictionPathsModal({
 
         {/* Path cards */}
         <div className="px-6 py-6 space-y-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] mb-4">
+          <p className="font-mono text-[11px] uppercase tracking-wider text-[--text-muted] mb-4">
             2 chemins créatifs
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -631,7 +631,7 @@ function BriefForm({
   const [concurrents, setConcurrents] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [references, setReferences] = useState("");
-  const [couleursImp, setCouleursImp] = useState("");
+  const [enforcedColors, setEnforcedColors] = useState("");
 
   const imposedHexes = couleursImp
     .split(",")
@@ -663,50 +663,50 @@ function BriefForm({
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-            Nom de la marque *
-          </label>
+        <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Nom de la marque <span className="text-red-400">·</span></p>
+          </div>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="ex: Celeste, Nøvak, Bloom…"
-            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
-        <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-            Secteur d'activité *
-          </label>
+        <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Secteur d'activité <span className="text-red-400">·</span></p>
+          </div>
           <input
             type="text"
             value={secteur}
             onChange={(e) => setSecteur(e.target.value)}
-            placeholder="ex: Cosmétique, SaaS B2B, Restauration…"
-            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            placeholder="e.g.: Cosmetics, B2B SaaS, Restaurants…"
+            className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
       </div>
 
-      <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-          Cible principale *
-        </label>
+      <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-border">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Cible principale <span className="text-red-400">·</span></p>
+        </div>
         <input
           type="text"
           value={cible}
           onChange={(e) => setCible(e.target.value)}
-          placeholder="ex: Femmes 25–40 ans, CSP+, urbaines, passionnées de bien-être"
-          className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+          placeholder="e.g.: Women 25-40 years, upper class, urban, wellness enthusiasts"
+          className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
         />
       </div>
 
-      <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-          3 valeurs de marque *
-        </label>
-        <div className="flex gap-2">
+      <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-border">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">3 valeurs de marque <span className="text-red-400">·</span></p>
+        </div>
+        <div className="flex gap-2 px-4 py-3">
           {[0, 1, 2].map((i) => (
             <input
               key={i}
@@ -717,16 +717,16 @@ function BriefForm({
                 next[i] = e.target.value;
                 setValeurs(next);
               }}
-              placeholder={["Innovation", "Simplicité", "Confiance"][i]}
-              className="flex-1 bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+              placeholder={["Innovation", "Simplicity", "Confiance"][i]}
+              className="flex-1 bg-card border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
             />
           ))}
         </div>
       </div>
 
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-3 block">
-          Ambiance visuelle *
+        <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-3 block">
+          Ambiance visuelle <span className="text-red-400">·</span>
         </label>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {AMBIANCE_OPTIONS.map((opt) => (
@@ -745,7 +745,7 @@ function BriefForm({
               <p className="font-display font-semibold text-xs text-foreground">
                 {opt.label}
               </p>
-              <p className="font-body text-[10px] text-[--text-muted] leading-tight">
+              <p className="font-body text-[11px] text-[--text-muted] leading-tight">
                 {opt.desc}
               </p>
               {ambiance === opt.id && (
@@ -759,40 +759,40 @@ function BriefForm({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-            Concurrents à éviter
-          </label>
+        <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Concurrents à éviter</p>
+          </div>
           <input
             type="text"
             value={concurrents}
             onChange={(e) => setConcurrents(e.target.value)}
             placeholder="ex: Nike, Apple, Zara…"
-            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
-        <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-            Marques de référence
-          </label>
+        <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Marques de référence</p>
+          </div>
           <input
             type="text"
             value={references}
             onChange={(e) => setReferences(e.target.value)}
             placeholder="ex: Glossier, Notion, Oatly…"
-            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
-        <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-            Couleurs imposées (HEX)
-          </label>
+        <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Enforced colors (HEX)</p>
+          </div>
           <input
             type="text"
             value={couleursImp}
-            onChange={(e) => setCouleursImp(e.target.value)}
+            onChange={(e) => setEnforcedColors(e.target.value)}
             placeholder="#FF5733, #2C3E50…"
-            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
           {imposedHexes.map((hex) => (
             <WcagInline
@@ -808,16 +808,16 @@ function BriefForm({
             />
           ))}
         </div>
-        <div>
-          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-            Logo existant (URL)
-          </label>
+        <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Logo existant (URL)</p>
+          </div>
           <input
             type="url"
             value={logoUrl}
             onChange={(e) => setLogoUrl(e.target.value)}
             placeholder="https://exemple.com/logo.png"
-            className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+            className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
       </div>
@@ -910,7 +910,7 @@ function DirectionCard({
           ))}
         </div>
         <div className="bg-white/30 rounded-lg px-3 py-2 space-y-0.5">
-          <p className="font-mono text-[9px] text-[--text-muted] uppercase tracking-wider">
+          <p className="font-mono text-[11px] text-[--text-muted] uppercase tracking-wider">
             Typographie
           </p>
           <p style={{ color: p.primary, fontSize: 14, fontWeight: 700 }}>
@@ -924,7 +924,7 @@ function DirectionCard({
           {direction.keywords.map((kw) => (
             <span
               key={kw}
-              className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium"
+              className="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium"
               style={{ background: `${p.accent}22`, color: p.accent }}
             >
               {kw}
@@ -968,7 +968,7 @@ function HybridPanel({
       </p>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
             Palette de
           </label>
           <select
@@ -984,7 +984,7 @@ function HybridPanel({
           </select>
         </div>
         <div>
-          <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
             Typo de
           </label>
           <select
@@ -1000,7 +1000,7 @@ function HybridPanel({
           </select>
         </div>
         <div>
-          <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
             Logo de
           </label>
           <select
@@ -1101,7 +1101,7 @@ function LogoConceptCard({
               className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-purple-500/40 transition-all relative"
               style={{ background: bg }}
               onClick={() => url && onSelectUrl(url)}
-              title={`Utiliser comme référence — ${label}`}
+              title={`Use as reference — ${label}`}
             >
               {url ? (
                 <img
@@ -1137,7 +1137,7 @@ function LogoConceptCard({
                 </div>
               )}
             </div>
-            <p className="font-mono text-[9px] text-center text-[--text-muted]">
+            <p className="font-mono text-[11px] text-center text-[--text-muted]">
               {label}
             </p>
           </div>
@@ -1192,7 +1192,7 @@ function AssetCard({
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     } catch {
-      toast.error("Erreur lors du téléchargement");
+      toast.error("Download error.");
     } finally {
       setDownloading(false);
     }
@@ -1211,9 +1211,9 @@ function AssetCard({
       );
       const newUrl = data[assetKey];
       if (newUrl) onRegenerated(assetKey, newUrl);
-      else toast.error("Pas de résultat pour cet asset");
+      else toast.error("No results for this asset.");
     } catch {
-      toast.error("Erreur lors de la regénération");
+      toast.error("Regeneration error.");
     } finally {
       setLoading(false);
     }
@@ -1230,7 +1230,7 @@ function AssetCard({
             <button
               type="button"
               onClick={() => onSetReference(url)}
-              className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5"
+              className="text-[11px] text-blue-500 hover:underline flex items-center gap-0.5"
             >
               <ImageIcon size={9} /> Référence
             </button>
@@ -1239,7 +1239,7 @@ function AssetCard({
             type="button"
             onClick={handleRegen}
             disabled={loading}
-            className="flex items-center gap-1 text-[10px] text-[--text-muted] hover:text-foreground transition-colors disabled:opacity-40"
+            className="flex items-center gap-1 text-[11px] text-[--text-muted] hover:text-foreground transition-colors disabled:opacity-40"
           >
             {loading ? (
               <Loader2 size={10} className="animate-spin" />
@@ -1285,7 +1285,7 @@ function AssetCard({
           disabled={downloading}
           className="inline-flex items-center gap-1.5 text-xs text-blue-500 font-medium hover:underline disabled:opacity-50"
         >
-          <Download size={10} /> {downloading ? "…" : "Télécharger"}
+          <Download size={10} /> {downloading ? "…" : "Download"}
         </button>
       )}
       {/* Lightbox */}
@@ -1369,7 +1369,7 @@ export function BrandStudio() {
   async function handleBriefSubmit(b: BrandBrief) {
     setBrief(b);
     setLoading(true);
-    setLoadingMsg("Brand Analyst évalue ton brief…");
+    setLoadingMsg("Brand Analyst evaluating your brief…");
     try {
       const result = await callApi<BrandAnalysisResult>(
         "/api/brand-analyst",
@@ -1460,7 +1460,7 @@ export function BrandStudio() {
         setStep("brief");
       } else {
         toast.error(
-          err instanceof Error ? err.message : "Erreur lors de la génération",
+          err instanceof Error ? err.message : "Generation error.",
         );
       }
     } finally {
@@ -1475,7 +1475,7 @@ export function BrandStudio() {
     setAnalysis(null);
     setBriefIssues([]);
     setLoading(true);
-    setLoadingMsg("Claude génère 3 directions créatives…");
+    setLoadingMsg("Claude generating 3 creative directions…");
     try {
       const data = await callApi<BrandStrategy>("/api/brand-strategy", b);
       setStrategy(data);
@@ -1488,7 +1488,7 @@ export function BrandStudio() {
         setStep("brief");
       } else {
         toast.error(
-          err instanceof Error ? err.message : "Erreur lors de la génération",
+          err instanceof Error ? err.message : "Generation error.",
         );
       }
     } finally {
@@ -1506,7 +1506,7 @@ export function BrandStudio() {
   ) {
     if (!strategy || !brief) return;
     setLoading(true);
-    setLoadingMsg("Claude génère la direction hybride…");
+    setLoadingMsg("Claude generating hybrid direction…");
     try {
       const hybrid = await callApi<BrandDirection>("/api/brand-hybrid", {
         directions: strategy.directions,
@@ -1527,11 +1527,11 @@ export function BrandStudio() {
       (next as any).hybrid = hybrid;
       setStrategy(next);
       setSelectedId(hybrid.id);
-      toast.success("Direction hybride générée");
+      toast.success("Hybrid direction generated.");
 
       // Auto-regenerate logos with the hybrid direction
       setLoadingMsg(
-        "Régénération automatique des logos pour la direction hybride…",
+        "Auto-regenerating logos for hybrid direction…",
       );
       const logoData = await callApi<BrandLogos>("/api/brand-logos", {
         brief,
@@ -1539,9 +1539,9 @@ export function BrandStudio() {
       });
       setLogos(logoData);
       setStep("logos");
-      toast.success("Logos régénérés avec la direction hybride");
+      toast.success("Logos regenerated with hybrid direction.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur hybridation");
+      toast.error(err instanceof Error ? err.message : "Hybridation error.");
     } finally {
       setLoading(false);
       setLoadingMsg("");
@@ -1553,7 +1553,7 @@ export function BrandStudio() {
   async function handleDirectionToLogos() {
     if (!brief || !selectedDirection) return;
     setLoading(true);
-    setLoadingMsg("fal.ai recraft-v3 génère 3 concepts de logo × 3 fonds…");
+    setLoadingMsg("fal.ai recraft-v3 generating 3 logo concepts × 3 backgrounds…");
     try {
       const data = await callApi<BrandLogos>("/api/brand-logos", {
         brief,
@@ -1565,7 +1565,7 @@ export function BrandStudio() {
       toast.error(
         err instanceof Error
           ? err.message
-          : "Erreur lors de la génération des logos",
+          : "Logo generation error.",
       );
     } finally {
       setLoading(false);
@@ -1583,7 +1583,7 @@ export function BrandStudio() {
     const logoUrl =
       selectedConcept?.logo_white_bg ?? selectedConcept?.logo_brand_bg;
     setLoading(true);
-    setLoadingMsg("fal.ai génère 10 visuels de marque en batches…");
+    setLoadingMsg("fal.ai generating 10 brand visuals in batches…");
     try {
       const data = await callApi<BrandAssets>("/api/brand-visuals", {
         brief,
@@ -1596,7 +1596,7 @@ export function BrandStudio() {
       toast.error(
         err instanceof Error
           ? err.message
-          : "Erreur lors de la génération des assets",
+          : "Asset generation error.",
       );
     } finally {
       setLoading(false);
@@ -1615,7 +1615,7 @@ export function BrandStudio() {
   async function handleGenerateCharte() {
     if (!brief || !selectedDirection) return;
     setLoading(true);
-    setLoadingMsg("Claude rédige la charte graphique complète…");
+    setLoadingMsg("Claude drafting complete brand guidelines…");
     try {
       const data = await callApi<BrandCharte>("/api/brand-charte", {
         brief,
@@ -1625,7 +1625,7 @@ export function BrandStudio() {
       setStep("charte");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Erreur lors de la charte",
+        err instanceof Error ? err.message : "Guidelines generation error.",
       );
     } finally {
       setLoading(false);
@@ -1652,7 +1652,7 @@ export function BrandStudio() {
       const html = await res.text();
       const win = window.open("", "_blank");
       if (!win) {
-        toast.error("Popups bloqués — autorise les popups");
+        toast.error("Popups blocked - allow popups");
         return;
       }
       win.document.write(html);
@@ -1660,7 +1660,7 @@ export function BrandStudio() {
       win.focus();
       setTimeout(() => win.print(), 800);
     } catch {
-      toast.error("Erreur lors de la génération PDF");
+      toast.error("PDF generation error.");
     }
   }
 
@@ -1688,9 +1688,9 @@ export function BrandStudio() {
       a.download = `${slug}-brand-kit.zip`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Brand kit ZIP téléchargé");
+      toast.success("Brand kit ZIP downloaded.");
     } catch {
-      toast.error("Erreur lors du téléchargement ZIP");
+      toast.error("ZIP download error.");
     }
   }
 
@@ -1717,11 +1717,11 @@ export function BrandStudio() {
         }),
       });
       const data = (await res.json()) as { signedUrl?: string; error?: string };
-      if (!res.ok || !data.signedUrl) throw new Error(data.error ?? "Erreur");
+      if (!res.ok || !data.signedUrl) throw new Error(data.error ?? "Error");
       setShareUrl(data.signedUrl);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Erreur lors du partage",
+        err instanceof Error ? err.message : "Sharing error.",
       );
     } finally {
       setSharing(false);
@@ -1755,7 +1755,7 @@ export function BrandStudio() {
     a.download = `${brief?.name?.toLowerCase().replace(/\s+/g, "-") ?? "brand"}-identity.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Brand kit exporté en JSON");
+    toast.success("Brand kit exported as JSON");
   }
 
   // ── Loading overlay ──
@@ -1802,12 +1802,12 @@ export function BrandStudio() {
       )}
 
       <div className="flex flex-col h-full overflow-y-auto px-8 py-8 max-w-4xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-6 text-center">
           <h1 className="font-display text-2xl font-bold text-foreground">
             Identité de marque
           </h1>
           <p className="text-[--text-muted] text-sm mt-1">
-            Brief → Stratégie → Logos → Visuels → Charte → Export
+            Brief → Strategy → Logos → Visuals → Guidelines → Export
           </p>
         </div>
 
@@ -1830,7 +1830,7 @@ export function BrandStudio() {
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="font-mono text-[10px] text-green-600 uppercase tracking-wider mb-1.5">
+                  <p className="font-mono text-[11px] text-green-600 uppercase tracking-wider mb-1.5">
                     ✓ À faire
                   </p>
                   <ul className="space-y-1">
@@ -1842,7 +1842,7 @@ export function BrandStudio() {
                   </ul>
                 </div>
                 <div>
-                  <p className="font-mono text-[10px] text-red-500 uppercase tracking-wider mb-1.5">
+                  <p className="font-mono text-[11px] text-red-500 uppercase tracking-wider mb-1.5">
                     ✗ À éviter
                   </p>
                   <ul className="space-y-1">
@@ -1936,7 +1936,7 @@ export function BrandStudio() {
                   onSelect={() => setSelectedLogo(concept.name)}
                   onSelectUrl={(url) => {
                     setReferenceUrl(url);
-                    toast.success("Défini comme image de référence");
+                    toast.success("Set as reference image.");
                   }}
                   brandName={brief?.name}
                   headingFont={selectedDirection?.typography?.heading}
@@ -1948,7 +1948,7 @@ export function BrandStudio() {
               <div className="flex items-center gap-3 px-4 py-2.5 bg-purple-500/5 border border-purple-500/20 rounded-xl">
                 <img
                   src={referenceUrl}
-                  alt="Référence"
+                  alt="Reference"
                   className="w-8 h-8 rounded-lg object-contain border border-border"
                 />
                 <p className="text-xs text-foreground flex-1">
@@ -2014,7 +2014,7 @@ export function BrandStudio() {
                   onRegenerated={handleAssetRegenerated}
                   onSetReference={(url) => {
                     setReferenceUrl(url);
-                    toast.success("Référence mise à jour");
+                    toast.success("Reference updated.");
                   }}
                 />
               ))}
@@ -2042,7 +2042,7 @@ export function BrandStudio() {
         {/* ── STEP 5: Charte ── */}
         {step === "charte" && charte && selectedDirection && (
           <div className="space-y-4">
-            <CharteSection title="Palette de couleurs">
+            <CharteSection title="Color palette">
               <div className="flex flex-wrap gap-4">
                 {charte.colors.map((c) => (
                   <div key={c.hex} className="flex items-center gap-3">
@@ -2063,14 +2063,14 @@ export function BrandStudio() {
               </div>
             </CharteSection>
 
-            <CharteSection title="Typographie">
+            <CharteSection title="Typography">
               <div className="space-y-3">
                 {Object.entries(charte.typography).map(([level, t]) => (
                   <div
                     key={level}
                     className="flex items-start gap-4 py-2 border-b border-border last:border-0"
                   >
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] w-16 pt-0.5 shrink-0">
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-[--text-muted] w-16 pt-0.5 shrink-0">
                       {level}
                     </span>
                     <div className="flex-1">
@@ -2089,7 +2089,7 @@ export function BrandStudio() {
               </div>
             </CharteSection>
 
-            <CharteSection title="Règles d'usage du logo">
+            <CharteSection title="Logo usage rules">
               <div className="space-y-2 text-sm">
                 <p>
                   <span className="font-semibold text-foreground">
@@ -2133,7 +2133,7 @@ export function BrandStudio() {
             </CharteSection>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <CharteSection title="Mise en page">
+              <CharteSection title="Page layout">
                 <div className="space-y-2 text-sm text-[--text-muted]">
                   <p>
                     <span className="font-semibold text-foreground">
@@ -2155,7 +2155,7 @@ export function BrandStudio() {
                   </p>
                 </div>
               </CharteSection>
-              <CharteSection title="Direction photographique">
+              <CharteSection title="Photography direction">
                 <div className="space-y-2 text-sm text-[--text-muted]">
                   <p>{charte.photography.style}</p>
                   <p className="italic">{charte.photography.mood}</p>
@@ -2239,7 +2239,7 @@ export function BrandStudio() {
               >
                 <FileText size={16} />
                 <div className="text-left">
-                  <p>Télécharger la charte PDF</p>
+                  <p>Download brand guidelines PDF</p>
                   <p className="text-xs font-body font-normal opacity-70">
                     HTML → imprimer en PDF depuis le navigateur
                   </p>
@@ -2256,7 +2256,7 @@ export function BrandStudio() {
                 >
                   <Archive size={16} />
                   <div className="text-left">
-                    <p>Télécharger le brand kit ZIP</p>
+                    <p>Download brand kit ZIP</p>
                     <p className="text-xs font-body font-normal text-[--text-muted]">
                       Logos + mockups + palette.json + charte.html
                     </p>
@@ -2266,7 +2266,7 @@ export function BrandStudio() {
                   type="button"
                   onClick={handleShareZip}
                   disabled={!charte || sharing}
-                  title="Partager un lien de téléchargement"
+                  title="Share a download link"
                   className="flex items-center justify-center gap-1.5 border border-border bg-white text-foreground font-display font-semibold text-sm px-3.5 rounded-xl hover:bg-card transition-colors disabled:opacity-40"
                 >
                   {sharing ? (
@@ -2294,7 +2294,7 @@ export function BrandStudio() {
                     className="flex items-center gap-1 text-xs font-semibold text-purple-500 hover:opacity-70 transition-opacity shrink-0"
                   >
                     {copied ? <CheckCheck size={14} /> : <Copy size={14} />}
-                    {copied ? "Copié" : "Copier"}
+                    {copied ? "Copied" : "Copier"}
                   </button>
                   <button
                     type="button"
@@ -2317,7 +2317,7 @@ export function BrandStudio() {
                 <div className="text-left">
                   <p>Exporter en JSON</p>
                   <p className="text-xs font-body font-normal text-[--text-muted]">
-                    Stratégie + palette + typographie + charte
+                    Strategy + palette + typography + guidelines
                   </p>
                 </div>
               </button>

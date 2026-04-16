@@ -17,7 +17,7 @@ const CONNECTIONS: Connection[] = [
   {
     id: 'slack',
     name: 'Slack',
-    description: 'Reçois des notifications quand tes vidéos sont prêtes, directement dans le canal de ton choix.',
+    description: 'Get notified when your videos are ready, directly in your channel of choice.',
     iconBg: 'bg-[#4A154B]',
     iconComponent: <span className="text-white font-display font-black text-base">S</span>,
     status: 'coming',
@@ -25,7 +25,7 @@ const CONNECTIONS: Connection[] = [
   {
     id: 'youtube',
     name: 'YouTube',
-    description: 'Publie tes vidéos Faceless et Motion directement sur ta chaîne YouTube en un clic.',
+    description: 'Publish your Faceless and Motion videos directly to your YouTube channel in one click.',
     iconBg: 'bg-red-600',
     iconComponent: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="currentColor" aria-hidden="true">
@@ -37,7 +37,7 @@ const CONNECTIONS: Connection[] = [
   {
     id: 'linkedin',
     name: 'LinkedIn',
-    description: 'Partage tes vidéos et ton brand kit directement sur ton profil ou ta page entreprise LinkedIn.',
+    description: 'Share your videos and brand kit directly to your LinkedIn profile or company page.',
     iconBg: 'bg-[#0A66C2]',
     iconComponent: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="currentColor" aria-hidden="true">
@@ -54,9 +54,9 @@ export function ConnectionsSection() {
   async function handleConnect(id: string) {
     if (pending) return
     setPending(id)
-    // Stub — backend connectors pas encore wired
+    // Stub — backend connectors not yet wired
     setTimeout(() => {
-      toast.info(`Connexion ${id} — bientôt disponible`)
+      toast.info(`Connection ${id} — coming soon`)
       setPending(null)
     }, 300)
   }
@@ -64,9 +64,9 @@ export function ConnectionsSection() {
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Connexions</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">Connections</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Relie Clyro à tes outils pour publier et automatiser.
+          Connect Clyro to your tools to publish and automate.
         </p>
       </div>
 
@@ -84,7 +84,7 @@ export function ConnectionsSection() {
                 <p className="font-display font-semibold text-foreground">{c.name}</p>
                 {c.status === 'coming' && (
                   <span className="shrink-0 inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-[--text-muted]">
-                    Bientôt
+                    Coming soon
                   </span>
                 )}
               </div>
@@ -102,7 +102,7 @@ export function ConnectionsSection() {
                     : 'bg-foreground text-background hover:opacity-90',
                 )}
               >
-                {c.status === 'coming' ? 'Bientôt' : 'Connecter'}
+                {c.status === 'coming' ? 'Coming soon' : 'Connect'}
               </button>
             </div>
           </div>
@@ -110,7 +110,7 @@ export function ConnectionsSection() {
       </div>
 
       <p className="font-body text-xs text-[--text-muted]">
-        Tu as besoin d&apos;une autre intégration ? Contacte-nous à{' '}
+        Need another integration? Contact us at{' '}
         <a href="mailto:support@clyro.app" className="text-blue-500 hover:underline">support@clyro.app</a>.
       </p>
     </div>

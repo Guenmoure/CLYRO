@@ -10,7 +10,7 @@ export default async function BrandPage() {
   const supabase = createServerComponentClient<Database>({ cookies })
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Charger les brand kits de l'utilisateur
+  // Load user's brand kits
   const { data: brandKits } = await supabase
     .from('brand_kits')
     .select('*')

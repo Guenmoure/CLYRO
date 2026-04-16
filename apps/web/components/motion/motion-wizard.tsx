@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { startMotionGeneration, getVoices, uploadBrandLogo } from '@/lib/api'
+import { startMotionGeneration, getPublicVoices, uploadBrandLogo } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
@@ -38,15 +38,15 @@ interface VoiceItem {
 // ── Data ───────────────────────────────────────────────────────────────────
 
 const MOTION_STYLES: Array<{ id: MotionStyle; emoji: string; label: string; desc: string }> = [
-  { id: 'corporate', emoji: '🏢', label: 'Corporate',  desc: 'Professionnel et épuré' },
+  { id: 'corporate', emoji: '🏢', label: 'Corporate',  desc: 'Professional and clean' },
   { id: 'dynamique', emoji: '⚡', label: 'Dynamique',  desc: 'Énergique et impactant' },
-  { id: 'luxe',      emoji: '✨', label: 'Luxe',       desc: 'Premium et élégant' },
-  { id: 'fun',       emoji: '🎉', label: 'Fun',        desc: 'Coloré et engageant' },
+  { id: 'luxe',      emoji: '✨', label: 'Luxe',       desc: 'Premium and elegant' },
+  { id: 'fun',       emoji: '🎉', label: 'Fun',        desc: 'Colorful and engaging' },
 ]
 
 const FORMATS: Array<{ id: VideoFormat; label: string; desc: string }> = [
   { id: '9:16', label: '9:16', desc: 'Stories / TikTok' },
-  { id: '1:1',  label: '1:1',  desc: 'Instagram carré' },
+  { id: '1:1',  label: '1:1',  desc: 'Square Instagram' },
   { id: '16:9', label: '16:9', desc: 'YouTube / pubs' },
 ]
 
@@ -59,10 +59,10 @@ const DURATIONS: Array<{ id: VideoDuration; label: string }> = [
 
 const PIPELINE_STEPS = [
   { key: 'storyboard', label: 'Analyse du brief',   progress: 20 },
-  { key: 'visuals',    label: 'Génération visuels', progress: 55 },
+  { key: 'visuals',    label: 'Generating visuals', progress: 55 },
   { key: 'audio',      label: 'Voix off',           progress: 72 },
   { key: 'assembly',   label: 'Assemblage Motion',  progress: 90 },
-  { key: 'done',       label: 'Vidéo prête !',      progress: 100 },
+  { key: 'done',       label: 'Video ready!',      progress: 100 },
 ]
 
 const STEP_LABELS = ['Brief', 'Marque', 'Format', 'Style', 'Voix', 'Confirmer']
@@ -101,7 +101,7 @@ function StepBrief({
         <textarea
           value={brief}
           onChange={(e) => onUpdate('brief', e.target.value)}
-          placeholder="Décris ta pub : produit, message clé, public cible, ton souhaité, call-to-action..."
+          placeholder="Describe your ad: product, key message, target audience, desired tone, call-to-action..."
           maxLength={2000}
           rows={6}
           className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple resize-none"
@@ -161,12 +161,12 @@ function StepBrand({
     try {
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Session expirée')
+      if (!session) throw new Error('Session expired')
       const logoUrl = await uploadBrandLogo(file, session.user.id)
       onUpdate({ ...brand, logo_url: logoUrl })
-      toast.success('Logo uploadé')
+      toast.success('Uploaded logo')
     } catch {
-      toast.error('Erreur lors de l\'upload du logo')
+      toast.error('Error during \'upload du logo')
     } finally {
       setUploading(false)
     }
@@ -206,7 +206,7 @@ function StepBrand({
                 disabled={uploading}
                 className="font-display font-semibold px-4 py-2 rounded-xl border border-border text-sm text-foreground hover:bg-muted disabled:opacity-40"
               >
-                {uploading ? 'Upload…' : brand.logo_url ? 'Changer' : 'Choisir un fichier'}
+                {uploading ? 'Uploading…' : brand.logo_url ? 'Change' : 'Choose file'}
               </button>
               {brand.logo_url && (
                 <button
@@ -309,7 +309,7 @@ function StepFormat({
 }) {
   return (
     <div>
-      <h2 className="font-display text-lg font-semibold text-foreground mb-4">Format & Durée</h2>
+      <h2 className="font-display text-lg font-semibold text-foreground mb-4">Format <h2 className="font-display text-lg font-semibold text-foreground mb-4">Format & Durée Duration<</h2>
       <div className="mb-5">
         <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3 block">Format</label>
         <div className="grid grid-cols-3 gap-3">
@@ -330,7 +330,7 @@ function StepFormat({
         </div>
       </div>
       <div className="mb-6">
-        <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3 block">Durée</label>
+        <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3 block">Duration</label>
         <div className="flex gap-3">
           {DURATIONS.map((d) => (
             <button
@@ -419,9 +419,9 @@ function StepVoice({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getVoices()
-      .then(({ public: pub }) => setVoices(pub as VoiceItem[]))
-      .catch(() => toast.error('Impossible de charger les voix'))
+    getPublicVoices()
+      .then(({ voices }) => setVoices(voices as VoiceItem[]))
+      .catch((err) => toast.error(err instanceof Error ? err.message : 'Impossible de charger les voix'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -507,7 +507,7 @@ function StepConfirm({
           disabled={launching}
           className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-60"
         >
-          {launching ? 'Lancement...' : '🚀 Générer la publicité'}
+          {launching ? 'Launching...' : '🚀 Generate ad'}
         </button>
       </div>
     </div>
@@ -539,7 +539,7 @@ function StepGenerating({ videoId, onReset }: { videoId: string; onReset: () => 
   return (
     <div>
       <h2 className="font-display text-lg font-semibold text-foreground mb-6">
-        {isError ? '❌ Erreur de génération' : isDone ? '✅ Publicité prête !' : '⏳ Génération en cours...'}
+        {isError ? '❌ Generation error' : isDone ? '✅ Ad ready!' : '⏳ Generating...'}
       </h2>
       <div className="h-2 bg-muted rounded-full mb-6 overflow-hidden">
         <div

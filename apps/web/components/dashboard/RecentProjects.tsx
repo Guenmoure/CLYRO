@@ -39,7 +39,7 @@ function formatRelativeDate(dateStr: string): string {
   const mins  = Math.floor(diff / 60_000)
   if (days > 30)  return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
   if (days > 1)   return `${days} days ago`
-  if (days === 1) return 'yesterday'
+  if (days === 1) return 'Yesterday'
   if (hours > 0)  return `${hours}h ago`
   if (mins > 0)   return `${mins}m ago`
   return 'just now'
@@ -86,7 +86,7 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
             onClick={() => setTab('recent')}
           />
           <TabButton
-            label="In progress"
+            label="Processing"
             count={draftCount}
             active={tab === 'drafts'}
             onClick={() => setTab('drafts')}
@@ -118,7 +118,7 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
             href="/projects"
             className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2 text-sm font-body text-[--text-secondary] hover:text-foreground hover:border-border transition-all"
           >
-            See all projects
+            View all projects
           </Link>
         </div>
       )}
@@ -177,7 +177,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
   const moduleLabel = MODULE_LABELS[project.module ?? ''] ?? 'Projet'
 
   async function handleDelete() {
-    if (!confirm('Supprimer ce projet ? Cette action est définitive.')) return
+    if (!confirm('Delete this project? This action is permanent.')) return
     setDeleting(true)
     try {
       const res = await fetch(`/api/videos/${project.id}`, { method: 'DELETE' })
@@ -234,13 +234,13 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
           {isProcessing && (
             <>
               <span className="text-xs text-[--text-muted]">·</span>
-              <span className="text-xs font-mono text-blue-400">en cours…</span>
+              <span className="text-xs font-mono text-blue-400">processing…</span>
             </>
           )}
           {isError && (
             <>
               <span className="text-xs text-[--text-muted]">·</span>
-              <span className="text-xs font-mono text-error">erreur</span>
+              <span className="text-xs font-mono text-error">error</span>
             </>
           )}
         </div>
@@ -254,7 +254,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
             onClick={handleEdit}
             className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 font-body text-xs text-foreground hover:bg-border transition-all"
           >
-            Ouvrir
+            Open
           </button>
         )}
 
@@ -263,7 +263,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
           <button
             type="button"
             onClick={() => onMenuToggle(!menuOpen)}
-            aria-label="Options du projet"
+            aria-label="Project options"
             className="w-8 h-8 rounded-full flex items-center justify-center text-[--text-muted] hover:bg-border hover:text-foreground transition-colors"
           >
             <MoreHorizontal size={16} />
@@ -278,7 +278,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
                   onClick={() => onMenuToggle(false)}
                   className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors"
                 >
-                  <ExternalLink size={13} /> Ouvrir dans un onglet
+                  <ExternalLink size={13} /> Open in new tab
                 </a>
               )}
               {project.output_url && (
@@ -288,7 +288,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
                   onClick={() => onMenuToggle(false)}
                   className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors"
                 >
-                  <Download size={13} /> Télécharger
+                  <Download size={13} /> Download
                 </a>
               )}
               <button
@@ -296,7 +296,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
                 onClick={handleEdit}
                 className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors"
               >
-                <Pencil size={13} /> Renommer
+                <Pencil size={13} /> Rename
               </button>
               <div className="border-t border-border" />
               <button
@@ -304,7 +304,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
                 onClick={() => { onMenuToggle(false); handleDelete() }}
                 className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-error hover:bg-error/10 transition-colors"
               >
-                <Trash2 size={13} /> Supprimer
+                <Trash2 size={13} /> Delete
               </button>
             </div>
           )}
@@ -323,7 +323,7 @@ function EmptyState({ tab }: { tab: 'recent' | 'drafts' }) {
         <FolderOpen size={28} className="text-[--text-muted]" />
       </div>
       <p className="font-display text-sm text-foreground">
-        {tab === 'recent' ? 'No projects yet' : 'No projects in progress'}
+        {tab === 'recent' ? 'No projects yet' : 'No projects processing'}
       </p>
       <p className="font-body text-xs text-[--text-muted] mt-2 max-w-xs">
         {tab === 'recent'

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Wand2, Loader2, ChevronRight, ImageIcon, Music, Upload, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { startMotionGeneration, getVoices, getVideo, uploadBrandLogo } from '@/lib/api'
+import { startMotionGeneration, getPublicVoices, getVideo, uploadBrandLogo } from '@/lib/api'
 import { createBrowserClient } from '@/lib/supabase'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import { toast } from '@/components/ui/toast'
@@ -17,11 +17,11 @@ import type { MotionStyle, VideoFormat, VideoDuration, Scene } from '@clyro/shar
 type SceneType = 'text_hero' | 'split_text_image' | 'product_showcase' | 'stats_counter' | 'cta_end' | 'image_full'
 
 const SCENE_TYPE_OPTIONS: Array<{ value: SceneType; label: string; desc: string }> = [
-  { value: 'text_hero',        label: 'Text Hero',        desc: 'Typographie plein écran' },
+  { value: 'text_hero',        label: 'Text Hero',        desc: 'Fullscreen typography' },
   { value: 'split_text_image', label: 'Split Text/Image', desc: 'Texte gauche, image droite' },
-  { value: 'product_showcase', label: 'Product Showcase', desc: 'Image produit centrée' },
-  { value: 'stats_counter',    label: 'Stats Counter',    desc: 'Chiffre animé' },
-  { value: 'cta_end',          label: 'CTA Final',        desc: 'Appel à l\'action' },
+  { value: 'product_showcase', label: 'Product Showcase', desc: 'Centered product image' },
+  { value: 'stats_counter',    label: 'Stats Counter',    desc: 'Animated number' },
+  { value: 'cta_end',          label: 'CTA Final',        desc: 'Call to action - \'action' },
   { value: 'image_full',       label: 'Image Full',       desc: 'Image plein cadre' },
 ]
 
@@ -49,7 +49,7 @@ const MOTION_STYLES: Array<{
     id: 'corporate',
     emoji: '🏢',
     label: 'Corporate',
-    desc: 'Professionnel et épuré',
+    desc: 'Professional and clean',
     gradient: 'from-[#1A237E] to-[#283593]',
     textColor: 'text-white',
     accentColor: 'bg-[#90CAF9]',
@@ -67,7 +67,7 @@ const MOTION_STYLES: Array<{
     id: 'luxe',
     emoji: '✨',
     label: 'Luxe',
-    desc: 'Premium et élégant',
+    desc: 'Premium and elegant',
     gradient: 'from-[#1a1208] to-[#2d1f0a]',
     textColor: 'text-[#C9A227]',
     accentColor: 'bg-[#C9A227]',
@@ -76,7 +76,7 @@ const MOTION_STYLES: Array<{
     id: 'fun',
     emoji: '🎉',
     label: 'Fun',
-    desc: 'Coloré et engageant',
+    desc: 'Colorful and engaging',
     gradient: 'from-[#FF6B9D] to-[#C44DFF]',
     textColor: 'text-white',
     accentColor: 'bg-[#FFE66D]',
@@ -97,19 +97,19 @@ const DURATIONS: Array<{ id: VideoDuration; label: string }> = [
 ]
 
 const MUSIC_TRACKS: Array<{ id: string; label: string; mood: string }> = [
-  { id: 'ambient-calm',    label: 'Ambient Calm',    mood: 'calme · éducatif' },
+  { id: 'ambient-calm',    label: 'Ambient Calm',    mood: 'calm · educational' },
   { id: 'upbeat-corporate',label: 'Corporate Upbeat', mood: 'motivant · pro'   },
   { id: 'epic-cinematic',  label: 'Epic Cinematic',  mood: 'dramatique · film' },
   { id: 'playful-fun',     label: 'Playful & Fun',   mood: 'jovial · fun'     },
-  { id: 'lofi-chill',      label: 'Lo-Fi Chill',     mood: 'détendu · étude'  },
+  { id: 'lofi-chill',      label: 'Lo-Fi Chill',     mood: 'relaxed · study'  },
 ]
 
 const PIPELINE = [
   { key: 'storyboard', label: 'Analyse du brief',  pct: 20  },
-  { key: 'visuals',    label: 'Génération visuels', pct: 55  },
+  { key: 'visuals',    label: 'Generating visuals', pct: 55  },
   { key: 'audio',      label: 'Voix off',           pct: 72  },
   { key: 'assembly',   label: 'Assemblage Motion',  pct: 90  },
-  { key: 'done',       label: 'Vidéo prête !',      pct: 100 },
+  { key: 'done',       label: 'Video ready!',      pct: 100 },
 ]
 
 interface VideoSession {
@@ -136,9 +136,9 @@ function StatusBadge({ status }: { status: string }) {
     error:      'bg-error/10 text-error',
   }
   const label: Record<string, string> = {
-    done: 'Prête', processing: 'En cours', storyboard: 'Storyboard',
+    done: 'Ready', processing: 'En cours', storyboard: 'Storyboard',
     visuals: 'Visuels', audio: 'Audio', assembly: 'Assemblage',
-    pending: 'En attente', error: 'Erreur',
+    pending: 'Pending', error: 'Erreur',
   }
   return (
     <span className={cn('font-mono text-[11px] uppercase tracking-wider px-1.5 py-0.5 rounded-full', map[status] ?? map.pending)}>
@@ -288,7 +288,7 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
     <div className="flex flex-col items-center justify-center h-full gap-6 px-8 max-w-lg mx-auto overflow-y-auto py-8">
       <div className="w-full">
         <h2 className="font-display text-xl font-bold text-foreground mb-1 text-center">
-          {isError ? 'Erreur de génération' : isDone ? 'Publicité prête !' : 'Génération en cours…'}
+          {isError ? 'Generation error' : isDone ? 'Ad ready!' : 'Generating…'}
         </h2>
         <p className="text-[--text-muted] text-sm text-center mb-6">
           {!isDone && !isError && 'Environ 2–5 minutes. Tu peux fermer cet onglet.'}
@@ -351,7 +351,7 @@ function DoneView({ session, onNew }: { session: VideoSession; onNew: () => void
     <div className="flex flex-col items-center justify-center h-full px-8 max-w-lg mx-auto gap-4">
       <div className="w-full">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-lg font-bold text-foreground">{session.title ?? 'Publicité'}</h2>
+          <h2 className="font-display text-lg font-bold text-foreground">{session.title ?? 'Advertisement'}</h2>
           <button type="button" onClick={onNew} className="text-xs font-mono text-blue-500 hover:underline">+ Nouvelle vidéo</button>
         </div>
         {session.output_url ? (
@@ -384,7 +384,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
   const logoFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    getVoices().then(({ public: pub }) => setVoices(pub as VoiceItem[])).catch(() => {})
+    getPublicVoices().then(({ voices }) => setVoices(voices as VoiceItem[])).catch(() => {})
   }, [])
 
   const canSubmit = !!style && title.trim().length > 0 && brief.trim().length >= 20
@@ -396,12 +396,12 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
     try {
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Session expirée')
+      if (!session) throw new Error('Session expired')
       const url = await uploadBrandLogo(file, session.user.id)
       setLogoUrl(url)
-      toast.success('Logo importé')
+      toast.success('Imported logo')
     } catch {
-      toast.error('Erreur lors de l\'import du logo')
+      toast.error('Error during \'import du logo')
     } finally {
       setLogoUploading(false)
       if (logoFileRef.current) logoFileRef.current.value = ''
@@ -428,7 +428,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
       })
       onGenerated(video_id, title)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors du lancement')
+      toast.error(err instanceof Error ? err.message : 'Launch error')
     } finally {
       setLaunching(false)
     }
@@ -499,7 +499,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
             </div>
           </div>
           <div className="flex-1 min-w-36">
-            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Durée</label>
+            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Duration</label>
             <div className="flex gap-2">
               {DURATIONS.map((d) => (
                 <button key={d.id} type="button" onClick={() => setDuration(d.id)}
@@ -514,7 +514,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
           <div className="flex-1 min-w-36">
             <label htmlFor="voice-select" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Voix off</label>
             <select id="voice-select" value={voiceId} onChange={(e) => setVoiceId(e.target.value)}
-              aria-label="Sélectionner une voix off"
+              aria-label="Select a voiceover"
               className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm focus:outline-none focus:border-blue-500 appearance-none">
               <option value="">Aucune voix</option>
               {voices.map((v) => <option key={v.id} value={v.id}>{v.name}{v.gender ? ` · ${v.gender}` : ''}</option>)}
@@ -608,7 +608,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                   className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-xs text-[--text-muted] hover:text-foreground hover:border-blue-500 transition-colors disabled:opacity-40"
                 >
                   {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                  {logoUploading ? 'Import…' : logoUrl ? 'Changer' : 'Importer'}
+                  {logoUploading ? 'Uploading…' : logoUrl ? 'Change' : 'Upload'}
                 </button>
               </div>
             </div>
@@ -618,7 +618,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
         {/* SECTION 4 — Titre + Brief */}
         <div className="space-y-3">
           <div>
-            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Titre de la publicité</label>
+            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Ad title</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="ex: Lancement produit — Janvier 2026" maxLength={200}
               className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500" />
@@ -627,7 +627,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
             <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Brief créatif</label>
             <div className="relative border border-border rounded-2xl bg-card focus-within:border-blue-500 transition-colors">
               <textarea value={brief} onChange={(e) => setBrief(e.target.value)}
-                placeholder="Produit, message clé, public cible, ton, call-to-action…&#10;&#10;ex : Application SaaS de gestion de projet pour PME. Message : gagnez 2h par jour. CTA : Essayez gratuitement." maxLength={2000} rows={5}
+                placeholder="Product, key message, target audience, tone, call-to-action…Produit, message clé, public cible, ton, call-to-action…&#10;&#10;ex : Application SaaS de gestion de projet pour PME. Message : gagnez 2h par jour. CTA : Essayez gratuitement.#10;Produit, message clé, public cible, ton, call-to-action…&#10;&#10;ex : Application SaaS de gestion de projet pour PME. Message : gagnez 2h par jour. CTA : Essayez gratuitement.#10;e.g.: Project management SaaS for SMBs. Message: save 2 hours daily. CTA: Try free." maxLength={2000} rows={5}
                 className="w-full bg-transparent px-4 pt-4 pb-14 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none rounded-2xl" />
               <div className="absolute bottom-3 left-4 right-3 flex items-center justify-between">
                 <span className={cn('font-mono text-[11px]', brief.length < 20 ? 'text-red-400' : 'text-[--text-muted]')}>
@@ -714,7 +714,7 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
               </div>
               <p className="font-display text-sm font-semibold text-foreground">Aucune session</p>
               <p className="text-[--text-secondary] font-body text-xs max-w-[180px]">
-                Crée ta première publicité Motion pour la voir ici.
+                Create your first Motion ad pour la voir ici.
               </p>
             </div>
           ) : (

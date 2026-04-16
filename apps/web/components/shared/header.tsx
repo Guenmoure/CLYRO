@@ -6,18 +6,18 @@ import { NotificationPanel } from '@/components/shared/notification-panel'
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard':         'Dashboard',
-  '/faceless':          'Vidéo Faceless',
-  '/faceless/new':      'Nouvelle vidéo',
+  '/faceless':          'Faceless Video',
+  '/faceless/new':      'New video',
   '/motion':            'Motion Design',
-  '/motion/new':        'Nouveau motion',
+  '/motion/new':        'New motion',
   '/brand':             'Brand Kit',
-  '/brand/new':         'Nouvelle identité',
-  '/projects':          'Bibliothèque',
-  '/history':           'Historique',
-  '/voices':            'Mes voix',
-  '/settings':          'Paramètres',
+  '/brand/new':         'New identity',
+  '/projects':          'Library',
+  '/history':           'History',
+  '/voices':            'My voices',
+  '/settings':          'Settings',
   '/settings/brand':    'Brand Kits',
-  '/settings/billing':  'Facturation',
+  '/settings/billing':  'Billing',
 }
 
 export function Header() {

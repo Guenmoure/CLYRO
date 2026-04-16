@@ -7,25 +7,25 @@ import { cn } from '@/lib/utils'
 type ThemeMode = 'light' | 'dark' | 'auto'
 
 const LANGUAGES = [
-  { code: 'fr', label: 'Français',        flag: '🇫🇷' },
-  { code: 'en', label: 'English',         flag: '🇬🇧' },
-  { code: 'es', label: 'Español',         flag: '🇪🇸' },
-  { code: 'de', label: 'Deutsch',         flag: '🇩🇪' },
-  { code: 'pt', label: 'Português',       flag: '🇵🇹' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'pt', label: 'Português', flag: '🇵🇹' },
 ]
 
 const USE_CASES = [
-  'Apprentissage & développement',
+  'Learning & development',
   'Marketing & promotion',
   'Inspiration & motivation',
-  'Divertissement',
-  'Sensibilisation',
-  'Prospection commerciale',
-  'Communication interne',
+  'Entertainment',
+  'Awareness',
+  'Sales prospecting',
+  'Internal communication',
 ]
 
 export function PreferencesSection() {
-  const [language, setLanguage] = useState('fr')
+  const [language, setLanguage] = useState('en')
   const [theme, setTheme]       = useState<ThemeMode>('auto')
   const [selectedUseCases, setSelectedUseCases] = useState<Set<string>>(new Set())
 
@@ -71,38 +71,38 @@ export function PreferencesSection() {
   return (
     <div className="max-w-3xl space-y-10">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Préférences</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">Preferences</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Langue, apparence et contexte d&apos;utilisation.
+          Language, appearance and usage context.
         </p>
       </div>
 
       {/* Language */}
       <section className="space-y-3">
-        <label className="font-body text-sm font-semibold text-foreground">Langue</label>
+        <label className="font-body text-sm font-semibold text-foreground">Language</label>
         <div className="relative">
           <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
           <select
             value={language}
             onChange={(e) => selectLanguage(e.target.value)}
             className="w-full rounded-xl border border-border bg-background pl-9 pr-4 py-2.5 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
-            aria-label="Langue"
+            aria-label="Language"
           >
             {LANGUAGES.map((l) => (
               <option key={l.code} value={l.code}>{l.flag}  {l.label}</option>
             ))}
           </select>
         </div>
-        <p className="font-body text-xs text-[--text-muted]">La langue par défaut des scripts générés par l&apos;IA.</p>
+        <p className="font-body text-xs text-[--text-muted]">Default language for AI-generated scripts.</p>
       </section>
 
       {/* Appearance */}
       <section className="space-y-3">
-        <label className="font-body text-sm font-semibold text-foreground">Apparence</label>
+        <label className="font-body text-sm font-semibold text-foreground">Appearance</label>
         <div className="grid grid-cols-3 gap-3">
           <ThemeCard
             mode="light"
-            label="Clair"
+            label="Light"
             icon={Sun}
             active={theme === 'light'}
             onClick={() => applyTheme('light')}
@@ -116,7 +116,7 @@ export function PreferencesSection() {
           />
           <ThemeCard
             mode="dark"
-            label="Sombre"
+            label="Dark"
             icon={Moon}
             active={theme === 'dark'}
             onClick={() => applyTheme('dark')}
@@ -127,9 +127,9 @@ export function PreferencesSection() {
       {/* Use cases */}
       <section className="space-y-3">
         <div>
-          <label className="font-body text-sm font-semibold text-foreground">Cas d&apos;usage</label>
+          <label className="font-body text-sm font-semibold text-foreground">Use Cases</label>
           <p className="font-body text-xs text-[--text-secondary] mt-1">
-            Sélectionne ce qui s&apos;applique à ton activité pour personnaliser les suggestions.
+            Select what applies to your activity to personalize suggestions.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -174,7 +174,7 @@ function ThemeCard({
     <button
       type="button"
       onClick={onClick}
-      aria-label={`Thème ${label}`}
+      aria-label={`Theme ${label}`}
       aria-pressed={active}
       className={cn(
         'group relative overflow-hidden rounded-2xl border p-3 transition-all',

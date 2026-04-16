@@ -78,7 +78,7 @@ function BrandResult({ assets }: { assets: BrandAsset[] }) {
           <span className="font-body text-xs text-[--text-secondary] text-center leading-snug">
             {asset.label}
           </span>
-          <Badge variant="neutral" className="text-[10px]">
+          <Badge variant="neutral" className="text-[11px]">
             {asset.type.toUpperCase()}
           </Badge>
         </a>
@@ -133,7 +133,7 @@ export function ResultModal({
           <BrandResult assets={assets} />
         ) : (
           <div className="rounded-xl bg-muted border border-border p-8 flex items-center justify-center">
-            <p className="font-mono text-sm text-[--text-muted]">Résultat non disponible</p>
+            <p className="font-mono text-sm text-[--text-muted]">Result not available</p>
           </div>
         )}
 
@@ -141,7 +141,7 @@ export function ResultModal({
         <div className="flex flex-wrap gap-2 justify-end pt-2 border-t border-border/50">
           {onNewProject && (
             <Button variant="ghost" onClick={onNewProject}>
-              Nouveau projet
+              New project
             </Button>
           )}
 
@@ -153,7 +153,7 @@ export function ResultModal({
                 loading={sharing}
                 onClick={handleShare}
               >
-                Partager
+                Share
               </Button>
               <Button
                 variant="secondary"
@@ -161,7 +161,7 @@ export function ResultModal({
                 asChild
               >
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer">
-                  Ouvrir
+                  Open
                 </a>
               </Button>
               <Button
@@ -170,7 +170,7 @@ export function ResultModal({
                 asChild
               >
                 <a href={videoUrl} download>
-                  Télécharger
+                  Download
                 </a>
               </Button>
             </>
@@ -187,7 +187,7 @@ export function ResultModal({
                 link.click()
               })}
             >
-              Tout télécharger
+              Download all
             </Button>
           )}
         </div>

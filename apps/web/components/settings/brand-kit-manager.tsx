@@ -36,7 +36,7 @@ function BrandKitForm({
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleSave() {
-    if (!name.trim()) { toast.error('Le nom est requis.'); return }
+    if (!name.trim()) { toast.error('Name is required.'); return }
     setSaving(true)
     try {
       const supabase = createBrowserClient()
@@ -82,10 +82,10 @@ function BrandKitForm({
         result = data
       }
 
-      toast.success(initial?.id ? 'Brand kit mis à jour.' : 'Brand kit créé.')
+      toast.success(initial?.id ? 'Brand kit updated.' : 'Brand kit created.')
       onSave(result)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.')
+      toast.error(err instanceof Error ? err.message : 'Error saving.')
     } finally {
       setSaving(false)
     }
@@ -101,12 +101,12 @@ function BrandKitForm({
   return (
     <div className="glass glass-heavy rounded-2xl p-6 space-y-5">
       <h3 className="font-display font-semibold text-gray-900 dark:text-white">
-        {initial?.id ? 'Modifier le brand kit' : 'Nouveau brand kit'}
+        {initial?.id ? 'Edit brand kit' : 'New brand kit'}
       </h3>
 
       {/* Name */}
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Nom</label>
+        <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Name</label>
         <input
           type="text"
           value={name}
@@ -121,7 +121,7 @@ function BrandKitForm({
       <div className="flex gap-4 flex-wrap">
         <div className="flex-1 min-w-36">
           <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
-            Couleur principale
+            Primary color
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -135,7 +135,7 @@ function BrandKitForm({
         </div>
         <div className="flex-1 min-w-36">
           <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
-            Couleur secondaire <span className="normal-case">(optionnel)</span>
+            Secondary color <span className="normal-case">(optional)</span>
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -159,7 +159,7 @@ function BrandKitForm({
       {/* Font family */}
       <div>
         <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
-          Police <span className="normal-case">(optionnel)</span>
+          Font <span className="normal-case">(optional)</span>
         </label>
         <input
           type="text"
@@ -173,7 +173,7 @@ function BrandKitForm({
       {/* Logo */}
       <div>
         <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
-          Logo <span className="normal-case">(optionnel)</span>
+          Logo <span className="normal-case">(optional)</span>
         </label>
         <div className="flex items-center gap-4">
           {logoPreview && (
@@ -185,7 +185,7 @@ function BrandKitForm({
             className="flex items-center gap-2 glass glass-hover rounded-xl px-4 py-2.5 text-sm font-body text-gray-600 dark:text-white/60 transition-all"
           >
             <Upload size={14} />
-            {logoPreview ? 'Changer' : 'Importer un logo'}
+            {logoPreview ? 'Change' : 'Upload logo'}
           </button>
           <input
             ref={fileRef}
@@ -205,7 +205,7 @@ function BrandKitForm({
           onChange={(e) => setIsDefault(e.target.checked)}
           className="w-4 h-4 rounded accent-clyro-primary"
         />
-        <span className="font-body text-sm text-gray-600 dark:text-white/60">Utiliser par défaut</span>
+        <span className="font-body text-sm text-gray-600 dark:text-white/60">Use by default</span>
       </label>
 
       {/* Actions */}
@@ -217,14 +217,14 @@ function BrandKitForm({
           className="bg-grad-primary text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 disabled:opacity-50 text-sm transition-opacity flex items-center gap-2"
         >
           {saving && <Loader2 size={13} className="animate-spin" />}
-          {saving ? 'Sauvegarde…' : 'Sauvegarder'}
+          {saving ? 'Saving…' : 'Save'}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="font-body text-sm text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70 transition-colors"
         >
-          Annuler
+          Cancel
         </button>
       </div>
     </div>
@@ -261,7 +261,7 @@ function BrandKitCard({
           <div>
             <p className="font-display font-semibold text-gray-900 dark:text-white text-sm">{kit.name}</p>
             {kit.is_default && (
-              <span className="font-mono text-[11px] uppercase tracking-wider text-clyro-primary">Par défaut</span>
+              <span className="font-mono text-[11px] uppercase tracking-wider text-clyro-primary">Default</span>
             )}
           </div>
         </div>
@@ -269,7 +269,7 @@ function BrandKitCard({
           {!kit.is_default && (
             <button
               type="button"
-              title="Définir par défaut"
+              title="Set as default"
               onClick={() => onSetDefault(kit.id)}
               className="w-7 h-7 rounded-lg glass glass-hover flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-yellow-500 transition-colors"
             >
@@ -278,7 +278,7 @@ function BrandKitCard({
           )}
           <button
             type="button"
-            title="Modifier"
+            title="Edit"
             onClick={() => onEdit(kit)}
             className="w-7 h-7 rounded-lg glass glass-hover flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-gray-700 dark:hover:text-white/70 transition-colors font-mono text-xs"
           >
@@ -286,7 +286,7 @@ function BrandKitCard({
           </button>
           <button
             type="button"
-            title="Supprimer"
+            title="Delete"
             onClick={() => onDelete(kit.id)}
             className="w-7 h-7 rounded-lg glass glass-hover flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-red-400 transition-colors"
           >
@@ -300,13 +300,13 @@ function BrandKitCard({
         <div
           className="w-6 h-6 rounded-lg border border-white/10 shadow-sm"
           style={{ background: kit.primary_color }}
-          title={`Primaire: ${kit.primary_color}`}
+          title={`Primary: ${kit.primary_color}`}
         />
         {kit.secondary_color && (
           <div
             className="w-6 h-6 rounded-lg border border-white/10 shadow-sm"
             style={{ background: kit.secondary_color }}
-            title={`Secondaire: ${kit.secondary_color}`}
+            title={`Secondary: ${kit.secondary_color}`}
           />
         )}
         {kit.font_family && (
@@ -328,7 +328,7 @@ export function BrandKitManager() {
   useEffect(() => {
     getBrandKits()
       .then(({ data }) => setKits(data))
-      .catch(() => toast.error('Impossible de charger les brand kits.'))
+      .catch(() => toast.error('Unable to load brand kits.'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -348,9 +348,9 @@ export function BrandKitManager() {
     try {
       await deleteBrandKit(id)
       setKits((prev) => prev.filter((k) => k.id !== id))
-      toast.success('Brand kit supprimé.')
+      toast.success('Brand kit deleted.')
     } catch {
-      toast.error('Impossible de supprimer.')
+      toast.error('Unable to delete.')
     }
   }
 
@@ -361,7 +361,7 @@ export function BrandKitManager() {
         prev.map((k) => ({ ...k, is_default: k.id === data.id }))
       )
     } catch {
-      toast.error('Impossible de définir par défaut.')
+      toast.error('Unable to set as default.')
     }
   }
 
@@ -413,7 +413,7 @@ export function BrandKitManager() {
           className="w-full flex items-center justify-center gap-2 glass glass-hover rounded-2xl py-4 text-sm font-body text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70 border-2 border-dashed border-gray-200 dark:border-white/[0.06] transition-all"
         >
           <Plus size={15} />
-          Nouveau brand kit
+          New brand kit
         </button>
       )}
     </div>

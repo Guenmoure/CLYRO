@@ -40,20 +40,22 @@ export default function DraftsPage() {
   const [filter,  setFilter]  = useState<Filter>('all')
 
   useEffect(() => {
-    const supabase = createBrowserClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function load() {
+      const supabase = createBrowserClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: authData } = await (supabase.auth.getSession() as Promise<any>)
+      const session = authData?.session
       if (!session) { setLoading(false); return }
-      supabase
+      const { data } = await supabase
         .from('videos')
         .select('id, module, title, wizard_step, wizard_state, updated_at')
         .eq('user_id', session.user.id)
         .eq('status', 'draft')
         .order('updated_at', { ascending: false })
-        .then(({ data }) => {
-          setDrafts((data ?? []) as DbDraftMeta[])
-          setLoading(false)
-        })
-    })
+      setDrafts((data ?? []) as DbDraftMeta[])
+      setLoading(false)
+    }
+    void load()
   }, [])
 
   function handleDelete(id: string) {

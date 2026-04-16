@@ -36,7 +36,7 @@ export function SignupForm() {
 
       setSuccess(true)
     } catch {
-      setError('Une erreur est survenue. Veuillez réessayer.')
+      setError('An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -65,10 +65,10 @@ export function SignupForm() {
         <div className="w-16 h-16 bg-success/10 border border-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-success text-2xl">✓</span>
         </div>
-        <h3 className="font-display font-semibold text-white mb-2">Vérifie ta boîte mail</h3>
+        <h3 className="font-display font-semibold text-white mb-2">Check your email</h3>
         <p className="text-white/50 text-sm font-body">
-          Un lien de confirmation a été envoyé à <strong className="text-white">{email}</strong>.
-          Clique dessus pour activer ton compte.
+          A confirmation link has been sent to <strong className="text-white">{email}</strong>.
+          Click it to activate your account.
         </p>
       </div>
     )
@@ -83,25 +83,25 @@ export function SignupForm() {
         className="w-full flex items-center justify-center gap-3 glass glass-hover text-white/80 font-body font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50"
       >
         <GoogleIcon />
-        Continuer avec Google
+        Continue with Google
       </button>
 
       {/* Divider */}
       <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-white/10" />
-        <span className="font-mono text-xs text-white/30 uppercase tracking-widest">ou</span>
+        <span className="font-mono text-xs text-white/30 uppercase tracking-widest">or</span>
         <div className="flex-1 h-px bg-white/10" />
       </div>
 
       {/* Signup form */}
       <form onSubmit={handleSignup} className="space-y-4">
         <div>
-          <label className="label-mono block mb-2">Nom complet</label>
+          <label className="label-mono block mb-2">Full name</label>
           <input
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="Jean Dupont"
+            placeholder="John Doe"
             required
             className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
           />
@@ -112,18 +112,18 @@ export function SignupForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="ton@email.com"
+            placeholder="your@email.com"
             required
             className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
           />
         </div>
         <div>
-          <label className="label-mono block mb-2">Mot de passe</label>
+          <label className="label-mono block mb-2">Password</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="8 caractères minimum"
+            placeholder="Minimum 8 characters"
             required
             minLength={8}
             className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
@@ -141,7 +141,7 @@ export function SignupForm() {
           disabled={loading}
           className="w-full bg-grad-primary text-white font-display font-semibold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {loading ? 'Création...' : 'Créer mon compte gratuit'}
+          {loading ? 'Creating...' : 'Create free account'}
         </button>
       </form>
     </div>

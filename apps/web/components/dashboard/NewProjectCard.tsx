@@ -39,7 +39,7 @@ export function NewProjectCard({ feature, className }: NewProjectCardProps) {
         />
       </div>
       <p className="font-body text-xs text-[--text-muted] group-hover:text-[--text-secondary] transition-colors duration-200">
-        Nouveau projet
+        New project
       </p>
     </button>
   )

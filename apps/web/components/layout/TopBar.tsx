@@ -3,6 +3,7 @@
 import { Menu } from 'lucide-react'
 import { NotificationPanel } from '@/components/shared/notification-panel'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 
 // ── TopBar ─────────────────────────────────────────────────────────────────────
 // Minimaliste : juste la cloche de notification + le toggle de thème.
@@ -28,9 +29,10 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
         </button>
       </div>
 
-      {/* Right: notifications + theme toggle */}
+      {/* Right: notifications + language + theme toggle */}
       <div className="flex items-center gap-2 sm:gap-3">
         <NotificationPanel />
+        <LanguageSwitcher />
         <ThemeToggle />
       </div>
     </header>
