@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Breadcrumbs } from '@/components/shared/breadcrumbs'
 import { StepSidebar, type WizardStep } from './StepSidebar'
+import { DraftRestoreBanner } from './DraftRestoreBanner'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,7 @@ interface WizardLayoutProps {
   /** Called when the user clicks "Sauvegarder" in the top bar */
   onSave?: () => void | Promise<void>
   isSaving?: boolean
+  draftWasRestored?: boolean
   /** Bottom bar props */
   canPrev?: boolean
   canNext?: boolean
@@ -181,6 +183,7 @@ export function WizardLayout({
   onBack,
   onSave,
   isSaving,
+  draftWasRestored,
   canPrev,
   canNext,
   onPrev,
@@ -199,6 +202,7 @@ export function WizardLayout({
         onProjectNameChange={onProjectNameChange}
         contextualHelp={contextualHelp}
         lastSaved={lastSaved}
+        isSaving={isSaving}
         onStepClick={onStepClick}
       />
 
@@ -215,6 +219,7 @@ export function WizardLayout({
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <DraftRestoreBanner wasRestored={draftWasRestored ?? false} />
           {children}
         </main>
 

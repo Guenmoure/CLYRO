@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { HeroBanner } from '@/components/dashboard/HeroBanner'
 import { FeatureCards } from '@/components/dashboard/FeatureCards'
-import { DraftsSection } from '@/components/dashboard/DraftsSection'
 import ProjectSectionsClient from './ProjectSectionsClient'
 
 export const dynamic = 'force-dynamic'
@@ -171,10 +170,7 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      {/* ── Drafts (client-only) ───────────────────────────────── */}
-      <DraftsSection />
-
-      {/* ── Recent projects (client-only, no SSR) ────────────────── */}
+      {/* ── Recent projects + Drafts (client-only, no SSR) ──────── */}
       {!errorMsg && (
         <ProjectSectionsClient
           userId={userId}

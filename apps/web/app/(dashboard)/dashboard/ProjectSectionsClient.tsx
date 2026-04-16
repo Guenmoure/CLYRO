@@ -3,8 +3,13 @@
 import dynamic from 'next/dynamic'
 import type { ComponentProps } from 'react'
 
-// Dynamic import with ssr:false — RecentProjects uses useRouter +
-// Supabase realtime, both of which need to run client-side only.
+// Dynamic imports with ssr:false — these components use browser-only APIs
+// (Supabase realtime, localStorage, useRouter).
+const DraftsSection = dynamic(
+  () => import('@/components/dashboard/DraftsSection').then((m) => m.DraftsSection),
+  { ssr: false }
+)
+
 const RecentProjects = dynamic(
   () => import('@/components/dashboard/RecentProjects').then((m) => m.RecentProjects),
   {
@@ -31,5 +36,10 @@ const RecentProjects = dynamic(
 )
 
 export default function ProjectSectionsClient(props: ComponentProps<typeof RecentProjects>) {
-  return <RecentProjects {...props} />
+  return (
+    <div className="space-y-10">
+      <DraftsSection />
+      <RecentProjects {...props} />
+    </div>
+  )
 }

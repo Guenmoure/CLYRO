@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import {
   Home, Video, Wand2, Mic2, FolderOpen, Palette, Settings,
-  LogOut, ChevronRight, Gem, HelpCircle,
+  LogOut, ChevronRight, Gem, HelpCircle, PenLine,
 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/motion',    label: 'Motion',    icon: Wand2      },
   { href: '/voices',    label: 'Voiceover', icon: Mic2       },
   { href: '/brand',     label: 'Brand Kit', icon: Palette    },
+  { href: '/drafts',    label: 'Drafts',    icon: PenLine    },
 ]
 
 function UserMenu({ user, plan, onSignOut }: {
@@ -53,7 +54,7 @@ function UserMenu({ user, plan, onSignOut }: {
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-sm">
           <span className="font-bold text-white text-xs select-none">{initials}</span>
         </div>
-        <span className="text-[9px] font-medium leading-none tracking-wide text-[--text-muted] group-hover:text-foreground truncate w-full text-center px-0.5">
+        <span className="text-[11px] font-medium leading-none tracking-wide text-[--text-muted] group-hover:text-foreground truncate w-full text-center px-0.5">
           {name.split(' ')[0]}
         </span>
       </button>
@@ -72,7 +73,7 @@ function UserMenu({ user, plan, onSignOut }: {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{name}</p>
-                  <p className="text-[10px] text-[--text-muted]">1 · {planLabel}</p>
+                  <p className="text-[11px] text-[--text-muted]">1 · {planLabel}</p>
                 </div>
               </div>
               <ChevronRight size={14} className="text-[--text-muted] shrink-0" />
@@ -137,8 +138,9 @@ export function Sidebar() {
   const pathname = usePathname()
   const router   = useRouter()
   const supabase = createBrowserClient()
-  const [user, setUser]   = useState<User | null>(null)
-  const [plan, setPlan]   = useState('free')
+  const [user, setUser]         = useState<User | null>(null)
+  const [plan, setPlan]         = useState('free')
+  const [draftCount, setDraftCount] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -147,6 +149,13 @@ export function Sidebar() {
       setUser(session.user)
       const { data } = await supabase.from('profiles').select('plan').eq('id', session.user.id).single()
       if (data) setPlan(data.plan ?? 'free')
+      // Load draft count
+      const { count } = await supabase
+        .from('videos')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', session.user.id)
+        .eq('status', 'draft')
+      setDraftCount(count ?? 0)
     }
     load()
   }, [supabase])
@@ -176,21 +185,29 @@ export function Sidebar() {
             item.href === '/dashboard'
               ? pathname === '/dashboard'
               : pathname === item.href || pathname.startsWith(item.href + '/')
+          const showBadge = item.href === '/drafts' && draftCount > 0
           return (
             <Link
               key={item.href}
               href={item.href}
               title={item.label}
               className={cn(
-                'group flex flex-col items-center justify-center gap-1 w-full py-2.5 px-1 rounded-xl transition-all duration-150',
+                'group relative flex flex-col items-center justify-center gap-1 w-full py-2.5 px-1 rounded-xl transition-all duration-150',
                 isActive
                   ? 'bg-blue-500/10 text-blue-400'
                   : 'text-[--text-muted] hover:bg-muted hover:text-foreground'
               )}
             >
-              <Icon size={20} strokeWidth={isActive ? 2 : 1.6} className="shrink-0" />
+              <div className="relative">
+                <Icon size={20} strokeWidth={isActive ? 2 : 1.6} className="shrink-0" />
+                {showBadge && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning text-[9px] font-bold text-black flex items-center justify-center leading-none">
+                    {draftCount > 9 ? '9+' : draftCount}
+                  </span>
+                )}
+              </div>
               <span className={cn(
-                'text-[9px] font-medium leading-none tracking-wide text-center truncate w-full px-0.5',
+                'text-[11px] font-medium leading-none tracking-wide text-center truncate w-full px-0.5',
                 isActive ? 'text-blue-400' : 'text-[--text-muted] group-hover:text-foreground'
               )}>
                 {item.label}

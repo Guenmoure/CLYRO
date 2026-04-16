@@ -1,14 +1,17 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { Mic, MicOff, Volume2 } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useDraftSave } from '@/hooks/use-draft-save'
+import { createBrowserClient } from '@/lib/supabase'
+import { Mic, MicOff, Volume2, AlertTriangle, ShoppingCart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { WizardLayout } from '@/components/creation/WizardLayout'
 import { GenerationOverlay, type GenerationStage } from '@/components/creation/GenerationOverlay'
 import { StyleCarousel, type StyleConfig } from '@/components/creation/StyleCarousel'
 import { VoicePickerModal, type ClyroVoice } from '@/components/creation/VoicePickerModal'
 import { ResultModal } from '@/components/creation/ResultModal'
+import AnimationModeSelector from '@/components/creation/AnimationModeSelector'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -16,44 +19,45 @@ import {
   getPublicVoices,
   subscribeToVideoStatus,
 } from '@/lib/api'
-import { createBrowserClient } from '@/lib/supabase'
-import type { FacelessStyle, VideoFormat, VideoDuration } from '@clyro/shared'
+import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
+import { ANIMATION_MODES } from '@clyro/shared'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const STEPS = [
-  { id: 'script',  label: 'Script' },
-  { id: 'style',   label: 'Style & Voix' },
-  { id: 'format',  label: 'Format' },
-  { id: 'options', label: 'Options' },
-  { id: 'review',  label: 'Finalisation' },
+  { id: 'script',    label: 'Script' },
+  { id: 'style',     label: 'Style & Voice' },
+  { id: 'animation', label: 'Animation' },
+  { id: 'format',    label: 'Format' },
+  { id: 'options',   label: 'Options' },
+  { id: 'review',    label: 'Finalization' },
 ]
 
 const GENERATION_STAGES: GenerationStage[] = [
-  { main: 'Analyse du script…',     sub: 'L\'IA décompose votre contenu en scènes' },
-  { main: 'Génération des images…', sub: 'Création des visuels pour chaque scène' },
-  { main: 'Synthèse vocale…',       sub: 'Enregistrement de la narration' },
-  { main: 'Animation…',             sub: 'Application des effets et transitions' },
-  { main: 'Assemblage final…',      sub: 'Montage et rendu de la vidéo' },
+  { main: 'Analyzing script…',     sub: 'AI breaks down your content into scenes' },
+  { main: 'Generating images…', sub: 'Creating visuals for each scene' },
+  { main: 'Text-to-speech…',       sub: 'Recording the narration' },
+  { main: 'Animating…',             sub: 'Applying effects and transitions' },
+  { main: 'Final assembly…',      sub: 'Editing and rendering the video' },
 ]
 
 const FACELESS_STYLES: StyleConfig[] = [
-  { id: 'cinematique',      name: 'Cinématique',      description: 'Plans épiques et mise en scène dramatique', pro: false },
-  { id: 'stock-vo',         name: 'Stock + VO',        description: 'Images de stock avec voix-off professionnelle', pro: false },
-  { id: 'whiteboard',       name: 'Whiteboard',        description: 'Animation tableau blanc, style explicatif', pro: false },
-  { id: 'stickman',         name: 'Stickman',          description: 'Animation humoristique en personnages fil', pro: false },
-  { id: 'flat-design',      name: 'Flat Design',       description: 'Illustrations vectorielles minimalistes', pro: true },
-  { id: '3d-pixar',         name: '3D Pixar',          description: 'Rendu 3D style animation grand public', pro: true },
-  { id: 'minimaliste',      name: 'Minimaliste',       description: 'Texte sur fond épuré, très propre', pro: false },
-  { id: 'infographie',      name: 'Infographie',       description: 'Graphiques, données et schémas animés', pro: true },
-  { id: 'motion-graphics',  name: 'Motion Graphics',   description: 'Animations typographiques modernes', pro: true },
-  { id: 'animation-2d',     name: 'Animation 2D',      description: 'Personnages animés style cartoon', pro: true },
+  { id: 'cinematique',      name: 'Cinematic',      description: 'Epic shots and dramatic staging', pro: false },
+  { id: 'stock-vo',         name: 'Stock + Voice',        description: 'Stock footage with professional narration', pro: false },
+  { id: 'whiteboard',       name: 'Whiteboard',        description: 'Whiteboard animation, explainer style', pro: false },
+  { id: 'stickman',         name: 'Stickman',          description: 'Humorous stick figure animation', pro: false },
+  { id: 'flat-design',      name: 'Flat Design',       description: 'Minimalist vector illustrations', pro: true },
+  { id: '3d-pixar',         name: '3D Pixar',          description: '3D rendering animation style', pro: true },
+  { id: 'minimaliste',      name: 'Minimalist',       description: 'Text on clean background, very polished', pro: false },
+  { id: 'infographie',      name: 'Infographics',       description: 'Animated charts, data and diagrams', pro: true },
+  { id: 'motion-graphics',  name: 'Motion Graphics',   description: 'Modern typographic animations', pro: true },
+  { id: 'animation-2d',     name: '2D Animation',      description: 'Cartoon-style animated characters', pro: true },
 ]
 
 const FORMAT_OPTIONS: { value: VideoFormat; label: string; desc: string }[] = [
   { value: '9:16', label: 'Vertical',    desc: 'TikTok, Reels, Shorts' },
-  { value: '1:1',  label: 'Carré',       desc: 'Instagram, Twitter' },
-  { value: '16:9', label: 'Paysage',     desc: 'YouTube, LinkedIn' },
+  { value: '1:1',  label: 'Square',       desc: 'Instagram, Twitter' },
+  { value: '16:9', label: 'Landscape',     desc: 'YouTube, LinkedIn' },
 ]
 
 const DURATION_OPTIONS: { value: VideoDuration; label: string }[] = [
@@ -63,11 +67,12 @@ const DURATION_OPTIONS: { value: VideoDuration; label: string }[] = [
 ]
 
 const CONTEXTUAL_HELP: string[] = [
-  'Écris ou colle ton script. L\'IA le découpera automatiquement en scènes.',
-  'Choisis le style visuel de ta vidéo. Survole les cartes pour voir un aperçu.',
-  'Le format détermine le ratio de ta vidéo et la durée de la narration.',
-  'Options avancées pour personnaliser davantage ta vidéo.',
-  'Vérifie tout avant de lancer la génération.',
+  'Write or paste your script. AI will automatically break it down into scenes.',
+  'Choose the visual style of your video. Hover over cards to preview.',
+  'Choose how your images will be animated. You can refine scene by scene later.',
+  'Format determines your video ratio and narration duration.',
+  'Advanced options to customize your video further.',
+  'Review everything before launching generation.',
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -92,22 +97,22 @@ function StepScript({
 
   return (
     <div className="space-y-4">
-      <SectionTitle>Ton script</SectionTitle>
-      <SectionSub>Colle ou écris le texte que tu veux transformer en vidéo.</SectionSub>
+      <SectionTitle>Your script</SectionTitle>
+      <SectionSub>Paste or write the text you want to transform into a video.</SectionSub>
 
       <textarea
         value={script}
         onChange={e => onChange(e.target.value)}
         rows={14}
-        placeholder="Ex: Aujourd'hui, on parle de la révolution de l'IA dans le marketing digital..."
+        placeholder="Ex: Today, we're talking about the AI revolution in digital marketing..."
         className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
       />
       <div className="flex items-center justify-between">
         <p className="font-mono text-xs text-[--text-muted]">
-          {wordCount} mots · ~{Math.round(wordCount / 130)} min de narration
+          {wordCount} words · ~{Math.round(wordCount / 130)} min narration
         </p>
         {wordCount > 600 && (
-          <Badge variant="warning">Script long — sera condensé</Badge>
+          <Badge variant="warning">Long script — will be condensed</Badge>
         )}
       </div>
     </div>
@@ -127,13 +132,13 @@ function StepStyleVoice({
   onStyleChange: (id: FacelessStyle) => void
   selectedVoice?: ClyroVoice
   onVoiceClick: () => void
-  userPlan: 'free' | 'pro' | 'studio'
+  userPlan: 'free' | 'starter' | 'pro' | 'creator' | 'studio'
 }) {
   return (
     <div className="space-y-8">
       <div>
-        <SectionTitle>Style visuel</SectionTitle>
-        <SectionSub>Choisis l&apos;esthétique de ta vidéo. Survole pour voir l&apos;aperçu.</SectionSub>
+        <SectionTitle>Visual style</SectionTitle>
+        <SectionSub>Choose your video aesthetic. Hover to see preview.</SectionSub>
         <StyleCarousel
           styles={FACELESS_STYLES}
           selected={selectedStyle}
@@ -143,8 +148,8 @@ function StepStyleVoice({
       </div>
 
       <div>
-        <SectionTitle>Voix</SectionTitle>
-        <SectionSub>Sélectionne la voix qui narrera ta vidéo.</SectionSub>
+        <SectionTitle>Voice</SectionTitle>
+        <SectionSub>Select the voice that will narrate your video.</SectionSub>
         <button
           type="button"
           onClick={onVoiceClick}
@@ -167,17 +172,96 @@ function StepStyleVoice({
                 </p>
               </>
             ) : (
-              <p className="font-body text-sm text-[--text-muted]">Aucune voix sélectionnée — cliquer pour choisir</p>
+              <p className="font-body text-sm text-[--text-muted]">No voice selected — click to choose</p>
             )}
           </div>
-          <Badge variant="neutral">Changer</Badge>
+          <Badge variant="neutral">Change</Badge>
         </button>
       </div>
     </div>
   )
 }
 
-// ── Step 2 — Format ────────────────────────────────────────────────────────────
+// ── Step 2 — Animation Mode ────────────────────────────────────────────────────
+
+function StepAnimation({
+  animationMode,
+  onModeChange,
+  userPlan,
+  wordCount,
+  creditsBalance,
+}: {
+  animationMode: AnimationMode
+  onModeChange:  (m: AnimationMode) => void
+  userPlan:      'free' | 'starter' | 'pro' | 'creator' | 'studio'
+  wordCount:     number
+  creditsBalance: number
+}) {
+  const durationMin      = Math.max(1, Math.ceil(wordCount / 150))
+  const config           = ANIMATION_MODES[animationMode]
+  const estimatedCredits = Math.ceil(durationMin * config.creditsPerMin)
+  const scenesEstimate   = Math.max(3, Math.round(wordCount / 60))
+  const insufficient     = creditsBalance < estimatedCredits
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <SectionTitle>Animation mode</SectionTitle>
+        <SectionSub>
+          Choose how your images will be animated.
+          You can adjust scene by scene in the next step.
+        </SectionSub>
+      </div>
+
+      <AnimationModeSelector
+        value={animationMode}
+        onChange={onModeChange}
+        userPlan={userPlan}
+        scriptDurationMin={durationMin}
+      />
+
+      {/* Credit estimate card */}
+      <div className="rounded-2xl border border-border bg-muted p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-display text-sm text-foreground">Estimate for this video</p>
+            <p className="font-body text-xs text-[--text-muted] mt-0.5">
+              ~{durationMin} min · {scenesEstimate} scenes · {config.label} mode
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="font-display text-xl bg-grad-primary bg-clip-text text-transparent">
+              ~{estimatedCredits} cr
+            </p>
+            <p className="font-mono text-xs text-[--text-muted] mt-0.5">
+              Balance: {creditsBalance} cr
+            </p>
+          </div>
+        </div>
+
+        {insufficient && (
+          <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-3">
+            <AlertTriangle size={14} className="text-warning shrink-0" />
+            <p className="font-body text-xs text-[--text-muted] flex-1">
+              Insufficient balance for this mode. Buy credits or switch to Storyboard mode.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 gap-1.5"
+              onClick={() => window.open('/settings/billing', '_blank')}
+            >
+              <ShoppingCart size={12} />
+              Credits
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Step 3 — Format ────────────────────────────────────────────────────────────
 
 function StepFormat({
   format,
@@ -194,7 +278,7 @@ function StepFormat({
     <div className="space-y-8">
       <div>
         <SectionTitle>Format</SectionTitle>
-        <SectionSub>Le ratio de ta vidéo détermine où elle sera diffusée.</SectionSub>
+        <SectionSub>Your video ratio determines where it will be distributed.</SectionSub>
         <div className="flex gap-4 flex-wrap">
           {FORMAT_OPTIONS.map(opt => (
             <button
@@ -208,7 +292,6 @@ function StepFormat({
                   : 'border-border bg-muted hover:border-border',
               )}
             >
-              {/* Aspect preview */}
               <div className={cn(
                 'bg-border rounded-lg',
                 opt.value === '9:16' && 'w-8 h-14',
@@ -225,8 +308,8 @@ function StepFormat({
       </div>
 
       <div>
-        <SectionTitle>Durée cible</SectionTitle>
-        <SectionSub>La narration sera adaptée à cette durée.</SectionSub>
+        <SectionTitle>Target duration</SectionTitle>
+        <SectionSub>Narration will be adapted to this duration.</SectionSub>
         <div className="flex gap-3 flex-wrap">
           {DURATION_OPTIONS.map(opt => (
             <button
@@ -249,7 +332,7 @@ function StepFormat({
   )
 }
 
-// ── Step 3 — Options ───────────────────────────────────────────────────────────
+// ── Step 4 — Options ───────────────────────────────────────────────────────────
 
 function StepOptions({
   dialogueMode,
@@ -260,10 +343,9 @@ function StepOptions({
 }) {
   return (
     <div className="space-y-6">
-      <SectionTitle>Options avancées</SectionTitle>
-      <SectionSub>Personnalise le comportement de la génération.</SectionSub>
+      <SectionTitle>Advanced options</SectionTitle>
+      <SectionSub>Customize the generation behavior.</SectionSub>
 
-      {/* Dialogue mode toggle */}
       <div className="flex items-center justify-between rounded-xl bg-muted border border-border px-4 py-4">
         <div className="flex items-center gap-3">
           {dialogueMode ? (
@@ -272,9 +354,9 @@ function StepOptions({
             <MicOff size={18} className="text-[--text-muted]" />
           )}
           <div>
-            <p className="font-display text-sm text-foreground">Mode dialogue</p>
+            <p className="font-display text-sm text-foreground">Dialogue mode</p>
             <p className="font-body text-xs text-[--text-muted]">
-              L&apos;IA détecte les personnages et attribue des voix différentes à chacun
+              AI detects characters and assigns different voices to each
             </p>
           </div>
         </div>
@@ -286,8 +368,8 @@ function StepOptions({
             dialogueMode ? 'bg-blue-500' : 'bg-border',
           )}
           role="switch"
-          title={dialogueMode ? 'Désactiver le mode dialogue' : 'Activer le mode dialogue'}
-          aria-checked={dialogueMode ? 'true' : 'false'}
+          title={dialogueMode ? 'Disable dialogue mode' : 'Enable dialogue mode'}
+          aria-checked={dialogueMode}
         >
           <span className={cn(
             'absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200',
@@ -299,13 +381,14 @@ function StepOptions({
   )
 }
 
-// ── Step 4 — Review ────────────────────────────────────────────────────────────
+// ── Step 5 — Review ────────────────────────────────────────────────────────────
 
 function StepReview({
   title,
   script,
   style,
   voice,
+  animationMode,
   format,
   duration,
   dialogueMode,
@@ -314,27 +397,30 @@ function StepReview({
   script: string
   style: FacelessStyle
   voice?: ClyroVoice
+  animationMode: AnimationMode
   format: VideoFormat
   duration: VideoDuration
   dialogueMode: boolean
 }) {
-  const wordCount = script.trim().split(/\s+/).filter(Boolean).length
+  const wordCount  = script.trim().split(/\s+/).filter(Boolean).length
   const styleConfig = FACELESS_STYLES.find(s => s.id === style)
+  const animConfig  = ANIMATION_MODES[animationMode]
 
   const rows: [string, string][] = [
-    ['Titre',        title || '—'],
-    ['Script',       `${wordCount} mots`],
+    ['Title',        title || '—'],
+    ['Script',       `${wordCount} words`],
     ['Style',        styleConfig?.name ?? style],
-    ['Voix',         voice?.name ?? 'Non sélectionnée'],
+    ['Voice',         voice?.name ?? 'Not selected'],
+    ['Animation',    `${animConfig.label} · ${animConfig.generationTime}`],
     ['Format',       format],
-    ['Durée',        duration],
-    ['Mode dialogue',dialogueMode ? 'Activé' : 'Désactivé'],
+    ['Duration',        duration],
+    ['Dialogue mode',dialogueMode ? 'Enabled' : 'Disabled'],
   ]
 
   return (
     <div className="space-y-4">
-      <SectionTitle>Récapitulatif</SectionTitle>
-      <SectionSub>Vérifie tes paramètres avant de lancer la génération.</SectionSub>
+      <SectionTitle>Summary</SectionTitle>
+      <SectionSub>Review your settings before launching generation.</SectionSub>
 
       <div className="rounded-xl bg-muted border border-border overflow-hidden">
         {rows.map(([label, value], i) => (
@@ -351,8 +437,18 @@ function StepReview({
         ))}
       </div>
 
+      {animationMode !== 'storyboard' && (
+        <div className="flex items-start gap-3 rounded-xl bg-blue-500/5 border border-blue-500/20 px-4 py-3">
+          <span className="font-mono text-[11px] text-blue-400 mt-0.5">ℹ</span>
+          <p className="font-body text-xs text-[--text-muted]">
+            <strong className="text-foreground">{animConfig.label}</strong> mode — clips
+            will be generated after images ({animConfig.generationTime} additional).
+          </p>
+        </div>
+      )}
+
       <p className="font-body text-xs text-[--text-muted] text-center mt-4">
-        La génération prend généralement 2 à 5 minutes selon la longueur du script.
+        Generation typically takes 2 to 15 minutes depending on mode and script length.
       </p>
     </div>
   )
@@ -361,22 +457,68 @@ function StepReview({
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function FacelessNewPage() {
-  const router = useRouter()
+  const router      = useRouter()
+  const params      = useSearchParams()
+  const draftParam  = params.get('draft')
 
   const [currentStep,    setCurrentStep]    = useState(0)
-  const [projectName,    setProjectName]    = useState('Nouveau projet Faceless')
-  const [lastSaved,      setLastSaved]      = useState<Date | null>(null)
+  const [projectName,    setProjectName]    = useState('New Faceless project')
   const [script,         setScript]         = useState('')
   const [style,          setStyle]          = useState<FacelessStyle>('cinematique')
   const [selectedVoice,  setSelectedVoice]  = useState<ClyroVoice | undefined>()
+  const [animationMode,  setAnimationMode]  = useState<AnimationMode>('storyboard')
   const [format,         setFormat]         = useState<VideoFormat>('9:16')
   const [duration,       setDuration]       = useState<VideoDuration>('30s')
   const [dialogueMode,   setDialogueMode]   = useState(false)
 
+  // Restore draft from DB on mount when ?draft=<id> is present
+  useEffect(() => {
+    if (!draftParam) return
+    const supabase = createBrowserClient()
+    supabase
+      .from('videos')
+      .select('title, wizard_step, wizard_state')
+      .eq('id', draftParam)
+      .eq('status', 'draft')
+      .single()
+      .then(({ data }) => {
+        if (!data) return
+        if (data.title) setProjectName(data.title)
+        if (typeof data.wizard_step === 'number') setCurrentStep(data.wizard_step - 1)
+        const s = (data.wizard_state ?? {}) as Record<string, unknown>
+        if (s.script)        setScript(s.script as string)
+        if (s.style)         setStyle(s.style as FacelessStyle)
+        if (s.selectedVoice) setSelectedVoice(s.selectedVoice as ClyroVoice)
+        if (s.animationMode) setAnimationMode(s.animationMode as AnimationMode)
+        if (s.format)        setFormat(s.format as VideoFormat)
+        if (s.duration)      setDuration(s.duration as VideoDuration)
+        if (typeof s.dialogueMode === 'boolean') setDialogueMode(s.dialogueMode)
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftParam])
+
+  // DB-backed draft auto-save
+  const { wasRestored, lastSaved, isSaving: draftIsSaving, clearDraft } = useDraftSave({
+    module:      'faceless',
+    title:       projectName,
+    style:       style as string,
+    currentStep,
+    totalSteps:  STEPS.length,
+    stepLabel:   STEPS[currentStep]?.label ?? '',
+    state:       { script, style, selectedVoice, animationMode, format, duration, dialogueMode },
+    initialDraftId: draftParam,
+  })
+
+  // User profile
+  const [userPlan,        setUserPlan]        = useState<'free' | 'starter' | 'pro' | 'creator' | 'studio'>('free')
+  const [creditsBalance,  setCreditsBalance]  = useState(0)
+
+  // Voice picker
   const [voicePickerOpen, setVoicePickerOpen] = useState(false)
   const [libraryVoices,   setLibraryVoices]   = useState<ClyroVoice[]>([])
   const [voicesLoading,   setVoicesLoading]   = useState(false)
 
+  // Generation
   const [generating,     setGenerating]     = useState(false)
   const [genStage,       setGenStage]       = useState(0)
   const [genProgress,    setGenProgress]    = useState(0)
@@ -384,6 +526,25 @@ export default function FacelessNewPage() {
 
   const [resultVideoUrl, setResultVideoUrl] = useState<string | undefined>()
   const [resultOpen,     setResultOpen]     = useState(false)
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const supabase = createBrowserClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      supabase
+        .from('profiles')
+        .select('plan, credits_balance')
+        .eq('id', session.user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setUserPlan((data.plan as typeof userPlan) ?? 'free')
+            setCreditsBalance(data.credits_balance ?? 0)
+          }
+        })
+    })
+  }, [])
 
   // Load voices when voice picker opens
   async function handleOpenVoicePicker() {
@@ -400,11 +561,17 @@ export default function FacelessNewPage() {
     }
   }
 
+  const wordCount = script.trim().split(/\s+/).filter(Boolean).length
+  const durationMin = Math.max(1, Math.ceil(wordCount / 150))
+  const estimatedCredits = Math.ceil(durationMin * ANIMATION_MODES[animationMode].creditsPerMin)
+  const creditInsufficient = creditsBalance < estimatedCredits
+
   const canNext = useCallback(() => {
     if (currentStep === 0) return script.trim().length > 20
     if (currentStep === 1) return !!selectedVoice
+    if (currentStep === 2) return !creditInsufficient  // block on insufficient credits
     return true
-  }, [currentStep, script, selectedVoice])
+  }, [currentStep, script, selectedVoice, creditInsufficient])
 
   function handleNext() {
     if (currentStep < STEPS.length - 1) {
@@ -430,6 +597,7 @@ export default function FacelessNewPage() {
         format,
         duration,
         dialogue_mode: dialogueMode,
+        animation_mode: animationMode,
       })
 
       const supabase = createBrowserClient()
@@ -452,12 +620,9 @@ export default function FacelessNewPage() {
             reject(new Error('Génération échouée'))
           }
         })
-
-        // Cleanup ref
         ;(window as Window & { _clyroEs?: EventSource })._clyroEs = es
       })
 
-      // Fetch output_url
       const supabase2 = createBrowserClient()
       const { data: video } = await supabase2
         .from('videos')
@@ -467,6 +632,7 @@ export default function FacelessNewPage() {
 
       setResultVideoUrl(video?.output_url ?? undefined)
       setGenerating(false)
+      clearDraft()
       setResultOpen(true)
     } catch {
       setGenerating(false)
@@ -488,20 +654,21 @@ export default function FacelessNewPage() {
       <WizardLayout
         featureTitle="Faceless Videos"
         featureHref="/faceless"
-        currentPageLabel="Nouvelle vidéo"
+        currentPageLabel="New video"
         steps={STEPS}
         currentStep={currentStep}
         projectName={projectName}
         onProjectNameChange={setProjectName}
         contextualHelp={CONTEXTUAL_HELP[currentStep]}
         lastSaved={lastSaved}
+        isSaving={draftIsSaving}
+        draftWasRestored={wasRestored}
         onStepClick={setCurrentStep}
-        onSave={() => setLastSaved(new Date())}
         canPrev={currentStep > 0}
         canNext={canNext()}
         onPrev={() => setCurrentStep(s => s - 1)}
         onNext={handleNext}
-        nextLabel={isLastStep ? 'Lancer la génération' : 'Suivant'}
+        nextLabel={isLastStep ? 'Launch generation' : 'Next'}
       >
         <div className="max-w-2xl mx-auto px-6 py-8">
           {currentStep === 0 && (
@@ -513,10 +680,19 @@ export default function FacelessNewPage() {
               onStyleChange={setStyle}
               selectedVoice={selectedVoice}
               onVoiceClick={handleOpenVoicePicker}
-              userPlan="free"
+              userPlan={userPlan}
             />
           )}
           {currentStep === 2 && (
+            <StepAnimation
+              animationMode={animationMode}
+              onModeChange={setAnimationMode}
+              userPlan={userPlan}
+              wordCount={wordCount}
+              creditsBalance={creditsBalance}
+            />
+          )}
+          {currentStep === 3 && (
             <StepFormat
               format={format}
               duration={duration}
@@ -524,18 +700,19 @@ export default function FacelessNewPage() {
               onDurationChange={setDuration}
             />
           )}
-          {currentStep === 3 && (
+          {currentStep === 4 && (
             <StepOptions
               dialogueMode={dialogueMode}
               onDialogueModeChange={setDialogueMode}
             />
           )}
-          {currentStep === 4 && (
+          {currentStep === 5 && (
             <StepReview
               title={projectName}
               script={script}
               style={style}
               voice={selectedVoice}
+              animationMode={animationMode}
               format={format}
               duration={duration}
               dialogueMode={dialogueMode}

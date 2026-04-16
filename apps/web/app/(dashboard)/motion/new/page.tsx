@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useCallback, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useDraftSave } from '@/hooks/use-draft-save'
 import { Volume2, Mic, Music } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { WizardLayout } from '@/components/creation/WizardLayout'
@@ -23,30 +24,30 @@ import type { MotionStyle, VideoFormat, VideoDuration } from '@clyro/shared'
 const STEPS = [
   { id: 'brief',  label: 'Brief' },
   { id: 'style',  label: 'Style & Format' },
-  { id: 'brand',  label: 'Marque' },
-  { id: 'voice',  label: 'Voix & Audio' },
-  { id: 'review', label: 'Rendu' },
+  { id: 'brand',  label: 'Brand' },
+  { id: 'voice',  label: 'Voice & Audio' },
+  { id: 'review', label: 'Render' },
 ]
 
 const GENERATION_STAGES: GenerationStage[] = [
-  { main: 'Analyse du brief…',       sub: 'L\'IA structure votre message en scènes' },
-  { main: 'Création du storyboard…', sub: 'Génération de la séquence narrative' },
-  { main: 'Génération des assets…',  sub: 'Création des visuels de fond' },
-  { main: 'Synthèse vocale…',        sub: 'Enregistrement de la narration' },
-  { main: 'Rendu Remotion…',         sub: 'Animation et assemblage final' },
+  { main: 'Analyzing brief…',       sub: 'AI structures your message into scenes' },
+  { main: 'Creating storyboard…', sub: 'Generating narrative sequence' },
+  { main: 'Generating assets…',  sub: 'Creating background visuals' },
+  { main: 'Text-to-speech…',        sub: 'Recording narration' },
+  { main: 'Remotion render…',         sub: 'Animation and final assembly' },
 ]
 
 const MOTION_STYLES: StyleConfig[] = [
-  { id: 'corporate', name: 'Corporate',  description: 'Professionnel et sobre, idéal B2B', pro: false },
-  { id: 'dynamique', name: 'Dynamique',  description: 'Énergie et rythme, parfait pour les réseaux', pro: false },
-  { id: 'luxe',      name: 'Luxe',       description: 'Élégant et premium, pour les marques haut de gamme', pro: true },
-  { id: 'fun',       name: 'Fun',        description: 'Coloré et décalé, tonalité légère', pro: false },
+  { id: 'corporate', name: 'Corporate',  description: 'Professional and sleek, ideal for B2B', pro: false },
+  { id: 'dynamique', name: 'Dynamic',  description: 'Energy and rhythm, perfect for social media', pro: false },
+  { id: 'luxe',      name: 'Luxury',       description: 'Elegant and premium, for upscale brands', pro: true },
+  { id: 'fun',       name: 'Fun',        description: 'Colorful and quirky, light tone', pro: false },
 ]
 
 const FORMAT_OPTIONS: { value: VideoFormat; label: string; desc: string }[] = [
   { value: '9:16', label: 'Vertical', desc: 'TikTok, Reels, Shorts' },
-  { value: '1:1',  label: 'Carré',   desc: 'Instagram, Twitter' },
-  { value: '16:9', label: 'Paysage', desc: 'YouTube, LinkedIn' },
+  { value: '1:1',  label: 'Square',   desc: 'Instagram, Twitter' },
+  { value: '16:9', label: 'Landscape', desc: 'YouTube, LinkedIn' },
 ]
 
 const DURATION_OPTIONS: { value: VideoDuration; label: string }[] = [
@@ -57,11 +58,11 @@ const DURATION_OPTIONS: { value: VideoDuration; label: string }[] = [
 ]
 
 const CONTEXTUAL_HELP = [
-  'Décris en quelques phrases ce que tu veux communiquer et à qui.',
-  'Le style définit l\'ambiance visuelle. Le format détermine le ratio.',
-  'Tes couleurs de marque seront intégrées dans chaque scène.',
-  'Choisis la voix et la musique de fond.',
-  'Tout est prêt — lance le rendu Remotion.',
+  'Describe in a few sentences what you want to communicate and to whom.',
+  'Style defines visual atmosphere. Format determines ratio.',
+  'Your brand colors will be integrated into each scene.',
+  'Choose the voice and background music.',
+  'Everything is ready — launch the Remotion render.',
 ]
 
 const FONTS = ['Inter', 'Poppins', 'Montserrat', 'Playfair Display', 'DM Sans', 'Space Grotesk']
@@ -80,19 +81,19 @@ function SectionSub({ children }: { children: React.ReactNode }) {
 function StepBrief({ brief, onChange }: { brief: string; onChange: (v: string) => void }) {
   return (
     <div className="space-y-4">
-      <SectionTitle>Ton brief</SectionTitle>
+      <SectionTitle>Your brief</SectionTitle>
       <SectionSub>
-        Décris le message que tu veux faire passer, ton audience cible et l&apos;objectif de la vidéo.
+        Describe the message you want to convey, your target audience and the video objective.
       </SectionSub>
       <textarea
         value={brief}
         onChange={e => onChange(e.target.value)}
         rows={10}
-        placeholder="Ex: Nous sommes une startup SaaS qui aide les PME à automatiser leur comptabilité. Notre cible : dirigeants de 30-50 ans. Objectif : générer des leads qualifiés via LinkedIn..."
+        placeholder="Ex: We are a SaaS startup that helps SMEs automate their accounting. Our target: business owners aged 30-50. Objective: generate qualified leads via LinkedIn..."
         className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
       />
       <p className="font-mono text-xs text-[--text-muted] text-right">
-        {brief.trim().length} / 1000 caractères recommandés
+        {brief.trim().length} / 1000 recommended characters
       </p>
     </div>
   )
@@ -112,7 +113,7 @@ function StepStyleFormat({
     <div className="space-y-8">
       <div>
         <SectionTitle>Style</SectionTitle>
-        <SectionSub>L&apos;ambiance visuelle de ta motion design vidéo.</SectionSub>
+        <SectionSub>The visual atmosphere of your motion design video.</SectionSub>
         <StyleCarousel
           styles={MOTION_STYLES}
           selected={style}
@@ -123,7 +124,7 @@ function StepStyleFormat({
 
       <div>
         <SectionTitle>Format</SectionTitle>
-        <SectionSub>Ratio et réseau de diffusion.</SectionSub>
+        <SectionSub>Ratio and distribution network.</SectionSub>
         <div className="flex gap-4 flex-wrap mb-6">
           {FORMAT_OPTIONS.map(opt => (
             <button
@@ -151,7 +152,7 @@ function StepStyleFormat({
           ))}
         </div>
 
-        <SectionTitle>Durée</SectionTitle>
+        <SectionTitle>Duration</SectionTitle>
         <div className="flex gap-3 flex-wrap mt-3">
           {DURATION_OPTIONS.map(opt => (
             <button
@@ -187,19 +188,19 @@ function StepBrand({
 }) {
   return (
     <div className="space-y-6">
-      <SectionTitle>Identité de marque</SectionTitle>
-      <SectionSub>Ces éléments seront intégrés dans toutes les scènes de ta vidéo.</SectionSub>
+      <SectionTitle>Brand identity</SectionTitle>
+      <SectionSub>These elements will be integrated into all scenes of your video.</SectionSub>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="font-mono text-xs text-[--text-muted]">Couleur principale</label>
+          <label className="font-mono text-xs text-[--text-muted]">Primary color</label>
           <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={primaryColor}
               onChange={e => onPrimaryChange(e.target.value)}
-              title="Couleur principale"
-              aria-label="Couleur principale"
+              title="Primary color"
+              aria-label="Primary color"
               className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
             />
             <span className="font-mono text-sm text-foreground">{primaryColor.toUpperCase()}</span>
@@ -207,14 +208,14 @@ function StepBrand({
         </div>
 
         <div className="space-y-2">
-          <label className="font-mono text-xs text-[--text-muted]">Couleur secondaire</label>
+          <label className="font-mono text-xs text-[--text-muted]">Secondary color</label>
           <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={secondaryColor}
               onChange={e => onSecondaryChange(e.target.value)}
-              title="Couleur secondaire"
-              aria-label="Couleur secondaire"
+              title="Secondary color"
+              aria-label="Secondary color"
               className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
             />
             <span className="font-mono text-sm text-foreground">{secondaryColor.toUpperCase()}</span>
@@ -223,7 +224,7 @@ function StepBrand({
       </div>
 
       <div className="space-y-2">
-        <label className="font-mono text-xs text-[--text-muted]">Typographie</label>
+        <label className="font-mono text-xs text-[--text-muted]">Typography</label>
         <div className="flex gap-2 flex-wrap">
           {FONTS.map(f => (
             <button
@@ -258,8 +259,8 @@ function StepVoiceAudio({
   return (
     <div className="space-y-6">
       <div>
-        <SectionTitle>Voix</SectionTitle>
-        <SectionSub>La voix qui lira le texte de tes scènes.</SectionSub>
+        <SectionTitle>Voice</SectionTitle>
+        <SectionSub>The voice that will read your scene text.</SectionSub>
         <button
           type="button"
           onClick={onVoiceClick}
@@ -285,21 +286,21 @@ function StepVoiceAudio({
               </>
             ) : (
               <p className="font-body text-sm text-[--text-muted]">
-                Aucune voix sélectionnée — cliquer pour choisir
+                No voice selected — click to choose
               </p>
             )}
           </div>
-          <Badge variant="neutral">Changer</Badge>
+          <Badge variant="neutral">Change</Badge>
         </button>
       </div>
 
       <div>
-        <SectionTitle>Musique de fond</SectionTitle>
-        <SectionSub>Optionnel — une piste musicale jouée en fond.</SectionSub>
+        <SectionTitle>Background music</SectionTitle>
+        <SectionSub>Optional — a music track played in the background.</SectionSub>
         <div className="flex items-center gap-3 rounded-xl bg-muted border border-border px-4 py-3">
           <Music size={18} className="text-[--text-muted]" />
-          <p className="font-body text-sm text-[--text-muted] flex-1">Aucune musique (coming soon)</p>
-          <Badge variant="neutral">Bientôt</Badge>
+          <p className="font-body text-sm text-[--text-muted] flex-1">No music (coming soon)</p>
+          <Badge variant="neutral">Soon</Badge>
         </div>
       </div>
     </div>
@@ -316,19 +317,19 @@ function StepReview({
 }) {
   const styleConfig = MOTION_STYLES.find(s => s.id === style)
   const rows: [string, string][] = [
-    ['Titre',  title || '—'],
+    ['Title',  title || '—'],
     ['Brief',  brief.substring(0, 60) + (brief.length > 60 ? '…' : '')],
     ['Style',  styleConfig?.name ?? style],
     ['Format', format],
-    ['Durée',  duration],
-    ['Couleur',primaryColor.toUpperCase()],
-    ['Voix',   voice?.name ?? 'Non sélectionnée'],
+    ['Duration',  duration],
+    ['Color',primaryColor.toUpperCase()],
+    ['Voice',   voice?.name ?? 'Not selected'],
   ]
 
   return (
     <div className="space-y-4">
-      <SectionTitle>Prêt à rendre</SectionTitle>
-      <SectionSub>Vérifie tes paramètres avant de lancer le rendu Remotion.</SectionSub>
+      <SectionTitle>Ready to render</SectionTitle>
+      <SectionSub>Review your settings before launching the Remotion render.</SectionSub>
 
       <div className="rounded-xl bg-muted border border-border overflow-hidden">
         {rows.map(([label, value], i) => (
@@ -346,7 +347,7 @@ function StepReview({
       </div>
 
       <p className="font-body text-xs text-[--text-muted] text-center mt-4">
-        Le rendu prend 1 à 3 minutes. Tu seras notifié dès que ta vidéo est prête.
+        Rendering takes 1 to 3 minutes. You will be notified as soon as your video is ready.
       </p>
     </div>
   )
@@ -355,11 +356,12 @@ function StepReview({
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function MotionNewPage() {
-  const router = useRouter()
+  const router     = useRouter()
+  const params     = useSearchParams()
+  const draftParam = params.get('draft')
 
   const [currentStep,    setCurrentStep]    = useState(0)
-  const [projectName,    setProjectName]    = useState('Nouveau projet Motion')
-  const [lastSaved,      setLastSaved]      = useState<Date | null>(null)
+  const [projectName,    setProjectName]    = useState('New Motion project')
   const [brief,          setBrief]          = useState('')
   const [style,          setStyle]          = useState<MotionStyle>('corporate')
   const [format,         setFormat]         = useState<VideoFormat>('16:9')
@@ -368,6 +370,45 @@ export default function MotionNewPage() {
   const [secondaryColor, setSecondaryColor] = useState('#9B5CF6')
   const [fontFamily,     setFontFamily]     = useState('Inter')
   const [selectedVoice,  setSelectedVoice]  = useState<ClyroVoice | undefined>()
+
+  // Restore draft from DB on mount when ?draft=<id> is present
+  useEffect(() => {
+    if (!draftParam) return
+    const supabase = createBrowserClient()
+    supabase
+      .from('videos')
+      .select('title, wizard_step, wizard_state')
+      .eq('id', draftParam)
+      .eq('status', 'draft')
+      .single()
+      .then(({ data }) => {
+        if (!data) return
+        if (data.title) setProjectName(data.title)
+        if (typeof data.wizard_step === 'number') setCurrentStep(data.wizard_step - 1)
+        const s = (data.wizard_state ?? {}) as Record<string, unknown>
+        if (s.brief)          setBrief(s.brief as string)
+        if (s.style)          setStyle(s.style as MotionStyle)
+        if (s.format)         setFormat(s.format as VideoFormat)
+        if (s.duration)       setDuration(s.duration as VideoDuration)
+        if (s.primaryColor)   setPrimaryColor(s.primaryColor as string)
+        if (s.secondaryColor) setSecondaryColor(s.secondaryColor as string)
+        if (s.fontFamily)     setFontFamily(s.fontFamily as string)
+        if (s.selectedVoice)  setSelectedVoice(s.selectedVoice as ClyroVoice)
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftParam])
+
+  // DB-backed draft auto-save
+  const { wasRestored, lastSaved, isSaving: draftIsSaving, clearDraft } = useDraftSave({
+    module:      'motion',
+    title:       projectName,
+    style:       style as string,
+    currentStep,
+    totalSteps:  STEPS.length,
+    stepLabel:   STEPS[currentStep]?.label ?? '',
+    state:       { brief, style, format, duration, primaryColor, secondaryColor, fontFamily, selectedVoice },
+    initialDraftId: draftParam,
+  })
 
   const [voicePickerOpen, setVoicePickerOpen] = useState(false)
   const [libraryVoices,   setLibraryVoices]   = useState<ClyroVoice[]>([])
@@ -448,7 +489,7 @@ export default function MotionNewPage() {
             return prev.includes(label) ? prev : [...prev, label]
           })
           if (data.status === 'done')  resolve()
-          if (data.status === 'error') reject(new Error('Génération échouée'))
+          if (data.status === 'error') reject(new Error('Generation failed'))
         })
         ;(window as Window & { _clyroEs?: EventSource })._clyroEs = es
       })
@@ -462,6 +503,7 @@ export default function MotionNewPage() {
 
       setResultVideoUrl(video?.output_url ?? undefined)
       setGenerating(false)
+      clearDraft()
       setResultOpen(true)
     } catch {
       setGenerating(false)
@@ -483,20 +525,21 @@ export default function MotionNewPage() {
       <WizardLayout
         featureTitle="Motion Design"
         featureHref="/motion"
-        currentPageLabel="Nouvelle vidéo"
+        currentPageLabel="New video"
         steps={STEPS}
         currentStep={currentStep}
         projectName={projectName}
         onProjectNameChange={setProjectName}
         contextualHelp={CONTEXTUAL_HELP[currentStep]}
         lastSaved={lastSaved}
+        isSaving={draftIsSaving}
+        draftWasRestored={wasRestored}
         onStepClick={setCurrentStep}
-        onSave={() => setLastSaved(new Date())}
         canPrev={currentStep > 0}
         canNext={canNext()}
         onPrev={() => setCurrentStep(s => s - 1)}
         onNext={handleNext}
-        nextLabel={isLastStep ? 'Lancer le rendu' : 'Suivant'}
+        nextLabel={isLastStep ? 'Launch render' : 'Next'}
       >
         <div className="max-w-2xl mx-auto px-6 py-8">
           {currentStep === 0 && <StepBrief brief={brief} onChange={setBrief} />}

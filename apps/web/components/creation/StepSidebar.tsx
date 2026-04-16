@@ -1,9 +1,43 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { CheckCircle, HelpCircle } from 'lucide-react'
+import { CheckCircle, HelpCircle, Check, Cloud } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
+
+// ── AutoSaveIndicator ──────────────────────────────────────────────────────────
+
+function formatRelativeSave(date: Date): string {
+  const diffMin = Math.round((Date.now() - date.getTime()) / 60_000)
+  if (diffMin < 1) return "à l'instant"
+  if (diffMin === 1) return 'il y a 1 min'
+  if (diffMin < 60)  return `il y a ${diffMin} min`
+  return `il y a ${Math.round(diffMin / 60)}h`
+}
+
+function AutoSaveIndicator({ lastSaved, isSaving }: { lastSaved?: Date | null; isSaving?: boolean }) {
+  if (!lastSaved && !isSaving) {
+    return <p className="font-mono text-[11px] text-[--text-muted] mt-1">Non sauvegardé</p>
+  }
+  return (
+    <div className="flex items-center gap-1.5 mt-1" aria-live="polite">
+      {isSaving ? (
+        <>
+          <Cloud size={11} className="text-blue-400 animate-pulse" strokeWidth={1.8} />
+          <span className="font-mono text-[11px] text-[--text-muted]">Sauvegarde…</span>
+        </>
+      ) : lastSaved ? (
+        <>
+          <Check size={11} className="text-success shrink-0" strokeWidth={2.2} />
+          <span className="font-mono text-[11px] text-[--text-muted]">
+            Brouillon sauvegardé{' '}
+            <span className="opacity-60">{formatRelativeSave(lastSaved)}</span>
+          </span>
+        </>
+      ) : null}
+    </div>
+  )
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -19,6 +53,7 @@ interface StepSidebarProps {
   onProjectNameChange: (name: string) => void
   contextualHelp?: string
   lastSaved?: Date | null
+  isSaving?: boolean
   onStepClick?: (index: number) => void
 }
 
@@ -50,7 +85,7 @@ function StepIndicator({ index, status }: { index: number; status: 'done' | 'act
 
 function DesktopSidebar({
   steps, currentStep, projectName, onProjectNameChange,
-  contextualHelp, lastSaved, onStepClick,
+  contextualHelp, lastSaved, isSaving, onStepClick,
 }: StepSidebarProps) {
   const [editing, setEditing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -63,10 +98,6 @@ function DesktopSidebar({
   function stopEdit() {
     setEditing(false)
   }
-
-  const lastSavedLabel = lastSaved
-    ? `Modifié il y a ${Math.round((Date.now() - lastSaved.getTime()) / 60000)} min`
-    : 'Non sauvegardé'
 
   return (
     <aside className="hidden md:flex w-64 bg-card border-r border-border/50 flex-col h-full py-6 px-4 shrink-0">
@@ -92,7 +123,7 @@ function DesktopSidebar({
             {projectName || 'Nouveau projet'}
           </button>
         )}
-        <p className="font-mono text-[10px] text-[--text-muted] mt-1">{lastSavedLabel}</p>
+        <AutoSaveIndicator lastSaved={lastSaved} isSaving={isSaving} />
       </div>
 
       {/* Steps list */}
