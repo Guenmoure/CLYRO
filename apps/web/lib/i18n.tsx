@@ -32,19 +32,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }
 
   function t(key: string): string {
-    const keys = key.split('.')
-    let value: any = translations[lang] || translations.en
+    const dict = translations[lang] || translations.en
+    const value = (dict as Record<string, string>)[key]
+    if (value !== undefined) return value
 
-    for (const k of keys) {
-      value = value?.[k]
-    }
-
-    // Fallback to English if translation not found
-    if (value === undefined) {
-      value = key.split('.').reduce((obj: any, k: string) => obj?.[k], translations.en)
-    }
-
-    return value || key
+    // Fallback to English
+    const fallback = (translations.en as Record<string, string>)[key]
+    return fallback ?? key
   }
 
   return (
@@ -59,10 +53,7 @@ const DEFAULT_CONTEXT: LanguageContextType = {
   lang: 'en',
   setLang: () => {},
   t: (key: string) => {
-    const keys = key.split('.')
-    let value: any = translations.en
-    for (const k of keys) value = value?.[k]
-    return value || key
+    return (translations.en as Record<string, string>)[key] ?? key
   },
 }
 

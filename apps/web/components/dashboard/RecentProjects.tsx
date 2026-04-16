@@ -8,6 +8,7 @@ import {
   Pencil, Trash2, ExternalLink, Download, Play, FolderOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { RealtimeProjects } from './RealtimeProjects'
 import type { VideoProject } from './ProjectCard'
 
@@ -48,6 +49,7 @@ function formatRelativeDate(dateStr: string): string {
 const PROCESSING_STATUSES = new Set(['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly'])
 
 export function RecentProjects({ userId, videos: initialVideos }: RecentProjectsProps) {
+  const { t } = useLanguage()
   const [tab, setTab] = useState<'recent' | 'drafts'>('recent')
   const [projects, setProjects] = useState<VideoProject[]>(initialVideos)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
@@ -80,13 +82,13 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
       <div className="flex items-center justify-center">
         <div className="inline-flex items-center gap-1 rounded-full border border-border bg-card p-1">
           <TabButton
-            label="Recent"
+            label={t('recent') || 'Recent'}
             count={recentCount}
             active={tab === 'recent'}
             onClick={() => setTab('recent')}
           />
           <TabButton
-            label="Processing"
+            label={t('processing') || 'Processing'}
             count={draftCount}
             active={tab === 'drafts'}
             onClick={() => setTab('drafts')}
@@ -106,6 +108,7 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
               menuOpen={menuOpenId === project.id}
               onMenuToggle={(open) => setMenuOpenId(open ? project.id : null)}
               onDeleted={handleDeleted}
+              t={t}
             />
           ))}
         </div>
@@ -118,7 +121,7 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
             href="/projects"
             className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2 text-sm font-body text-[--text-secondary] hover:text-foreground hover:border-border transition-all"
           >
-            View all projects
+            {t('viewAllProjects') || 'View all projects'}
           </Link>
         </div>
       )}
@@ -160,11 +163,12 @@ function TabButton({ label, count, active, onClick }: {
 
 // ── Project row ────────────────────────────────────────────────────────────────
 
-function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
+function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
   project: VideoProject
   menuOpen: boolean
   onMenuToggle: (open: boolean) => void
   onDeleted: (id: string) => void
+  t: (key: string) => string
 }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
@@ -177,7 +181,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
   const moduleLabel = MODULE_LABELS[project.module ?? ''] ?? 'Projet'
 
   async function handleDelete() {
-    if (!confirm('Delete this project? This action is permanent.')) return
+    if (!confirm(t('confirmDelete'))) return
     setDeleting(true)
     try {
       const res = await fetch(`/api/videos/${project.id}`, { method: 'DELETE' })
@@ -254,7 +258,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
             onClick={handleEdit}
             className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 font-body text-xs text-foreground hover:bg-border transition-all"
           >
-            Open
+            {t('open') || 'Open'}
           </button>
         )}
 
@@ -296,7 +300,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
                 onClick={handleEdit}
                 className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors"
               >
-                <Pencil size={13} /> Rename
+                <Pencil size={13} /> {t('edit')}
               </button>
               <div className="border-t border-border" />
               <button
@@ -304,7 +308,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
                 onClick={() => { onMenuToggle(false); handleDelete() }}
                 className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-error hover:bg-error/10 transition-colors"
               >
-                <Trash2 size={13} /> Delete
+                <Trash2 size={13} /> {t('delete')}
               </button>
             </div>
           )}
@@ -317,25 +321,26 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted }: {
 // ── Empty state ────────────────────────────────────────────────────────────────
 
 function EmptyState({ tab }: { tab: 'recent' | 'drafts' }) {
+  const { t } = useLanguage()
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border bg-card/30">
       <div className="rounded-2xl bg-muted p-4 mb-4">
         <FolderOpen size={28} className="text-[--text-muted]" />
       </div>
       <p className="font-display text-sm text-foreground">
-        {tab === 'recent' ? 'No projects yet' : 'No projects processing'}
+        {tab === 'recent' ? t('noProjectsYet') || 'No projects yet' : t('noProjectsProcessing') || 'No projects processing'}
       </p>
       <p className="font-body text-xs text-[--text-muted] mt-2 max-w-xs">
         {tab === 'recent'
-          ? 'Create your first project in under 5 minutes.'
-          : 'Projects being generated will show up here.'}
+          ? t('createFirstProject') || 'Create your first project in under 5 minutes.'
+          : t('projectsGenerating') || 'Projects being generated will show up here.'}
       </p>
       {tab === 'recent' && (
         <Link
           href="/faceless/new"
           className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-4 py-2 font-display text-sm font-semibold text-white hover:opacity-90 transition-opacity"
         >
-          Create my first project
+          {t('createMyFirstProject')}
         </Link>
       )}
     </div>

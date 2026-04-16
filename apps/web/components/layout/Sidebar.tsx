@@ -8,6 +8,7 @@ import {
   Settings, HelpCircle, ChevronRight, ChevronUp, LogOut, Gem, Code2,
 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { SettingsModal, type SettingsSectionId } from '@/components/settings/SettingsModal'
 
@@ -124,6 +125,7 @@ function NavItem({
 
 function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () => void }) {
   const supabase = createBrowserClient()
+  const { t } = useLanguage()
   const [name, setName]       = useState<string | null>(null)
   const [email, setEmail]     = useState<string>('')
   const [plan, setPlan]       = useState<string>('free')
@@ -241,7 +243,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
             />
             <DropdownItem
               icon={<Settings size={15} />}
-              label="Settings"
+              label={t('userSettings')}
               onClick={() => openSettings('account')}
             />
           </div>
@@ -267,7 +269,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
           <div className="p-2 border-t border-border">
             <DropdownItem
               icon={<LogOut size={15} />}
-              label="Log out"
+              label={t('userLogout')}
               onClick={onSignOut}
               danger
             />

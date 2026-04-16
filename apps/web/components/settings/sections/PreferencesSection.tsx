@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Check, Globe, Monitor, Moon, Sun } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 type ThemeMode = 'light' | 'dark' | 'auto'
@@ -15,16 +16,17 @@ const LANGUAGES = [
 ]
 
 const USE_CASES = [
-  'Learning & development',
-  'Marketing & promotion',
-  'Inspiration & motivation',
-  'Entertainment',
-  'Awareness',
-  'Sales prospecting',
-  'Internal communication',
+  'useCase_learning',
+  'useCase_marketing',
+  'useCase_inspiration',
+  'useCase_entertainment',
+  'useCase_awareness',
+  'useCase_sales',
+  'useCase_internal',
 ]
 
 export function PreferencesSection() {
+  const { t, setLang } = useLanguage()
   const [language, setLanguage] = useState('en')
   const [theme, setTheme]       = useState<ThemeMode>('auto')
   const [selectedUseCases, setSelectedUseCases] = useState<Set<string>>(new Set())
@@ -56,6 +58,7 @@ export function PreferencesSection() {
 
   function selectLanguage(code: string) {
     setLanguage(code)
+    setLang(code as 'en' | 'fr' | 'es' | 'de' | 'pt')
     localStorage.setItem('clyro_language', code)
   }
 
@@ -71,15 +74,15 @@ export function PreferencesSection() {
   return (
     <div className="max-w-3xl space-y-10">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Preferences</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">{t('preferences')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Language, appearance and usage context.
+          {t('languageAndAppearance')}
         </p>
       </div>
 
       {/* Language */}
       <section className="space-y-3">
-        <label className="font-body text-sm font-semibold text-foreground">Language</label>
+        <label className="font-body text-sm font-semibold text-foreground">{t('language')}</label>
         <div className="relative">
           <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
           <select
@@ -93,30 +96,30 @@ export function PreferencesSection() {
             ))}
           </select>
         </div>
-        <p className="font-body text-xs text-[--text-muted]">Default language for AI-generated scripts.</p>
+        <p className="font-body text-xs text-[--text-muted]">{t('languageDescription')}</p>
       </section>
 
       {/* Appearance */}
       <section className="space-y-3">
-        <label className="font-body text-sm font-semibold text-foreground">Appearance</label>
+        <label className="font-body text-sm font-semibold text-foreground">{t('appearance')}</label>
         <div className="grid grid-cols-3 gap-3">
           <ThemeCard
             mode="light"
-            label="Light"
+            label={t('light')}
             icon={Sun}
             active={theme === 'light'}
             onClick={() => applyTheme('light')}
           />
           <ThemeCard
             mode="auto"
-            label="Auto"
+            label={t('auto')}
             icon={Monitor}
             active={theme === 'auto'}
             onClick={() => applyTheme('auto')}
           />
           <ThemeCard
             mode="dark"
-            label="Dark"
+            label={t('dark')}
             icon={Moon}
             active={theme === 'dark'}
             onClick={() => applyTheme('dark')}
@@ -127,19 +130,20 @@ export function PreferencesSection() {
       {/* Use cases */}
       <section className="space-y-3">
         <div>
-          <label className="font-body text-sm font-semibold text-foreground">Use Cases</label>
+          <label className="font-body text-sm font-semibold text-foreground">{t('useCases')}</label>
           <p className="font-body text-xs text-[--text-secondary] mt-1">
-            Select what applies to your activity to personalize suggestions.
+            {t('useCasesDescription')}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {USE_CASES.map((uc) => {
-            const active = selectedUseCases.has(uc)
+          {USE_CASES.map((ucKey) => {
+            const active = selectedUseCases.has(ucKey)
+            const label = t(ucKey)
             return (
               <button
-                key={uc}
+                key={ucKey}
                 type="button"
-                onClick={() => toggleUseCase(uc)}
+                onClick={() => toggleUseCase(ucKey)}
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-body transition-all',
                   active
@@ -149,7 +153,7 @@ export function PreferencesSection() {
                 aria-pressed={active}
               >
                 {active && <Check size={12} />}
-                {uc}
+                {label}
               </button>
             )
           })}

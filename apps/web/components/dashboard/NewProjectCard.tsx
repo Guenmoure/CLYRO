@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 interface NewProjectCardProps {
   feature: 'faceless' | 'motion' | 'brand'
@@ -17,6 +18,7 @@ const FEATURE_ROUTES: Record<string, string> = {
 
 export function NewProjectCard({ feature, className }: NewProjectCardProps) {
   const router = useRouter()
+  const { t } = useLanguage()
   const href = FEATURE_ROUTES[feature] ?? '/dashboard'
 
   return (
@@ -39,7 +41,7 @@ export function NewProjectCard({ feature, className }: NewProjectCardProps) {
         />
       </div>
       <p className="font-body text-xs text-[--text-muted] group-hover:text-[--text-secondary] transition-colors duration-200">
-        New project
+        {t('newProject')}
       </p>
     </button>
   )

@@ -6,11 +6,13 @@ import {
   AlertTriangle, ShieldCheck,
 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
 export function SecuritySection() {
   const supabase = createBrowserClient()
+  const { t } = useLanguage()
   const [email, setEmail]   = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -85,7 +87,7 @@ export function SecuritySection() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Security</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">{t('securitySettings')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
           Password, authentication and active sessions.
         </p>
@@ -135,7 +137,7 @@ export function SecuritySection() {
             <form onSubmit={handleChangePassword} className="space-y-3">
               <div>
                 <label htmlFor="new-pass" className="font-body text-xs font-semibold text-foreground mb-1.5 block">
-                  New password
+                  {t('newPassword')}
                 </label>
                 <input
                   id="new-pass"
@@ -178,14 +180,14 @@ export function SecuritySection() {
                   disabled={saving}
                   className="inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-foreground dark:text-gray-950 text-white px-4 py-2 text-sm font-display font-semibold hover:opacity-90 disabled:opacity-60 transition-all"
                 >
-                  {saving ? <><Loader2 size={13} className="animate-spin" /> Saving…</> : 'Save'}
+                  {saving ? <><Loader2 size={13} className="animate-spin" /> {t('saving')}</> : t('save')}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setNewPassword(''); setConfirmPass('') }}
                   className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-[--text-secondary] hover:text-foreground transition-colors"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
               </div>
             </form>

@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { Camera, Loader2, Users } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 import { toast } from '@/components/ui/toast'
 
 export function GeneralSection() {
   const supabase = createBrowserClient()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
   const [userId, setUserId]   = useState('')
@@ -66,7 +68,7 @@ export function GeneralSection() {
   return (
     <div className="max-w-2xl space-y-8">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">General</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">{t('generalSettings')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
           Your workspace identity. Used in emails and shared pages.
         </p>
@@ -139,7 +141,7 @@ export function GeneralSection() {
           disabled={saving}
           className="inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-foreground dark:text-gray-950 text-white px-5 py-2.5 text-sm font-display font-semibold hover:opacity-90 disabled:opacity-60 transition-all"
         >
-          {saving ? <><Loader2 size={13} className="animate-spin" /> Saving…</> : 'Save'}
+          {saving ? <><Loader2 size={13} className="animate-spin" /> {t('saving')}</> : t('save')}
         </button>
       </div>
 

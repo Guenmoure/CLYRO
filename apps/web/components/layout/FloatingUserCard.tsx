@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { Settings, HelpCircle, LogOut, Zap } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 
@@ -21,6 +22,7 @@ export function FloatingUserCard() {
   const supabase = createBrowserClient()
   const router   = useRouter()
   const pathname = usePathname()
+  const { t } = useLanguage()
 
   const [open, setOpen]   = useState(false)
   const [name, setName]   = useState('')
@@ -120,7 +122,7 @@ export function FloatingUserCard() {
               <NavLink
                 key={item.href}
                 href={item.href}
-                label={item.label}
+                label={item.label === 'Settings' ? t('userSettings') : item.label}
                 icon={item.icon}
                 active={false}
                 external={'external' in item ? item.external : false}
@@ -133,7 +135,7 @@ export function FloatingUserCard() {
               className="flex items-center gap-3 w-full px-2 py-2 rounded-lg text-sm font-body text-error hover:bg-error/10 transition-colors"
             >
               <LogOut size={15} />
-              Sign out
+              {t('userLogout')}
             </button>
           </div>
         </div>

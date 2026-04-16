@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Bell, X, CreditCard, Zap, CheckCircle, Info } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 
 type NotifType = 'payment_failed' | 'update' | 'success' | 'info'
 type Tab = 'all' | 'updates' | 'payments'
@@ -116,6 +117,7 @@ function saveRead(ids: Set<string>) {
 }
 
 export function NotificationPanel() {
+  const { t } = useLanguage()
   const [open, setOpen]   = useState(false)
   const [tab, setTab]     = useState<Tab>('all')
   const [notifs, setNotifs] = useState<Notification[]>([])
@@ -192,7 +194,7 @@ export function NotificationPanel() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">Notifications</span>
+              <span className="text-sm font-semibold text-foreground">{t('notifications') || 'Notifications'}</span>
               {unread > 0 && (
                 <span className="text-[11px] font-bold text-white bg-error rounded-full px-1.5 py-0.5 leading-none">
                   {unread}
@@ -204,7 +206,7 @@ export function NotificationPanel() {
               onClick={markAllRead}
               className="text-[11px] text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium transition-colors"
             >
-              Mark all as read
+              {t('markAllRead') || 'Mark all as read'}
             </button>
           </div>
 
@@ -231,7 +233,7 @@ export function NotificationPanel() {
             {filtered.length === 0 ? (
               <div className="py-12 text-center">
                 <Bell size={24} className="text-[--text-muted] mx-auto mb-2" />
-                <p className="text-sm text-[--text-muted]">No notifications</p>
+                <p className="text-sm text-[--text-muted]">{t('noNotifications') || 'No notifications'}</p>
               </div>
             ) : (
               filtered.map(n => {
@@ -287,7 +289,7 @@ export function NotificationPanel() {
               href="/settings"
               className="text-[11px] text-[--text-muted] hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
             >
-              Manage notification preferences
+              {t('manageNotificationPreferences') || 'Manage notification preferences'}
             </a>
           </div>
         </div>

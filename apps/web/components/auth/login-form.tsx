@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 
 export function LoginForm() {
   const router = useRouter()
   const supabase = createBrowserClient()
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -87,7 +89,7 @@ export function LoginForm() {
           />
         </div>
         <div>
-          <label className="label-mono block mb-2">Password</label>
+          <label className="label-mono block mb-2">{t('password')}</label>
           <input
             type="password"
             value={password}
@@ -109,7 +111,7 @@ export function LoginForm() {
           disabled={loading}
           className="w-full bg-grad-primary text-white font-display font-semibold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {loading ? 'Signing in...' : 'Sign in'}
+          {loading ? t('signingIn') : t('signIn')}
         </button>
       </form>
     </div>

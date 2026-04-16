@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLanguage } from '@/lib/i18n'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
@@ -49,6 +50,7 @@ const CONNECTIONS: Connection[] = [
 ]
 
 export function ConnectionsSection() {
+  const { t } = useLanguage()
   const [pending, setPending] = useState<string | null>(null)
 
   async function handleConnect(id: string) {
@@ -64,7 +66,7 @@ export function ConnectionsSection() {
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Connections</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">{t('connections')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
           Connect Clyro to your tools to publish and automate.
         </p>
@@ -84,7 +86,7 @@ export function ConnectionsSection() {
                 <p className="font-display font-semibold text-foreground">{c.name}</p>
                 {c.status === 'coming' && (
                   <span className="shrink-0 inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-[--text-muted]">
-                    Coming soon
+                    {t('connectionSoon')}
                   </span>
                 )}
               </div>
@@ -102,7 +104,7 @@ export function ConnectionsSection() {
                     : 'bg-foreground text-background hover:opacity-90',
                 )}
               >
-                {c.status === 'coming' ? 'Coming soon' : 'Connect'}
+                {c.status === 'coming' ? t('connectionSoon') : 'Connect'}
               </button>
             </div>
           </div>
