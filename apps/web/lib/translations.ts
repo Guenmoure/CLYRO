@@ -106,6 +106,22 @@ export const translations = {
     deleteVoiceLabel: 'Delete voice',
     searchVoiceLabel: 'Search a voice',
 
+    // Notifications
+    notifications: 'Notifications',
+    noNotifications: 'No notifications',
+    markAllRead: 'Mark all as read',
+    manageNotificationPreferences: 'Manage notification preferences',
+
+    // Dashboard
+    recent: 'Recent',
+    open: 'Open',
+    processing: 'Processing',
+    projectsGenerating: 'Projects generating',
+    noProjectsYet: 'No projects yet',
+    noProjectsProcessing: 'No projects processing',
+    createFirstProject: 'Create your first project',
+    viewAllProjects: 'View all projects',
+
     // Confirmation
     confirmDelete: 'Confirm delete',
   },
@@ -200,6 +216,20 @@ export const translations = {
     deleteVoiceLabel: 'Supprimer la voix',
     searchVoiceLabel: 'Rechercher une voix',
 
+    notifications: 'Notifications',
+    noNotifications: 'Aucune notification',
+    markAllRead: 'Tout marquer comme lu',
+    manageNotificationPreferences: 'Gérer les préférences de notification',
+
+    recent: 'Récents',
+    open: 'Ouvrir',
+    processing: 'En cours',
+    projectsGenerating: 'Projets en génération',
+    noProjectsYet: 'Aucun projet pour le moment',
+    noProjectsProcessing: 'Aucun projet en cours',
+    createFirstProject: 'Créer votre premier projet',
+    viewAllProjects: 'Voir tous les projets',
+
     confirmDelete: 'Confirmer la suppression',
   },
 
@@ -292,6 +322,20 @@ export const translations = {
 
     deleteVoiceLabel: 'Eliminar voz',
     searchVoiceLabel: 'Buscar una voz',
+
+    notifications: 'Notificaciones',
+    noNotifications: 'Sin notificaciones',
+    markAllRead: 'Marcar todo como leído',
+    manageNotificationPreferences: 'Gestionar preferencias de notificación',
+
+    recent: 'Recientes',
+    open: 'Abrir',
+    processing: 'Procesando',
+    projectsGenerating: 'Proyectos en generación',
+    noProjectsYet: 'Aún no hay proyectos',
+    noProjectsProcessing: 'No hay proyectos en proceso',
+    createFirstProject: 'Crea tu primer proyecto',
+    viewAllProjects: 'Ver todos los proyectos',
 
     confirmDelete: 'Confirmar eliminación',
   },
@@ -386,6 +430,20 @@ export const translations = {
     deleteVoiceLabel: 'Stimme löschen',
     searchVoiceLabel: 'Stimme suchen',
 
+    notifications: 'Benachrichtigungen',
+    noNotifications: 'Keine Benachrichtigungen',
+    markAllRead: 'Alle als gelesen markieren',
+    manageNotificationPreferences: 'Benachrichtigungseinstellungen verwalten',
+
+    recent: 'Neueste',
+    open: 'Öffnen',
+    processing: 'Verarbeitung',
+    projectsGenerating: 'Projekte werden generiert',
+    noProjectsYet: 'Noch keine Projekte',
+    noProjectsProcessing: 'Keine Projekte in Bearbeitung',
+    createFirstProject: 'Erstelle dein erstes Projekt',
+    viewAllProjects: 'Alle Projekte anzeigen',
+
     confirmDelete: 'Löschung bestätigen',
   },
 
@@ -478,6 +536,20 @@ export const translations = {
 
     deleteVoiceLabel: 'Excluir voz',
     searchVoiceLabel: 'Pesquisar uma voz',
+
+    notifications: 'Notificações',
+    noNotifications: 'Sem notificações',
+    markAllRead: 'Marcar tudo como lido',
+    manageNotificationPreferences: 'Gerenciar preferências de notificação',
+
+    recent: 'Recentes',
+    open: 'Abrir',
+    processing: 'Processando',
+    projectsGenerating: 'Projetos em geração',
+    noProjectsYet: 'Nenhum projeto ainda',
+    noProjectsProcessing: 'Nenhum projeto em processamento',
+    createFirstProject: 'Crie seu primeiro projeto',
+    viewAllProjects: 'Ver todos os projetos',
 
     confirmDelete: 'Confirmar exclusão',
   },
