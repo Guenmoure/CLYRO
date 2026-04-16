@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { Volume2, Mic, Music } from 'lucide-react'
@@ -355,7 +355,7 @@ function StepReview({
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-export default function MotionNewPage() {
+function MotionNewPageInner() {
   const router     = useRouter()
   const params     = useSearchParams()
   const draftParam = params.get('draft')
@@ -594,5 +594,13 @@ export default function MotionNewPage() {
         onNewProject={() => { setResultOpen(false); router.push('/motion/new') }}
       />
     </>
+  )
+}
+
+export default function MotionNewPage() {
+  return (
+    <Suspense>
+      <MotionNewPageInner />
+    </Suspense>
   )
 }

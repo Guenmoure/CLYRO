@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { createBrowserClient } from '@/lib/supabase'
@@ -456,7 +456,7 @@ function StepReview({
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-export default function FacelessNewPage() {
+function FacelessNewPageInner() {
   const router      = useRouter()
   const params      = useSearchParams()
   const draftParam  = params.get('draft')
@@ -748,5 +748,13 @@ export default function FacelessNewPage() {
         onNewProject={() => { setResultOpen(false); router.push('/faceless/new') }}
       />
     </>
+  )
+}
+
+export default function FacelessNewPage() {
+  return (
+    <Suspense>
+      <FacelessNewPageInner />
+    </Suspense>
   )
 }
