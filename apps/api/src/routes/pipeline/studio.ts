@@ -417,9 +417,9 @@ studioRouter.post('/render-final', authMiddleware, async (req, res) => {
 studioRouter.get('/avatars', authMiddleware, async (_req, res) => {
   try {
     const avatars = await listAvatars()
-    // HeyGen doesn't distinguish stock from personal in the default listing —
-    // front-end can filter by premium flag or name tag if needed.
-    res.json({ stock: avatars, personal: [] })
+    // Group by category for the frontend tabs
+    const categories = [...new Set(avatars.map((a) => a.category))]
+    res.json({ avatars, categories })
   } catch (err) {
     logger.error({ err }, 'studio.avatars failed')
     res.status(500).json({ error: 'Failed to list avatars', code: 'HEYGEN_ERROR' })

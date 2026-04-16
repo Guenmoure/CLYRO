@@ -422,10 +422,29 @@ export async function deleteStudioScene(sceneId: string) {
   )
 }
 
+export interface StudioAvatar {
+  avatar_id: string
+  avatar_name: string
+  gender: string
+  preview_image_url: string
+  preview_video_url?: string
+  premium?: boolean
+  avatar_type?: string
+  looks_count: number
+  looks: Array<{
+    look_id: string
+    name: string
+    preview_image_url: string
+    preview_video_url?: string
+  }>
+  tags: string[]
+  category: 'professional' | 'lifestyle' | 'ugc' | 'community' | 'other'
+}
+
 export async function getStudioAvatars() {
   return apiFetch<{
-    stock: Array<{ avatar_id: string; avatar_name: string; gender: string; preview_image_url: string }>
-    personal: Array<{ avatar_id: string; avatar_name: string; gender: string; preview_image_url: string }>
+    avatars: StudioAvatar[]
+    categories: string[]
   }>('/api/v1/pipeline/studio/avatars')
 }
 

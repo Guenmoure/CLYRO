@@ -8,13 +8,46 @@ import { logger } from '../lib/logger'
 const HEYGEN_BASE = 'https://api.heygen.com'
 const HEYGEN_API_KEY = process.env.HEYGEN_API_KEY ?? ''
 
-export interface HeyGenAvatar {
+/** Raw avatar object from HeyGen /v2/avatars */
+export interface HeyGenAvatarRaw {
   avatar_id: string
   avatar_name: string
-  gender: 'male' | 'female' | 'neutral'
+  gender: string
   preview_image_url: string
   preview_video_url?: string
   premium?: boolean
+  avatar_type?: string        // e.g. "public", "private", "custom"
+  group_id?: string
+  is_favorite?: boolean
+  looks?: Array<{
+    look_id: string
+    name: string
+    preview_image_url: string
+    preview_video_url?: string
+  }>
+  tags?: string[]             // e.g. ["professional", "lifestyle", "ugc"]
+  [key: string]: unknown      // capture any extra fields from the API
+}
+
+/** Normalized avatar for CLYRO frontend */
+export interface HeyGenAvatar {
+  avatar_id: string
+  avatar_name: string
+  gender: string
+  preview_image_url: string
+  preview_video_url?: string
+  premium?: boolean
+  avatar_type?: string
+  group_id?: string
+  looks_count: number
+  looks: Array<{
+    look_id: string
+    name: string
+    preview_image_url: string
+    preview_video_url?: string
+  }>
+  tags: string[]
+  category: 'professional' | 'lifestyle' | 'ugc' | 'community' | 'other'
 }
 
 export interface HeyGenVideoStatus {
@@ -95,6 +128,53 @@ export async function getVideoStatus(videoId: string): Promise<HeyGenVideoStatus
   return data.data
 }
 
+// ── Category inference from avatar tags / type / name ──────────────────
+
+const PROFESSIONAL_KEYWORDS = ['professional', 'business', 'corporate', 'formal', 'office']
+const LIFESTYLE_KEYWORDS = ['lifestyle', 'casual', 'everyday', 'friendly']
+const UGC_KEYWORDS = ['ugc', 'creator', 'influencer', 'selfie', 'content']
+
+function inferCategory(raw: HeyGenAvatarRaw): HeyGenAvatar['category'] {
+  // 1. Check tags first
+  const tags = (raw.tags ?? []).map((t) => t.toLowerCase())
+  if (tags.some((t) => PROFESSIONAL_KEYWORDS.includes(t))) return 'professional'
+  if (tags.some((t) => LIFESTYLE_KEYWORDS.includes(t))) return 'lifestyle'
+  if (tags.some((t) => UGC_KEYWORDS.includes(t))) return 'ugc'
+
+  // 2. Check avatar_type from HeyGen
+  const type = (raw.avatar_type ?? '').toLowerCase()
+  if (type === 'private' || type === 'custom') return 'community'
+
+  // 3. Fallback: if it has multiple looks → likely professional
+  if ((raw.looks ?? []).length >= 5) return 'professional'
+
+  return 'other'
+}
+
+function normalizeAvatar(raw: HeyGenAvatarRaw): HeyGenAvatar {
+  const looks = (raw.looks ?? []).map((l) => ({
+    look_id: l.look_id ?? '',
+    name: l.name ?? '',
+    preview_image_url: l.preview_image_url ?? '',
+    preview_video_url: l.preview_video_url,
+  }))
+
+  return {
+    avatar_id: raw.avatar_id,
+    avatar_name: raw.avatar_name,
+    gender: raw.gender ?? 'neutral',
+    preview_image_url: raw.preview_image_url,
+    preview_video_url: raw.preview_video_url,
+    premium: raw.premium,
+    avatar_type: raw.avatar_type,
+    group_id: raw.group_id,
+    looks_count: looks.length,
+    looks,
+    tags: raw.tags ?? [],
+    category: inferCategory(raw),
+  }
+}
+
 // ── List avatars ────────────────────────────────────────────────────────
 
 export async function listAvatars(): Promise<HeyGenAvatar[]> {
@@ -103,13 +183,21 @@ export async function listAvatars(): Promise<HeyGenAvatar[]> {
   const res = await fetch(`${HEYGEN_BASE}/v2/avatars`, {
     headers: { 'X-Api-Key': HEYGEN_API_KEY },
   })
-  const data = await res.json() as { data: { avatars: HeyGenAvatar[] }; message?: string }
+  const data = await res.json() as { data: { avatars: HeyGenAvatarRaw[] }; message?: string }
   if (!res.ok) {
     logger.warn({ status: res.status, body: data }, 'HeyGen listAvatars failed')
     return []
   }
-  const avatars = data.data.avatars ?? []
-  logger.info({ count: avatars.length }, 'HeyGen avatars loaded')
+  const raw = data.data.avatars ?? []
+
+  // Log a sample avatar to see full API shape (debug, remove later)
+  if (raw.length > 0) {
+    logger.info({ sampleKeys: Object.keys(raw[0]), sample: JSON.stringify(raw[0]).slice(0, 500) }, 'HeyGen avatar sample')
+  }
+
+  const avatars = raw.map(normalizeAvatar)
+  const cats = avatars.reduce((acc, a) => { acc[a.category] = (acc[a.category] || 0) + 1; return acc }, {} as Record<string, number>)
+  logger.info({ count: avatars.length, categories: cats }, 'HeyGen avatars loaded')
   return avatars
 }
 

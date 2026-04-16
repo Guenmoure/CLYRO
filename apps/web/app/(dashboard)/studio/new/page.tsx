@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
-import { analyzeStudio, getStudioAvatars } from '@/lib/api'
+import { analyzeStudio, getStudioAvatars, type StudioAvatar } from '@/lib/api'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { createBrowserClient } from '@/lib/supabase'
 
@@ -44,22 +44,43 @@ function StudioNewPageInner() {
   const [restored, setRestored] = useState(false)
 
   // Avatar list
-  const [avatars, setAvatars] = useState<Array<{ avatar_id: string; avatar_name: string; preview_image_url: string }>>([])
+  const [avatars, setAvatars] = useState<StudioAvatar[]>([])
   const [avatarId, setAvatarId] = useState<string>('')
+  const [selectedLookId, setSelectedLookId] = useState<string>('')
   const [loadingAvatars, setLoadingAvatars] = useState(true)
   const [avatarSearch, setAvatarSearch] = useState('')
+  const [avatarTab, setAvatarTab] = useState<string>('all')
+
+  const AVATAR_TABS = [
+    { key: 'all', label: 'All' },
+    { key: 'professional', label: 'Professional' },
+    { key: 'lifestyle', label: 'Lifestyle' },
+    { key: 'ugc', label: 'UGC' },
+    { key: 'community', label: 'Community' },
+  ]
 
   const filteredAvatars = useMemo(() => {
-    if (!avatarSearch.trim()) return avatars
-    const q = avatarSearch.toLowerCase()
-    return avatars.filter((av) => av.avatar_name.toLowerCase().includes(q))
-  }, [avatars, avatarSearch])
+    let list = avatars
+    if (avatarTab !== 'all') {
+      list = list.filter((av) => av.category === avatarTab)
+    }
+    if (avatarSearch.trim()) {
+      const q = avatarSearch.toLowerCase()
+      list = list.filter((av) => av.avatar_name.toLowerCase().includes(q))
+    }
+    return list
+  }, [avatars, avatarSearch, avatarTab])
+
+  const selectedAvatar = useMemo(
+    () => avatars.find((a) => a.avatar_id === avatarId),
+    [avatars, avatarId],
+  )
 
   useEffect(() => {
     getStudioAvatars()
       .then((data) => {
-        setAvatars(data.stock)
-        if (data.stock.length > 0) setAvatarId(data.stock[0]!.avatar_id)
+        setAvatars(data.avatars)
+        if (data.avatars.length > 0) setAvatarId(data.avatars[0]!.avatar_id)
       })
       .catch(() => setAvatars([]))
       .finally(() => setLoadingAvatars(false))
@@ -290,27 +311,48 @@ function StudioNewPageInner() {
             </Card>
           ) : (
             <>
+              {/* Category tabs */}
+              <div className="flex gap-1.5 flex-wrap">
+                {AVATAR_TABS.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setAvatarTab(tab.key)}
+                    className={cn(
+                      'px-3 py-1 rounded-full text-xs font-body font-medium border transition-all',
+                      avatarTab === tab.key
+                        ? 'bg-blue-500 text-white border-blue-500'
+                        : 'bg-card text-foreground border-border hover:border-blue-300',
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
               {/* Search avatars */}
-              {avatars.length > 8 && (
-                <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
-                  <input
-                    type="text"
-                    value={avatarSearch}
-                    onChange={(e) => setAvatarSearch(e.target.value)}
-                    placeholder="Search avatars..."
-                    className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-                  />
-                </div>
-              )}
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
+                <input
+                  type="text"
+                  value={avatarSearch}
+                  onChange={(e) => setAvatarSearch(e.target.value)}
+                  placeholder="Search avatars..."
+                  className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+
               {/* Scrollable avatar grid */}
-              <div className="max-h-[320px] overflow-y-auto rounded-xl pr-1 scrollbar-thin">
+              <div className="max-h-[380px] overflow-y-auto rounded-xl pr-1 scrollbar-thin">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {filteredAvatars.map((av) => (
                     <button
                       key={av.avatar_id}
                       type="button"
-                      onClick={() => setAvatarId(av.avatar_id)}
+                      onClick={() => {
+                        setAvatarId(av.avatar_id)
+                        setSelectedLookId('')
+                      }}
                       className={cn(
                         'relative rounded-xl overflow-hidden border transition-all card-interactive',
                         avatarId === av.avatar_id
@@ -327,18 +369,62 @@ function StudioNewPageInner() {
                           <Check size={11} className="text-white" />
                         </div>
                       )}
-                      <p className="font-body text-[11px] text-foreground px-2 py-1.5 truncate bg-card">
-                        {av.avatar_name}
-                      </p>
+                      <div className="flex items-center justify-between px-2 py-1.5 bg-card">
+                        <p className="font-body text-[11px] text-foreground truncate">
+                          {av.avatar_name}
+                        </p>
+                        {av.looks_count > 1 && (
+                          <span className="font-body text-[10px] text-[--text-muted] whitespace-nowrap ml-1">
+                            {av.looks_count} looks
+                          </span>
+                        )}
+                      </div>
                     </button>
                   ))}
                 </div>
-                {filteredAvatars.length === 0 && avatarSearch && (
+                {filteredAvatars.length === 0 && (
                   <p className="font-body text-sm text-[--text-muted] text-center py-6">
-                    No avatars matching &ldquo;{avatarSearch}&rdquo;
+                    {avatarSearch ? `No avatars matching "${avatarSearch}"` : 'No avatars in this category'}
                   </p>
                 )}
               </div>
+
+              {/* Looks selector — shown when selected avatar has multiple looks */}
+              {selectedAvatar && selectedAvatar.looks.length > 1 && (
+                <div className="space-y-2">
+                  <p className="font-body text-xs font-medium text-[--text-secondary]">
+                    {selectedAvatar.avatar_name} — {selectedAvatar.looks.length} looks
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                    {selectedAvatar.looks.map((look) => (
+                      <button
+                        key={look.look_id}
+                        type="button"
+                        onClick={() => setSelectedLookId(look.look_id)}
+                        className={cn(
+                          'relative shrink-0 w-16 rounded-lg overflow-hidden border transition-all',
+                          selectedLookId === look.look_id
+                            ? 'border-blue-500 ring-2 ring-blue-500/30'
+                            : 'border-border hover:border-blue-300',
+                        )}
+                      >
+                        <div
+                          className="aspect-[3/4] bg-cover bg-center bg-muted"
+                          style={{ backgroundImage: `url(${look.preview_image_url})` }}
+                        />
+                        {selectedLookId === look.look_id && (
+                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                            <Check size={9} className="text-white" />
+                          </div>
+                        )}
+                        <p className="font-body text-[9px] text-foreground px-1 py-0.5 truncate bg-card text-center">
+                          {look.name}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
