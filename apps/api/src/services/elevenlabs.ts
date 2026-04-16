@@ -37,7 +37,7 @@ export interface ElevenLabsVoice {
   voice_id: string
   name: string
   preview_url: string
-  category: 'premade' | 'cloned' | 'generated'
+  category: 'premade' | 'cloned' | 'generated' | 'professional' | 'high_quality'
   labels: {
     accent?: string
     age?: string
@@ -108,7 +108,11 @@ export async function listPublicVoices(filters?: VoiceFilters): Promise<ClyroVoi
     if (!res.ok) throw new Error(`ElevenLabs /voices error ${res.status}`)
 
     const data = (await res.json()) as { voices: ElevenLabsVoice[] }
-    let voices = (data.voices ?? []).filter((v) => v.category === 'premade')
+    // Return all voices from the account (premade, professional, cloned, generated)
+    // instead of filtering to only premade — the user's ElevenLabs plan may include
+    // professional and high-quality voices that were previously excluded.
+    let voices = data.voices ?? []
+    logger.info({ count: voices.length, categories: [...new Set(voices.map(v => v.category))] }, 'ElevenLabs voices loaded')
 
     if (filters?.gender)
       voices = voices.filter(
@@ -183,7 +187,7 @@ export async function getVoiceFilters(): Promise<{
   if (!res.ok) throw new Error(`ElevenLabs /voices error ${res.status}`)
 
   const data = (await res.json()) as { voices: ElevenLabsVoice[] }
-  const voices = (data.voices ?? []).filter((v) => v.category === 'premade')
+  const voices = data.voices ?? []
 
   // Construire la liste des langues disponibles à partir des accents présents
   const availableAccents = new Set(voices.map((v) => v.labels.accent?.toLowerCase()).filter(Boolean))
