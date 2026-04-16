@@ -97,61 +97,140 @@ const ACCENT_TO_LANGUAGE: Record<string, { label: string; flag: string }> = {
   hindi:      { label: 'Hindi',      flag: '🇮🇳' },
 }
 
-// ── 1. Voix publiques (bibliothèque premade) ───────────────────────────────
+// ── Shared voice from ElevenLabs library ───────────────────────────────────
+
+interface ElevenLabsSharedVoice {
+  voice_id: string
+  name: string
+  preview_url: string
+  category: string
+  labels: Record<string, string>  // flat key-value labels
+  description?: string
+  cloned_by_count?: number
+  usage_character_count_1y?: number
+}
+
+function normalizeSharedVoice(v: ElevenLabsSharedVoice): ClyroVoice {
+  // Shared voices use flat labels like { "accent": "american", "gender": "male", ... }
+  const accentKey = (v.labels?.accent ?? '').toLowerCase()
+  const langInfo = ACCENT_TO_LANGUAGE[accentKey]
+  return {
+    id: v.voice_id,
+    name: v.name,
+    previewUrl: v.preview_url,
+    category: 'public',
+    gender: v.labels?.gender,
+    accent: v.labels?.accent,
+    language: langInfo?.label,
+    languageFlag: langInfo?.flag,
+    age: v.labels?.age,
+    useCase: v.labels?.use_case,
+    description: v.labels?.description ?? v.description,
+  }
+}
+
+// ── 1. Fetch ALL voices: account voices + shared library ───────────────────
+
+async function fetchAccountVoices(): Promise<ElevenLabsVoice[]> {
+  const res = await fetch(`${BASE_URL}/voices`, {
+    headers: { 'xi-api-key': getApiKey() },
+  })
+  if (!res.ok) throw new Error(`ElevenLabs /voices error ${res.status}`)
+  const data = (await res.json()) as { voices: ElevenLabsVoice[] }
+  return data.voices ?? []
+}
+
+async function fetchSharedVoices(pageSize = 100, maxPages = 3): Promise<ElevenLabsSharedVoice[]> {
+  const all: ElevenLabsSharedVoice[] = []
+  let page = 0
+
+  while (page < maxPages) {
+    const url = `${BASE_URL}/shared-voices?page_size=${pageSize}&page=${page}`
+    const res = await fetch(url, {
+      headers: { 'xi-api-key': getApiKey() },
+    })
+    if (!res.ok) {
+      logger.warn({ status: res.status, page }, 'ElevenLabs /shared-voices page failed')
+      break
+    }
+    const data = (await res.json()) as { voices: ElevenLabsSharedVoice[]; has_more?: boolean; last_sort_id?: string }
+    const voices = data.voices ?? []
+    all.push(...voices)
+
+    // Stop if no more pages or fewer results than page size
+    if (!data.has_more || voices.length < pageSize) break
+    page++
+  }
+
+  return all
+}
 
 export async function listPublicVoices(filters?: VoiceFilters): Promise<ClyroVoice[]> {
   try {
-    const res = await fetch(`${BASE_URL}/voices`, {
-      headers: { 'xi-api-key': getApiKey() },
-    })
+    // Fetch account voices and shared library in parallel
+    const [accountVoices, sharedVoices] = await Promise.all([
+      fetchAccountVoices(),
+      fetchSharedVoices(),
+    ])
 
-    if (!res.ok) throw new Error(`ElevenLabs /voices error ${res.status}`)
+    logger.info({
+      accountCount: accountVoices.length,
+      sharedCount: sharedVoices.length,
+      accountCategories: [...new Set(accountVoices.map(v => v.category))],
+    }, 'ElevenLabs voices loaded')
 
-    const data = (await res.json()) as { voices: ElevenLabsVoice[] }
-    // Return all voices from the account (premade, professional, cloned, generated)
-    // instead of filtering to only premade — the user's ElevenLabs plan may include
-    // professional and high-quality voices that were previously excluded.
-    let voices = data.voices ?? []
-    logger.info({ count: voices.length, categories: [...new Set(voices.map(v => v.category))] }, 'ElevenLabs voices loaded')
+    // Normalize both sets
+    const normalizedAccount = accountVoices.map(normalizeVoice)
+    const normalizedShared = sharedVoices.map(normalizeSharedVoice)
 
+    // Merge and deduplicate (account voices take priority)
+    const seenIds = new Set(normalizedAccount.map((v) => v.id))
+    const merged = [
+      ...normalizedAccount,
+      ...normalizedShared.filter((v) => !seenIds.has(v.id)),
+    ]
+
+    let voices = merged
+
+    // Apply filters
     if (filters?.gender)
       voices = voices.filter(
-        (v) => v.labels.gender?.toLowerCase() === filters.gender!.toLowerCase()
+        (v) => v.gender?.toLowerCase() === filters.gender!.toLowerCase()
       )
     if (filters?.accent)
       voices = voices.filter((v) =>
-        v.labels.accent?.toLowerCase().includes(filters.accent!.toLowerCase())
+        v.accent?.toLowerCase().includes(filters.accent!.toLowerCase())
       )
     if (filters?.language) {
       const targetAccents = LANGUAGE_ACCENT_MAP[filters.language.toLowerCase()] ?? [filters.language.toLowerCase()]
       voices = voices.filter((v) => {
-        const accent = v.labels.accent?.toLowerCase() ?? ''
+        const accent = v.accent?.toLowerCase() ?? ''
         return targetAccents.some((a) => accent.includes(a))
       })
     }
     if (filters?.useCase)
       voices = voices.filter(
-        (v) => v.labels.use_case?.toLowerCase() === filters.useCase!.toLowerCase()
+        (v) => v.useCase?.toLowerCase() === filters.useCase!.toLowerCase()
       )
     if (filters?.search) {
       const q = filters.search.toLowerCase()
       voices = voices.filter(
         (v) =>
           v.name.toLowerCase().includes(q) ||
-          v.labels.description?.toLowerCase().includes(q)
+          v.description?.toLowerCase().includes(q)
       )
     }
 
-    // Trier : voix françaises en premier si pas de filtre langue spécifique
+    // Sort: French voices first if no language filter
     if (!filters?.language) {
       voices.sort((a, b) => {
-        const aFr = a.labels.accent?.toLowerCase() === 'french' ? -1 : 0
-        const bFr = b.labels.accent?.toLowerCase() === 'french' ? -1 : 0
+        const aFr = a.accent?.toLowerCase() === 'french' ? -1 : 0
+        const bFr = b.accent?.toLowerCase() === 'french' ? -1 : 0
         return aFr - bFr
       })
     }
 
-    return voices.map(normalizeVoice)
+    return voices
   } catch (err) {
     logger.error({ err }, 'ElevenLabs: listPublicVoices failed')
     return []
@@ -181,16 +260,10 @@ export async function getVoiceFilters(): Promise<{
   languages: Array<{ value: string; label: string; flag: string }>
   useCases: string[]
 }> {
-  const res = await fetch(`${BASE_URL}/voices`, {
-    headers: { 'xi-api-key': getApiKey() },
-  })
-  if (!res.ok) throw new Error(`ElevenLabs /voices error ${res.status}`)
+  // Use the full voice library (account + shared) to build filter options
+  const allVoices = await listPublicVoices()
 
-  const data = (await res.json()) as { voices: ElevenLabsVoice[] }
-  const voices = data.voices ?? []
-
-  // Construire la liste des langues disponibles à partir des accents présents
-  const availableAccents = new Set(voices.map((v) => v.labels.accent?.toLowerCase()).filter(Boolean))
+  const availableAccents = new Set(allVoices.map((v) => v.accent?.toLowerCase()).filter(Boolean))
   const languagesMap = new Map<string, { value: string; label: string; flag: string }>()
 
   for (const [langKey, accents] of Object.entries(LANGUAGE_ACCENT_MAP)) {
@@ -200,16 +273,16 @@ export async function getVoiceFilters(): Promise<{
     }
   }
 
-  // Toujours inclure Français en premier
+  // Always include French first
   const languagesOrdered = [
     ...(languagesMap.has('français') ? [languagesMap.get('français')!] : [{ value: 'français', label: 'Français', flag: '🇫🇷' }]),
     ...[...languagesMap.values()].filter((l) => l.value !== 'français'),
   ]
 
   return {
-    genders: [...new Set(voices.map((v) => v.labels.gender).filter(Boolean))] as string[],
+    genders: [...new Set(allVoices.map((v) => v.gender).filter(Boolean))] as string[],
     languages: languagesOrdered,
-    useCases: [...new Set(voices.map((v) => v.labels.use_case).filter(Boolean))] as string[],
+    useCases: [...new Set(allVoices.map((v) => v.useCase).filter(Boolean))] as string[],
   }
 }
 
@@ -465,7 +538,8 @@ function normalizeVoice(v: ElevenLabsVoice): ClyroVoice {
     id: v.voice_id,
     name: v.name,
     previewUrl: v.preview_url,
-    category: v.category === 'premade' ? 'public' : 'cloned',
+    // Map all ElevenLabs categories: premade, professional, high_quality → public; cloned/generated → cloned
+    category: (v.category === 'cloned' || v.category === 'generated') ? 'cloned' : 'public',
     gender: v.labels.gender,
     accent: v.labels.accent,
     language: langInfo?.label,
