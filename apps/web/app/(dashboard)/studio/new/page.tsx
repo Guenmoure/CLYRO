@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useState, useEffect, useMemo, Suspense, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   FileText, Youtube, ArrowRight, Loader2, Sparkles,
-  Globe, Wand2, Info, Check,
+  Globe, Wand2, Info, Check, Search,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -47,6 +47,13 @@ function StudioNewPageInner() {
   const [avatars, setAvatars] = useState<Array<{ avatar_id: string; avatar_name: string; preview_image_url: string }>>([])
   const [avatarId, setAvatarId] = useState<string>('')
   const [loadingAvatars, setLoadingAvatars] = useState(true)
+  const [avatarSearch, setAvatarSearch] = useState('')
+
+  const filteredAvatars = useMemo(() => {
+    if (!avatarSearch.trim()) return avatars
+    const q = avatarSearch.toLowerCase()
+    return avatars.filter((av) => av.avatar_name.toLowerCase().includes(q))
+  }, [avatars, avatarSearch])
 
   useEffect(() => {
     getStudioAvatars()
@@ -256,7 +263,14 @@ function StudioNewPageInner() {
 
         {/* Avatar picker */}
         <div className="space-y-3">
-          <p className="font-body text-sm font-semibold text-foreground">Avatar</p>
+          <div className="flex items-center justify-between">
+            <p className="font-body text-sm font-semibold text-foreground">Avatar</p>
+            {avatars.length > 0 && (
+              <span className="font-body text-xs text-[--text-muted]">
+                {filteredAvatars.length} avatar{filteredAvatars.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
           {loadingAvatars ? (
             <div className="grid grid-cols-4 gap-2">
               {[1, 2, 3, 4].map((i) => (
@@ -275,34 +289,57 @@ function StudioNewPageInner() {
               </div>
             </Card>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {avatars.slice(0, 8).map((av) => (
-                <button
-                  key={av.avatar_id}
-                  type="button"
-                  onClick={() => setAvatarId(av.avatar_id)}
-                  className={cn(
-                    'relative rounded-xl overflow-hidden border transition-all card-interactive',
-                    avatarId === av.avatar_id
-                      ? 'border-blue-500 ring-2 ring-blue-500/30'
-                      : 'border-border hover:border-border',
-                  )}
-                >
-                  <div
-                    className="aspect-[3/4] bg-cover bg-center bg-muted"
-                    style={{ backgroundImage: `url(${av.preview_image_url})` }}
+            <>
+              {/* Search avatars */}
+              {avatars.length > 8 && (
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
+                  <input
+                    type="text"
+                    value={avatarSearch}
+                    onChange={(e) => setAvatarSearch(e.target.value)}
+                    placeholder="Search avatars..."
+                    className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
                   />
-                  {avatarId === av.avatar_id && (
-                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow">
-                      <Check size={11} className="text-white" />
-                    </div>
-                  )}
-                  <p className="font-body text-[11px] text-foreground px-2 py-1.5 truncate bg-card">
-                    {av.avatar_name}
+                </div>
+              )}
+              {/* Scrollable avatar grid */}
+              <div className="max-h-[320px] overflow-y-auto rounded-xl pr-1 scrollbar-thin">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {filteredAvatars.map((av) => (
+                    <button
+                      key={av.avatar_id}
+                      type="button"
+                      onClick={() => setAvatarId(av.avatar_id)}
+                      className={cn(
+                        'relative rounded-xl overflow-hidden border transition-all card-interactive',
+                        avatarId === av.avatar_id
+                          ? 'border-blue-500 ring-2 ring-blue-500/30'
+                          : 'border-border hover:border-border',
+                      )}
+                    >
+                      <div
+                        className="aspect-[3/4] bg-cover bg-center bg-muted"
+                        style={{ backgroundImage: `url(${av.preview_image_url})` }}
+                      />
+                      {avatarId === av.avatar_id && (
+                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow">
+                          <Check size={11} className="text-white" />
+                        </div>
+                      )}
+                      <p className="font-body text-[11px] text-foreground px-2 py-1.5 truncate bg-card">
+                        {av.avatar_name}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+                {filteredAvatars.length === 0 && avatarSearch && (
+                  <p className="font-body text-sm text-[--text-muted] text-center py-6">
+                    No avatars matching &ldquo;{avatarSearch}&rdquo;
                   </p>
-                </button>
-              ))}
-            </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 

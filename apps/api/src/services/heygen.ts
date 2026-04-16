@@ -105,10 +105,12 @@ export async function listAvatars(): Promise<HeyGenAvatar[]> {
   })
   const data = await res.json() as { data: { avatars: HeyGenAvatar[] }; message?: string }
   if (!res.ok) {
-    logger.warn({ status: res.status }, 'HeyGen listAvatars failed')
+    logger.warn({ status: res.status, body: data }, 'HeyGen listAvatars failed')
     return []
   }
-  return data.data.avatars ?? []
+  const avatars = data.data.avatars ?? []
+  logger.info({ count: avatars.length }, 'HeyGen avatars loaded')
+  return avatars
 }
 
 // ── Instant Avatar (Digital Twin) ───────────────────────────────────────
