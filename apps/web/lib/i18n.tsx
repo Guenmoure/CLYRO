@@ -47,8 +47,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return value || key
   }
 
-  if (!hydrated) return children
-
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
       {children}
@@ -56,10 +54,18 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function useLanguage() {
-  const context = useContext(LanguageContext)
-  if (!context) {
-    throw new Error('useLanguage must be used within LanguageProvider')
-  }
-  return context
+// Default fallback — used during SSR before LanguageProvider mounts
+const DEFAULT_CONTEXT: LanguageContextType = {
+  lang: 'en',
+  setLang: () => {},
+  t: (key: string) => {
+    const keys = key.split('.')
+    let value: any = translations.en
+    for (const k of keys) value = value?.[k]
+    return value || key
+  },
+}
+
+export function useLanguage(): LanguageContextType {
+  return useContext(LanguageContext) ?? DEFAULT_CONTEXT
 }
