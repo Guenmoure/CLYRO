@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { HeroBanner } from '@/components/dashboard/HeroBanner'
 import { FeatureCards } from '@/components/dashboard/FeatureCards'
+import { DraftsSection } from '@/components/dashboard/DraftsSection'
 import ProjectSectionsClient from './ProjectSectionsClient'
 
 export const dynamic = 'force-dynamic'
@@ -105,7 +106,7 @@ export default async function DashboardPage() {
     return null
   }
 
-  const firstName = (profile?.full_name ?? userEmail ?? 'là').split(/[\s@]/)[0] ?? 'là'
+  const firstName = (profile?.full_name ?? userEmail ?? 'User').split(/[\s@]/)[0] ?? 'User'
   const plan      = profile?.plan ?? 'free'
   const credits   = profile?.credits ?? 0
   const isStarter = plan !== 'pro' && plan !== 'studio'
@@ -170,7 +171,10 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      {/* ── Recent / Drafts (client-only, no SSR) ────────────────── */}
+      {/* ── Drafts (client-only) ───────────────────────────────── */}
+      <DraftsSection />
+
+      {/* ── Recent projects (client-only, no SSR) ────────────────── */}
       {!errorMsg && (
         <ProjectSectionsClient
           userId={userId}

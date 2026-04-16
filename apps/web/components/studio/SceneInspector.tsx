@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { RefreshCw, RotateCcw, Loader2, Trash2, Wand2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -25,13 +25,13 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
   const [busy, setBusy]         = useState(false)
 
   // Sync state when scene changes
-  useState(() => {
+  useEffect(() => {
     if (scene) {
       setScript(scene.script)
       setType(scene.type)
       setFeedback('')
     }
-  })
+  }, [scene])
 
   if (!scene) {
     return (

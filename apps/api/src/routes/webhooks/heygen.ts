@@ -42,23 +42,15 @@ heygenWebhookRouter.post('/heygen', async (req, res) => {
     const { event_type, event_data } = payload
     const { video_id, callback_id, url, thumbnail_url, duration, error } = event_data
 
-    // Prefer callback_id (our own key); fall back to heygen_video_id for
-    // idempotency if the callback_id wasn't set.
-    const matchBy = callback_id ? { callback: callback_id } : { heygen: video_id }
-    const { data: scene } = callback_id
-      ? await supabaseAdmin
-          .from('studio_scenes')
-          .select('id, status, previous_versions')
-          .eq('heygen_video_id', video_id)
-          .maybeSingle()
-      : await supabaseAdmin
-          .from('studio_scenes')
-          .select('id, status, previous_versions')
-          .eq('heygen_video_id', video_id)
-          .maybeSingle()
+    // Look up scene by heygen_video_id (stored when we call generateAvatarScene)
+    const { data: scene } = await supabaseAdmin
+      .from('studio_scenes')
+      .select('id, status, previous_versions')
+      .eq('heygen_video_id', video_id)
+      .maybeSingle()
 
     if (!scene) {
-      logger.warn({ video_id, callback_id, matchBy }, 'HeyGen webhook: no matching scene')
+      logger.warn({ video_id, callback_id }, 'HeyGen webhook: no matching scene')
       res.status(200).json({ received: true, matched: false })
       return
     }
