@@ -2,7 +2,7 @@ import { LoginForm } from '@/components/auth/login-form'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Connexion — CLYRO',
+  title: 'Sign in — CLYRO',
 }
 
 export default function LoginPage() {
@@ -21,11 +21,11 @@ export default function LoginPage() {
       {/* Card */}
       <div className="glass glass-heavy rounded-2xl p-8">
         <div className="mb-6">
-          <h2 className="font-display text-xl font-semibold text-foreground">Connexion</h2>
+          <h2 className="font-display text-xl font-semibold text-foreground">Sign in</h2>
           <p className="text-[--text-secondary] text-sm mt-1 font-body">
-            Pas encore de compte ?{' '}
+            Don't have an account?{' '}
             <Link href="/signup" className="text-[--primary] hover:text-foreground transition-colors duration-200 font-medium">
-              S&apos;inscrire
+              Sign up
             </Link>
           </p>
         </div>

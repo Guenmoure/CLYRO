@@ -2,7 +2,7 @@ import { SignupForm } from '@/components/auth/signup-form'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Inscription — CLYRO',
+  title: 'Sign up — CLYRO',
 }
 
 export default function SignupPage() {
@@ -14,7 +14,7 @@ export default function SignupPage() {
           <span className="text-gradient-animated">C</span>LYRO
         </h1>
         <p className="text-[--text-muted] mt-2 font-body text-sm">
-          De ton script à ta vidéo en 10 minutes
+          From script to video in 10 minutes
         </p>
       </div>
 
@@ -22,12 +22,12 @@ export default function SignupPage() {
       <div className="glass glass-heavy rounded-2xl p-8">
         <div className="mb-6">
           <h2 className="font-display text-xl font-semibold text-foreground">
-            Créer un compte gratuit
+            Create a free account
           </h2>
           <p className="text-[--text-secondary] text-sm mt-1 font-body">
-            Déjà inscrit ?{' '}
+            Already signed up?{' '}
             <Link href="/login" className="text-[--primary] hover:text-foreground transition-colors duration-200 font-medium">
-              Se connecter
+              Sign in
             </Link>
           </p>
         </div>
@@ -35,7 +35,7 @@ export default function SignupPage() {
       </div>
 
       <p className="text-center text-xs text-[--text-disabled] font-body">
-        3 vidéos gratuites à l&apos;inscription. Aucune carte requise.
+        3 free videos on signup. No credit card required.
       </p>
     </div>
   )
