@@ -44,7 +44,7 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://fal.media",
               "media-src 'self' blob: https://*.supabase.co",
-              `connect-src 'self' https://*.supabase.co wss://*.supabase.co ${apiUrl}`,
+              `connect-src 'self' https://*.supabase.co wss://*.supabase.co ${apiUrl} https://api.elevenlabs.io https://fal.media`,
               "frame-ancestors 'none'",
             ].join('; '),
           },
