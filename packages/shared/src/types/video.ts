@@ -1,4 +1,61 @@
 export type VideoModule = 'faceless' | 'motion'
+
+// ── Animation Mode ─────────────────────────────────────────────────────────────
+
+export type AnimationMode = 'storyboard' | 'fast' | 'pro'
+
+export interface AnimationModeConfig {
+  mode:           AnimationMode
+  label:          string
+  description:    string
+  clipDuration:   number   // 0 = Ken Burns, 5 = fast, 8 = pro
+  model:          string | null
+  creditsPerMin:  number
+  generationTime: string
+  availablePlans: ('free' | 'starter' | 'pro' | 'creator' | 'studio')[]
+}
+
+export const ANIMATION_MODES: Record<AnimationMode, AnimationModeConfig> = {
+  storyboard: {
+    mode:           'storyboard',
+    label:          'Storyboard',
+    description:    'Images fixes avec Ken Burns. Rapide, économique, idéal pour tester.',
+    clipDuration:   0,
+    model:          null,
+    creditsPerMin:  5,
+    generationTime: '~2 min',
+    availablePlans: ['free', 'starter', 'pro', 'creator', 'studio'],
+  },
+  fast: {
+    mode:           'fast',
+    label:          'Fast Animation',
+    description:    'Clips animés 5 s en boucle. Meilleur rapport qualité/crédits.',
+    clipDuration:   5,
+    model:          'fal-ai/wan-i2v',
+    creditsPerMin:  25,
+    generationTime: '~5 min',
+    availablePlans: ['pro', 'creator', 'studio'],
+  },
+  pro: {
+    mode:           'pro',
+    label:          'Pro Animation',
+    description:    'Clips Kling v1.5 8 s. Qualité maximale pour le contenu premium.',
+    clipDuration:   8,
+    model:          'fal-ai/kling-video/v1.5/pro/image-to-video',
+    creditsPerMin:  80,
+    generationTime: '~15 min',
+    availablePlans: ['pro', 'creator', 'studio'],
+  },
+}
+
+/** Résout le mode effectif d'une scène (global + override par index). */
+export function resolveSceneMode(
+  globalMode: AnimationMode,
+  sceneIndex: number,
+  overrides:  Record<number, AnimationMode>
+): AnimationMode {
+  return overrides[sceneIndex] ?? globalMode
+}
 export type VideoStatus = 'pending' | 'processing' | 'storyboard' | 'visuals' | 'audio' | 'animation' | 'assembly' | 'done' | 'error'
 
 export type FacelessStyle =
@@ -121,6 +178,8 @@ export interface CreateFacelessVideoPayload {
   pre_generated_scenes?: PreGeneratedScene[]
   dialogue_mode?: boolean                // true = auto-detect & enable multi-character voices
   speaker_voices?: Record<string, string> // map speaker name → voice_id (optional override)
+  animation_mode?: AnimationMode         // global animation mode (default: storyboard)
+  animation_overrides?: Record<number, AnimationMode> // per-scene overrides
 }
 
 export interface MotionScene {
