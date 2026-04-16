@@ -6,12 +6,12 @@ import { cn } from '@/lib/utils'
 export type AvatarFilter = 'all' | 'professional' | 'lifestyle' | 'ugc' | 'community' | 'favorites'
 
 const FILTER_LABELS: Record<AvatarFilter, string> = {
-  all:          'Tous',
-  professional: 'Professionnel',
+  all:          'All',
+  professional: 'Professional',
   lifestyle:    'Lifestyle',
   ugc:          'UGC',
-  community:    'Communauté',
-  favorites:    'Favoris',
+  community:    'Community',
+  favorites:    'Favorites',
 }
 
 interface AvatarFiltersProps {
@@ -31,7 +31,7 @@ export function AvatarFilters({ search, activeFilter, onSearch, onFilter }: Avat
           type="text"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          placeholder="Rechercher un avatar..."
+          placeholder="Search avatars..."
           className="w-full bg-muted border border-border rounded-xl h-11 pl-10 pr-10 font-body text-sm text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
         />
         <button

@@ -1,13 +1,21 @@
 'use client'
 
-import { Search, SlidersHorizontal, ArrowUpDown } from 'lucide-react'
+import {
+  Search, SlidersHorizontal, ArrowUpDown,
+  MessageCircle, BookOpen, Users, Video,
+  GraduationCap, Film, Radio, Podcast, Youtube,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 const VOICE_CATEGORIES = [
-  'Conversationnel', 'Narration', 'Personnages',
-  'Réseaux sociaux', 'Éducatif', 'Cinématique',
-  'Newscast', 'Sports', 'Podcast', 'YouTube',
+  { key: 'conversational', label: 'Conversational', icon: MessageCircle },
+  { key: 'narration',      label: 'Narration',      icon: BookOpen },
+  { key: 'characters',     label: 'Characters',     icon: Users },
+  { key: 'social media',   label: 'Social Media',   icon: Video },
+  { key: 'educational',    label: 'Educational',    icon: GraduationCap },
+  { key: 'news',           label: 'News',           icon: Radio },
+  { key: 'video games',    label: 'Video Games',    icon: Film },
 ]
 
 interface VoiceFiltersProps {
@@ -29,19 +37,19 @@ export function VoiceFilters({ search, activeCategory, onSearch, onCategory, onS
             type="text"
             value={search}
             onChange={(e) => onSearch(e.target.value)}
-            placeholder="Rechercher dans les voix..."
+            placeholder="Search library voices..."
             className="w-full bg-muted border border-border rounded-xl h-10 pl-9 pr-4 font-body text-sm text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
           />
         </div>
         <Button variant="secondary" size="sm" leftIcon={<SlidersHorizontal size={13} />}>
-          Filtres
+          Filters
         </Button>
         {onSort && (
           <button
             type="button"
             onClick={onSort}
             className="p-2 rounded-xl bg-muted border border-border hover:bg-border transition-colors"
-            aria-label="Trier"
+            aria-label="Sort"
           >
             <ArrowUpDown size={14} className="text-[--text-secondary]" />
           </button>
@@ -49,20 +57,21 @@ export function VoiceFilters({ search, activeCategory, onSearch, onCategory, onS
       </div>
 
       {/* Category pills — horizontally scrollable */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-        {VOICE_CATEGORIES.map((cat) => (
+      <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+        {VOICE_CATEGORIES.map(({ key, label, icon: Icon }) => (
           <button
-            key={cat}
+            key={key}
             type="button"
-            onClick={() => onCategory(activeCategory === cat ? null : cat)}
+            onClick={() => onCategory(activeCategory === key ? null : key)}
             className={cn(
-              'shrink-0 px-3 py-1.5 rounded-full font-body text-xs border transition-all duration-150 whitespace-nowrap',
-              activeCategory === cat
-                ? 'bg-blue-500/15 border-blue-500/40 text-blue-400'
-                : 'bg-muted border-border text-[--text-secondary] hover:border-border hover:text-foreground',
+              'shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-body text-xs font-medium border transition-all duration-150 whitespace-nowrap',
+              activeCategory === key
+                ? 'bg-foreground text-background border-foreground'
+                : 'bg-card text-foreground border-border hover:border-blue-500/40',
             )}
           >
-            {cat}
+            <Icon size={12} />
+            {label}
           </button>
         ))}
       </div>

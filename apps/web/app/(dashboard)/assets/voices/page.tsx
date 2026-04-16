@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo } from 'react'
-import { Plus, ChevronRight, TrendingUp, Sparkles } from 'lucide-react'
+import { Plus, ChevronRight, TrendingUp, Sparkles, Mic2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { VoiceCard } from '@/components/assets/VoiceCard'
 import { VoiceFilters } from '@/components/assets/VoiceFilters'
@@ -30,7 +30,7 @@ function VoiceSkeleton() {
 
 function CollectionCard({ title, icon }: { title: string; icon: React.ReactNode }) {
   return (
-    <div className="shrink-0 w-48 rounded-xl bg-muted border border-border p-4 cursor-pointer hover:border-border hover:bg-muted/80 transition-all">
+    <div className="shrink-0 w-48 rounded-xl bg-muted border border-border p-4 cursor-pointer hover:border-blue-500/30 hover:bg-muted/80 transition-all">
       <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3">
         {icon}
       </div>
@@ -41,15 +41,15 @@ function CollectionCard({ title, icon }: { title: string; icon: React.ReactNode 
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-export default function VoicesPage() {
-  const [allVoices,   setAllVoices]   = useState<ClyroVoice[]>([])
-  const [myVoices,    setMyVoices]    = useState<ClyroVoice[]>([])
-  const [loading,     setLoading]     = useState(true)
-  const [activeTab,   setActiveTab]   = useState<VoiceTab>('explore')
-  const [search,      setSearch]      = useState('')
-  const [category,    setCategory]    = useState<string | null>(null)
-  const [playingId,   setPlayingId]   = useState<string | null>(null)
-  const [selected,    setSelected]    = useState<ClyroVoice | null>(null)
+export default function VoicesAssetsPage() {
+  const [allVoices, setAllVoices]   = useState<ClyroVoice[]>([])
+  const [myVoices, setMyVoices]     = useState<ClyroVoice[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [activeTab, setActiveTab]   = useState<VoiceTab>('explore')
+  const [search, setSearch]         = useState('')
+  const [category, setCategory]     = useState<string | null>(null)
+  const [playingId, setPlayingId]   = useState<string | null>(null)
+  const [selected, setSelected]     = useState<ClyroVoice | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
@@ -86,13 +86,15 @@ export default function VoicesPage() {
 
   const activeVoices = activeTab === 'my_voices' ? myVoices : allVoices
 
-  const trendingVoices = useMemo(() => allVoices.slice(0, 6), [allVoices])
+  const trendingVoices = useMemo(
+    () => allVoices.filter((v) => v.previewUrl).slice(0, 6),
+    [allVoices],
+  )
 
   const filtered = useMemo(() => {
     let list = activeVoices
     if (category) {
       list = list.filter((v) =>
-        v.category?.toLowerCase().includes(category.toLowerCase()) ||
         v.useCase?.toLowerCase().includes(category.toLowerCase()),
       )
     }
@@ -100,7 +102,7 @@ export default function VoicesPage() {
       const q = search.toLowerCase()
       list = list.filter((v) =>
         v.name.toLowerCase().includes(q) ||
-        v.description.toLowerCase().includes(q) ||
+        v.description?.toLowerCase().includes(q) ||
         v.accent?.toLowerCase().includes(q) ||
         v.language?.toLowerCase().includes(q),
       )
@@ -108,10 +110,10 @@ export default function VoicesPage() {
     return list
   }, [activeVoices, category, search])
 
-  const TABS: { key: VoiceTab; label: string }[] = [
-    { key: 'explore',   label: 'Explorer'          },
-    { key: 'my_voices', label: 'Mes Voix'          },
-    { key: 'default',   label: 'Voix par défaut'   },
+  const TABS: { key: VoiceTab; label: string; count?: number }[] = [
+    { key: 'explore',   label: 'Explore',        count: allVoices.length },
+    { key: 'my_voices', label: 'My Voices',       count: myVoices.length },
+    { key: 'default',   label: 'Default Voices' },
   ]
 
   return (
@@ -119,29 +121,34 @@ export default function VoicesPage() {
       {/* Sub-header: tabs + CTA */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border/30 bg-card/40">
         <div className="flex gap-1">
-          {TABS.map(({ key, label }) => (
+          {TABS.map(({ key, label, count }) => (
             <button
               key={key}
               type="button"
               onClick={() => setActiveTab(key)}
               className={cn(
-                'px-3 py-1.5 rounded-lg font-body text-sm transition-all duration-150',
+                'flex items-center gap-2 px-3 py-1.5 rounded-lg font-body text-sm transition-all duration-150',
                 activeTab === key
-                  ? 'bg-blue-500/10 text-blue-400'
-                  : 'text-[--text-secondary] hover:text-foreground hover:bg-muted',
+                  ? 'bg-blue-500/10 text-blue-500'
+                  : 'text-[--text-muted] hover:text-foreground hover:bg-muted',
               )}
             >
               {label}
+              {count !== undefined && (
+                <span className={cn(
+                  'font-body text-[10px] rounded-full px-1.5 py-0.5',
+                  activeTab === key ? 'bg-blue-500/20 text-blue-500' : 'bg-muted text-[--text-muted]',
+                )}>
+                  {count}
+                </span>
+              )}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">Docs</Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus size={13} />}>
-            Créer une voix
-          </Button>
-        </div>
+        <Button variant="primary" size="sm" leftIcon={<Plus size={13} />}>
+          Create Voice
+        </Button>
       </div>
 
       {/* Filters */}
@@ -156,11 +163,11 @@ export default function VoicesPage() {
       <div className="px-6 py-6 space-y-8">
 
         {/* Trending voices — only on Explore tab */}
-        {activeTab === 'explore' && !loading && trendingVoices.length > 0 && (
+        {activeTab === 'explore' && !loading && trendingVoices.length > 0 && !search && !category && (
           <section>
             <div className="flex items-center gap-2 mb-4">
-              <TrendingUp size={16} className="text-blue-400" />
-              <h2 className="font-display text-lg text-foreground">Voix tendance</h2>
+              <TrendingUp size={16} className="text-blue-500" />
+              <h2 className="font-body text-base font-semibold text-foreground">Trending voices</h2>
               <ChevronRight size={14} className="text-[--text-muted]" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -178,20 +185,18 @@ export default function VoicesPage() {
         )}
 
         {/* Collections carousel — only on Explore tab */}
-        {activeTab === 'explore' && !loading && (
+        {activeTab === 'explore' && !loading && !search && !category && (
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Sparkles size={15} className="text-purple-400" />
-                <h2 className="font-display text-lg text-foreground">Sélectionnées pour vous</h2>
-              </div>
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles size={15} className="text-purple-400" />
+              <h2 className="font-body text-base font-semibold text-foreground">Handpicked for your use case</h2>
             </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+            <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-2">
               {[
-                { title: 'Meilleures voix ElevenLabs v3',  icon: <Sparkles size={14} className="text-blue-400" /> },
-                { title: 'Voix populaires TikTok',          icon: <TrendingUp size={14} className="text-pink-400" /> },
-                { title: 'Voix Studio-Qualité',             icon: <Sparkles size={14} className="text-amber-400" /> },
-                { title: 'Voix de Narration',               icon: <Sparkles size={14} className="text-emerald-400" /> },
+                { title: 'Best voices for Eleven v3',      icon: <Sparkles size={14} className="text-blue-400" /> },
+                { title: 'Popular TikTok voices',           icon: <TrendingUp size={14} className="text-pink-400" /> },
+                { title: 'Studio-Quality Conversational',   icon: <Sparkles size={14} className="text-amber-400" /> },
+                { title: 'Narration voices',                icon: <Sparkles size={14} className="text-emerald-400" /> },
                 { title: 'Podcasts & YouTube',              icon: <TrendingUp size={14} className="text-purple-400" /> },
               ].map((col) => (
                 <CollectionCard key={col.title} title={col.title} icon={col.icon} />
@@ -202,16 +207,14 @@ export default function VoicesPage() {
 
         {/* All voices list */}
         <section>
-          {activeTab === 'explore' && (
-            <h2 className="font-display text-lg text-foreground mb-4">
-              Toutes les voix
-              {!loading && (
-                <span className="font-mono text-sm text-[--text-muted] ml-2 font-normal">
-                  ({filtered.length})
-                </span>
-              )}
-            </h2>
-          )}
+          <h2 className="font-body text-base font-semibold text-foreground mb-4">
+            {activeTab === 'my_voices' ? 'My voices' : activeTab === 'default' ? 'Default voices' : 'All voices'}
+            {!loading && (
+              <span className="font-body text-sm text-[--text-muted] ml-2 font-normal">
+                ({filtered.length})
+              </span>
+            )}
+          </h2>
 
           {loading ? (
             <div className="space-y-2">
@@ -219,10 +222,11 @@ export default function VoicesPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Mic2 size={24} className="text-[--text-muted] mb-2" />
               <p className="font-body text-sm text-[--text-muted]">
                 {activeTab === 'my_voices'
-                  ? 'Tu n\'as pas encore de voix clonée.'
-                  : 'Aucune voix ne correspond à ta recherche.'}
+                  ? 'You don\'t have any cloned voices yet.'
+                  : 'No voices match your search.'}
               </p>
             </div>
           ) : (

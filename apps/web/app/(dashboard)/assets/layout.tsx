@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 
 const TABS = [
   { href: '/assets/avatars', label: 'Avatars',  icon: User },
-  { href: '/assets/voices',  label: 'Voix off', icon: Mic  },
+  { href: '/assets/voices',  label: 'Voices',   icon: Mic  },
 ]
 
 export default function AssetsLayout({ children }: { children: React.ReactNode }) {
@@ -21,10 +21,10 @@ export default function AssetsLayout({ children }: { children: React.ReactNode }
           <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
             <Package size={16} className="text-blue-500" />
           </div>
-          <h1 className="font-display text-2xl text-foreground">Assets</h1>
+          <h1 className="font-body text-2xl font-bold text-foreground">Assets</h1>
         </div>
-        <p className="font-body text-sm text-[--text-secondary] mb-4">
-          Tes avatars et voix pour tous tes projets CLYRO.
+        <p className="font-body text-sm text-[--text-muted] mb-4">
+          Your avatars and voices for all CLYRO projects.
         </p>
 
         {/* Tab navigation */}

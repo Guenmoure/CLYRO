@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { UserPlus, Video } from 'lucide-react'
+import { UserPlus, Video, ChevronDown, ChevronUp, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { AvatarCard } from '@/components/assets/AvatarCard'
 import { AvatarFilters, type AvatarFilter } from '@/components/assets/AvatarFilters'
 import { AvatarPreviewModal } from '@/components/assets/AvatarPreviewModal'
 import { CreateAvatarModal } from '@/components/assets/CreateAvatarModal'
@@ -12,12 +11,49 @@ import { cn } from '@/lib/utils'
 
 type AvatarTab = 'public' | 'my'
 
+/** A group of avatars sharing the same base name (e.g. "Annie") */
+interface AvatarGroup {
+  baseName: string
+  avatars: StudioAvatar[]        // All avatars/looks under this name
+  totalLooks: number
+  mainPreview: string            // preview_image_url of the first avatar
+  category: StudioAvatar['category']
+}
+
+/** Group avatars by their base name (removing look suffixes) */
+function groupAvatarsByName(avatars: StudioAvatar[]): AvatarGroup[] {
+  const map = new Map<string, StudioAvatar[]>()
+
+  for (const av of avatars) {
+    // Extract base name — strip common suffixes like " - Look 1", " (casual)", " V2", etc.
+    const baseName = av.avatar_name
+      .replace(/\s*[-–]\s*(look|style|outfit|version|v)\s*\d*/i, '')
+      .replace(/\s*\(.*\)\s*$/, '')
+      .trim()
+    const key = baseName.toLowerCase()
+
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push(av)
+  }
+
+  return Array.from(map.entries()).map(([, avatars]) => {
+    const main = avatars[0]!
+    // Total looks = sum of each avatar's looks, or the number of avatars if no looks data
+    const totalLooks = avatars.reduce((sum, a) => sum + Math.max(a.looks_count, 1), 0)
+    return {
+      baseName: main.avatar_name.replace(/\s*[-–]\s*(look|style|outfit|version|v)\s*\d*/i, '').replace(/\s*\(.*\)\s*$/, '').trim(),
+      avatars,
+      totalLooks,
+      mainPreview: main.preview_image_url,
+      category: main.category,
+    }
+  }).sort((a, b) => a.baseName.localeCompare(b.baseName))
+}
+
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
 function AvatarSkeleton() {
-  return (
-    <div className="aspect-[3/4] rounded-2xl bg-muted animate-shimmer" />
-  )
+  return <div className="aspect-[3/4] rounded-2xl bg-muted animate-pulse" />
 }
 
 // ── Empty personal avatar state ────────────────────────────────────────────────
@@ -28,17 +64,122 @@ function NoPersonalAvatar({ onCreate }: { onCreate: () => void }) {
       <div className="w-20 h-20 rounded-full bg-muted border border-border flex items-center justify-center mb-4">
         <UserPlus size={30} className="text-[--text-muted]" />
       </div>
-      <h3 className="font-display text-lg text-foreground">Crée ton premier avatar</h3>
-      <p className="font-body text-sm text-[--text-secondary] mt-2 max-w-sm">
-        Clone ton apparence en 2 minutes. Upload une courte vidéo et CLYRO génère
-        ton avatar IA via HeyGen Instant Avatar.
+      <h3 className="font-body text-lg font-semibold text-foreground">Create your first avatar</h3>
+      <p className="font-body text-sm text-[--text-muted] mt-2 max-w-sm">
+        Clone your appearance in 2 minutes. Upload a short video and CLYRO generates your AI avatar via HeyGen Instant Avatar.
       </p>
       <Button variant="primary" className="mt-6" leftIcon={<Video size={14} />} onClick={onCreate}>
-        Créer mon avatar
+        Create my avatar
       </Button>
-      <p className="font-mono text-xs text-[--text-muted] mt-3">
-        Disponible à partir du plan Creator
-      </p>
+    </div>
+  )
+}
+
+// ── Avatar Group Card (grouped by name, expandable looks) ──────────────────────
+
+function AvatarGroupCard({
+  group,
+  isExpanded,
+  onToggle,
+  onSelectAvatar,
+}: {
+  group: AvatarGroup
+  isExpanded: boolean
+  onToggle: () => void
+  onSelectAvatar: (av: StudioAvatar) => void
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden transition-all hover:border-blue-500/30">
+      {/* Main card — click to expand */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full text-left"
+      >
+        <div className="relative aspect-[3/4] bg-muted overflow-hidden group">
+          {group.mainPreview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={group.mainPreview}
+              alt={group.baseName}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+              <span className="font-body text-4xl text-foreground/40">
+                {group.baseName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+
+          {/* Info overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-3">
+            <p className="font-body text-sm text-white font-semibold leading-tight truncate">
+              {group.baseName}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="font-body text-xs text-white/60">
+                {group.totalLooks} look{group.totalLooks !== 1 ? 's' : ''}
+              </span>
+              {isExpanded
+                ? <ChevronUp size={12} className="text-white/60" />
+                : <ChevronDown size={12} className="text-white/60" />
+              }
+            </div>
+          </div>
+        </div>
+      </button>
+
+      {/* Expanded looks grid */}
+      {isExpanded && (
+        <div className="p-3 border-t border-border bg-muted/30">
+          <p className="font-body text-xs font-medium text-[--text-muted] mb-2">
+            {group.totalLooks} look{group.totalLooks !== 1 ? 's' : ''} available
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {group.avatars.map((av) => {
+              // If avatar has individual looks, show them
+              if (av.looks.length > 0) {
+                return av.looks.map((look) => (
+                  <button
+                    key={look.look_id}
+                    type="button"
+                    onClick={() => onSelectAvatar(av)}
+                    className="relative rounded-xl overflow-hidden border border-border hover:border-blue-500 transition-all group/look"
+                  >
+                    <div
+                      className="aspect-[3/4] bg-cover bg-center bg-muted"
+                      style={{ backgroundImage: `url(${look.preview_image_url})` }}
+                    />
+                    <p className="font-body text-[10px] text-foreground px-1.5 py-1 truncate bg-card text-center">
+                      {look.name || av.avatar_name}
+                    </p>
+                  </button>
+                ))
+              }
+              // Otherwise show the avatar itself as a look
+              return (
+                <button
+                  key={av.avatar_id}
+                  type="button"
+                  onClick={() => onSelectAvatar(av)}
+                  className="relative rounded-xl overflow-hidden border border-border hover:border-blue-500 transition-all"
+                >
+                  <div
+                    className="aspect-[3/4] bg-cover bg-center bg-muted"
+                    style={{ backgroundImage: `url(${av.preview_image_url})` }}
+                  />
+                  <p className="font-body text-[10px] text-foreground px-1.5 py-1 truncate bg-card text-center">
+                    {av.avatar_name}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -46,13 +187,14 @@ function NoPersonalAvatar({ onCreate }: { onCreate: () => void }) {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function AvatarsPage() {
-  const [avatars,      setAvatars]      = useState<StudioAvatar[]>([])
-  const [loading,      setLoading]      = useState(true)
-  const [activeTab,    setActiveTab]    = useState<AvatarTab>('public')
-  const [search,       setSearch]       = useState('')
+  const [avatars, setAvatars]           = useState<StudioAvatar[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [activeTab, setActiveTab]       = useState<AvatarTab>('public')
+  const [search, setSearch]             = useState('')
   const [activeFilter, setActiveFilter] = useState<AvatarFilter>('all')
-  const [selected,     setSelected]     = useState<StudioAvatar | null>(null)
-  const [createOpen,   setCreateOpen]   = useState(false)
+  const [selected, setSelected]         = useState<StudioAvatar | null>(null)
+  const [createOpen, setCreateOpen]     = useState(false)
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
 
   useEffect(() => {
     getStudioAvatars()
@@ -66,7 +208,8 @@ export default function AvatarsPage() {
     [avatars],
   )
 
-  const filtered = useMemo(() => {
+  // Filter then group
+  const groups = useMemo(() => {
     let list = activeTab === 'my' ? personalAvatars : avatars
     if (activeFilter !== 'all' && activeFilter !== 'favorites') {
       list = list.filter((a) => a.category === activeFilter)
@@ -75,12 +218,17 @@ export default function AvatarsPage() {
       const q = search.toLowerCase()
       list = list.filter((a) => a.avatar_name.toLowerCase().includes(q))
     }
-    return list
+    return groupAvatarsByName(list)
   }, [avatars, personalAvatars, activeTab, activeFilter, search])
 
+  const totalAvatars = useMemo(
+    () => groups.reduce((sum, g) => sum + g.avatars.length, 0),
+    [groups],
+  )
+
   const tabs: { key: AvatarTab; label: string; count: number }[] = [
-    { key: 'public', label: 'Avatars Publics', count: avatars.length },
-    { key: 'my',     label: 'Mes Avatars',     count: personalAvatars.length },
+    { key: 'public', label: 'Public Avatars', count: avatars.length },
+    { key: 'my',     label: 'My Avatars',     count: personalAvatars.length },
   ]
 
   return (
@@ -96,14 +244,14 @@ export default function AvatarsPage() {
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 rounded-lg font-body text-sm transition-all duration-150',
                 activeTab === key
-                  ? 'bg-blue-500/10 text-blue-400'
-                  : 'text-[--text-secondary] hover:text-foreground hover:bg-muted',
+                  ? 'bg-blue-500/10 text-blue-500'
+                  : 'text-[--text-muted] hover:text-foreground hover:bg-muted',
               )}
             >
               {label}
               <span className={cn(
-                'font-mono text-[10px] rounded-full px-1.5 py-0.5',
-                activeTab === key ? 'bg-blue-500/20 text-blue-400' : 'bg-muted text-[--text-muted]',
+                'font-body text-[10px] rounded-full px-1.5 py-0.5',
+                activeTab === key ? 'bg-blue-500/20 text-blue-500' : 'bg-muted text-[--text-muted]',
               )}>
                 {count}
               </span>
@@ -117,7 +265,7 @@ export default function AvatarsPage() {
           leftIcon={<UserPlus size={13} />}
           onClick={() => setCreateOpen(true)}
         >
-          Créer un avatar
+          Create avatar
         </Button>
       </div>
 
@@ -129,7 +277,7 @@ export default function AvatarsPage() {
         onFilter={setActiveFilter}
       />
 
-      {/* Grid */}
+      {/* Grid — grouped by name */}
       <div className="px-6 py-6">
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -139,29 +287,32 @@ export default function AvatarsPage() {
           <div className="grid">
             <NoPersonalAvatar onCreate={() => setCreateOpen(true)} />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : groups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <p className="font-body text-sm text-[--text-muted]">
-              Aucun avatar ne correspond à ta recherche.
+              No avatars match your search.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {filtered.map((avatar) => (
-              <AvatarCard
-                key={avatar.avatar_id}
-                avatar={avatar}
-                onClick={() => setSelected(avatar)}
-                onUse={() => setSelected(avatar)}
+            {groups.map((group) => (
+              <AvatarGroupCard
+                key={group.baseName}
+                group={group}
+                isExpanded={expandedGroup === group.baseName}
+                onToggle={() => setExpandedGroup(
+                  expandedGroup === group.baseName ? null : group.baseName
+                )}
+                onSelectAvatar={setSelected}
               />
             ))}
           </div>
         )}
 
         {/* Footer count */}
-        {!loading && filtered.length > 0 && (
-          <p className="font-mono text-xs text-[--text-muted] text-center mt-6">
-            {filtered.length} avatar{filtered.length > 1 ? 's' : ''}
+        {!loading && groups.length > 0 && (
+          <p className="font-body text-xs text-[--text-muted] text-center mt-6">
+            {groups.length} avatar{groups.length > 1 ? 's' : ''} &middot; {totalAvatars} total look{totalAvatars > 1 ? 's' : ''}
           </p>
         )}
       </div>
