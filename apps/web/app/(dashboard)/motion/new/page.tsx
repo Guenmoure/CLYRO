@@ -11,6 +11,7 @@ import { StyleCarousel, type StyleConfig } from '@/components/creation/StyleCaro
 import { VoicePickerModal, type ClyroVoice } from '@/components/creation/VoicePickerModal'
 import { ResultModal } from '@/components/creation/ResultModal'
 import { Badge } from '@/components/ui/badge'
+import { toast } from '@/components/ui/toast'
 import {
   startMotionGeneration,
   getPublicVoices,
@@ -394,6 +395,9 @@ function MotionNewPageInner() {
         if (s.secondaryColor) setSecondaryColor(s.secondaryColor as string)
         if (s.fontFamily)     setFontFamily(s.fontFamily as string)
         if (s.selectedVoice)  setSelectedVoice(s.selectedVoice as ClyroVoice)
+        if (typeof data.wizard_step === 'number' && data.wizard_step >= 4) {
+          toast.success('Projet restauré — tes scènes sont intactes, aucun crédit supplémentaire consommé')
+        }
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftParam])

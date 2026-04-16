@@ -6,7 +6,7 @@ import { createBrowserClient } from '@/lib/supabase'
 const AUTOSAVE_MS = 30_000   // 30 s interval
 
 export interface DraftSaveOptions {
-  module:       'faceless' | 'motion'
+  module:       'faceless' | 'motion' | 'brand' | 'studio'
   title:        string
   style:        string
   currentStep:  number
@@ -53,15 +53,28 @@ export function useDraftSave({
     setIsSaving(true)
     try {
       const { module: mod, title: t, style: s, currentStep: step, state: st } = latestRef.current
+
+      // Determine expiry: Pro users get no expiry, others get 7 days
+      const { data: profile } = await (supabase
+        .from('profiles')
+        .select('plan')
+        .eq('id', session.user.id)
+        .single() as Promise<any>)
+      const isPro = profile?.plan === 'pro' || profile?.plan === 'business'
+      const expiresAt = isPro
+        ? null
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+
       const payload = {
-        user_id:      session.user.id,
-        module:       mod,
-        style:        s || 'draft',
-        title:        t || 'Sans titre',
-        status:       'draft' as const,
-        wizard_step:  step + 1,
-        wizard_state: st,
-        updated_at:   new Date().toISOString(),
+        user_id:            session.user.id,
+        module:             mod,
+        style:              s || 'draft',
+        title:              t || 'Sans titre',
+        status:             'draft' as const,
+        wizard_step:        step + 1,
+        wizard_state:       st,
+        draft_expires_at:   expiresAt,
+        updated_at:         new Date().toISOString(),
       }
 
       if (latestRef.current.draftId) {

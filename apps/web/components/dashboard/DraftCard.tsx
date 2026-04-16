@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Video, Sparkles, Play, Trash2 } from 'lucide-react'
+import React, { useState } from 'react'
+import { Video, Sparkles, Play, Trash2, Palette, Clapperboard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 
 export interface DbDraftMeta {
   id:           string
-  module:       'faceless' | 'motion'
+  module:       'faceless' | 'motion' | 'brand' | 'studio'
   title:        string
   wizard_step:  number | null
   wizard_state: Record<string, unknown> | null
@@ -23,24 +23,47 @@ interface DraftCardProps {
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 
-const MODULE_CONFIG = {
+const MODULE_CONFIG: Record<string, {
+  Icon: React.FC<any>; iconColor: string; iconBg: string
+  label: string; gradFrom: string; gradTo: string; totalSteps: number
+}> = {
   faceless: {
-    Icon:      Video,
-    iconColor: 'text-blue-400',
-    iconBg:    'bg-blue-500/10',
-    label:     'Faceless Video',
-    gradFrom:  'from-blue-500',
-    gradTo:    'to-blue-600',
+    Icon:       Video,
+    iconColor:  'text-blue-400',
+    iconBg:     'bg-blue-500/10',
+    label:      'Faceless Video',
+    gradFrom:   'from-blue-500',
+    gradTo:     'to-blue-600',
+    totalSteps: 6,
   },
   motion: {
-    Icon:      Sparkles,
-    iconColor: 'text-purple-400',
-    iconBg:    'bg-purple-500/10',
-    label:     'Motion Design',
-    gradFrom:  'from-purple-500',
-    gradTo:    'to-blue-500',
+    Icon:       Sparkles,
+    iconColor:  'text-purple-400',
+    iconBg:     'bg-purple-500/10',
+    label:      'Motion Design',
+    gradFrom:   'from-purple-500',
+    gradTo:     'to-blue-500',
+    totalSteps: 5,
   },
-} as const
+  brand: {
+    Icon:       Palette,
+    iconColor:  'text-amber-400',
+    iconBg:     'bg-amber-500/10',
+    label:      'Brand Kit',
+    gradFrom:   'from-amber-500',
+    gradTo:     'to-orange-500',
+    totalSteps: 6,
+  },
+  studio: {
+    Icon:       Clapperboard,
+    iconColor:  'text-emerald-400',
+    iconBg:     'bg-emerald-500/10',
+    label:      'AI Studio',
+    gradFrom:   'from-emerald-500',
+    gradTo:     'to-teal-500',
+    totalSteps: 1,
+  },
+}
 
 function formatRelative(iso: string): string {
   const diffMs  = Date.now() - new Date(iso).getTime()
@@ -58,10 +81,10 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
   const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const config      = MODULE_CONFIG[draft.module] ?? MODULE_CONFIG.faceless
+  const config      = MODULE_CONFIG[draft.module] ?? MODULE_CONFIG.faceless!
   const { Icon }    = config
   const step        = draft.wizard_step ?? 1
-  const totalSteps  = draft.module === 'faceless' ? 6 : 5
+  const totalSteps  = config.totalSteps
   const progressPct = Math.round((step / totalSteps) * 100)
   const href        = `/${draft.module}/new?draft=${draft.id}`
 

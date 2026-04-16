@@ -14,6 +14,7 @@ import { ResultModal } from '@/components/creation/ResultModal'
 import AnimationModeSelector from '@/components/creation/AnimationModeSelector'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { toast } from '@/components/ui/toast'
 import {
   startFacelessGeneration,
   getPublicVoices,
@@ -493,6 +494,9 @@ function FacelessNewPageInner() {
         if (s.format)        setFormat(s.format as VideoFormat)
         if (s.duration)      setDuration(s.duration as VideoDuration)
         if (typeof s.dialogueMode === 'boolean') setDialogueMode(s.dialogueMode)
+        if (typeof data.wizard_step === 'number' && data.wizard_step >= 4) {
+          toast.success('Projet restauré — tes scènes sont intactes, aucun crédit supplémentaire consommé')
+        }
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftParam])

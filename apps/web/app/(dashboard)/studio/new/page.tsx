@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   FileText, Youtube, ArrowRight, Loader2, Sparkles,
   Globe, Wand2, Info, Check,
@@ -12,6 +12,8 @@ import { Card } from '@/components/ui/card'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { analyzeStudio, getStudioAvatars } from '@/lib/api'
+import { useDraftSave } from '@/hooks/use-draft-save'
+import { createBrowserClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,8 +29,11 @@ const LANGUAGES = [
 
 const YOUTUBE_RE = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/
 
-export default function StudioNewPage() {
+function StudioNewPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialDraftId = searchParams.get('draft')
+
   const [mode, setMode] = useState<Mode>('script')
   const [title, setTitle] = useState('')
   const [script, setScript] = useState('')
@@ -36,6 +41,7 @@ export default function StudioNewPage() {
   const [language, setLanguage] = useState('fr')
   const [analyzing, setAnalyzing] = useState(false)
   const [step, setStep] = useState<string>('')
+  const [restored, setRestored] = useState(false)
 
   // Avatar list
   const [avatars, setAvatars] = useState<Array<{ avatar_id: string; avatar_name: string; preview_image_url: string }>>([])
@@ -51,6 +57,41 @@ export default function StudioNewPage() {
       .catch(() => setAvatars([]))
       .finally(() => setLoadingAvatars(false))
   }, [])
+
+  // ── Restore draft from DB ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!initialDraftId || restored) return
+    async function loadDraft() {
+      const supabase = createBrowserClient()
+      const { data } = await (supabase
+        .from('videos')
+        .select('wizard_state, title')
+        .eq('id', initialDraftId)
+        .single() as Promise<any>)
+      if (!data) return
+      setRestored(true)
+      const s = data.wizard_state as Record<string, any>
+      if (data.title)    setTitle(data.title)
+      if (s.mode)        setMode(s.mode)
+      if (s.script)      setScript(s.script)
+      if (s.youtubeUrl)  setYoutubeUrl(s.youtubeUrl)
+      if (s.language)    setLanguage(s.language)
+      toast.success('Brouillon restauré — reprends là où tu t\'étais arrêté')
+    }
+    loadDraft()
+  }, [initialDraftId, restored])
+
+  // ── Draft auto-save ─────────────────────────────────────────────────────────
+  useDraftSave({
+    module:      'studio',
+    title:       title || 'Studio Draft',
+    style:       mode,
+    currentStep: 0,
+    totalSteps:  1,
+    stepLabel:   'Setup',
+    state:       { mode, script, youtubeUrl, language },
+    initialDraftId,
+  })
 
   // Derived metrics
   const words = useMemo(() => script.trim().split(/\s+/).filter(Boolean).length, [script])
@@ -302,6 +343,14 @@ export default function StudioNewPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function StudioNewPage() {
+  return (
+    <Suspense>
+      <StudioNewPageInner />
+    </Suspense>
   )
 }
 

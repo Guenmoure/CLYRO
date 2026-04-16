@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useCallback, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Upload, Sparkles, Palette, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { WizardLayout } from '@/components/creation/WizardLayout'
@@ -14,6 +14,8 @@ import {
   generateBrandAsset,
 } from '@/lib/api'
 import { createBrowserClient } from '@/lib/supabase'
+import { useDraftSave } from '@/hooks/use-draft-save'
+import { toast } from '@/components/ui/toast'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -456,12 +458,14 @@ function StepExport({
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-export default function BrandNewPage() {
+function BrandNewPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialDraftId = searchParams.get('draft')
 
   const [currentStep,    setCurrentStep]    = useState(0)
   const [projectName,    setProjectName]    = useState('New Brand Kit')
-  const [lastSaved,      setLastSaved]      = useState<Date | null>(null)
+  const [restored,       setRestored]       = useState(false)
 
   // Brief
   const [brandName,     setBrandName]     = useState('')
@@ -486,6 +490,51 @@ export default function BrandNewPage() {
   const [generating,  setGenerating]  = useState(false)
   const [resultAssets, setResultAssets] = useState<BrandAsset[]>([])
   const [resultOpen,  setResultOpen]  = useState(false)
+
+  // ── Restore draft from DB ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!initialDraftId || restored) return
+    async function loadDraft() {
+      const supabase = createBrowserClient()
+      const { data } = await (supabase
+        .from('videos')
+        .select('wizard_step, wizard_state, title')
+        .eq('id', initialDraftId)
+        .single() as Promise<any>)
+      if (!data) return
+      setRestored(true)
+      const s = data.wizard_state as Record<string, any>
+      if (data.title)           setProjectName(data.title)
+      if (s.brandName)          setBrandName(s.brandName)
+      if (s.industry)           setIndustry(s.industry)
+      if (s.values)             setValues(s.values)
+      if (s.primaryColor)       setPrimaryColor(s.primaryColor)
+      if (s.secondaryColor)     setSecondaryColor(s.secondaryColor)
+      if (s.fontFamily)         setFontFamily(s.fontFamily)
+      if (s.logoMode)           setLogoMode(s.logoMode)
+      if (s.logoUrl)            setLogoUrl(s.logoUrl)
+      if (s.logoPrompt)         setLogoPrompt(s.logoPrompt)
+      if (s.selectedAssets)     setSelectedAssets(s.selectedAssets)
+      const step = Math.max(0, (data.wizard_step ?? 1) - 1)
+      setCurrentStep(step)
+      if (step >= 3) {
+        toast.success('Projet restauré — tes données sont intactes, aucun crédit supplémentaire consommé')
+      }
+    }
+    loadDraft()
+  }, [initialDraftId, restored])
+
+  // ── Draft auto-save ─────────────────────────────────────────────────────────
+  const { lastSaved } = useDraftSave({
+    module:      'brand',
+    title:       projectName,
+    style:       'brand-kit',
+    currentStep,
+    totalSteps:  STEPS.length,
+    stepLabel:   STEPS[currentStep]?.label ?? '',
+    state:       { brandName, industry, values, primaryColor, secondaryColor, fontFamily, logoMode, logoUrl, logoPrompt, selectedAssets },
+    initialDraftId,
+  })
 
   function handleBriefChange(field: 'name' | 'industry' | 'values', v: string) {
     if (field === 'name')     setBrandName(v)
@@ -586,7 +635,6 @@ export default function BrandNewPage() {
         contextualHelp={CONTEXTUAL_HELP[currentStep]}
         lastSaved={lastSaved}
         onStepClick={setCurrentStep}
-        onSave={() => setLastSaved(new Date())}
         canPrev={currentStep > 0}
         canNext={canNext()}
         onPrev={() => setCurrentStep(s => s - 1)}
@@ -639,5 +687,13 @@ export default function BrandNewPage() {
         onNewProject={() => { setResultOpen(false); router.push('/brand/new') }}
       />
     </>
+  )
+}
+
+export default function BrandNewPage() {
+  return (
+    <Suspense>
+      <BrandNewPageInner />
+    </Suspense>
   )
 }

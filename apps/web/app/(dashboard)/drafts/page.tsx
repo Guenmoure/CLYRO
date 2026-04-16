@@ -1,19 +1,21 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { PenLine, Video, Sparkles, Clock, Trash2 } from 'lucide-react'
+import { PenLine, Video, Sparkles, Clock, Trash2, Palette, Clapperboard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createBrowserClient } from '@/lib/supabase'
 import { DraftCard, type DbDraftMeta } from '@/components/dashboard/DraftCard'
 
 // ── Filter types ───────────────────────────────────────────────────────────────
 
-type Filter = 'all' | 'faceless' | 'motion'
+type Filter = 'all' | 'faceless' | 'motion' | 'brand' | 'studio'
 
 const FILTERS: { value: Filter; label: string; icon: React.ReactNode }[] = [
-  { value: 'all',      label: 'Tous',     icon: <PenLine  size={13} /> },
-  { value: 'faceless', label: 'Faceless', icon: <Video    size={13} /> },
-  { value: 'motion',   label: 'Motion',   icon: <Sparkles size={13} /> },
+  { value: 'all',      label: 'Tous',    icon: <PenLine      size={13} /> },
+  { value: 'faceless', label: 'Faceless',icon: <Video        size={13} /> },
+  { value: 'motion',   label: 'Motion',  icon: <Sparkles     size={13} /> },
+  { value: 'brand',    label: 'Brand',   icon: <Palette      size={13} /> },
+  { value: 'studio',   label: 'Studio',  icon: <Clapperboard size={13} /> },
 ]
 
 // ── Empty state ────────────────────────────────────────────────────────────────
@@ -26,7 +28,7 @@ function EmptyState() {
       </div>
       <h3 className="font-display text-base text-foreground mb-1">Aucun brouillon</h3>
       <p className="font-body text-sm text-[--text-muted] max-w-xs">
-        Tes projets en cours apparaîtront ici. Lance un projet Faceless ou Motion pour commencer.
+        Tes projets en cours apparaîtront ici. Lance un projet Faceless, Motion, Brand Kit ou Studio pour commencer.
       </p>
     </div>
   )
