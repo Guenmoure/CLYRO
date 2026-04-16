@@ -30,10 +30,10 @@ interface StyleTemplate {
 }
 
 const TEMPLATE_CATEGORIES: Array<{ id: TemplateCategory; label: string }> = [
-  { id: 'all',        label: 'Tous les styles' },
+  { id: 'all',        label: 'All styles'      },
   { id: 'cinematic',  label: 'Cinematic'     },
   { id: 'animation',  label: 'Animation'       },
-  { id: 'handmade',   label: 'Fait main'       },
+  { id: 'handmade',   label: 'Handmade'        },
   { id: '3d',         label: '3D & VFX'        },
 ]
 
@@ -170,10 +170,10 @@ function PreviewAnimation2d({ selected: _s }: { selected: boolean }) {
 
 const STYLE_TEMPLATES: StyleTemplate[] = [
   { id: 'cinematique',     label: 'Cinematic',    desc: 'Dramatic lighting, 8K',          category: 'cinematic', preview: PreviewCinematic    },
-  { id: 'stock-vo',        label: 'Stock + VO',      desc: 'Documentaire National Geo',       category: 'cinematic', preview: PreviewStockVo      },
-  { id: 'whiteboard',      label: 'Whiteboard',      desc: 'Marqueur sur tableau blanc',      category: 'handmade',  preview: PreviewWhiteboard   },
-  { id: 'stickman',        label: 'Bonshommes',      desc: 'Stickman 'Stickman 'Stickman 'Stickman & formes géo' geo shapes' geo shapes' geo shapes',           category: 'handmade',  badge: 'New', preview: PreviewStickman    },
-  { id: 'flat-design',     label: 'Flat Design',     desc: 'Illustration plate, couleurs vives', category: 'animation', badge: 'New', preview: PreviewFlatDesign  },
+  { id: 'stock-vo',        label: 'Stock + VO',      desc: 'National Geo documentary style',  category: 'cinematic', preview: PreviewStockVo      },
+  { id: 'whiteboard',      label: 'Whiteboard',      desc: 'Marker on whiteboard',            category: 'handmade',  preview: PreviewWhiteboard   },
+  { id: 'stickman',        label: 'Stickman',        desc: 'Stickman & geo shapes',           category: 'handmade',  badge: 'New', preview: PreviewStickman    },
+  { id: 'flat-design',     label: 'Flat Design',     desc: 'Flat illustration, vibrant colors', category: 'animation', badge: 'New', preview: PreviewFlatDesign  },
   { id: '3d-pixar',        label: '3D Pixar',        desc: 'Claymation style Pixar',          category: '3d',        badge: 'New', preview: Preview3dPixar     },
   { id: 'motion-graphics', label: 'Motion Graphics', desc: 'Geo shapes, animated type',         category: '3d',        preview: PreviewMotionGraphics },
   { id: 'animation-2d',    label: 'Animation 2D',    desc: 'Vector animation',          category: 'animation', preview: PreviewAnimation2d  },

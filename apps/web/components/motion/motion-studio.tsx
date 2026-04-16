@@ -40,10 +40,10 @@ const DURATIONS: Array<{ id: VideoDuration; label: string }> = [
 ]
 
 const STYLE_LABELS: Record<string, { label: string; color: string }> = {
-  hero:        { label: 'Accroche',  color: '#00CFFF' },
+  hero:        { label: 'Hook',      color: '#00CFFF' },
   feature:     { label: 'Key point', color: '#9B59FF' },
   stats:       { label: 'Stats',     color: '#00C896' },
-  'text-focus': { label: 'Citation', color: '#FFB347' },
+  'text-focus': { label: 'Quote',   color: '#FFB347' },
   outro:       { label: 'Outro',     color: '#FF6B6B' },
 }
 
@@ -57,11 +57,11 @@ const SCENE_TYPE_LABELS: Record<string, string> = {
 }
 
 const PIPELINE_STEPS = [
-  { key: 'storyboard', label: 'Analyse du brief',  pct: 20 },
-  { key: 'visuals',    label: 'Generating visuals', pct: 55 },
-  { key: 'audio',      label: 'Voix off',           pct: 75 },
-  { key: 'assembly',   label: 'Assemblage',         pct: 92 },
-  { key: 'done',       label: 'Video ready!',      pct: 100 },
+  { key: 'storyboard', label: 'Analyzing brief',     pct: 20 },
+  { key: 'visuals',    label: 'Generating visuals',  pct: 55 },
+  { key: 'audio',      label: 'Voiceover',           pct: 75 },
+  { key: 'assembly',   label: 'Assembly',             pct: 92 },
+  { key: 'done',       label: 'Video ready!',        pct: 100 },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -298,7 +298,7 @@ function SceneCard({
             </div>
             {/* Scene Type (Remotion composition) */}
             <div>
-              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Type de scène</label>
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Scene type</label>
               <select
                 value={scene.scene_type ?? 'text_hero'}
                 onChange={(e) => onChange({ scene_type: e.target.value as any })}
@@ -410,7 +410,7 @@ function VoicePicker({
       {/* No voice */}
       <button
         type="button"
-        onClick={() => onSelect('', 'Pas de voix off')}
+        onClick={() => onSelect('', 'No voiceover')}
         className={cn(
           'w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left mb-2 transition-all',
           voiceId === ''
@@ -421,7 +421,7 @@ function VoicePicker({
         <div className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center shrink-0">
           <Mic2 size={14} className="text-[--text-muted]" />
         </div>
-        <p className="text-sm font-display font-semibold text-foreground">Pas de voix off</p>
+        <p className="text-sm font-display font-semibold text-foreground">No voiceover</p>
         {voiceId === '' && <CheckCircle2 size={16} className="ml-auto text-blue-500" />}
       </button>
 
@@ -797,23 +797,23 @@ export function MotionStudio({
 
               {/* Header */}
               <div className="text-center">
-                <h1 className="font-display text-2xl font-bold text-foreground">Create a Motion video<</h1>
+                <h1 className="font-display text-2xl font-bold text-foreground">Create a Motion video</h1>
                 <p className="text-sm text-[--text-muted] mt-1">
-                  Décrivez l'ambiance visuelle, entrez votre script — Claude génère le storyboard.
+                  Describe the visual mood, enter your script — Claude generates the storyboard.
                 </p>
               </div>
 
               {/* Brief */}
               <div className="rounded-2xl border border-border bg-muted overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">BRIEF VISUEL</p>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">VISUAL BRIEF</p>
                   <span className="text-red-400 text-[10px]">·</span>
-                  <span className="font-mono text-[10px] text-[--text-muted] opacity-60">Style, ambiance, couleurs, émotion recherchée</span>
+                  <span className="font-mono text-[10px] text-[--text-muted] opacity-60">Style, mood, colors, desired emotion</span>
                 </div>
                 <textarea
                   value={brief}
                   onChange={(e) => setBrief(e.target.value)}
-                  placeholder='"Describe 'visual mood and style of your video…"
+                  placeholder="Describe the visual mood and style of your video…"
                   rows={4}
                   className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none px-4 py-3"
                 />
@@ -822,20 +822,20 @@ export function MotionStudio({
               {/* Script */}
               <div className="rounded-2xl border border-border bg-muted overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">SCRIPT VOIX OFF</p>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">VOICEOVER SCRIPT</p>
                   <span className="text-red-400 text-[10px]">·</span>
-                  <span className="font-mono text-[10px] text-[--text-muted] opacity-60">Le texte exact qui sera découpé en scènes</span>
+                  <span className="font-mono text-[10px] text-[--text-muted] opacity-60">The exact text that will be split into scenes</span>
                 </div>
                 <textarea
                   value={script}
                   onChange={(e) => setScript(e.target.value)}
-                  placeholder="Entrez ici le texte complet de votre voix off…"
+                  placeholder="Enter the full text of your voiceover here…"
                   rows={6}
                   className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none px-4 py-3"
                 />
                 <div className="px-4 pb-2.5">
                   <p className={cn('text-[10px] font-mono text-right', script.length < 20 ? 'text-[--text-muted]' : 'text-emerald-600')}>
-                    {script.length} caractères
+                    {script.length} characters
                   </p>
                 </div>
               </div>
@@ -863,7 +863,7 @@ export function MotionStudio({
                   </div>
                 </div>
                 <div>
-                  <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2 block">Durée</label>
+                  <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2 block">Duration</label>
                   <div className="flex gap-2">
                     {DURATIONS.map((d) => (
                       <button
@@ -942,7 +942,7 @@ export function MotionStudio({
                 className="w-full flex items-center justify-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-5 py-3.5 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
               >
                 {genLoading
-                  ? <><Loader2 size={16} className="animate-spin" /> Génération du storyboard…</>
+                  ? <><Loader2 size={16} className="animate-spin" /> Generating storyboard…</>
                   : <><Sparkles size={16} /> Generate storyboard</>
                 }
               </button>
@@ -961,7 +961,7 @@ export function MotionStudio({
                 className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
                 <ArrowLeft size={15} />
-                Modifier le brief
+                Edit brief
               </button>
               <div className="flex items-center gap-3">
                 <button
@@ -971,7 +971,7 @@ export function MotionStudio({
                   className="flex items-center gap-1.5 text-xs text-blue-500 border border-blue-500/30 rounded-lg px-3 py-1.5 hover:bg-blue-500/10 transition-colors disabled:opacity-50"
                 >
                   <RefreshCw size={12} className={cn(genLoading && 'animate-spin')} />
-                  Tout regénérer
+                  Regenerate all
                 </button>
                 <button
                   type="button"
@@ -983,7 +983,7 @@ export function MotionStudio({
                     ? <Loader2 size={14} className="animate-spin" />
                     : <Wand2 size={14} />
                   }
-                  Lancer la génération
+                  Launch generation
                 </button>
               </div>
             </div>
@@ -993,7 +993,7 @@ export function MotionStudio({
               {genLoading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3">
                   <Sparkles size={28} className="text-blue-500 animate-pulse" />
-                  <p className="text-sm text-[--text-muted]">Régénération du storyboard…</p>
+                  <p className="text-sm text-[--text-muted]">Regenerating storyboard…</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">

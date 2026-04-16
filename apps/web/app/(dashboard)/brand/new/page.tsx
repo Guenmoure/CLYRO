@@ -30,8 +30,8 @@ const CONTEXTUAL_HELP = [
   "Describe your business, sector and brand values.",
   "Choose your colors and typography.",
   "Upload your logo or generate one with AI.",
-  "Select asset types to\'assets à générer.',
-  "Review your\'ensemble de ton identité avant l\'export.',
+  "Select asset types to generate.",
+  "Review your full brand identity before export.",
   "Generate and export your complete brand kit.",
 ]
 
