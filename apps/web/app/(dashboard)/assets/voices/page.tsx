@@ -1,0 +1,252 @@
+'use client'
+
+import { useEffect, useRef, useState, useMemo } from 'react'
+import { Plus, ChevronRight, TrendingUp, Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { VoiceCard } from '@/components/assets/VoiceCard'
+import { VoiceFilters } from '@/components/assets/VoiceFilters'
+import { VoicePreviewModal } from '@/components/assets/VoicePreviewModal'
+import { getVoices, getPublicVoices, type ClyroVoice } from '@/lib/api'
+import { cn } from '@/lib/utils'
+
+type VoiceTab = 'explore' | 'my_voices' | 'default'
+
+// ── Skeleton ───────────────────────────────────────────────────────────────────
+
+function VoiceSkeleton() {
+  return (
+    <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card animate-pulse">
+      <div className="w-12 h-12 rounded-full bg-muted shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3 bg-muted rounded w-1/2" />
+        <div className="h-2.5 bg-muted rounded w-1/3" />
+      </div>
+      <div className="w-9 h-9 rounded-full bg-muted shrink-0" />
+    </div>
+  )
+}
+
+// ── Collection card (horizontal carousel) ─────────────────────────────────────
+
+function CollectionCard({ title, icon }: { title: string; icon: React.ReactNode }) {
+  return (
+    <div className="shrink-0 w-48 rounded-xl bg-muted border border-border p-4 cursor-pointer hover:border-border hover:bg-muted/80 transition-all">
+      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3">
+        {icon}
+      </div>
+      <p className="font-body text-sm text-foreground leading-snug">{title}</p>
+    </div>
+  )
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
+
+export default function VoicesPage() {
+  const [allVoices,   setAllVoices]   = useState<ClyroVoice[]>([])
+  const [myVoices,    setMyVoices]    = useState<ClyroVoice[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [activeTab,   setActiveTab]   = useState<VoiceTab>('explore')
+  const [search,      setSearch]      = useState('')
+  const [category,    setCategory]    = useState<string | null>(null)
+  const [playingId,   setPlayingId]   = useState<string | null>(null)
+  const [selected,    setSelected]    = useState<ClyroVoice | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    Promise.all([getPublicVoices(), getVoices()])
+      .then(([pub, mine]) => {
+        setAllVoices(pub.voices)
+        setMyVoices((mine.personal ?? []) as ClyroVoice[])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  // Single audio singleton
+  function handlePlay(id: string | null) {
+    if (!id) {
+      audioRef.current?.pause()
+      setPlayingId(null)
+      return
+    }
+    if (playingId === id) {
+      audioRef.current?.pause()
+      setPlayingId(null)
+      return
+    }
+    audioRef.current?.pause()
+    const voice = allVoices.find((v) => v.id === id)
+    if (!voice?.previewUrl) { setPlayingId(id); return }
+    const audio = new Audio(voice.previewUrl)
+    audioRef.current = audio
+    audio.play().catch(() => {})
+    audio.onended = () => setPlayingId(null)
+    setPlayingId(id)
+  }
+
+  const activeVoices = activeTab === 'my_voices' ? myVoices : allVoices
+
+  const trendingVoices = useMemo(() => allVoices.slice(0, 6), [allVoices])
+
+  const filtered = useMemo(() => {
+    let list = activeVoices
+    if (category) {
+      list = list.filter((v) =>
+        v.category?.toLowerCase().includes(category.toLowerCase()) ||
+        v.useCase?.toLowerCase().includes(category.toLowerCase()),
+      )
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter((v) =>
+        v.name.toLowerCase().includes(q) ||
+        v.description.toLowerCase().includes(q) ||
+        v.accent?.toLowerCase().includes(q) ||
+        v.language?.toLowerCase().includes(q),
+      )
+    }
+    return list
+  }, [activeVoices, category, search])
+
+  const TABS: { key: VoiceTab; label: string }[] = [
+    { key: 'explore',   label: 'Explorer'          },
+    { key: 'my_voices', label: 'Mes Voix'          },
+    { key: 'default',   label: 'Voix par défaut'   },
+  ]
+
+  return (
+    <>
+      {/* Sub-header: tabs + CTA */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border/30 bg-card/40">
+        <div className="flex gap-1">
+          {TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={cn(
+                'px-3 py-1.5 rounded-lg font-body text-sm transition-all duration-150',
+                activeTab === key
+                  ? 'bg-blue-500/10 text-blue-400'
+                  : 'text-[--text-secondary] hover:text-foreground hover:bg-muted',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm">Docs</Button>
+          <Button variant="primary" size="sm" leftIcon={<Plus size={13} />}>
+            Créer une voix
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <VoiceFilters
+        search={search}
+        activeCategory={category}
+        onSearch={setSearch}
+        onCategory={setCategory}
+      />
+
+      {/* Content */}
+      <div className="px-6 py-6 space-y-8">
+
+        {/* Trending voices — only on Explore tab */}
+        {activeTab === 'explore' && !loading && trendingVoices.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp size={16} className="text-blue-400" />
+              <h2 className="font-display text-lg text-foreground">Voix tendance</h2>
+              <ChevronRight size={14} className="text-[--text-muted]" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {trendingVoices.map((voice) => (
+                <VoiceCard
+                  key={voice.id}
+                  voice={voice}
+                  playing={playingId === voice.id}
+                  onPlay={handlePlay}
+                  onClick={() => setSelected(voice)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Collections carousel — only on Explore tab */}
+        {activeTab === 'explore' && !loading && (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles size={15} className="text-purple-400" />
+                <h2 className="font-display text-lg text-foreground">Sélectionnées pour vous</h2>
+              </div>
+            </div>
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+              {[
+                { title: 'Meilleures voix ElevenLabs v3',  icon: <Sparkles size={14} className="text-blue-400" /> },
+                { title: 'Voix populaires TikTok',          icon: <TrendingUp size={14} className="text-pink-400" /> },
+                { title: 'Voix Studio-Qualité',             icon: <Sparkles size={14} className="text-amber-400" /> },
+                { title: 'Voix de Narration',               icon: <Sparkles size={14} className="text-emerald-400" /> },
+                { title: 'Podcasts & YouTube',              icon: <TrendingUp size={14} className="text-purple-400" /> },
+              ].map((col) => (
+                <CollectionCard key={col.title} title={col.title} icon={col.icon} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* All voices list */}
+        <section>
+          {activeTab === 'explore' && (
+            <h2 className="font-display text-lg text-foreground mb-4">
+              Toutes les voix
+              {!loading && (
+                <span className="font-mono text-sm text-[--text-muted] ml-2 font-normal">
+                  ({filtered.length})
+                </span>
+              )}
+            </h2>
+          )}
+
+          {loading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 8 }).map((_, i) => <VoiceSkeleton key={i} />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="font-body text-sm text-[--text-muted]">
+                {activeTab === 'my_voices'
+                  ? 'Tu n\'as pas encore de voix clonée.'
+                  : 'Aucune voix ne correspond à ta recherche.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filtered.map((voice) => (
+                <VoiceCard
+                  key={voice.id}
+                  voice={voice}
+                  playing={playingId === voice.id}
+                  onPlay={handlePlay}
+                  onClick={() => setSelected(voice)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* Voice preview modal */}
+      <VoicePreviewModal
+        voice={selected}
+        isOpen={!!selected}
+        onClose={() => setSelected(null)}
+      />
+    </>
+  )
+}

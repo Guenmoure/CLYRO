@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import {
-  LayoutGrid, Video, Sparkles, Palette, History, Mic, Film,
+  LayoutGrid, Video, Sparkles, Palette, History, Mic, Film, Package,
   Settings, HelpCircle, ChevronRight, ChevronUp, LogOut, Gem, Code2,
 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
@@ -39,7 +39,7 @@ const NAV_SECTIONS = [
       { href: '/motion',    label: 'Motion Design',   icon: Sparkles },
       { href: '/brand',     label: 'Brand Kit',       icon: Palette },
       { href: '/projects',  label: 'Projects',        icon: History },
-      { href: '/voices',    label: 'Voices',          icon: Mic },
+      { href: '/assets',    label: 'Assets',          icon: Package },
     ],
   },
   {

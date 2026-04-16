@@ -211,6 +211,24 @@ const config: Config = {
           '0%':   { opacity: '0', transform: 'translateX(20px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        // AnimationModeSelector — indicateurs visuels mini-preview
+        'ken-burns': {
+          '0%':   { transform: 'scale(1) translate(0, 0)' },
+          '100%': { transform: 'scale(1.12) translate(-2%, -1%)' },
+        },
+        'pulse-fast': {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%':      { transform: 'scale(1.02) translateX(0.5%)' },
+        },
+        'pulse-slow': {
+          '0%':   { transform: 'scale(1.02) translateX(0)' },
+          '100%': { transform: 'scale(1.08) translateX(-2%)' },
+        },
+        // Waveform bars for voice/audio playback indicator
+        waveform: {
+          '0%, 100%': { height: '4px' },
+          '50%':      { height: '20px' },
+        },
       },
 
       animation: {
@@ -222,6 +240,10 @@ const config: Config = {
         'fade-up':         'fade-up 0.4s ease-out forwards',
         'fade-in':         'fade-in 0.3s ease-out',
         'slide-in-right':  'slide-in-right 0.3s ease-out',
+        'ken-burns':       'ken-burns 3s ease-in-out infinite alternate',
+        'pulse-fast':      'pulse-fast 1.2s ease-in-out infinite',
+        'pulse-slow':      'pulse-slow 2.5s ease-in-out infinite alternate',
+        waveform:          'waveform 0.8s ease-in-out infinite',
       },
     },
   },
