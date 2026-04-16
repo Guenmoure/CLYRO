@@ -100,7 +100,7 @@ function StepBrief({
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="brand-values" className="font-mono text-xs text-[--text-muted]">Values >Valeurs & tonalité< tone</label>
+        <label htmlFor="brand-values" className="font-mono text-xs text-[--text-muted]">Values &amp; tone</label>
         <textarea
           id="brand-values"
           value={values}

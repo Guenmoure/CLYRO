@@ -1942,10 +1942,10 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
 // ── Step 5 — Final video ───────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, string> = {
-  pending:    'En attente…',
-  processing: 'Traitement en cours…',
+  pending:    'Pending…',
+  processing: 'Processing…',
   storyboard: 'Storyboard generation…',
-  visuals:    'Generating images 'Generating images 'Generating images 'Génération des images & clips…' clips…' clips…' clips…',
+  visuals:    'Generating images & clips…',
   audio:      'Voiceover generation…',
   assembly:   'Assembling video…',
   done:       'Video ready!',

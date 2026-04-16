@@ -309,7 +309,7 @@ function StepFormat({
 }) {
   return (
     <div>
-      <h2 className="font-display text-lg font-semibold text-foreground mb-4">Format <h2 className="font-display text-lg font-semibold text-foreground mb-4">Format & Durée Duration<</h2>
+      <h2 className="font-display text-lg font-semibold text-foreground mb-4">Format &amp; Duration</h2>
       <div className="mb-5">
         <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3 block">Format</label>
         <div className="grid grid-cols-3 gap-3">
