@@ -14,7 +14,7 @@ export function DraftsSection() {
 
   useEffect(() => {
     const supabase = createBrowserClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
       if (!session) return
 
       // Count all drafts
@@ -23,7 +23,7 @@ export function DraftsSection() {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', session.user.id)
         .eq('status', 'draft')
-        .then(({ count }) => setTotalCount(count ?? 0))
+        .then(({ count }: { count: any }) => setTotalCount(count ?? 0))
 
       // Fetch preview set
       supabase
@@ -33,7 +33,7 @@ export function DraftsSection() {
         .eq('status', 'draft')
         .order('updated_at', { ascending: false })
         .limit(PREVIEW_LIMIT)
-        .then(({ data }) => {
+        .then(({ data }: { data: any }) => {
           if (data) setDrafts(data as DbDraftMeta[])
         })
     })

@@ -381,7 +381,7 @@ export default function MotionNewPage() {
       .eq('id', draftParam)
       .eq('status', 'draft')
       .single()
-      .then(({ data }) => {
+      .then(({ data }: { data: any }) => {
         if (!data) return
         if (data.title) setProjectName(data.title)
         if (typeof data.wizard_step === 'number') setCurrentStep(data.wizard_step - 1)

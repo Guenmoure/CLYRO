@@ -633,9 +633,9 @@ function BriefForm({
   const [references, setReferences] = useState("");
   const [enforcedColors, setEnforcedColors] = useState("");
 
-  const imposedHexes = couleursImp
+  const imposedHexes = enforcedColors
     .split(",")
-    .map((s) => s.trim())
+    .map((s: string) => s.trim())
     .filter(Boolean);
 
   const canSubmit =
@@ -656,7 +656,7 @@ function BriefForm({
       concurrents: concurrents.trim() || undefined,
       logo_url: logoUrl.trim() || undefined,
       references: references.trim() || undefined,
-      couleurs_imposees: couleursImp.trim() || undefined,
+      couleurs_imposees: enforcedColors.trim() || undefined,
     });
   }
 
@@ -789,7 +789,7 @@ function BriefForm({
           </div>
           <input
             type="text"
-            value={couleursImp}
+            value={enforcedColors}
             onChange={(e) => setEnforcedColors(e.target.value)}
             placeholder="#FF5733, #2C3E50…"
             className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
@@ -798,12 +798,12 @@ function BriefForm({
             <WcagInline
               key={hex}
               hex={hex}
-              onApply={(suggestedColor) => {
-                const updated = couleursImp
+              onApply={(suggestedColor: string) => {
+                const updated = enforcedColors
                   .split(",")
-                  .map((c) => (c.trim() === hex.trim() ? suggestedColor : c))
+                  .map((c: string) => (c.trim() === hex.trim() ? suggestedColor : c))
                   .join(", ");
-                setCouleursImp(updated);
+                setEnforcedColors(updated);
               }}
             />
           ))}

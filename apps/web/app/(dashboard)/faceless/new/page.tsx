@@ -481,7 +481,7 @@ export default function FacelessNewPage() {
       .eq('id', draftParam)
       .eq('status', 'draft')
       .single()
-      .then(({ data }) => {
+      .then(({ data }: { data: any }) => {
         if (!data) return
         if (data.title) setProjectName(data.title)
         if (typeof data.wizard_step === 'number') setCurrentStep(data.wizard_step - 1)
@@ -530,14 +530,14 @@ export default function FacelessNewPage() {
   // Fetch user profile on mount
   useEffect(() => {
     const supabase = createBrowserClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
       if (!session) return
       supabase
         .from('profiles')
         .select('plan, credits_balance')
         .eq('id', session.user.id)
         .single()
-        .then(({ data }) => {
+        .then(({ data }: { data: any }) => {
           if (data) {
             setUserPlan((data.plan as typeof userPlan) ?? 'free')
             setCreditsBalance(data.credits_balance ?? 0)

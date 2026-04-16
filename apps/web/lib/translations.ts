@@ -85,7 +85,6 @@ export const translations = {
 
     // Brand kit
     brandSettings: 'Brand settings',
-    modifyBrandKit: 'Modify brand kit',
     deleteBrandKit: 'Delete',
 
     // Notifications & Connections
@@ -184,7 +183,6 @@ export const translations = {
     editPrompt: 'Modifier le prompt',
 
     brandSettings: 'Paramètres du brand',
-    modifyBrandKit: 'Modifier le brand kit',
     deleteBrandKit: 'Supprimer',
 
     connections: 'Connexions',
@@ -278,7 +276,6 @@ export const translations = {
     editPrompt: 'Editar prompt',
 
     brandSettings: 'Configuración de brand',
-    modifyBrandKit: 'Modificar brand kit',
     deleteBrandKit: 'Eliminar',
 
     connections: 'Conexiones',
@@ -372,7 +369,6 @@ export const translations = {
     editPrompt: 'Prompt bearbeiten',
 
     brandSettings: 'Brand-Einstellungen',
-    modifyBrandKit: 'Brand Kit ändern',
     deleteBrandKit: 'Löschen',
 
     connections: 'Verbindungen',
@@ -466,7 +462,6 @@ export const translations = {
     editPrompt: 'Editar prompt',
 
     brandSettings: 'Configurações de brand',
-    modifyBrandKit: 'Modificar brand kit',
     deleteBrandKit: 'Excluir',
 
     connections: 'Conexões',
