@@ -20,7 +20,7 @@ interface StyleCarouselProps {
   styles: StyleConfig[]
   selected: string
   onChange: (styleId: string) => void
-  userPlan: 'free' | 'pro' | 'studio'
+  userPlan: 'free' | 'starter' | 'pro' | 'creator' | 'studio'
   onProRequired?: () => void
 }
 
