@@ -65,7 +65,7 @@ export function LoginForm() {
         className="w-full flex items-center justify-center gap-3 glass glass-hover text-white/80 font-body font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50"
       >
         <GoogleIcon />
-        Continue with Google
+        {t('continueWithGoogle')}
       </button>
 
       {/* Divider */}
@@ -78,7 +78,7 @@ export function LoginForm() {
       {/* Email/Password form */}
       <form onSubmit={handleEmailLogin} className="space-y-4">
         <div>
-          <label className="label-mono block mb-2">Email</label>
+          <label className="label-mono block mb-2">{t('email')}</label>
           <input
             type="email"
             value={email}

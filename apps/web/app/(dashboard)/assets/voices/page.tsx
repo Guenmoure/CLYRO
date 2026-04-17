@@ -7,6 +7,7 @@ import { VoiceCard } from '@/components/assets/VoiceCard'
 import { VoiceFilters } from '@/components/assets/VoiceFilters'
 import { VoicePreviewModal } from '@/components/assets/VoicePreviewModal'
 import { getVoices, getPublicVoices, type ClyroVoice } from '@/lib/api'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 type VoiceTab = 'explore' | 'my_voices' | 'default'
@@ -42,6 +43,7 @@ function CollectionCard({ title, icon }: { title: string; icon: React.ReactNode 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function VoicesAssetsPage() {
+  const { t } = useLanguage()
   const [allVoices, setAllVoices]   = useState<ClyroVoice[]>([])
   const [myVoices, setMyVoices]     = useState<ClyroVoice[]>([])
   const [loading, setLoading]       = useState(true)
@@ -111,9 +113,9 @@ export default function VoicesAssetsPage() {
   }, [activeVoices, category, search])
 
   const TABS: { key: VoiceTab; label: string; count?: number }[] = [
-    { key: 'explore',   label: 'Explore',        count: allVoices.length },
-    { key: 'my_voices', label: 'My Voices',       count: myVoices.length },
-    { key: 'default',   label: 'Default Voices' },
+    { key: 'explore',   label: t('exploreVoices'),        count: allVoices.length },
+    { key: 'my_voices', label: t('myVoicesTab'),       count: myVoices.length },
+    { key: 'default',   label: t('defaultVoices') },
   ]
 
   return (
@@ -147,7 +149,7 @@ export default function VoicesAssetsPage() {
         </div>
 
         <Button variant="primary" size="sm" leftIcon={<Plus size={13} />}>
-          Create Voice
+          {t('createVoice')}
         </Button>
       </div>
 
@@ -167,7 +169,7 @@ export default function VoicesAssetsPage() {
           <section>
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp size={16} className="text-blue-500" />
-              <h2 className="font-body text-base font-semibold text-foreground">Trending voices</h2>
+              <h2 className="font-body text-base font-semibold text-foreground">{t('trendingVoices')}</h2>
               <ChevronRight size={14} className="text-[--text-muted]" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -189,15 +191,15 @@ export default function VoicesAssetsPage() {
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Sparkles size={15} className="text-purple-400" />
-              <h2 className="font-body text-base font-semibold text-foreground">Handpicked for your use case</h2>
+              <h2 className="font-body text-base font-semibold text-foreground">{t('handpicked')}</h2>
             </div>
             <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-2">
               {[
-                { title: 'Best voices for Eleven v3',      icon: <Sparkles size={14} className="text-blue-400" /> },
-                { title: 'Popular TikTok voices',           icon: <TrendingUp size={14} className="text-pink-400" /> },
-                { title: 'Studio-Quality Conversational',   icon: <Sparkles size={14} className="text-amber-400" /> },
-                { title: 'Narration voices',                icon: <Sparkles size={14} className="text-emerald-400" /> },
-                { title: 'Podcasts & YouTube',              icon: <TrendingUp size={14} className="text-purple-400" /> },
+                { title: t('bestVoicesV3'),      icon: <Sparkles size={14} className="text-blue-400" /> },
+                { title: t('popularTikTok'),           icon: <TrendingUp size={14} className="text-pink-400" /> },
+                { title: t('studioConversational'),   icon: <Sparkles size={14} className="text-amber-400" /> },
+                { title: t('narrationVoices'),                icon: <Sparkles size={14} className="text-emerald-400" /> },
+                { title: t('podcastsYouTube'),              icon: <TrendingUp size={14} className="text-purple-400" /> },
               ].map((col) => (
                 <CollectionCard key={col.title} title={col.title} icon={col.icon} />
               ))}
@@ -208,7 +210,7 @@ export default function VoicesAssetsPage() {
         {/* All voices list */}
         <section>
           <h2 className="font-body text-base font-semibold text-foreground mb-4">
-            {activeTab === 'my_voices' ? 'My voices' : activeTab === 'default' ? 'Default voices' : 'All voices'}
+            {activeTab === 'my_voices' ? t('myVoices') : activeTab === 'default' ? t('defaultVoices') : t('allVoices')}
             {!loading && (
               <span className="font-body text-sm text-[--text-muted] ml-2 font-normal">
                 ({filtered.length})
@@ -225,8 +227,8 @@ export default function VoicesAssetsPage() {
               <Mic2 size={24} className="text-[--text-muted] mb-2" />
               <p className="font-body text-sm text-[--text-muted]">
                 {activeTab === 'my_voices'
-                  ? 'You don\'t have any cloned voices yet.'
-                  : 'No voices match your search.'}
+                  ? t('noClonedVoices')
+                  : t('noVoicesMatch')}
               </p>
             </div>
           ) : (

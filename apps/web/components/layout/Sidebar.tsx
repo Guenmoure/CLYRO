@@ -27,29 +27,31 @@ interface SidebarProps {
   onMobileClose: () => void
 }
 
-// ── Nav structure ──────────────────────────────────────────────────────────────
+// ── Nav structure (translation keys) ──────────────────────────────────────────
 
-const NAV_SECTIONS = [
-  {
-    label: 'Workspace',
-    items: [
-      { href: '/dashboard', label: 'Dashboard',       icon: LayoutGrid, exact: true },
-      { href: '/studio',    label: 'AI Avatar Studio', icon: Film },
-      { href: '/faceless',  label: 'Faceless Videos', icon: Video },
-      { href: '/motion',    label: 'Motion Design',   icon: Sparkles },
-      { href: '/brand',     label: 'Brand Kit',       icon: Palette },
-      { href: '/projects',  label: 'Projects',        icon: History },
-      { href: '/assets',    label: 'Assets',          icon: Package },
-    ],
-  },
-  {
-    label: 'Account',
-    items: [
-      // Settings removed — accessible via the user dropdown (bottom-left card).
-      { href: 'mailto:support@clyro.app', label: 'Help', icon: HelpCircle, external: true },
-    ],
-  },
-]
+function useNavSections() {
+  const { t } = useLanguage()
+  return [
+    {
+      label: t('workspace'),
+      items: [
+        { href: '/dashboard', label: t('dashboard'),       icon: LayoutGrid, exact: true },
+        { href: '/studio',    label: t('aiAvatarStudio'),  icon: Film },
+        { href: '/faceless',  label: t('facelessVideos'),  icon: Video },
+        { href: '/motion',    label: t('motionDesign'),    icon: Sparkles },
+        { href: '/brand',     label: t('brandKit'),        icon: Palette },
+        { href: '/projects',  label: t('projects'),        icon: History },
+        { href: '/assets',    label: t('assets'),          icon: Package },
+      ],
+    },
+    {
+      label: t('account'),
+      items: [
+        { href: 'mailto:support@clyro.app', label: t('help'), icon: HelpCircle, external: true },
+      ],
+    },
+  ]
+}
 
 // ── Tooltip helper ─────────────────────────────────────────────────────────────
 
@@ -173,7 +175,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
     setSettingsOpen(true)
   }
 
-  const planLabel = plan === 'pro' ? 'Pro' : plan === 'studio' ? 'Studio' : 'Free plan'
+  const planLabel = plan === 'pro' ? 'Pro' : plan === 'studio' ? 'Studio' : t('freePlan')
 
   return (
     <div
@@ -205,7 +207,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
           </div>
         )}
         {!collapsed && <ChevronUp size={14} className={cn('shrink-0 text-[--text-muted] transition-transform', dropdownOpen && 'rotate-180')} />}
-        {collapsed && <NavTooltip label={name ?? email.split('@')[0] ?? 'Compte'} />}
+        {collapsed && <NavTooltip label={name ?? email.split('@')[0] ?? t('account')} />}
       </button>
 
       {/* Dropdown — HeyGen-style */}
@@ -237,7 +239,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
           <div className="p-2 space-y-0.5">
             <DropdownItem
               icon={<Gem size={15} className="text-amber-500" />}
-              label="Upgrade plan"
+              label={t('upgradePlan')}
               href="/pricing"
               primary
             />
@@ -252,13 +254,13 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
           <div className="p-2 space-y-0.5 border-t border-border">
             <DropdownItem
               icon={<Code2 size={15} />}
-              label="Developers"
+              label={t('developers')}
               onClick={() => openSettings('api')}
               trailing={<ChevronRight size={13} className="text-[--text-muted]" />}
             />
             <DropdownItem
               icon={<HelpCircle size={15} />}
-              label="Help"
+              label={t('help')}
               href="mailto:support@clyro.app"
               external
               trailing={<ChevronRight size={13} className="text-[--text-muted]" />}
@@ -334,6 +336,8 @@ function DropdownItem({
 
 export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const supabase = createBrowserClient()
+  const { t } = useLanguage()
+  const navSections = useNavSections()
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -378,7 +382,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
             type="button"
             onClick={() => onToggle(!collapsed)}
             className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-muted border border-border rounded-full items-center justify-center shadow-card hover:bg-border transition-colors z-10"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')}
           >
             <ChevronRight
               size={13}
@@ -389,7 +393,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
 
         {/* Nav sections */}
         <nav className="flex-1 overflow-y-auto py-2 space-y-4">
-          {NAV_SECTIONS.map((section) => (
+          {navSections.map((section) => (
             <div key={section.label} className={cn('space-y-0.5', collapsed ? 'px-2' : 'px-3')}>
               {!collapsed && (
                 <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold px-1 mb-2">

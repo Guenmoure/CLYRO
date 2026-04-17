@@ -7,6 +7,7 @@ import { AvatarFilters, type AvatarFilter } from '@/components/assets/AvatarFilt
 import { AvatarPreviewModal } from '@/components/assets/AvatarPreviewModal'
 import { CreateAvatarModal } from '@/components/assets/CreateAvatarModal'
 import { getStudioAvatars, type StudioAvatar } from '@/lib/api'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 type AvatarTab = 'public' | 'my'
@@ -59,17 +60,18 @@ function AvatarSkeleton() {
 // ── Empty personal avatar state ────────────────────────────────────────────────
 
 function NoPersonalAvatar({ onCreate }: { onCreate: () => void }) {
+  const { t } = useLanguage()
   return (
     <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
       <div className="w-20 h-20 rounded-full bg-muted border border-border flex items-center justify-center mb-4">
         <UserPlus size={30} className="text-[--text-muted]" />
       </div>
-      <h3 className="font-body text-lg font-semibold text-foreground">Create your first avatar</h3>
+      <h3 className="font-body text-lg font-semibold text-foreground">{t('createFirstAvatar')}</h3>
       <p className="font-body text-sm text-[--text-muted] mt-2 max-w-sm">
-        Clone your appearance in 2 minutes. Upload a short video and CLYRO generates your AI avatar via HeyGen Instant Avatar.
+        {t('createAvatarDesc')}
       </p>
       <Button variant="primary" className="mt-6" leftIcon={<Video size={14} />} onClick={onCreate}>
-        Create my avatar
+        {t('createMyAvatar')}
       </Button>
     </div>
   )
@@ -88,6 +90,7 @@ function AvatarGroupCard({
   onToggle: () => void
   onSelectAvatar: (av: StudioAvatar) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden transition-all hover:border-blue-500/30">
       {/* Main card — click to expand */}
@@ -136,7 +139,7 @@ function AvatarGroupCard({
       {isExpanded && (
         <div className="p-3 border-t border-border bg-muted/30">
           <p className="font-body text-xs font-medium text-[--text-muted] mb-2">
-            {group.totalLooks} look{group.totalLooks !== 1 ? 's' : ''} available
+            {group.totalLooks} look{group.totalLooks !== 1 ? 's' : ''} {t('available')}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {group.avatars.map((av) => {
@@ -187,6 +190,7 @@ function AvatarGroupCard({
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function AvatarsPage() {
+  const { t } = useLanguage()
   const [avatars, setAvatars]           = useState<StudioAvatar[]>([])
   const [loading, setLoading]           = useState(true)
   const [activeTab, setActiveTab]       = useState<AvatarTab>('public')
@@ -227,8 +231,8 @@ export default function AvatarsPage() {
   )
 
   const tabs: { key: AvatarTab; label: string; count: number }[] = [
-    { key: 'public', label: 'Public Avatars', count: avatars.length },
-    { key: 'my',     label: 'My Avatars',     count: personalAvatars.length },
+    { key: 'public', label: t('publicAvatars'), count: avatars.length },
+    { key: 'my',     label: t('myAvatars'),     count: personalAvatars.length },
   ]
 
   return (
@@ -265,7 +269,7 @@ export default function AvatarsPage() {
           leftIcon={<UserPlus size={13} />}
           onClick={() => setCreateOpen(true)}
         >
-          Create avatar
+          {t('createAvatar')}
         </Button>
       </div>
 
@@ -290,7 +294,7 @@ export default function AvatarsPage() {
         ) : groups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <p className="font-body text-sm text-[--text-muted]">
-              No avatars match your search.
+              {t('noAvatarsMatch')}
             </p>
           </div>
         ) : (

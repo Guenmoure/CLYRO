@@ -18,6 +18,7 @@ import {
 import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 type Tab = 'explore' | 'my-voices' | 'default'
 
@@ -31,13 +32,13 @@ interface ClonedVoice {
 // ── Use-case category chips ──────────────────────────────────────────────────
 
 const USE_CASE_CATEGORIES = [
-  { key: '',                label: 'All',             icon: null },
-  { key: 'conversational',  label: 'Conversational',  icon: MessageCircle },
-  { key: 'narration',       label: 'Narration',       icon: BookOpen },
-  { key: 'characters',      label: 'Characters',      icon: Users },
-  { key: 'social media',    label: 'Social Media',    icon: Video },
-  { key: 'educational',     label: 'Educational',     icon: GraduationCap },
-  { key: 'news',            label: 'News',            icon: TrendingUp },
+  { key: '',                tKey: 'all',             icon: null },
+  { key: 'conversational',  tKey: 'conversational',  icon: MessageCircle },
+  { key: 'narration',       tKey: 'narration',       icon: BookOpen },
+  { key: 'characters',      tKey: 'characters',      icon: Users },
+  { key: 'social media',    tKey: 'socialMedia',     icon: Video },
+  { key: 'educational',     tKey: 'educational',     icon: GraduationCap },
+  { key: 'news',            tKey: 'news',            icon: TrendingUp },
 ] as const
 
 // ── Voice card (compact row style like ElevenLabs) ───────────────────────────
@@ -47,6 +48,7 @@ function VoiceCard({ voice, onToggleFavorite, compact }: {
   onToggleFavorite?: (id: string, current: boolean) => void
   compact?: boolean
 }) {
+  const { t } = useLanguage()
   const [playing, setPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -79,7 +81,7 @@ function VoiceCard({ voice, onToggleFavorite, compact }: {
         <div className="flex-1 min-w-0">
           <p className="font-body text-sm font-medium text-foreground truncate">{voice.name}</p>
           <p className="font-body text-xs text-[--text-muted] truncate">
-            {voice.useCase || 'General'}
+            {voice.useCase || t('general')}
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -116,7 +118,7 @@ function VoiceCard({ voice, onToggleFavorite, compact }: {
             <p className="font-body text-sm font-semibold text-foreground truncate">{voice.name}</p>
           </div>
           <p className="font-body text-xs text-[--text-muted] mt-0.5">
-            {voice.useCase || 'General'}
+            {voice.useCase || t('general')}
           </p>
           <div className="flex items-center gap-2 mt-1.5">
             {voice.languageFlag && <span className="text-xs">{voice.languageFlag}</span>}
@@ -159,6 +161,7 @@ function VoiceCard({ voice, onToggleFavorite, compact }: {
 // ── Clone voice modal ────────────────────────────────────────────────────────
 
 function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned: () => void }) {
+  const { t } = useLanguage()
   const [name, setName]           = useState('')
   const [file, setFile]           = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -169,35 +172,35 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
     try {
       const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      if (!user) throw new Error(t('notAuthenticated'))
       const ext  = file.name.split('.').pop() ?? 'mp3'
       const path = `${user.id}/${Date.now()}.${ext}`
       const { error: uploadError } = await supabase.storage.from('voice-samples').upload(path, file, { contentType: file.type })
       if (uploadError) throw new Error(uploadError.message)
       const { data: urlData } = supabase.storage.from('voice-samples').getPublicUrl(path)
       await cloneVoice({ name: name.trim(), sample_url: urlData.publicUrl })
-      toast.success('Voice cloned successfully!')
+      toast.success(t('voiceCloned'))
       onCloned(); onClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error cloning voice')
+      toast.error(err instanceof Error ? err.message : t('errorCloningVoice'))
     } finally { setUploading(false) }
   }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="rounded-2xl border border-border bg-card p-6 w-full max-w-md shadow-xl">
-        <h3 className="font-body text-lg font-semibold text-foreground mb-1">Clone a voice</h3>
-        <p className="text-[--text-muted] text-sm font-body mb-5">Upload a clear 30-60 second audio sample (MP3, WAV, M4A).</p>
+        <h3 className="font-body text-lg font-semibold text-foreground mb-1">{t('cloneVoice')}</h3>
+        <p className="text-[--text-muted] text-sm font-body mb-5">{t('cloneVoiceDesc')}</p>
         <div className="space-y-4 mb-5">
           <div>
-            <label htmlFor="voice-name" className="font-body text-xs font-medium text-[--text-secondary] mb-2 block">Name</label>
+            <label htmlFor="voice-name" className="font-body text-xs font-medium text-[--text-secondary] mb-2 block">{t('name')}</label>
             <input id="voice-name" type="text" value={name} onChange={(e) => setName(e.target.value)}
               placeholder="My main voice"
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-all"
             />
           </div>
           <div>
-            <label htmlFor="voice-file" className="font-body text-xs font-medium text-[--text-secondary] mb-2 block">Audio file</label>
+            <label htmlFor="voice-file" className="font-body text-xs font-medium text-[--text-secondary] mb-2 block">{t('audioFile')}</label>
             <input id="voice-file" type="file" accept="audio/mp3,audio/mpeg,audio/wav,audio/m4a,audio/*"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm file:mr-3 file:text-xs file:text-blue-500 file:bg-transparent file:border-0 file:cursor-pointer focus:outline-none"
@@ -206,12 +209,12 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
         </div>
         <div className="flex gap-3">
           <button type="button" onClick={onClose} className="flex-1 border border-border bg-card text-foreground font-body font-medium py-2.5 rounded-xl text-sm hover:bg-muted transition-all">
-            Cancel
+            {t('cancel')}
           </button>
           <button type="button" onClick={handleSubmit} disabled={!name.trim() || !file || uploading}
             className="flex-1 bg-blue-500 text-white font-body font-medium py-2.5 rounded-xl hover:bg-blue-600 disabled:opacity-50 text-sm transition-colors"
           >
-            {uploading ? 'Uploading...' : 'Clone'}
+            {uploading ? t('uploading') : t('clone')}
           </button>
         </div>
       </div>
@@ -222,6 +225,7 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
 // ── Personal voice card ──────────────────────────────────────────────────────
 
 function PersonalVoiceCard({ voice, onDeleted }: { voice: ClonedVoice; onDeleted: (id: string) => void }) {
+  const { t } = useLanguage()
   const [showConfirm, setShowConfirm] = useState(false)
   const [deleting, setDeleting]       = useState(false)
 
@@ -229,10 +233,10 @@ function PersonalVoiceCard({ voice, onDeleted }: { voice: ClonedVoice; onDeleted
     setDeleting(true)
     try {
       await deleteVoice(voice.id)
-      toast.success('Voice deleted')
+      toast.success(t('voiceDeleted'))
       onDeleted(voice.id)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error')
+      toast.error(err instanceof Error ? err.message : t('errorOccurred'))
       setDeleting(false); setShowConfirm(false)
     }
   }
@@ -247,7 +251,7 @@ function PersonalVoiceCard({ voice, onDeleted }: { voice: ClonedVoice; onDeleted
           <div>
             <p className="font-body text-sm font-semibold text-foreground">{voice.name}</p>
             <p className="font-body text-xs text-[--text-muted] mt-0.5">
-              Cloned &middot; {new Date(voice.created_at).toLocaleDateString('en-US')}
+              {t('cloned')} &middot; {new Date(voice.created_at).toLocaleDateString('en-US')}
             </p>
           </div>
         </div>
@@ -262,11 +266,11 @@ function PersonalVoiceCard({ voice, onDeleted }: { voice: ClonedVoice; onDeleted
             <div className="flex gap-2">
               <button type="button" onClick={handleDelete} disabled={deleting}
                 className="font-body text-xs text-white px-3 py-1.5 bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors">
-                {deleting ? '...' : 'Confirm'}
+                {deleting ? '...' : t('confirm')}
               </button>
               <button type="button" onClick={() => setShowConfirm(false)}
                 className="font-body text-xs text-[--text-muted] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-all">
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           )}
@@ -282,6 +286,7 @@ function TrendingSection({ voices, onToggleFavorite }: {
   voices: ClyroVoice[]
   onToggleFavorite: (id: string, current: boolean) => void
 }) {
+  const { t } = useLanguage()
   // Pick first 6 voices that have a preview URL as "trending"
   const trending = useMemo(
     () => voices.filter((v) => v.previewUrl).slice(0, 6),
@@ -294,7 +299,7 @@ function TrendingSection({ voices, onToggleFavorite }: {
     <section>
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp size={16} className="text-blue-500" />
-        <h2 className="font-body text-base font-semibold text-foreground">Trending voices</h2>
+        <h2 className="font-body text-base font-semibold text-foreground">{t('trendingVoices')}</h2>
         <ChevronRight size={16} className="text-[--text-muted]" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -309,6 +314,7 @@ function TrendingSection({ voices, onToggleFavorite }: {
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function VoicesPage() {
+  const { t } = useLanguage()
   const [tab, setTab] = useState<Tab>('explore')
 
   // Explore tab state
@@ -343,9 +349,9 @@ export default function VoicesPage() {
       setPublicVoices(voices)
     } catch (err) {
       console.error('[voices/public]', err)
-      toast.error(err instanceof Error ? err.message : 'Failed to load voices')
+      toast.error(err instanceof Error ? err.message : t('failedLoadVoices'))
     } finally { setLoadingPublic(false) }
-  }, [filters, activeCategory])
+  }, [filters, activeCategory, t])
 
   useEffect(() => { if (tab === 'explore' || tab === 'default') fetchPublic() }, [tab, fetchPublic])
 
@@ -357,10 +363,10 @@ export default function VoicesPage() {
       .then(({ personal }) => setPersonalVoices(personal as ClonedVoice[]))
       .catch((err) => {
         console.error('[voices/personal]', err)
-        toast.error(err instanceof Error ? err.message : 'Failed to load cloned voices')
+        toast.error(err instanceof Error ? err.message : t('failedLoadClonedVoices'))
       })
       .finally(() => setLoadingPersonal(false))
-  }, [tab])
+  }, [tab, t])
 
   // Filtered voices for display
   const displayVoices = useMemo(() => {
@@ -381,13 +387,13 @@ export default function VoicesPage() {
     try {
       await toggleVoiceFavorite(voiceId, isFavorite ? 'remove' : 'add')
       setPublicVoices((prev) => prev.map((v) => v.id === voiceId ? { ...v, isFavorite: !isFavorite } : v))
-    } catch (err) { toast.error(err instanceof Error ? err.message : 'Error') }
+    } catch (err) { toast.error(err instanceof Error ? err.message : t('errorOccurred')) }
   }
 
   const TABS = [
-    { key: 'explore' as Tab,   label: 'Explore' },
-    { key: 'my-voices' as Tab, label: 'My Voices' },
-    { key: 'default' as Tab,   label: 'Default Voices' },
+    { key: 'explore' as Tab,   label: t('exploreVoices') },
+    { key: 'my-voices' as Tab, label: t('myVoicesTab') },
+    { key: 'default' as Tab,   label: t('defaultVoices') },
   ]
 
   return (
@@ -397,7 +403,7 @@ export default function VoicesPage() {
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-4">
-            <h1 className="font-body text-2xl font-bold text-foreground">Voices</h1>
+            <h1 className="font-body text-2xl font-bold text-foreground">{t('voices')}</h1>
             {/* Tabs */}
             <div className="flex gap-1 border border-border rounded-xl p-1 bg-card">
               {TABS.map((t) => (
@@ -423,7 +429,7 @@ export default function VoicesPage() {
             <button type="button" onClick={() => setShowCloneModal(true)}
               className="flex items-center gap-2 bg-blue-500 text-white font-body font-medium px-4 py-2.5 rounded-xl hover:bg-blue-600 text-sm transition-colors"
             >
-              <Plus size={14} /> Create Voice
+              <Plus size={14} /> {t('createVoice')}
             </button>
           )}
         </div>
@@ -440,7 +446,7 @@ export default function VoicesPage() {
                   type="text"
                   value={filters.search}
                   onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
-                  placeholder="Search library voices..."
+                  placeholder={t('searchVoices')}
                   aria-label="Search voices"
                   className="w-full pl-10 pr-9 py-2.5 border border-border bg-card rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-all"
                 />
@@ -462,7 +468,7 @@ export default function VoicesPage() {
                   aria-label="Filter by language"
                   className="bg-transparent text-sm font-body text-foreground focus:outline-none appearance-none cursor-pointer pr-2"
                 >
-                  <option value="">Language</option>
+                  <option value="">{t('languageLabel')}</option>
                   {filterOptions.languages.map((l) => (
                     <option key={l.value} value={l.value}>{l.flag} {l.label}</option>
                   ))}
@@ -476,7 +482,7 @@ export default function VoicesPage() {
                 aria-label="Filter by gender"
                 className="border border-border bg-card rounded-xl px-3 py-2.5 text-sm font-body text-foreground focus:outline-none appearance-none cursor-pointer"
               >
-                <option value="">Accent</option>
+                <option value="">{t('accent')}</option>
                 {filterOptions.genders.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
@@ -499,7 +505,7 @@ export default function VoicesPage() {
                     )}
                   >
                     {Icon && <Icon size={14} />}
-                    {cat.label}
+                    {t(cat.tKey)}
                   </button>
                 )
               })}
@@ -515,7 +521,7 @@ export default function VoicesPage() {
               <section>
                 <div className="flex items-center gap-2 mb-3">
                   <Star size={14} className="text-yellow-400" fill="currentColor" />
-                  <h2 className="font-body text-base font-semibold text-foreground">Favorites</h2>
+                  <h2 className="font-body text-base font-semibold text-foreground">{t('favorites')}</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {favoriteVoices.map((v) => (
@@ -529,7 +535,7 @@ export default function VoicesPage() {
             <section>
               {!filters.search && !activeCategory && (
                 <h2 className="font-body text-base font-semibold text-foreground mb-3">
-                  {tab === 'default' ? 'Default voices' : 'All voices'}
+                  {tab === 'default' ? t('defaultVoices') : t('allVoices')}
                 </h2>
               )}
               {loadingPublic ? (
@@ -541,7 +547,7 @@ export default function VoicesPage() {
               ) : displayVoices.length === 0 ? (
                 <div className="rounded-xl border border-border bg-card p-10 text-center">
                   <Mic2 size={24} className="text-[--text-muted] mx-auto mb-2" />
-                  <p className="text-[--text-muted] font-body text-sm">No voices match these filters.</p>
+                  <p className="text-[--text-muted] font-body text-sm">{t('noVoicesMatch')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -566,14 +572,14 @@ export default function VoicesPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/15 to-blue-500/15 border border-border flex items-center justify-center mb-5">
                   <Mic2 size={28} className="text-emerald-500" />
                 </div>
-                <p className="font-body text-lg font-bold text-foreground mb-2">No cloned voices yet</p>
+                <p className="font-body text-lg font-bold text-foreground mb-2">{t('noClonedVoices')}</p>
                 <p className="font-body text-sm text-[--text-muted] mb-5 max-w-sm">
-                  Record or upload 30 seconds of your voice. We clone it via ElevenLabs so you can use it in all your videos.
+                  {t('noClonedVoicesYet')}
                 </p>
                 <button type="button" onClick={() => setShowCloneModal(true)}
                   className="inline-flex items-center gap-2 bg-blue-500 text-white font-body font-medium px-5 py-2.5 rounded-xl hover:bg-blue-600 text-sm transition-colors"
                 >
-                  <Plus size={14} /> Create Voice
+                  <Plus size={14} /> {t('createVoice')}
                 </button>
               </div>
             ) : (

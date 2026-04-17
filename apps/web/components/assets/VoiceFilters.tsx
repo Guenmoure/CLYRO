@@ -3,19 +3,20 @@
 import {
   Search, SlidersHorizontal, ArrowUpDown,
   MessageCircle, BookOpen, Users, Video,
-  GraduationCap, Film, Radio, Podcast, Youtube,
+  GraduationCap, Film, Radio,
 } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 const VOICE_CATEGORIES = [
-  { key: 'conversational', label: 'Conversational', icon: MessageCircle },
-  { key: 'narration',      label: 'Narration',      icon: BookOpen },
-  { key: 'characters',     label: 'Characters',     icon: Users },
-  { key: 'social media',   label: 'Social Media',   icon: Video },
-  { key: 'educational',    label: 'Educational',    icon: GraduationCap },
-  { key: 'news',           label: 'News',           icon: Radio },
-  { key: 'video games',    label: 'Video Games',    icon: Film },
+  { key: 'conversational', translationKey: 'conversational', icon: MessageCircle },
+  { key: 'narration',      translationKey: 'narration',      icon: BookOpen },
+  { key: 'characters',     translationKey: 'characters',     icon: Users },
+  { key: 'social media',   translationKey: 'socialMedia',    icon: Video },
+  { key: 'educational',    translationKey: 'educational',    icon: GraduationCap },
+  { key: 'news',           translationKey: 'news',           icon: Radio },
+  { key: 'video games',    translationKey: 'characters',     icon: Film },
 ]
 
 interface VoiceFiltersProps {
@@ -27,6 +28,8 @@ interface VoiceFiltersProps {
 }
 
 export function VoiceFilters({ search, activeCategory, onSearch, onCategory, onSort }: VoiceFiltersProps) {
+  const { t } = useLanguage()
+
   return (
     <div className="px-6 py-4 space-y-3 border-b border-border/30">
       {/* Search + action row */}
@@ -37,12 +40,12 @@ export function VoiceFilters({ search, activeCategory, onSearch, onCategory, onS
             type="text"
             value={search}
             onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search library voices..."
+            placeholder={t('searchVoices')}
             className="w-full bg-muted border border-border rounded-xl h-10 pl-9 pr-4 font-body text-sm text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
           />
         </div>
         <Button variant="secondary" size="sm" leftIcon={<SlidersHorizontal size={13} />}>
-          Filters
+          {t('filters')}
         </Button>
         {onSort && (
           <button
@@ -58,7 +61,7 @@ export function VoiceFilters({ search, activeCategory, onSearch, onCategory, onS
 
       {/* Category pills — horizontally scrollable */}
       <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-        {VOICE_CATEGORIES.map(({ key, label, icon: Icon }) => (
+        {VOICE_CATEGORIES.map(({ key, translationKey, icon: Icon }) => (
           <button
             key={key}
             type="button"
@@ -71,7 +74,7 @@ export function VoiceFilters({ search, activeCategory, onSearch, onCategory, onS
             )}
           >
             <Icon size={12} />
-            {label}
+            {t(translationKey)}
           </button>
         ))}
       </div>

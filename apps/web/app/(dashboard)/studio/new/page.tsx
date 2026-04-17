@@ -13,6 +13,7 @@ import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { analyzeStudio, getStudioAvatars, type StudioAvatar } from '@/lib/api'
 import { useDraftSave } from '@/hooks/use-draft-save'
+import { useLanguage } from '@/lib/i18n'
 import { createBrowserClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
@@ -33,6 +34,7 @@ function StudioNewPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialDraftId = searchParams.get('draft')
+  const { t } = useLanguage()
 
   const [mode, setMode] = useState<Mode>('script')
   const [title, setTitle] = useState('')
@@ -52,11 +54,11 @@ function StudioNewPageInner() {
   const [avatarTab, setAvatarTab] = useState<string>('all')
 
   const AVATAR_TABS = [
-    { key: 'all', label: 'All' },
-    { key: 'professional', label: 'Professional' },
-    { key: 'lifestyle', label: 'Lifestyle' },
-    { key: 'ugc', label: 'UGC' },
-    { key: 'community', label: 'Community' },
+    { key: 'all', label: t('all') },
+    { key: 'professional', label: t('professional') },
+    { key: 'lifestyle', label: t('lifestyle') },
+    { key: 'ugc', label: t('ugc') },
+    { key: 'community', label: t('community') },
   ]
 
   const filteredAvatars = useMemo(() => {
@@ -104,7 +106,7 @@ function StudioNewPageInner() {
       if (s.script)      setScript(s.script)
       if (s.youtubeUrl)  setYoutubeUrl(s.youtubeUrl)
       if (s.language)    setLanguage(s.language)
-      toast.success('Brouillon restauré — reprends là où tu t\'étais arrêté')
+      toast.success(t('draftRestored'))
     }
     loadDraft()
   }, [initialDraftId, restored])
@@ -134,7 +136,7 @@ function StudioNewPageInner() {
     setAnalyzing(true)
 
     try {
-      setStep(mode === 'youtube' ? 'Transcription de la vidéo…' : 'Analyse de la structure…')
+      setStep(mode === 'youtube' ? t('videoTranscription') : t('analyzingStructure'))
 
       const result = await analyzeStudio({
         inputType: mode === 'script' ? 'script' : 'youtube_url',
@@ -145,11 +147,11 @@ function StudioNewPageInner() {
         format: '16_9',
       })
 
-      setStep('Redirection vers l\'éditeur…')
+      setStep(t('redirectingToEditor'))
       toast.success(`Projet créé — ${result.sceneCount} scènes prêtes à générer`)
       router.push(`/studio/${result.projectId}/editor`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Échec de l\'analyse')
+      toast.error(err instanceof Error ? err.message : t('analysisError'))
     } finally {
       setAnalyzing(false)
       setStep('')
@@ -164,14 +166,14 @@ function StudioNewPageInner() {
         <div className="text-center space-y-2">
           <div className="flex justify-center">
             <Badge variant="info" dot>
-              <Sparkles size={10} className="mr-1" /> AI Avatar Studio
+              <Sparkles size={10} className="mr-1" /> {t('studioBadge')}
             </Badge>
           </div>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-            CLYRO Studio
+            {t('studioHeading')}
           </h1>
           <p className="font-body text-sm text-[--text-secondary] max-w-xl mx-auto">
-            Create a video with your AI avatar in a few minutes. Start from a script or a YouTube URL.
+            {t('studioSubtitle')}
           </p>
         </div>
 
@@ -181,31 +183,31 @@ function StudioNewPageInner() {
             active={mode === 'script'}
             onClick={() => setMode('script')}
             icon={<FileText size={28} className="text-blue-500" />}
-            title="I have a script"
-            description="Paste your text and CLYRO generates the complete video."
-            tags={['Any language', 'Auto-structured', 'Free format']}
+            title={t('iHaveScript')}
+            description={t('scriptDescription')}
+            tags={[t('tagAnyLanguage'), t('tagAutoStructured'), t('tagFreeFormat')]}
           />
           <ModeCard
             active={mode === 'youtube'}
             onClick={() => setMode('youtube')}
             icon={<Youtube size={28} className="text-red-500" />}
-            title="I have a YouTube video"
-            description="CLYRO transcribes, improves and recreates it with your avatar."
-            tags={['Any duration', 'Script improved by AI', 'Auto-chaptered']}
+            title={t('iHaveYouTube')}
+            description={t('youtubeDescription')}
+            tags={[t('tagAnyDuration'), t('tagScriptImproved'), t('tagAutoChaptered')]}
           />
         </div>
 
         {/* Title (optional) */}
         <div className="space-y-2">
           <label htmlFor="title" className="font-body text-sm font-semibold text-foreground">
-            Project title <span className="text-[--text-muted] font-normal">(optional)</span>
+            {t('projectTitleOptional')}
           </label>
           <input
             id="title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Leave empty — CLYRO will suggest one"
+            placeholder={t('titlePlaceholder')}
             className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus:outline-none focus:border-blue-500 transition-colors"
             maxLength={120}
           />
@@ -215,23 +217,19 @@ function StudioNewPageInner() {
         {mode === 'script' ? (
           <div className="space-y-2">
             <label htmlFor="script" className="font-body text-sm font-semibold text-foreground">
-              Your script
+              {t('yourScript')}
             </label>
             <textarea
               id="script"
               value={script}
               onChange={(e) => setScript(e.target.value)}
               rows={12}
-              placeholder={`Paste your script here. CLYRO will:
-  ✓ Split it into scenes automatically
-  ✓ Choose the optimal visual type for each
-  ✓ Generate the avatar and animations
-  ✓ Assemble everything into a final video`}
+              placeholder={t('scriptPlaceholder')}
               className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus:outline-none focus:border-blue-500 transition-colors resize-y"
             />
             <div className="flex items-center justify-between">
               <p className="font-mono text-xs text-[--text-muted]">
-                {words} words · ~{estimatedMin} min estimated
+                {words} {t('wordsCount')} · ~{estimatedMin} {t('minEstimated')}
               </p>
               {scriptValid && <Check size={13} className="text-emerald-500" />}
             </div>
@@ -239,7 +237,7 @@ function StudioNewPageInner() {
         ) : (
           <div className="space-y-3">
             <label htmlFor="ytUrl" className="font-body text-sm font-semibold text-foreground">
-              YouTube URL
+              {t('youtubeUrl')}
             </label>
             <div className="relative">
               <Youtube size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-red-500 pointer-events-none" />
@@ -255,8 +253,7 @@ function StudioNewPageInner() {
             <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
               <Info size={14} className="text-amber-500 shrink-0 mt-0.5" />
               <p className="font-body text-xs text-[--text-secondary]">
-                CLYRO will analyze and improve this content. The final video is a new, improved version —
-                not a copy. Make sure you have the rights to this content.
+                {t('youtubeContentNote')}
               </p>
             </div>
           </div>
@@ -265,7 +262,7 @@ function StudioNewPageInner() {
         {/* Language */}
         <div className="space-y-2">
           <label htmlFor="lang" className="font-body text-sm font-semibold text-foreground">
-            Language
+            {t('languageLabel')}
           </label>
           <div className="relative">
             <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
@@ -285,7 +282,7 @@ function StudioNewPageInner() {
         {/* Avatar picker */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="font-body text-sm font-semibold text-foreground">Avatar</p>
+            <p className="font-body text-sm font-semibold text-foreground">{t('avatarLabel')}</p>
             {avatars.length > 0 && (
               <span className="font-body text-xs text-[--text-muted]">
                 {filteredAvatars.length} avatar{filteredAvatars.length !== 1 ? 's' : ''}
@@ -302,10 +299,9 @@ function StudioNewPageInner() {
             <Card variant="elevated" padding="md" className="flex items-center gap-3">
               <Info size={16} className="text-amber-500 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="font-body text-sm text-foreground">HeyGen avatars unavailable</p>
+                <p className="font-body text-sm text-foreground">{t('avatarsUnavailable')}</p>
                 <p className="font-body text-xs text-[--text-secondary] mt-0.5">
-                  Add <span className="font-mono">HEYGEN_API_KEY</span> on the server to load real avatars.
-                  You can still create a project — avatar generation will fail gracefully.
+                  {t('avatarsUnavailableDesc')}
                 </p>
               </div>
             </Card>
@@ -337,7 +333,7 @@ function StudioNewPageInner() {
                   type="text"
                   value={avatarSearch}
                   onChange={(e) => setAvatarSearch(e.target.value)}
-                  placeholder="Search avatars..."
+                  placeholder={t('searchAvatars')}
                   className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
@@ -384,7 +380,7 @@ function StudioNewPageInner() {
                 </div>
                 {filteredAvatars.length === 0 && (
                   <p className="font-body text-sm text-[--text-muted] text-center py-6">
-                    {avatarSearch ? `No avatars matching "${avatarSearch}"` : 'No avatars in this category'}
+                    {avatarSearch ? t('noAvatarsMatch') : t('noAvatarsInCategory')}
                   </p>
                 )}
               </div>
@@ -440,8 +436,8 @@ function StudioNewPageInner() {
           rightIcon={!analyzing ? <ArrowRight size={16} /> : undefined}
         >
           {analyzing
-            ? (step || 'Analysis in progress…')
-            : mode === 'script' ? 'Analyze my script' : 'Analyze the YouTube video'}
+            ? (step || t('analysisInProgress'))
+            : mode === 'script' ? t('analyzeMyScript') : t('analyzeYouTube')}
         </Button>
 
         {/* Progress steps during analysis */}
@@ -452,10 +448,10 @@ function StudioNewPageInner() {
               <span className="font-body">{step}</span>
             </div>
             <div className="mt-3 space-y-1.5 pl-8">
-              <StepLine done label="Project initialization" />
-              {mode === 'youtube' && <StepLine done={step.includes('Claude')} label="YouTube transcription" />}
-              <StepLine done={step.includes('Redirection')} label="Claude analyzes the structure" />
-              <StepLine done={step.includes('Redirection')} label="Optimized scene split" />
+              <StepLine done label={t('projectInit')} />
+              {mode === 'youtube' && <StepLine done={step.includes('Claude')} label={t('youtubeTranscription')} />}
+              <StepLine done={step.includes(t('redirectingToEditor'))} label={t('claudeAnalysis')} />
+              <StepLine done={step.includes(t('redirectingToEditor'))} label={t('sceneSplit')} />
             </div>
           </div>
         )}

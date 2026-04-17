@@ -1,18 +1,19 @@
 'use client'
 
 import { Search, SlidersHorizontal } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 export type AvatarFilter = 'all' | 'professional' | 'lifestyle' | 'ugc' | 'community' | 'favorites'
 
-const FILTER_LABELS: Record<AvatarFilter, string> = {
-  all:          'All',
-  professional: 'Professional',
-  lifestyle:    'Lifestyle',
-  ugc:          'UGC',
-  community:    'Community',
-  favorites:    'Favorites',
-}
+const FILTER_KEYS: { key: AvatarFilter; translationKey: string }[] = [
+  { key: 'all',          translationKey: 'all' },
+  { key: 'professional', translationKey: 'professional' },
+  { key: 'lifestyle',    translationKey: 'lifestyle' },
+  { key: 'ugc',          translationKey: 'ugc' },
+  { key: 'community',    translationKey: 'community' },
+  { key: 'favorites',    translationKey: 'favorites' },
+]
 
 interface AvatarFiltersProps {
   search:         string
@@ -22,6 +23,8 @@ interface AvatarFiltersProps {
 }
 
 export function AvatarFilters({ search, activeFilter, onSearch, onFilter }: AvatarFiltersProps) {
+  const { t } = useLanguage()
+
   return (
     <div className="px-6 py-4 space-y-3 border-b border-border/30">
       {/* Search bar */}
@@ -31,13 +34,13 @@ export function AvatarFilters({ search, activeFilter, onSearch, onFilter }: Avat
           type="text"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          placeholder="Search avatars..."
+          placeholder={t('searchAvatars')}
           className="w-full bg-muted border border-border rounded-xl h-11 pl-10 pr-10 font-body text-sm text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
         />
         <button
           type="button"
           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-border hover:bg-muted transition-colors"
-          aria-label="Filtres avancés"
+          aria-label={t('filters')}
         >
           <SlidersHorizontal size={13} className="text-[--text-secondary]" />
         </button>
@@ -45,19 +48,19 @@ export function AvatarFilters({ search, activeFilter, onSearch, onFilter }: Avat
 
       {/* Filter pills */}
       <div className="flex gap-2 flex-wrap">
-        {(Object.keys(FILTER_LABELS) as AvatarFilter[]).map((filter) => (
+        {FILTER_KEYS.map(({ key, translationKey }) => (
           <button
-            key={filter}
+            key={key}
             type="button"
-            onClick={() => onFilter(filter)}
+            onClick={() => onFilter(key)}
             className={cn(
               'px-4 py-1.5 rounded-full font-body text-sm border transition-all duration-150',
-              activeFilter === filter
+              activeFilter === key
                 ? 'bg-blue-500/15 border-blue-500/40 text-blue-400'
                 : 'bg-muted border-border text-[--text-secondary] hover:border-border hover:text-foreground',
             )}
           >
-            {FILTER_LABELS[filter]}
+            {t(translationKey)}
           </button>
         ))}
       </div>

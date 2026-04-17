@@ -38,7 +38,7 @@ export function SignupForm() {
 
       setSuccess(true)
     } catch {
-      setError('An error occurred. Please try again.')
+      setError(t('errorOccurred'))
     } finally {
       setLoading(false)
     }
@@ -67,10 +67,10 @@ export function SignupForm() {
         <div className="w-16 h-16 bg-success/10 border border-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-success text-2xl">✓</span>
         </div>
-        <h3 className="font-display font-semibold text-white mb-2">Check your email</h3>
+        <h3 className="font-display font-semibold text-white mb-2">{t('checkYourEmail')}</h3>
         <p className="text-white/50 text-sm font-body">
-          A confirmation link has been sent to <strong className="text-white">{email}</strong>.
-          Click it to activate your account.
+          {t('confirmationSent')} <strong className="text-white">{email}</strong>.
+          {t('clickToActivate')}
         </p>
       </div>
     )
@@ -85,20 +85,20 @@ export function SignupForm() {
         className="w-full flex items-center justify-center gap-3 glass glass-hover text-white/80 font-body font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50"
       >
         <GoogleIcon />
-        Continue with Google
+        {t('continueWithGoogle')}
       </button>
 
       {/* Divider */}
       <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-white/10" />
-        <span className="font-mono text-xs text-white/30 uppercase tracking-widest">or</span>
+        <span className="font-mono text-xs text-white/30 uppercase tracking-widest">{t('or')}</span>
         <div className="flex-1 h-px bg-white/10" />
       </div>
 
       {/* Signup form */}
       <form onSubmit={handleSignup} className="space-y-4">
         <div>
-          <label className="label-mono block mb-2">Full name</label>
+          <label className="label-mono block mb-2">{t('fullName')}</label>
           <input
             type="text"
             value={fullName}
@@ -109,7 +109,7 @@ export function SignupForm() {
           />
         </div>
         <div>
-          <label className="label-mono block mb-2">Email</label>
+          <label className="label-mono block mb-2">{t('email')}</label>
           <input
             type="email"
             value={email}
@@ -125,7 +125,7 @@ export function SignupForm() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Minimum 8 characters"
+            placeholder={t('minChars')}
             required
             minLength={8}
             className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
