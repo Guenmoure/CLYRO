@@ -12,6 +12,7 @@ import { Button }   from '@/components/ui/button'
 import { Badge }    from '@/components/ui/badge'
 import { Card }     from '@/components/ui/card'
 import { SpinnerAI } from '@/components/ui/spinner'
+import { Logo }          from '@/components/ui/Logo'
 import { MobileMenu }     from '@/components/landing/mobile-menu'
 import { PricingToggle }  from '@/components/landing/pricing-toggle'
 import { ThemeToggle }    from '@/components/ui/theme-toggle'
@@ -61,10 +62,11 @@ function SectionHeader({ label, labelVariant, title, subtitle, titleGradient }: 
 // ── 1. HEADER ─────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#fonctionnalites' },
-  { label: 'Styles',          href: '#styles' },
-  { label: 'Pricing',          href: '/pricing' },
-  { label: 'FAQ',             href: '#faq' },
+  { label: 'Features',     href: '#fonctionnalites' },
+  { label: 'Avatar Studio', href: '#avatar-studio' },
+  { label: 'Styles',       href: '#styles' },
+  { label: 'Pricing',      href: '/pricing' },
+  { label: 'FAQ',          href: '#faq' },
 ]
 
 function Header() {
@@ -72,10 +74,7 @@ function Header() {
     <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
-        <Link href="/" className="font-display text-xl font-bold shrink-0">
-          <span className="text-foreground">CLY</span>
-          <span className="gradient-text">RO</span>
-        </Link>
+        <Logo variant="full" size="sm" href="/" />
 
         {/* Nav — desktop */}
         <nav className="hidden md:flex items-center gap-6">
@@ -130,8 +129,8 @@ function HeroSection() {
         <p className="font-body text-lg md:text-xl text-[--text-secondary] max-w-2xl mx-auto mt-6 leading-relaxed">
           No camera. No editor. No agency.
           <br />
-          CLYRO generates your faceless videos, motion designs,
-          and brand identity — entirely AI-powered.
+          CLYRO generates your faceless videos, AI avatar presenters,
+          motion designs, and brand identity — entirely AI-powered.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -316,7 +315,19 @@ const MODULES = [
     mockupSlots: ['Scene 1', 'Scene 2', 'Scene 3', 'Scene 4'],
   },
   {
-    badge:       { label: 'Module 2', variant: 'info' as const },
+    badge:       { label: 'New · AI Avatar Studio', variant: 'purple' as const, dot: true },
+    title:       'AI avatars that speak your script',
+    desc:        "Pick a realistic presenter from hundreds of avatars — Professional, UGC, Lifestyle, Community — or paste a YouTube URL and let CLYRO re-voice it. Each avatar ships with multiple looks (outfit, setting) so your videos stay on-brand.",
+    features:    [
+      'Hundreds of avatars grouped by name with every look variant',
+      'Narration in 12 languages with cloned or premade voices',
+      'Script or YouTube URL → edited video ready to publish',
+    ],
+    reverse:     true,
+    mockupSlots: ['Professional', 'Lifestyle', 'UGC', 'Community'],
+  },
+  {
+    badge:       { label: 'Module 3', variant: 'info' as const },
     title:       'After Effects-style motion design',
     desc:        "Create ads, product presentations, and animated teasers. Define your brief, CLYRO generates a structured storyboard and renders your video with professional animations.",
     features:    [
@@ -324,11 +335,11 @@ const MODULES = [
       "Visual assets generated to match your brand feel",
       'Auto-generated thumbnails for ads',
     ],
-    reverse:     true,
+    reverse:     false,
     mockupSlots: ['Intro', 'Slide 1', 'Slide 2', 'Outro'],
   },
   {
-    badge:       { label: 'New', variant: 'purple' as const, dot: true },
+    badge:       { label: 'Module 4', variant: 'info' as const },
     title:       'Complete brand identity',
     desc:        "In 15 minutes, CLYRO generates your logo, color palette, typefaces, mockups, and professional brand guidelines PDF — from a simple text brief.",
     features:    [
@@ -336,7 +347,7 @@ const MODULES = [
       'Automatic WCAG color compliance verification',
       'Brand kit ZIP export (PNG/SVG logos, ASE palette, brand PDF)',
     ],
-    reverse:     false,
+    reverse:     true,
     mockupSlots: ['Direction A', 'Direction B', 'Direction C', 'Export'],
   },
 ]
@@ -347,14 +358,15 @@ function SolutionSection() {
       <div className="max-w-5xl mx-auto">
         <SectionHeader
           label="The CLYRO solution"
-          title={<>Three tools. <span className="gradient-text">One workflow.</span></>}
+          title={<>Four tools. <span className="gradient-text">One workflow.</span></>}
         />
 
         <div className="flex flex-col gap-20">
           {MODULES.map((mod, i) => (
             <div
               key={i}
-              className={`flex flex-col ${mod.reverse ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 items-center`}
+              id={mod.badge.label.includes('AI Avatar Studio') ? 'avatar-studio' : undefined}
+              className={`flex flex-col ${mod.reverse ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 items-center scroll-mt-24`}
             >
               {/* Text */}
               <div className="flex-1">
@@ -613,6 +625,10 @@ const FAQS = [
     q: "Can I use my own voice?",
     a: "Yes, with voice cloning. Upload a 30-second sample minimum, and CLYRO generates all your voiceovers with your own voice. Available in the Pro plan and above.",
   },
+  {
+    q: "What AI avatars are available in the Avatar Studio?",
+    a: "CLYRO ships with hundreds of photorealistic avatars grouped by category — Professional, Lifestyle, UGC, and Community. Each avatar has several looks (outfits, settings) so you can stay on-brand across videos. You can also create a personal avatar in your account.",
+  },
 ]
 
 function FaqSection() {
@@ -686,7 +702,7 @@ function CtaSection() {
 const FOOTER_COLS = [
   {
     title: 'Product',
-    links: ['Faceless Videos', 'Motion Design', 'Brand Kit', 'Pricing', 'API'],
+    links: ['Faceless Videos', 'AI Avatar Studio', 'Motion Design', 'Brand Kit', 'Pricing'],
   },
   {
     title: 'Resources',
@@ -705,10 +721,7 @@ function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           {/* Col 1 — Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="font-display text-xl font-bold">
-              <span className="text-foreground">CLY</span>
-              <span className="gradient-text">RO</span>
-            </Link>
+            <Logo variant="full" size="sm" href="/" />
             <p className="font-body text-sm text-[--text-muted] mt-2 mb-5">
               From script to video in 10 minutes.
             </p>
