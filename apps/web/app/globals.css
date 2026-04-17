@@ -452,6 +452,21 @@
     @apply font-mono text-sm;
     font-feature-settings: 'liga' 1, 'calt' 1; /* ligatures de code */
   }
+
+  /* ── Focus-visible global (a11y) — fallback pour éléments natifs ─────────
+     Le composant <Button> définit son propre focus ring avec offset, mais
+     les <a>, <input>, <select>, <textarea> et <button> natifs qui ne l'utilisent
+     pas tombent sur cette règle. Couleur : token --ring (charte CLYRO). */
+  :where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  /* Supprime l'outline si l'élément a déjà une ring Tailwind (évite le doublon) */
+  .ring-2:focus-visible,
+  .focus-visible\:ring-2:focus-visible {
+    outline: none;
+  }
 }
 
 /* ============================================================
