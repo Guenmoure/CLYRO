@@ -1,20 +1,35 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 
 export function SignupForm() {
-  const router = useRouter()
-  const supabase = createBrowserClient()
-  const { t } = useLanguage()
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const supabase     = createBrowserClient()
+  const { t }        = useLanguage()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  // Pré-script passé depuis le hero textarea (?script=...)
+  useEffect(() => {
+    const raw = searchParams.get('script')
+    if (raw) {
+      try {
+        const decoded = decodeURIComponent(raw)
+        // Persist across email-confirmation round-trip
+        localStorage.setItem('clyro_prefilled_script', decoded)
+      } catch {
+        // Ignore malformed param
+      }
+    }
+  }, [searchParams])
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()

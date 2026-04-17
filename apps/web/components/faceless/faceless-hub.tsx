@@ -553,6 +553,17 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
     }).catch(() => null)
   }, [])
 
+  // Récupère le script pré-rempli depuis la landing page (hero textarea)
+  useEffect(() => {
+    const prefilled = localStorage.getItem('clyro_prefilled_script')
+    if (prefilled) {
+      onChange({ script: prefilled })
+      localStorage.removeItem('clyro_prefilled_script')
+      toast.success('Ton script a été pré-chargé — choisis un style !')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (styleRef.current && !styleRef.current.contains(e.target as Node)) setShowStylePicker(false)

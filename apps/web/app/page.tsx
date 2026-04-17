@@ -6,25 +6,29 @@ import type { Metadata } from 'next'
 import {
   ArrowRight, Play, CheckCircle, Clock, DollarSign,
   Frown, FileText, Cpu, Download, ChevronDown,
-  Twitter, Linkedin, Youtube, Instagram,
+  Twitter, Linkedin, Youtube, Instagram, Maximize2,
 } from 'lucide-react'
-import { Button }   from '@/components/ui/button'
-import { Badge }    from '@/components/ui/badge'
-import { Card }     from '@/components/ui/card'
-import { SpinnerAI } from '@/components/ui/spinner'
+import { Button }        from '@/components/ui/button'
+import { Badge }         from '@/components/ui/badge'
+import { Card }          from '@/components/ui/card'
+import { SpinnerAI }     from '@/components/ui/spinner'
 import { Logo }          from '@/components/ui/Logo'
-import { MobileMenu }     from '@/components/landing/mobile-menu'
-import { PricingToggle }  from '@/components/landing/pricing-toggle'
-import { ThemeToggle }    from '@/components/ui/theme-toggle'
+import { MobileMenu }    from '@/components/landing/mobile-menu'
+import { PricingToggle } from '@/components/landing/pricing-toggle'
+import { ThemeToggle }   from '@/components/ui/theme-toggle'
+import { HeroScript }      from '@/components/landing/HeroScript'
+import { VideoShowcase }   from '@/components/landing/VideoShowcase'
+import { ScrollRevealInit } from '@/components/landing/ScrollRevealInit'
+import { StickyMobileCta }  from '@/components/landing/StickyMobileCta'
 
 export const metadata: Metadata = {
-  title: 'CLYRO — AI Video Generation in Less Than 10 Minutes',
+  title: 'CLYRO — AI Video Generation in Less Than 5 Minutes',
   description:
-    'From script to video in less than 10 minutes. No camera, no editor, no agency. Faceless videos, motion design and brand kit — entirely AI-powered.',
+    'Paste your script. Choose a style. Your video is ready. Faceless videos, AI avatars, motion design — entirely AI-powered.',
   keywords: ['AI video', 'faceless videos', 'motion graphics', 'brand kit', 'video generation'],
   openGraph: {
     title: 'CLYRO — AI Video Generation',
-    description: 'From script to video in less than 10 minutes.',
+    description: 'Paste your script. Choose a style. Your video is ready in under 5 minutes.',
     type: 'website',
   },
 }
@@ -39,17 +43,16 @@ function SectionLabel({ children, variant = 'info' }: { children: React.ReactNod
   )
 }
 
-function SectionHeader({ label, labelVariant, title, subtitle, titleGradient }: {
+function SectionHeader({ label, labelVariant, title, subtitle }: {
   label: string
   labelVariant?: React.ComponentProps<typeof Badge>['variant']
   title: React.ReactNode
   subtitle?: string
-  titleGradient?: boolean
 }) {
   return (
     <div className="text-center max-w-2xl mx-auto mb-12">
       <SectionLabel variant={labelVariant}>{label}</SectionLabel>
-      <h2 className={`font-display text-3xl md:text-4xl font-bold text-foreground ${titleGradient ? '' : ''}`}>
+      <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
         {title}
       </h2>
       {subtitle && (
@@ -62,21 +65,19 @@ function SectionHeader({ label, labelVariant, title, subtitle, titleGradient }: 
 // ── 1. HEADER ─────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { label: 'Features',     href: '#fonctionnalites' },
+  { label: 'Features',      href: '#features' },
   { label: 'Avatar Studio', href: '#avatar-studio' },
-  { label: 'Styles',       href: '#styles' },
-  { label: 'Pricing',      href: '/pricing' },
-  { label: 'FAQ',          href: '#faq' },
+  { label: 'Styles',        href: '#styles' },
+  { label: 'Pricing',       href: '/pricing' },
+  { label: 'FAQ',           href: '#faq' },
 ]
 
 function Header() {
   return (
     <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        {/* Logo */}
         <Logo variant="full" size="sm" href="/" />
 
-        {/* Nav — desktop */}
         <nav className="hidden md:flex items-center gap-6">
           {NAV_LINKS.map((l) => (
             <a
@@ -89,7 +90,6 @@ function Header() {
           ))}
         </nav>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 shrink-0">
           <ThemeToggle />
           <Link href="/login" className="hidden sm:block">
@@ -105,127 +105,127 @@ function Header() {
   )
 }
 
-// ── 2. HERO ───────────────────────────────────────────────────────────────────
+// ── 2. HERO — split layout ────────────────────────────────────────────────────
 
 function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center pt-16 overflow-hidden noise-overlay">
+    <section
+      id="hero"
+      className="relative min-h-screen flex items-center pt-16 overflow-hidden noise-overlay"
+    >
       {/* Glow blobs */}
-      <div className="pointer-events-none absolute top-1/4 -left-24 w-96 h-96 rounded-full bg-[var(--primary)]/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-1/4 -right-24 w-96 h-96 rounded-full bg-[var(--secondary)]/10 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full bg-[var(--primary)]/10 blur-[80px]" />
+      <div className="pointer-events-none absolute bottom-1/4 -right-32 w-[500px] h-[500px] rounded-full bg-[var(--secondary)]/10 blur-[80px]" />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-24 text-center w-full">
-        <Badge variant="info" dot className="mb-8 inline-flex">
-          AI Video Generation
-        </Badge>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 w-full
+                      grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-        <h1 className="font-display text-5xl md:text-7xl font-bold leading-tight text-foreground">
-          From your{' '}
-          <span className="gradient-text">script to video</span>
-          <br />
-          in less than 10 minutes.
-        </h1>
+        {/* ══ LEFT — Text + CTA + Textarea ══ */}
+        <div className="space-y-6 order-last lg:order-first">
+          <Badge variant="info" dot className="inline-flex">
+            AI Video Generation
+          </Badge>
 
-        <p className="font-body text-lg md:text-xl text-[--text-secondary] max-w-2xl mx-auto mt-6 leading-relaxed">
-          No camera. No editor. No agency.
-          <br />
-          CLYRO generates your faceless videos, AI avatar presenters,
-          motion designs, and brand identity — entirely AI-powered.
-        </p>
+          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] text-foreground">
+            Paste your script.{' '}
+            <br className="hidden sm:block" />
+            <span className="gradient-text">Choose a style.</span>
+            <br />
+            Your video is ready.
+          </h1>
 
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/signup">
-            <Button variant="primary" size="lg" rightIcon={<ArrowRight size={18} />}>
-              Create your first video free
-            </Button>
-          </Link>
-          <a href="#fonctionnalites">
-            <Button variant="secondary" size="lg" leftIcon={<Play size={16} />}>
-              Watch demo
-            </Button>
-          </a>
+          <p className="font-body text-lg text-[--text-secondary] max-w-lg leading-relaxed">
+            CLYRO turns your text into a publish-ready video — AI voice,
+            animated scenes, karaoke subtitles — in under 5 minutes.
+            No editor. No agency.
+          </p>
+
+          {/* Textarea client island */}
+          <HeroScript />
+
+          <p className="font-mono text-xs text-[--text-muted]">
+            ✓ 250 free credits on signup &nbsp;·&nbsp; ✓ No credit card required &nbsp;·&nbsp; ✓ Results in under 5 min
+          </p>
         </div>
 
-        <p className="font-mono text-xs text-[--text-muted] mt-5">
-          ✓ 3 free videos on signup · ✓ No credit card required · ✓ Results in under 5 minutes
-        </p>
+        {/* ══ RIGHT — Video preview ══ */}
+        <div className="relative order-first lg:order-last">
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/30 aspect-video">
 
-        {/* Hero mockup */}
-        <div className="mt-16 perspective-[1000px]">
-          <div className="[transform:rotateX(4deg)] hover:[transform:rotateX(0deg)] transition-transform duration-500">
-            <Card variant="glass" padding="md" className="max-w-3xl mx-auto shadow-card-hover">
-              {/* Generation bar */}
-              <div className="flex items-center gap-4 mb-5">
-                <SpinnerAI size="md" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-body text-sm text-[--text-secondary]">Generating...</span>
-                    <span className="font-mono text-xs text-[--text-muted]">Scene 3 / 6</span>
-                  </div>
-                  <div className="h-1 bg-border rounded-full overflow-hidden">
-                    <div className="h-full w-1/2 bg-grad-primary rounded-full" />
-                  </div>
+            {/*
+              Real video — replace src with /demo/clyro-hero-demo.mp4 once
+              a 720p H.264 < 4 MB export is available from CLYRO.
+              Requirements : H.264 baseline, 1280×720, < 4 MB for good LCP.
+            */}
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              poster="/demo/hero-poster.jpg"
+              className="absolute inset-0 w-full h-full object-cover"
+              aria-label="CLYRO demo — faceless video generation workflow"
+            >
+              <source src="/demo/clyro-hero-demo.mp4" type="video/mp4" />
+            </video>
+
+            {/* Placeholder shown when video hasn't loaded or is unavailable */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-violet-900/50 to-indigo-900/60 flex flex-col items-center justify-center gap-4">
+              {/* Simulated generation interface */}
+              <div className="w-4/5 max-w-xs space-y-3">
+                <div className="flex items-center gap-2">
+                  <SpinnerAI size="sm" />
+                  <span className="font-body text-sm text-white/80">Generating scenes...</span>
+                  <span className="font-mono text-xs text-white/50 ml-auto">Scene 4 / 6</span>
+                </div>
+                <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full w-2/3 bg-gradient-to-r from-blue-400 to-violet-400 rounded-full" />
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  {[
+                    { label: 'Scene 1', done: true },
+                    { label: 'Scene 2', done: true },
+                    { label: 'Scene 3', active: true },
+                  ].map((s) => (
+                    <div key={s.label} className="aspect-video bg-white/5 rounded-lg border border-white/10 flex items-center justify-center relative overflow-hidden">
+                      {s.done && <Play size={12} className="text-white/40" />}
+                      {s.active && (
+                        <div className="absolute inset-0 bg-blue-500/10 border border-blue-400/30 rounded-lg flex items-center justify-center">
+                          <SpinnerAI size="sm" />
+                        </div>
+                      )}
+                      <Badge
+                        variant={s.done ? 'success' : 'info'}
+                        className="absolute top-1 right-1 text-[9px] px-1 py-0"
+                        dot={!!s.active}
+                      >
+                        {s.done ? 'HD' : 'AI'}
+                      </Badge>
+                      <span className="absolute bottom-1 left-1 font-mono text-[9px] text-white/40">{s.label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* Scene thumbnails */}
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: 'Scene 1', done: true },
-                  { label: 'Scene 2', done: true },
-                  { label: 'Scene 3', active: true },
-                ].map((scene) => (
-                  <div
-                    key={scene.label}
-                    className="relative aspect-video bg-border rounded-xl overflow-hidden flex items-center justify-center"
-                  >
-                    {scene.done && (
-                      <div className="absolute inset-0 bg-muted/60 flex items-center justify-center">
-                        <Play size={20} className="text-foreground/60" />
-                      </div>
-                    )}
-                    {scene.active && (
-                      <div className="absolute inset-0 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center justify-center">
-                        <SpinnerAI size="sm" />
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <Badge variant={scene.done ? 'success' : scene.active ? 'info' : 'neutral'} dot={!!scene.active}>
-                        {scene.done ? 'HD' : scene.active ? 'IA' : '—'}
-                      </Badge>
-                    </div>
-                    <span className="absolute bottom-2 left-2 font-mono text-xs text-[--text-muted]">{scene.label}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ── 3. SOCIAL PROOF ───────────────────────────────────────────────────────────
-
-const STATS = [
-  { value: '2 000+', label: 'videos generated' },
-  { value: '500+',   label: 'active creators' },
-  { value: '<5 min', label: 'average generation time' },
-  { value: '4.8/5',  label: 'average rating' },
-]
-
-function SocialProof() {
-  return (
-    <section className="bg-card border-y border-border/50 py-8">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x md:divide-border/50">
-          {STATS.map((stat) => (
-            <div key={stat.label} className="flex flex-col items-center text-center px-4 py-2">
-              <div className="font-display text-2xl font-bold gradient-text">{stat.value}</div>
-              <div className="font-body text-sm text-[--text-muted] mt-0.5">{stat.label}</div>
             </div>
-          ))}
+
+            {/* Gradient overlay at bottom */}
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+
+            {/* "Generated by CLYRO" badge */}
+            <div className="absolute bottom-3 left-3">
+              <Badge variant="success" className="backdrop-blur-sm bg-success/20 text-white border-success/30">
+                Generated by CLYRO in 4 min
+              </Badge>
+            </div>
+
+            {/* Fullscreen hint */}
+            <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm rounded-lg p-2 border border-white/10">
+              <Maximize2 size={13} className="text-white/60" />
+            </div>
+          </div>
+
+          {/* Depth shadow */}
+          <div className="absolute -bottom-6 inset-x-8 h-12 bg-blue-500/10 blur-2xl rounded-full" />
         </div>
       </div>
     </section>
@@ -236,48 +236,51 @@ function SocialProof() {
 
 const PROBLEMS = [
   {
-    icon: <Clock size={22} />,
+    icon:      <Clock size={22} />,
     iconColor: 'text-error',
     iconBg:    'bg-error/10',
     title:     'Hours of editing',
-    text:      'Finding visuals, editing, adjusting, exporting... A 2-minute video = a full day of work.',
+    text:      'Finding visuals, cutting, color grading, exporting... A 2-minute video = a full day of work.',
   },
   {
-    icon: <DollarSign size={22} />,
+    icon:      <DollarSign size={22} />,
     iconColor: 'text-warning',
     iconBg:    'bg-warning/10',
     title:     'Agency costs are sky-high',
-    text:      'A professional video costs $500-$5,000. Unaffordable for scaling content production.',
+    text:      'A professional video costs $500–$5,000. Unaffordable for scaling content production.',
   },
   {
-    icon: <Frown size={22} />,
+    icon:      <Frown size={22} />,
     iconColor: 'text-purple-400',
     iconBg:    'bg-purple-500/10',
     title:     'Inconsistent results',
-    text:      "Switching freelancers, tools, or styles with every video. No brand consistency over time.",
+    text:      "Switching freelancers, tools, and styles with every video. No brand consistency over time.",
   },
 ]
 
 function ProblemSection() {
   return (
-    <section id="fonctionnalites" className="bg-background py-24 px-4 sm:px-6">
+    <section id="features" className="bg-background py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
-        <SectionHeader
-          label="The problem"
-          labelVariant="error"
-          title="Video creation takes too much time"
-          subtitle="Creators spend 80% of their time producing, not creating."
-        />
-
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="reveal">
+          <SectionHeader
+            label="The problem"
+            labelVariant="error"
+            title="Video creation takes too much time"
+            subtitle="Creators spend 80% of their time producing, not creating."
+          />
+        </div>
+        <div className="grid md:grid-cols-3 gap-6 stagger">
           {PROBLEMS.map((p) => (
-            <Card key={p.title} variant="elevated" hoverable>
-              <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl ${p.iconBg} ${p.iconColor} mb-4`}>
-                {p.icon}
-              </div>
-              <h3 className="font-display text-lg font-semibold text-foreground mb-2">{p.title}</h3>
-              <p className="font-body text-sm text-[--text-secondary] leading-relaxed">{p.text}</p>
-            </Card>
+            <div key={p.title} className="reveal">
+              <Card variant="elevated" hoverable>
+                <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl ${p.iconBg} ${p.iconColor} mb-4`}>
+                  {p.icon}
+                </div>
+                <h3 className="font-display text-lg font-semibold text-foreground mb-2">{p.title}</h3>
+                <p className="font-body text-sm text-[--text-secondary] leading-relaxed">{p.text}</p>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
@@ -287,68 +290,58 @@ function ProblemSection() {
 
 // ── 5. SOLUTION ───────────────────────────────────────────────────────────────
 
-function ModuleMockup({ slots }: { slots: string[] }) {
-  return (
-    <Card variant="glass" padding="md" className="w-full">
-      <div className="grid grid-cols-2 gap-2">
-        {slots.map((label, i) => (
-          <div key={i} className="aspect-video bg-border rounded-lg flex items-center justify-center">
-            <span className="font-mono text-xs text-[--text-muted]">{label}</span>
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
-}
-
 const MODULES = [
   {
     badge:       { label: 'Module 1', variant: 'purple' as const },
     title:       'Animated faceless videos',
-    desc:        "Paste your script, choose from 6 visual styles, select a voice — CLYRO generates your complete video with animated scenes, voiceovers, and karaoke subtitles.",
+    desc:        "Paste your script, choose from 6 visual styles, pick a voice — CLYRO generates your complete video with animated scenes, voiceover, and karaoke subtitles.",
     features:    [
       '6 styles: 2D Animation, Cinematic, Whiteboard, and more',
-      'Karaoke subtitles auto-synced',
-      'Regenerate scenes individually as needed',
+      'Karaoke subtitles auto-synced to the voiceover',
+      'Regenerate individual scenes without restarting',
     ],
     reverse:     false,
-    mockupSlots: ['Scene 1', 'Scene 2', 'Scene 3', 'Scene 4'],
+    previewGradient: 'from-violet-500/30 to-blue-500/20',
+    previewLabel:    'Faceless Video · 6 scenes',
   },
   {
     badge:       { label: 'New · AI Avatar Studio', variant: 'purple' as const, dot: true },
     title:       'AI avatars that speak your script',
-    desc:        "Pick a realistic presenter from hundreds of avatars — Professional, UGC, Lifestyle, Community — or paste a YouTube URL and let CLYRO re-voice it. Each avatar ships with multiple looks (outfit, setting) so your videos stay on-brand.",
+    desc:        "Pick a photorealistic presenter from hundreds of avatars — Professional, UGC, Lifestyle — or paste a YouTube URL and let CLYRO re-voice it. Each avatar ships with multiple looks.",
     features:    [
-      'Hundreds of avatars grouped by name with every look variant',
+      'Hundreds of avatars across Professional, UGC, Lifestyle categories',
       'Narration in 12 languages with cloned or premade voices',
-      'Script or YouTube URL → edited video ready to publish',
+      'Script or YouTube URL → publish-ready video',
     ],
     reverse:     true,
-    mockupSlots: ['Professional', 'Lifestyle', 'UGC', 'Community'],
+    previewGradient: 'from-emerald-500/30 to-teal-500/20',
+    previewLabel:    'Avatar Studio · 4 looks',
   },
   {
     badge:       { label: 'Module 3', variant: 'info' as const },
-    title:       'After Effects-style motion design',
-    desc:        "Create ads, product presentations, and animated teasers. Define your brief, CLYRO generates a structured storyboard and renders your video with professional animations.",
+    title:       'After Effects–style motion design',
+    desc:        "Create ads, product launches, and animated teasers. Define your brief, CLYRO generates a structured storyboard and renders your video with professional animations.",
     features:    [
-      '9:16, 1:1, 16:9 formats — ready for all platforms',
-      "Visual assets generated to match your brand feel",
+      '9:16, 1:1, 16:9 — ready for every platform',
+      'Visual assets generated to match your brand feel',
       'Auto-generated thumbnails for ads',
     ],
     reverse:     false,
-    mockupSlots: ['Intro', 'Slide 1', 'Slide 2', 'Outro'],
+    previewGradient: 'from-orange-500/30 to-amber-500/20',
+    previewLabel:    'Motion Design · 4 slides',
   },
   {
     badge:       { label: 'Module 4', variant: 'info' as const },
-    title:       'Complete brand identity',
-    desc:        "In 15 minutes, CLYRO generates your logo, color palette, typefaces, mockups, and professional brand guidelines PDF — from a simple text brief.",
+    title:       'Complete brand identity in 15 minutes',
+    desc:        "CLYRO generates your logo, color palette, typefaces, mockups, and professional brand guidelines PDF — from a simple text brief.",
     features:    [
-      '3 creative directions to choose from with blending options',
-      'Automatic WCAG color compliance verification',
+      '3 creative directions to choose from',
+      'Automatic WCAG color compliance check',
       'Brand kit ZIP export (PNG/SVG logos, ASE palette, brand PDF)',
     ],
     reverse:     true,
-    mockupSlots: ['Direction A', 'Direction B', 'Direction C', 'Export'],
+    previewGradient: 'from-pink-500/30 to-rose-500/20',
+    previewLabel:    'Brand Kit · 3 directions',
   },
 ]
 
@@ -356,17 +349,19 @@ function SolutionSection() {
   return (
     <section className="bg-card py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
-        <SectionHeader
-          label="The CLYRO solution"
-          title={<>Four tools. <span className="gradient-text">One workflow.</span></>}
-        />
+        <div className="reveal">
+          <SectionHeader
+            label="The CLYRO solution"
+            title={<>Four tools. <span className="gradient-text">One workflow.</span></>}
+          />
+        </div>
 
         <div className="flex flex-col gap-20">
           {MODULES.map((mod, i) => (
             <div
               key={i}
-              id={mod.badge.label.includes('AI Avatar Studio') ? 'avatar-studio' : undefined}
-              className={`flex flex-col ${mod.reverse ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 items-center scroll-mt-24`}
+              id={mod.badge.label.includes('Avatar Studio') ? 'avatar-studio' : undefined}
+              className={`reveal flex flex-col ${mod.reverse ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 items-center scroll-mt-24`}
             >
               {/* Text */}
               <div className="flex-1">
@@ -385,12 +380,18 @@ function SolutionSection() {
                     </li>
                   ))}
                 </ul>
-                <Button variant="secondary" size="md">See example →</Button>
+                <Link href="/signup">
+                  <Button variant="secondary" size="md">Try it free →</Button>
+                </Link>
               </div>
 
-              {/* Mockup */}
+              {/* Preview card */}
               <div className="flex-1 w-full">
-                <ModuleMockup slots={mod.mockupSlots} />
+                <Card variant="glass" padding="md" className="w-full">
+                  <div className={`aspect-video rounded-xl bg-gradient-to-br ${mod.previewGradient} flex items-center justify-center`}>
+                    <span className="font-mono text-xs text-white/60">{mod.previewLabel}</span>
+                  </div>
+                </Card>
               </div>
             </div>
           ))}
@@ -412,8 +413,8 @@ const STEPS = [
   {
     num:   '02',
     icon:  <Cpu size={24} />,
-    title: "AI generates everything",
-    text:  'Images, animations, voiceovers, karaoke subtitles. All in parallel, in minutes.',
+    title: 'AI generates everything',
+    text:  'Images, animations, voiceover, karaoke subtitles — all in parallel, in minutes.',
   },
   {
     num:   '03',
@@ -427,22 +428,22 @@ function HowItWorks() {
   return (
     <section className="bg-background py-24 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
-        <SectionHeader
-          label="How it works"
-          labelVariant="neutral"
-          title="Ready in 3 steps"
-        />
+        <div className="reveal">
+          <SectionHeader
+            label="How it works"
+            labelVariant="neutral"
+            title="Ready in 3 steps"
+          />
+        </div>
 
-        <div className="grid md:grid-cols-3 gap-8 relative">
-          {/* Connector line — spans columns, sits behind content */}
+        <div className="grid md:grid-cols-3 gap-8 relative stagger">
           <div
             className="hidden md:block absolute top-[28px] left-[calc(33.33%-1px)] right-[calc(33.33%-1px)] h-px border-t border-dashed border-border z-0"
             aria-hidden="true"
           />
 
           {STEPS.map((step) => (
-            <div key={step.num} className="flex flex-col items-center text-center relative z-10">
-              {/* Step number circle */}
+            <div key={step.num} className="reveal flex flex-col items-center text-center relative z-10">
               <div className="w-14 h-14 rounded-full bg-muted border border-border flex items-center justify-center mb-4 shrink-0">
                 <span className="font-mono text-lg font-bold gradient-text">{step.num}</span>
               </div>
@@ -463,7 +464,7 @@ function HowItWorks() {
 
 const VIDEO_STYLES = [
   {
-    name: 'Animation 2D',
+    name: '2D Animation',
     desc: 'Animated cartoon characters',
     preview: (
       <div className="absolute inset-0 bg-gradient-to-br from-orange-500/30 to-yellow-500/15 flex items-center justify-center">
@@ -484,7 +485,6 @@ const VIDEO_STYLES = [
     desc: 'Professional realistic images',
     preview: (
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 to-slate-900/70">
-        {/* Cinematic bars */}
         <div className="absolute top-0 left-0 right-0 h-[14%] bg-black/70" />
         <div className="absolute bottom-0 left-0 right-0 h-[14%] bg-black/70" />
         <div className="absolute inset-0 flex items-center justify-center">
@@ -551,23 +551,20 @@ function StylesSection() {
   return (
     <section id="styles" className="bg-card py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
-        <SectionHeader
-          label="6 styles available"
-          title="A style for every type of content"
-        />
+        <div className="reveal">
+          <SectionHeader
+            label="6 styles available"
+            title="A style for every type of content"
+          />
+        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 stagger">
           {VIDEO_STYLES.map((style) => (
-            <div
-              key={style.name}
-              className="group rounded-2xl overflow-hidden border border-border/60 bg-card hover:border-border hover:shadow-card-hover transition-all duration-200 cursor-pointer"
-            >
-              {/* Distinct CSS art thumbnail */}
+            <div key={style.name} className="reveal group rounded-2xl overflow-hidden border border-border/60 bg-card hover:border-border hover:shadow-card-hover transition-all duration-200 cursor-pointer">
               <div className="relative aspect-video overflow-hidden">
                 {style.preview}
                 <div className="absolute inset-0 bg-[var(--primary)]/0 group-hover:bg-[var(--primary)]/5 transition-colors duration-200" />
               </div>
-              {/* Info */}
               <div className="p-4">
                 <h3 className="font-display text-sm font-semibold text-foreground">{style.name}</h3>
                 <p className="font-body text-xs text-[--text-muted] mt-0.5">{style.desc}</p>
@@ -584,13 +581,15 @@ function StylesSection() {
 
 function PricingSection() {
   return (
-    <section id="tarifs" className="bg-background py-24 px-4 sm:px-6">
+    <section id="pricing" className="bg-background py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
-        <SectionHeader
-          label="Pricing"
-          labelVariant="neutral"
-          title="Simple. Transparent. No surprises."
-        />
+        <div className="reveal">
+          <SectionHeader
+            label="Pricing"
+            labelVariant="neutral"
+            title="Simple. Transparent. No surprises."
+          />
+        </div>
         <PricingToggle />
         <div className="mt-10 text-center">
           <Link
@@ -627,7 +626,7 @@ const FAQS = [
   },
   {
     q: "What AI avatars are available in the Avatar Studio?",
-    a: "CLYRO ships with hundreds of photorealistic avatars grouped by category — Professional, Lifestyle, UGC, and Community. Each avatar has several looks (outfits, settings) so you can stay on-brand across videos. You can also create a personal avatar in your account.",
+    a: "CLYRO ships with hundreds of photorealistic avatars grouped by category — Professional, Lifestyle, UGC, and Community. Each avatar has several looks so you can stay on-brand across videos.",
   },
 ]
 
@@ -635,17 +634,19 @@ function FaqSection() {
   return (
     <section id="faq" className="bg-card py-24 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto">
-        <SectionHeader
-          label="Frequently asked questions"
-          labelVariant="neutral"
-          title="Everything you need to know"
-        />
+        <div className="reveal">
+          <SectionHeader
+            label="Frequently asked questions"
+            labelVariant="neutral"
+            title="Everything you need to know"
+          />
+        </div>
 
         <div className="flex flex-col gap-3">
           {FAQS.map((faq) => (
             <details
               key={faq.q}
-              className="group bg-muted border border-border/50 rounded-xl overflow-hidden"
+              className="group bg-muted border border-border/50 rounded-xl overflow-hidden reveal"
             >
               <summary className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer list-none select-none">
                 <span className="font-display text-sm font-semibold text-foreground">{faq.q}</span>
@@ -669,7 +670,7 @@ function FaqSection() {
 
 function CtaSection() {
   return (
-    <section className="bg-background py-24 px-4 sm:px-6 relative overflow-hidden">
+    <section className="bg-background py-24 px-4 sm:px-6 relative overflow-hidden reveal">
       <div className="pointer-events-none absolute inset-0 bg-grad-glow-blue opacity-60" />
       <div className="pointer-events-none absolute inset-0 bg-grad-glow-purple opacity-40" />
 
@@ -679,7 +680,7 @@ function CtaSection() {
           <span className="gradient-text">now.</span>
         </h2>
         <p className="font-body text-lg text-[--text-secondary] mt-4">
-          3 free videos. No credit card. Results in under 5 minutes.
+          250 free credits. No credit card. Results in under 5 minutes.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
@@ -688,8 +689,8 @@ function CtaSection() {
               Create free account
             </Button>
           </Link>
-          <a href="#fonctionnalites">
-            <Button variant="ghost" size="lg">Watch demo →</Button>
+          <a href="#features">
+            <Button variant="ghost" size="lg">See examples →</Button>
           </a>
         </div>
       </div>
@@ -719,11 +720,10 @@ function Footer() {
     <footer className="bg-card border-t border-border/50 py-12 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-          {/* Col 1 — Brand */}
           <div className="col-span-2 md:col-span-1">
             <Logo variant="full" size="sm" href="/" />
             <p className="font-body text-sm text-[--text-muted] mt-2 mb-5">
-              From script to video in 10 minutes.
+              From script to video in 5 minutes.
             </p>
             <div className="flex items-center gap-3">
               {[Twitter, Instagram, Youtube, Linkedin].map((Icon, i) => (
@@ -739,7 +739,6 @@ function Footer() {
             </div>
           </div>
 
-          {/* Cols 2–4 */}
           {FOOTER_COLS.map((col) => (
             <div key={col.title}>
               <h4 className="font-mono text-xs uppercase tracking-wider text-[--text-muted] mb-4">
@@ -776,9 +775,16 @@ function Footer() {
 export default function LandingPage() {
   return (
     <main className="bg-background text-foreground min-h-screen">
+      {/* Client-side scroll reveal observer + sticky CTA */}
+      <ScrollRevealInit />
+      <StickyMobileCta heroId="hero" />
+
       <Header />
       <HeroSection />
-      <SocialProof />
+
+      {/* "Made with CLYRO" carousel — replaces fake stats */}
+      <VideoShowcase />
+
       <ProblemSection />
       <SolutionSection />
       <HowItWorks />
