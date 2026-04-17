@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { toast } from '@/components/ui/toast'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -232,18 +233,21 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   async function handleEditAsNew() {
     if (duplicating) return
     setDuplicating(true)
+    toast.info('Duplication du projet…')
     try {
-      // Duplicate the project as a fresh draft: status='draft', new id, cloned
-      // metadata + wizard_state. The original stays untouched and the server
-      // tells us whether the copy belongs in the feature's hub (per-scene
-      // editor) or on the /new wizard's review step.
       const res = await fetch(`/api/videos/${project.id}/duplicate`, { method: 'POST' })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '')
+        console.error('[EditAsNew] duplicate failed', res.status, detail)
+        throw new Error(`HTTP ${res.status}`)
+      }
       const { id: newId, module, target } = await res.json() as {
         id: string; module: string; target: 'hub' | 'new'
       }
       router.push(`/${module}/${target}?draft=${newId}`)
-    } catch {
+    } catch (err) {
+      console.error('[EditAsNew]', err)
+      toast.error('Impossible de dupliquer le projet — réessaie')
       setDuplicating(false)
     }
   }
