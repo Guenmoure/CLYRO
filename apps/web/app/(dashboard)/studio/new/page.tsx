@@ -163,7 +163,10 @@ function StudioNewPageInner() {
         value: mode === 'script' ? script.trim() : youtubeUrl.trim(),
         language,
         title: title.trim() || undefined,
-        avatarId: avatarId || undefined,
+        // When a specific look is picked, send its look_id as the avatarId.
+        // HeyGen accepts look_ids as valid avatar identifiers, so no backend
+        // schema or DB change is needed.
+        avatarId: selectedLookId || avatarId || undefined,
         format: '16_9',
       })
 
