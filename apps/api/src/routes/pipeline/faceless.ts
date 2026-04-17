@@ -126,9 +126,13 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
 
     // Créer l'entrée vidéo en DB (status: pending)
     //
-    // Note: animation_mode / animation_overrides sont stockés dans metadata (JSONB)
-    // plutôt que sur des colonnes dédiées, pour ne pas dépendre de l'application
-    // de la migration 20260415000003_f1_animation_mode.sql en production.
+    // Note: animation_mode / animation_overrides sont écrits à la fois sur
+    // les colonnes dédiées (ajoutées par la migration
+    // 20260415000003_f1_animation_mode.sql) ET dans metadata JSONB.
+    //   - Les colonnes permettent de filtrer/agréger facilement en SQL
+    //     (dashboards internes, stats produit, indexation).
+    //   - La copie dans metadata sert de filet de sécurité et reste le
+    //     format consommé par le pipeline.
     const resolvedAnimationMode = animation_mode ?? 'storyboard'
     const resolvedAnimationOverrides = animation_overrides ?? {}
     const { data: video, error: dbError } = await supabaseAdmin
@@ -139,6 +143,8 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
         style,
         title,
         status: 'pending',
+        animation_mode: resolvedAnimationMode,
+        animation_overrides: resolvedAnimationOverrides,
         metadata: {
           voice_id,
           input_type,
