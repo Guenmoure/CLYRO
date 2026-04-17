@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Play, X, ArrowRight } from 'lucide-react'
+import { useRef, useState, useEffect } from 'react'
+import { ChevronLeft, ChevronRight, Play, X, ArrowRight, Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -168,8 +168,41 @@ function ShowcaseCard({ video, onPlay }: { video: ShowcaseVideo; onPlay: () => v
 }
 
 // ── VideoModal ─────────────────────────────────────────────────────────────────
+// autoPlay strategy :
+//  - démarre muet (muted=true) pour satisfaire la browser autoplay policy
+//  - bouton mute/unmute visible en overlay pour laisser l'utilisateur activer le son
+//  - Escape ferme le modal ; focus trap entre close + vidéo
 
 function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => void }) {
+  const [muted, setMuted]       = useState(true)
+  const [errored, setErrored]   = useState(false)
+  const videoRef                = useRef<HTMLVideoElement>(null)
+  const dialogRef               = useRef<HTMLDivElement>(null)
+  const closeBtnRef             = useRef<HTMLButtonElement>(null)
+
+  // Focus trap + Escape
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null
+    closeBtnRef.current?.focus()
+    const FOCUSABLE = 'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key === 'Tab' && dialogRef.current) {
+        const els = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+        if (!els.length) return
+        if (e.shiftKey && document.activeElement === els[0]) { e.preventDefault(); els[els.length - 1].focus() }
+        else if (!e.shiftKey && document.activeElement === els[els.length - 1]) { e.preventDefault(); els[0].focus() }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => { window.removeEventListener('keydown', onKey); prev?.focus?.() }
+  }, [onClose])
+
+  // Sync muted state on the video element
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = muted
+  }, [muted])
+
   return (
     <div
       role="dialog"
@@ -179,22 +212,42 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         className="relative max-w-4xl w-full rounded-2xl overflow-hidden shadow-2xl border border-border/30"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Video player */}
-        <video
-          src={video.videoUrl}
-          controls
-          autoPlay
-          playsInline
-          className="w-full aspect-video bg-black"
-          onError={(e) => {
-            // If video can't load, show poster gradient instead
-            const el = e.currentTarget
-            el.style.display = 'none'
-          }}
-        />
+        {/* Placeholder gradient — visible si erreur ou avant chargement */}
+        {errored && (
+          <div className={cn('aspect-video bg-gradient-to-br flex items-center justify-center', video.placeholderGradient)}>
+            <p className="font-mono text-xs text-white/50">Preview not available yet</p>
+          </div>
+        )}
+
+        {/* Video player — muted au départ pour autoplay garanti */}
+        {!errored && (
+          <video
+            ref={videoRef}
+            src={video.videoUrl}
+            controls
+            autoPlay
+            muted          // muted obligatoire pour autoplay cross-browser
+            playsInline
+            className="w-full aspect-video bg-black"
+            onError={() => setErrored(true)}
+          />
+        )}
+
+        {/* Bouton mute / unmute — coin bas-gauche de la vidéo */}
+        {!errored && (
+          <button
+            type="button"
+            onClick={() => setMuted((m) => !m)}
+            aria-label={muted ? 'Enable sound' : 'Mute'}
+            className="absolute bottom-[4.5rem] left-3 bg-black/60 backdrop-blur-sm rounded-full p-2 hover:bg-black/80 transition-colors text-white z-10"
+          >
+            {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+          </button>
+        )}
 
         {/* Info bar */}
         <div className="bg-card px-5 py-4 flex items-center justify-between gap-4">
@@ -213,6 +266,7 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
 
         {/* Close button */}
         <button
+          ref={closeBtnRef}
           type="button"
           aria-label="Close preview"
           onClick={onClose}
