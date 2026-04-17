@@ -2,14 +2,19 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import {
-  Zap, ArrowRight, AlertCircle, RefreshCw,
+  AlertCircle, RefreshCw,
 } from 'lucide-react'
 import type { Database } from '@/lib/database.types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { HeroBanner } from '@/components/dashboard/HeroBanner'
-import { FeatureCards } from '@/components/dashboard/FeatureCards'
-import ProjectSectionsClient from './ProjectSectionsClient'
+
+// Dashboard components
+import { PromoBanner }        from '@/components/dashboard/PromoBanner'
+import { NewProjectDropdown } from '@/components/dashboard/NewProjectDropdown'
+import { QuickActions }       from '@/components/dashboard/QuickActions'
+import { CreditsBanner }      from '@/components/dashboard/CreditsBanner'
+import { EmptyDashboard }     from '@/components/dashboard/EmptyDashboard'
+import ProjectSectionsClient  from './ProjectSectionsClient'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Dashboard — CLYRO' }
@@ -29,7 +34,7 @@ interface Profile {
 export default async function DashboardPage() {
   console.log('[DashboardPage] Starting render')
 
-  // Guard env vars — évite le crash SSR si Vercel n'a pas les variables Supabase
+  // Guard env vars — prevents SSR crash when Supabase env vars are missing
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     console.error('[DashboardPage] Missing Supabase env vars')
     return (
@@ -64,7 +69,7 @@ export default async function DashboardPage() {
       console.log('[DashboardPage] No user — middleware will redirect')
       return null
     } else {
-      userId = authData.user.id
+      userId    = authData.user.id
       userEmail = authData.user.email ?? null
       console.log('[DashboardPage] User authenticated:', userId)
 
@@ -77,7 +82,7 @@ export default async function DashboardPage() {
           .maybeSingle(),
         supabase
           .from('videos')
-          .select('id, title, module, style, status, output_url, created_at')
+          .select('id, title, module, style, status, output_url, created_at, thumbnail_url, duration_seconds')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(50),
@@ -105,52 +110,40 @@ export default async function DashboardPage() {
     return null
   }
 
-  const firstName = (profile?.full_name ?? userEmail ?? 'User').split(/[\s@]/)[0] ?? 'User'
-  const plan      = profile?.plan ?? 'free'
-  const credits   = profile?.credits ?? 0
-  const isStarter = plan !== 'pro' && plan !== 'studio'
+  const firstName   = (profile?.full_name ?? userEmail ?? 'User').split(/[\s@]/)[0] ?? 'User'
+  const plan        = profile?.plan ?? 'free'
+  const credits     = profile?.credits ?? 0
+  const hasProjects = (videos?.length ?? 0) > 0
 
   console.log('[DashboardPage] Rendering JSX')
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-6xl mx-auto space-y-10">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-6xl mx-auto space-y-6">
 
-      {/* ── Greeting (subtle, no big block) ─────────────────────────── */}
-      <div className="flex items-center justify-between">
+      {/* ── Greeting + New project button ─────────────────────── */}
+      <div className="flex items-center justify-between gap-4 min-h-[36px]">
         <p className="font-body text-sm text-[--text-secondary]">
-          Hi <span className="text-foreground font-medium">{firstName}</span> · ready to create?
+          Hi <span className="text-foreground font-medium">{firstName}</span>{' '}
+          <span className="text-[--text-muted]">· ready to create?</span>
         </p>
+        <NewProjectDropdown />
       </div>
 
-      {/* ── Hero carousel ──────────────────────────────────────────── */}
-      <HeroBanner />
+      {/* ── Promo banner (dismissable) ────────────────────────── */}
+      <PromoBanner />
 
-      {/* ── Plan banner — Starter only — demoted to info strip, no primary CTA ──
-           (The HeroBanner above already has the primary CTA; this is just a nudge.) */}
-      {isStarter && (
-        <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/50 px-4 py-2.5">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <Zap className="text-warning shrink-0" size={14} />
-            <p className="font-body text-xs text-[--text-secondary] truncate">
-              <span className="text-foreground font-medium">Starter plan</span>
-              <span className="mx-2 text-[--text-muted]">·</span>
-              {credits} credit{credits !== 1 ? 's' : ''} left this month
-            </p>
-          </div>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-blue-500 hover:text-blue-400 transition-colors"
-          >
-            Upgrade to Pro
-            <ArrowRight size={12} />
-          </Link>
-        </div>
-      )}
+      {/* ── Credits (always visible, contextualized) ─────────── */}
+      <CreditsBanner credits={credits} plan={plan} />
 
-      {/* ── Feature cards ──────────────────────────────────────────── */}
-      <FeatureCards />
+      {/* ── Quick actions — 4 cards ───────────────────────────── */}
+      <div className="space-y-3">
+        <p className="font-mono text-xs uppercase tracking-widest text-[--text-muted]">
+          Create
+        </p>
+        <QuickActions />
+      </div>
 
-      {/* ── Fetch error banner ─────────────────────────────────────── */}
+      {/* ── Fetch error banner ─────────────────────────────────── */}
       {errorMsg && (
         <Card variant="elevated" className="flex items-center gap-4 py-5 px-6">
           <div className="bg-error/10 rounded-xl p-3 shrink-0">
@@ -170,12 +163,16 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      {/* ── Recent projects + Drafts (client-only, no SSR) ──────── */}
+      {/* ── Projects or empty state ───────────────────────────── */}
       {!errorMsg && (
-        <ProjectSectionsClient
-          userId={userId}
-          videos={videos ?? []}
-        />
+        hasProjects ? (
+          <ProjectSectionsClient
+            userId={userId}
+            videos={videos ?? []}
+          />
+        ) : (
+          <EmptyDashboard firstName={firstName} />
+        )
       )}
     </div>
   )

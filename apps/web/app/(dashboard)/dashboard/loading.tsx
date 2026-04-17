@@ -1,51 +1,55 @@
+/**
+ * Dashboard loading skeleton — matches the new dashboard structure:
+ *   1. Greeting row + "New" button
+ *   2. PromoBanner (48px strip)
+ *   3. CreditsBanner (54px strip)
+ *   4. QuickActions (4 cards × 1 row)
+ *   5. Project grid (8 cards)
+ */
 export default function DashboardLoading() {
   return (
-    <div className="px-6 py-8 max-w-7xl mx-auto space-y-10">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-6xl mx-auto space-y-8">
 
-      {/* Welcome header skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <div className="h-7 w-48 bg-muted rounded-xl animate-shimmer" />
-          <div className="h-4 w-64 bg-muted rounded-lg animate-shimmer" />
-        </div>
-        <div className="h-9 w-36 bg-muted rounded-xl animate-shimmer" />
+      {/* ── Greeting row ──────────────────────────────────────── */}
+      <div className="flex items-center justify-between h-9">
+        <div className="h-4 w-44 bg-muted rounded-lg animate-shimmer" />
+        <div className="h-9 w-24 bg-muted rounded-xl animate-shimmer" />
       </div>
 
-      {/* Plan banner skeleton */}
-      <div className="h-16 w-full bg-muted rounded-2xl animate-shimmer" />
+      {/* ── PromoBanner strip ─────────────────────────────────── */}
+      <div className="h-12 w-full bg-muted rounded-2xl animate-shimmer" />
 
-      {/* Three module sections */}
-      {Array.from({ length: 3 }).map((_, si) => (
-        <div key={si} className="space-y-4">
-          {/* Section header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-muted rounded-xl animate-shimmer" />
-              <div className="space-y-1.5">
-                <div className="h-5 w-36 bg-muted rounded-lg animate-shimmer" />
-                <div className="h-3 w-28 bg-muted rounded animate-shimmer" />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="h-7 w-20 bg-muted rounded-lg animate-shimmer" />
-              <div className="h-7 w-20 bg-muted rounded-lg animate-shimmer" />
-            </div>
-          </div>
+      {/* ── CreditsBanner strip ───────────────────────────────── */}
+      <div className="h-14 w-full bg-muted rounded-2xl animate-shimmer" />
 
-          {/* Card grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {Array.from({ length: 5 }).map((_, ci) => (
-              <div key={ci} className="rounded-2xl bg-muted animate-shimmer overflow-hidden">
-                <div className="aspect-video bg-border" />
-                <div className="px-3 py-3 space-y-1.5">
-                  <div className="h-4 w-3/4 bg-border rounded" />
-                  <div className="h-3 w-1/2 bg-border rounded" />
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* ── QuickActions — 4 cards ────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-2xl bg-muted animate-shimmer overflow-hidden h-36" />
+        ))}
+      </div>
+
+      {/* ── Project grid ─────────────────────────────────────── */}
+      <div className="space-y-4">
+        {/* Section header */}
+        <div className="flex items-center justify-between">
+          <div className="h-5 w-32 bg-muted rounded-lg animate-shimmer" />
+          <div className="h-7 w-20 bg-muted rounded-lg animate-shimmer" />
         </div>
-      ))}
+
+        {/* Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="rounded-2xl bg-muted animate-shimmer overflow-hidden">
+              <div className="aspect-video bg-border/60" />
+              <div className="px-3 py-3 space-y-1.5">
+                <div className="h-4 w-3/4 bg-border/60 rounded" />
+                <div className="h-3 w-1/2 bg-border/60 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

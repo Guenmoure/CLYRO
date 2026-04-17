@@ -45,17 +45,25 @@ const MODULE_ICON_COLORS: Record<string, string> = {
   brand:    'text-cyan-400',
 }
 
+/** Gradient placeholder shown when a project has no thumbnail yet */
+const MODULE_GRADIENTS: Record<string, string> = {
+  faceless: 'from-blue-900/60 via-blue-800/30 to-indigo-900/40',
+  motion:   'from-purple-900/60 via-violet-800/30 to-indigo-900/40',
+  brand:    'from-cyan-900/50 via-teal-800/30 to-slate-900/40',
+  studio:   'from-rose-900/50 via-pink-800/30 to-slate-900/40',
+}
+
 function formatRelativeDate(dateStr: string): string {
   const diff  = Date.now() - new Date(dateStr).getTime()
   const days  = Math.floor(diff / 86_400_000)
   const hours = Math.floor(diff / 3_600_000)
   const mins  = Math.floor(diff / 60_000)
-  if (days > 30)  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-  if (days > 1)   return `Il y a ${days} jours`
-  if (days === 1) return 'Hier'
-  if (hours > 0)  return `Il y a ${hours}h`
-  if (mins > 0)   return `Il y a ${mins} min`
-  return "À l'instant"
+  if (days > 30)  return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+  if (days > 1)   return `${days} days ago`
+  if (days === 1) return 'Yesterday'
+  if (hours > 0)  return `${hours}h ago`
+  if (mins > 0)   return `${mins} min ago`
+  return 'Just now'
 }
 
 function formatDuration(seconds: number): string {
@@ -176,8 +184,9 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
     }
   }
 
-  const ModuleIcon = MODULE_ICONS[project.module ?? ''] ?? Video
-  const iconColor  = MODULE_ICON_COLORS[project.module ?? ''] ?? 'text-[--text-muted]'
+  const ModuleIcon    = MODULE_ICONS[project.module ?? ''] ?? Video
+  const iconColor     = MODULE_ICON_COLORS[project.module ?? ''] ?? 'text-[--text-muted]'
+  const moduleGradient = MODULE_GRADIENTS[project.module ?? ''] ?? 'from-slate-900/50 via-slate-800/30 to-slate-900/40'
 
   const moduleLabel = project.module
     ? project.module.charAt(0).toUpperCase() + project.module.slice(1) + ' Video'
@@ -208,24 +217,45 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
 
       {/* Thumbnail */}
       <div className="relative aspect-video overflow-hidden bg-card">
-        {project.thumbnail_url ? (
+        {/* Gradient placeholder — always present, hidden under thumbnail when loaded */}
+        <div className={cn(
+          'absolute inset-0 bg-gradient-to-br flex items-center justify-center',
+          moduleGradient,
+        )}>
+          <ModuleIcon size={32} className={cn(iconColor, 'opacity-20')} />
+        </div>
+
+        {/* Real thumbnail */}
+        {project.thumbnail_url && (
           <Image
             src={project.thumbnail_url}
-            alt={project.title ?? 'Projet'}
+            alt={project.title ?? 'Project'}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <ModuleIcon size={36} className={cn(iconColor, 'opacity-25')} />
+        )}
+
+        {/* Hover play overlay — only when video is ready */}
+        {project.output_url && !isProcessing && !isError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors duration-200">
+            <div className={cn(
+              'w-11 h-11 rounded-full bg-white/90 shadow-lg',
+              'flex items-center justify-center',
+              'opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100',
+              'transition-all duration-200',
+            )}>
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-900 ml-0.5">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
           </div>
         )}
 
         {/* Status badge — top-left */}
         <div className="absolute top-2 left-2">
-          {isProcessing && <Badge variant="info" dot>En cours</Badge>}
-          {isError && <Badge variant="error">Erreur</Badge>}
+          {isProcessing && <Badge variant="info" dot>Processing</Badge>}
+          {isError && <Badge variant="error">Error</Badge>}
         </div>
 
         {/* Duration chip — bottom-right */}
@@ -241,7 +271,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
       <div className="absolute top-2 right-2 z-10">
         <button
           type="button"
-          aria-label="Options du projet"
+          aria-label="Project options"
           onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
           className="w-7 h-7 rounded-lg bg-background/70 backdrop-blur-sm border border-border/50 flex items-center justify-center text-[--text-muted] hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-200"
         >
@@ -259,7 +289,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
       {/* Info */}
       <div className="px-3 py-2.5">
         <p className="font-display text-sm font-semibold text-foreground truncate leading-snug">
-          {project.title ?? 'Sans titre'}
+          {project.title ?? 'Untitled'}
         </p>
         <p className="font-mono text-xs text-[--text-muted] mt-0.5">
           {formatRelativeDate(project.created_at)} · {moduleLabel}
