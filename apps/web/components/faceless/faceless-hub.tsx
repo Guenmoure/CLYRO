@@ -10,6 +10,7 @@ import { cn, checkScriptDuration } from '@/lib/utils'
 import { toast } from '@/components/ui/toast'
 import { VideoPlayer } from '@/components/ui/video-player'
 import { ProgressBar } from '@/components/ui/progress-bar'
+import { IconButton } from '@/components/ui/icon-button'
 import { startFacelessGeneration, getPublicVoices, updateVideoMetadata, regenerateFacelessScene, regenerateFacelessClip, reassembleFacelessVideo } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import { useDraftSave } from '@/hooks/use-draft-save'
@@ -328,8 +329,24 @@ const PIPELINE_STEPS: Array<{ id: PipelineStep; label: string }> = [
 
 function StepIndicator({ current, savedState }: { current: PipelineStep; savedState?: 'saving' | 'saved' | null }) {
   const currentIdx = PIPELINE_STEPS.findIndex((s) => s.id === current)
+  const progressPct = PIPELINE_STEPS.length > 1
+    ? Math.round((currentIdx / (PIPELINE_STEPS.length - 1)) * 100)
+    : 0
   return (
-    <div className="glass glass-border-b flex items-center gap-1 px-6 py-3 shrink-0 z-10 rounded-b-2xl">
+    <div
+      className="glass glass-border-b relative flex items-center gap-1 px-6 py-3 shrink-0 z-20 rounded-b-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+      role="progressbar"
+      aria-valuenow={progressPct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`Étape ${currentIdx + 1} sur ${PIPELINE_STEPS.length} : ${PIPELINE_STEPS[currentIdx]?.label ?? ''}`}
+    >
+      {/* Barre de progression linéaire sous les steps */}
+      <div
+        className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 transition-all duration-500 ease-out"
+        style={{ width: `${progressPct}%` }}
+        aria-hidden="true"
+      />
       {PIPELINE_STEPS.map((step, i) => {
         const done   = i < currentIdx
         const active = i === currentIdx
@@ -927,19 +944,26 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               </button>
               {/* Merge with next */}
               {i < scenes.length - 1 && (
-                <button type="button" onClick={() => mergeWithNext(scene.id)}
-                  title="Fusionner avec la scène suivante"
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[--text-muted] hover:text-amber-600 transition-all">
-                  <Merge size={11} />
-                </button>
+                <IconButton
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Fusionner avec la scène suivante"
+                  onClick={() => mergeWithNext(scene.id)}
+                  className="hover:text-amber-600"
+                >
+                  <Merge />
+                </IconButton>
               )}
               {/* Delete */}
               {scenes.length > 1 && (
-                <button type="button" onClick={() => deleteScene(scene.id)}
-                  title="Delete this scene"
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[--text-muted] hover:text-red-500 transition-all">
-                  <Trash2 size={11} />
-                </button>
+                <IconButton
+                  variant="danger"
+                  size="sm"
+                  aria-label="Supprimer cette scène"
+                  onClick={() => deleteScene(scene.id)}
+                >
+                  <Trash2 />
+                </IconButton>
               )}
             </div>
 
@@ -1693,14 +1717,47 @@ function ScenePreviewLightbox({
   const [mediaError, setMediaError] = useState(false)
   const [mediaLoading, setMediaLoading] = useState(true)
 
+  // ── Focus trap : capture le focus à l'ouverture, le restaure à la fermeture ──
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const closeBtnRef = useRef<HTMLButtonElement>(null)
+
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    // Focus le bouton de fermeture à l'ouverture (UX attendue en dialog modal)
+    closeBtnRef.current?.focus()
+
+    const FOCUSABLE = 'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
       if (e.key === 'ArrowLeft' && index > 0) onNavigate(index - 1)
       if (e.key === 'ArrowRight' && index < scenes.length - 1) onNavigate(index + 1)
+      // Focus trap : boucle le Tab dans la lightbox
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
+        ).filter((el) => !el.hasAttribute('aria-hidden'))
+        if (focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      // Restore focus à l'élément qui avait le focus avant l'ouverture
+      previouslyFocused?.focus?.()
+    }
   }, [index, scenes.length, onClose, onNavigate])
 
   if (!scene) return null
@@ -1720,6 +1777,7 @@ function ScenePreviewLightbox({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={`Prévisualisation scène ${index + 1}`}
@@ -1728,6 +1786,7 @@ function ScenePreviewLightbox({
     >
       {/* Close */}
       <button
+        ref={closeBtnRef}
         type="button"
         aria-label="Fermer la prévisualisation"
         onClick={onClose}
@@ -2068,6 +2127,11 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
     : scenes.every((s) => s.clipStatus === 'done')
   const doneCnt = scenes.filter((s) => s.clipStatus === 'done').length
 
+  // Durée totale estimée (secondes) : audioDuration réelle si dispo, sinon duree_estimee
+  const estimatedTotalSec = Math.round(
+    scenes.reduce((acc, s) => acc + (s.audioDuration ?? s.duree_estimee ?? 5), 0),
+  )
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -2372,7 +2436,11 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
           <button type="button" onClick={onNext} disabled={!allClipsDone}
             className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
               allClipsDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
-            Assembler la vidéo <ArrowRight size={13} />
+            <span>Assembler la vidéo</span>
+            <span className="font-mono text-[11px] opacity-70 border-l border-white/20 pl-2 hidden sm:inline">
+              ~{estimatedTotalSec}s · {scenes.length} {scenes.length > 1 ? 'scènes' : 'scène'}
+            </span>
+            <ArrowRight size={13} />
           </button>
         </div>
       </div>
