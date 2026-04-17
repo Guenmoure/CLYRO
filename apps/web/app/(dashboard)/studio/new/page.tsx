@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   FileText, Youtube, ArrowRight, Loader2, Sparkles,
-  Globe, Wand2, Info, Check, Search,
+  Globe, Wand2, Info, Check, Search, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/card'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { analyzeStudio, getStudioAvatars, type StudioAvatar } from '@/lib/api'
+import { groupAvatarsByName, type AvatarGroup } from '@/lib/avatar-grouping'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { useLanguage } from '@/lib/i18n'
 import { createBrowserClient } from '@/lib/supabase'
@@ -61,6 +62,7 @@ function StudioNewPageInner() {
   const [loadingAvatars, setLoadingAvatars] = useState(true)
   const [avatarSearch, setAvatarSearch] = useState('')
   const [avatarTab, setAvatarTab] = useState<string>('all')
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
 
   const AVATAR_TABS = [
     { key: 'all', label: t('all') },
@@ -70,7 +72,8 @@ function StudioNewPageInner() {
     { key: 'community', label: t('community') },
   ]
 
-  const filteredAvatars = useMemo(() => {
+  // Filter → group by name. Each group card expands to reveal all looks.
+  const avatarGroups = useMemo<AvatarGroup[]>(() => {
     let list = avatars
     if (avatarTab !== 'all') {
       list = list.filter((av) => av.category === avatarTab)
@@ -79,13 +82,21 @@ function StudioNewPageInner() {
       const q = avatarSearch.toLowerCase()
       list = list.filter((av) => av.avatar_name.toLowerCase().includes(q))
     }
-    return list
+    return groupAvatarsByName(list)
   }, [avatars, avatarSearch, avatarTab])
 
   const selectedAvatar = useMemo(
     () => avatars.find((a) => a.avatar_id === avatarId),
     [avatars, avatarId],
   )
+
+  /** Group containing the currently selected avatar (or null if none). */
+  const selectedGroup = useMemo<AvatarGroup | null>(() => {
+    if (!selectedAvatar) return null
+    return avatarGroups.find((g) =>
+      g.avatars.some((a) => a.avatar_id === selectedAvatar.avatar_id),
+    ) ?? null
+  }, [avatarGroups, selectedAvatar])
 
   useEffect(() => {
     getStudioAvatars()
@@ -297,7 +308,7 @@ function StudioNewPageInner() {
             <p className="font-body text-sm font-semibold text-foreground">{t('avatarLabel')}</p>
             {avatars.length > 0 && (
               <span className="font-body text-xs text-[--text-muted]">
-                {filteredAvatars.length} avatar{filteredAvatars.length !== 1 ? 's' : ''}
+                {avatarGroups.length} {avatarGroups.length === 1 ? t('avatarsCount') : t('avatarsCountPlural')}
               </span>
             )}
           </div>
@@ -325,9 +336,12 @@ function StudioNewPageInner() {
                   <button
                     key={tab.key}
                     type="button"
-                    onClick={() => setAvatarTab(tab.key)}
+                    onClick={() => {
+                      setAvatarTab(tab.key)
+                      setExpandedGroup(null)
+                    }}
                     className={cn(
-                      'px-3 py-1 rounded-full text-xs font-body font-medium border transition-all',
+                      'px-3 py-1 rounded-full text-xs font-body font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
                       avatarTab === tab.key
                         ? 'bg-blue-500 text-white border-blue-500'
                         : 'bg-card text-foreground border-border hover:border-blue-300',
@@ -350,89 +364,53 @@ function StudioNewPageInner() {
                 />
               </div>
 
-              {/* Scrollable avatar grid */}
-              <div className="max-h-[380px] overflow-y-auto rounded-xl pr-1 scrollbar-thin">
+              {/* Scrollable grid — one card per base name, expandable to reveal looks */}
+              <div className="max-h-[480px] overflow-y-auto rounded-xl pr-1 scrollbar-thin">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {filteredAvatars.map((av) => (
-                    <button
-                      key={av.avatar_id}
-                      type="button"
-                      onClick={() => {
-                        setAvatarId(av.avatar_id)
-                        setSelectedLookId('')
-                      }}
-                      aria-label={`${t('avatarLabel')}: ${av.avatar_name}`}
-                      aria-pressed={avatarId === av.avatar_id}
-                      className={cn(
-                        'relative rounded-xl overflow-hidden border transition-all card-interactive',
-                        avatarId === av.avatar_id
-                          ? 'border-blue-500 ring-2 ring-blue-500/30'
-                          : 'border-border hover:border-border',
-                      )}
-                    >
-                      <div
-                        className="aspect-[3/4] bg-cover bg-center bg-muted"
-                        style={{ backgroundImage: `url(${av.preview_image_url})` }}
+                  {avatarGroups.map((group) => {
+                    const isExpanded   = expandedGroup === group.baseName
+                    const groupHasSel  = selectedGroup?.baseName === group.baseName
+                    return (
+                      <StudioAvatarGroupCard
+                        key={group.baseName}
+                        group={group}
+                        isExpanded={isExpanded}
+                        groupHasSelection={groupHasSel}
+                        selectedAvatarId={avatarId}
+                        selectedLookId={selectedLookId}
+                        onToggle={() => setExpandedGroup(isExpanded ? null : group.baseName)}
+                        onSelectAvatar={(av) => {
+                          setAvatarId(av.avatar_id)
+                          setSelectedLookId('')
+                        }}
+                        onSelectLook={(av, lookId) => {
+                          setAvatarId(av.avatar_id)
+                          setSelectedLookId(lookId)
+                        }}
                       />
-                      {avatarId === av.avatar_id && (
-                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow">
-                          <Check size={11} className="text-white" />
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between px-2 py-1.5 bg-card">
-                        <p className="font-body text-[11px] text-foreground truncate">
-                          {av.avatar_name}
-                        </p>
-                        {av.looks_count > 1 && (
-                          <span className="font-body text-[11px] text-[--text-muted] whitespace-nowrap ml-1">
-                            {av.looks_count} looks
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                    )
+                  })}
                 </div>
-                {filteredAvatars.length === 0 && (
+                {avatarGroups.length === 0 && (
                   <p className="font-body text-sm text-[--text-muted] text-center py-6">
                     {avatarSearch ? t('noAvatarsMatch') : t('noAvatarsInCategory')}
                   </p>
                 )}
               </div>
 
-              {/* Looks selector — shown when selected avatar has multiple looks */}
-              {selectedAvatar && selectedAvatar.looks.length > 1 && (
-                <div className="space-y-2">
-                  <p className="font-body text-xs font-medium text-[--text-secondary]">
-                    {selectedAvatar.avatar_name} — {selectedAvatar.looks.length} looks
+              {/* Selection summary */}
+              {selectedAvatar && (
+                <div className="flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/5 px-3 py-2">
+                  <Check size={13} className="text-blue-500 shrink-0" />
+                  <p className="font-body text-xs text-foreground">
+                    <span className="font-semibold">{selectedAvatar.avatar_name}</span>
+                    {selectedLookId && selectedAvatar.looks.find((l) => l.look_id === selectedLookId) && (
+                      <span className="text-[--text-muted]">
+                        {' · '}
+                        {selectedAvatar.looks.find((l) => l.look_id === selectedLookId)!.name}
+                      </span>
+                    )}
                   </p>
-                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-                    {selectedAvatar.looks.map((look) => (
-                      <button
-                        key={look.look_id}
-                        type="button"
-                        onClick={() => setSelectedLookId(look.look_id)}
-                        className={cn(
-                          'relative shrink-0 w-16 rounded-lg overflow-hidden border transition-all',
-                          selectedLookId === look.look_id
-                            ? 'border-blue-500 ring-2 ring-blue-500/30'
-                            : 'border-border hover:border-blue-300',
-                        )}
-                      >
-                        <div
-                          className="aspect-[3/4] bg-cover bg-center bg-muted"
-                          style={{ backgroundImage: `url(${look.preview_image_url})` }}
-                        />
-                        {selectedLookId === look.look_id && (
-                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                            <Check size={9} className="text-white" />
-                          </div>
-                        )}
-                        <p className="font-body text-[10px] text-foreground px-1 py-0.5 truncate bg-card text-center">
-                          {look.name}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
                 </div>
               )}
             </>
@@ -529,6 +507,136 @@ function ModeCard({
         </div>
       )}
     </button>
+  )
+}
+
+// ── StudioAvatarGroupCard ───────────────────────────────────────────────
+// One card per base name (e.g. "Annie"). Clicking expands to show all looks;
+// picking a look sets both avatarId + selectedLookId. The summary banner
+// under the grid confirms the current selection.
+
+function StudioAvatarGroupCard({
+  group,
+  isExpanded,
+  groupHasSelection,
+  selectedAvatarId,
+  selectedLookId,
+  onToggle,
+  onSelectAvatar,
+  onSelectLook,
+}: {
+  group: AvatarGroup
+  isExpanded: boolean
+  groupHasSelection: boolean
+  selectedAvatarId: string
+  selectedLookId: string
+  onToggle: () => void
+  onSelectAvatar: (av: StudioAvatar) => void
+  onSelectLook: (av: StudioAvatar, lookId: string) => void
+}) {
+  // Flatten all looks across every avatar in the group.
+  const flatLooks = group.avatars.flatMap((av) =>
+    av.looks.length > 0
+      ? av.looks.map((look) => ({ av, look }))
+      : [{ av, look: { look_id: av.avatar_id, name: av.avatar_name, preview_image_url: av.preview_image_url } }],
+  )
+
+  return (
+    <div
+      className={cn(
+        'rounded-xl border overflow-hidden transition-all',
+        groupHasSelection
+          ? 'border-blue-500 ring-2 ring-blue-500/30'
+          : 'border-border hover:border-blue-300',
+      )}
+    >
+      {/* Main group card */}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-label={`${group.baseName}, ${group.totalLooks} looks`}
+        className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+      >
+        <div className="relative aspect-[3/4] bg-muted overflow-hidden group">
+          {group.mainPreview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={group.mainPreview}
+              alt={group.baseName}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+              <span className="font-body text-4xl text-foreground/40">
+                {group.baseName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+          {groupHasSelection && (
+            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow">
+              <Check size={11} className="text-white" />
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between px-2 py-1.5 bg-card">
+          <p className="font-body text-[11px] text-foreground truncate font-medium">
+            {group.baseName}
+          </p>
+          <span className="font-body text-[11px] text-[--text-muted] whitespace-nowrap ml-1 flex items-center gap-0.5">
+            {group.totalLooks} look{group.totalLooks !== 1 ? 's' : ''}
+            {isExpanded
+              ? <ChevronUp size={10} />
+              : <ChevronDown size={10} />}
+          </span>
+        </div>
+      </button>
+
+      {/* Expanded looks grid — each look is independently selectable */}
+      {isExpanded && (
+        <div className="p-2 border-t border-border bg-muted/30">
+          <div className="grid grid-cols-2 gap-1.5">
+            {flatLooks.map(({ av, look }) => {
+              const isLookSelected = av.looks.length > 0
+                ? selectedAvatarId === av.avatar_id && selectedLookId === look.look_id
+                : selectedAvatarId === av.avatar_id && !selectedLookId
+              return (
+                <button
+                  key={`${av.avatar_id}-${look.look_id}`}
+                  type="button"
+                  onClick={() =>
+                    av.looks.length > 0
+                      ? onSelectLook(av, look.look_id)
+                      : onSelectAvatar(av)
+                  }
+                  aria-pressed={isLookSelected}
+                  className={cn(
+                    'relative rounded-lg overflow-hidden border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
+                    isLookSelected
+                      ? 'border-blue-500 ring-2 ring-blue-500/30'
+                      : 'border-border hover:border-blue-300',
+                  )}
+                >
+                  <div
+                    className="aspect-[3/4] bg-cover bg-center bg-muted"
+                    style={{ backgroundImage: `url(${look.preview_image_url})` }}
+                  />
+                  {isLookSelected && (
+                    <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                      <Check size={9} className="text-white" />
+                    </div>
+                  )}
+                  <p className="font-body text-[10px] text-foreground px-1 py-0.5 truncate bg-card text-center">
+                    {look.name}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

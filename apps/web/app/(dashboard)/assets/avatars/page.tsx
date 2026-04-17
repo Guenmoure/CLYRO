@@ -7,49 +7,11 @@ import { AvatarFilters, type AvatarFilter } from '@/components/assets/AvatarFilt
 import { AvatarPreviewModal } from '@/components/assets/AvatarPreviewModal'
 import { CreateAvatarModal } from '@/components/assets/CreateAvatarModal'
 import { getStudioAvatars, type StudioAvatar } from '@/lib/api'
+import { groupAvatarsByName, type AvatarGroup } from '@/lib/avatar-grouping'
 import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 type AvatarTab = 'public' | 'my'
-
-/** A group of avatars sharing the same base name (e.g. "Annie") */
-interface AvatarGroup {
-  baseName: string
-  avatars: StudioAvatar[]        // All avatars/looks under this name
-  totalLooks: number
-  mainPreview: string            // preview_image_url of the first avatar
-  category: StudioAvatar['category']
-}
-
-/** Group avatars by their base name (removing look suffixes) */
-function groupAvatarsByName(avatars: StudioAvatar[]): AvatarGroup[] {
-  const map = new Map<string, StudioAvatar[]>()
-
-  for (const av of avatars) {
-    // Extract base name — strip common suffixes like " - Look 1", " (casual)", " V2", etc.
-    const baseName = av.avatar_name
-      .replace(/\s*[-–]\s*(look|style|outfit|version|v)\s*\d*/i, '')
-      .replace(/\s*\(.*\)\s*$/, '')
-      .trim()
-    const key = baseName.toLowerCase()
-
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(av)
-  }
-
-  return Array.from(map.entries()).map(([, avatars]) => {
-    const main = avatars[0]!
-    // Total looks = sum of each avatar's looks, or the number of avatars if no looks data
-    const totalLooks = avatars.reduce((sum, a) => sum + Math.max(a.looks_count, 1), 0)
-    return {
-      baseName: main.avatar_name.replace(/\s*[-–]\s*(look|style|outfit|version|v)\s*\d*/i, '').replace(/\s*\(.*\)\s*$/, '').trim(),
-      avatars,
-      totalLooks,
-      mainPreview: main.preview_image_url,
-      category: main.category,
-    }
-  }).sort((a, b) => a.baseName.localeCompare(b.baseName))
-}
 
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
