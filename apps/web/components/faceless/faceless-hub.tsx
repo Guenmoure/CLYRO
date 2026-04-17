@@ -1960,114 +1960,133 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-        {/* Clips list */}
-        {scenes.map((scene, i) => (
-          <div key={scene.id} className="rounded-2xl border border-border bg-muted overflow-hidden">
-            <div className="flex items-start gap-4 p-4">
-              {/* Video thumbnail / preview */}
-              <div className={cn('w-28 h-16 rounded-xl flex-shrink-0 relative overflow-hidden bg-gradient-to-br', SCENE_COLORS[i % SCENE_COLORS.length])}>
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+        {/* Clips grid — same layout as the Images step */}
+        <div className="grid grid-cols-3 gap-4">
+          {scenes.map((scene, i) => (
+            <div key={scene.id} className="rounded-2xl border border-border overflow-hidden bg-muted">
+              {/* Clip preview */}
+              <div className={cn('h-36 relative bg-gradient-to-br', SCENE_COLORS[i % SCENE_COLORS.length])}>
                 {scene.clipStatus === 'generating' ? (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 size={16} className="text-white/60 animate-spin" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
+                    <Loader2 size={24} className="text-white/60 animate-spin" />
+                    <p className="font-mono text-[11px] text-white/50 uppercase tracking-widest">Génération…</p>
                   </div>
                 ) : scene.clipStatus === 'done' && scene.clipUrl ? (
-                  // Show actual video preview when clip is ready; click to open lightbox
                   <button
                     type="button"
                     onClick={() => setPreviewIndex(i)}
                     aria-label={`Prévisualiser clip Scène ${i + 1} en grand`}
                     className="absolute inset-0 cursor-zoom-in group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
-                    <video src={scene.clipUrl} className="w-full h-full object-cover" muted autoPlay playsInline />
+                    <video src={scene.clipUrl} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop playsInline />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <Play size={14} className="text-white fill-white" />
+                      <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+                        <Play size={14} className="text-black fill-black translate-x-0.5" />
+                      </div>
                     </div>
                   </button>
                 ) : scene.clipStatus === 'done' ? (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                      <Play size={11} className="text-white fill-white" />
-                    </div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3">
+                    <Check size={14} className="text-white" />
                   </div>
                 ) : scene.clipStatus === 'error' ? (
                   <button type="button" aria-label="Réessayer le clip" onClick={() => generateClip(scene.id)}
-                    className="absolute inset-0 flex items-center justify-center bg-red-500/20 hover:bg-red-500/30 transition-colors group">
-                    <div className="w-7 h-7 rounded-full border-2 border-red-300 group-hover:border-red-100 flex items-center justify-center transition-all">
-                      <RefreshCw size={11} className="text-red-200 group-hover:text-white transition-colors" />
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 transition-colors group">
+                    <div className="w-10 h-10 rounded-full border-2 border-red-300 group-hover:border-red-100 flex items-center justify-center transition-all">
+                      <RefreshCw size={14} className="text-red-200 group-hover:text-white transition-colors" />
                     </div>
+                    <p className="font-mono text-[11px] text-red-300 uppercase tracking-wider">Retry</p>
                   </button>
                 ) : (
-                  <button type="button" aria-label="Generate clip" onClick={() => generateClip(scene.id)}
-                    className="absolute inset-0 flex items-center justify-center hover:bg-white/10 transition-colors group">
-                    <div className="w-7 h-7 rounded-full border-2 border-white/30 group-hover:border-white/70 flex items-center justify-center transition-all">
-                      <Film size={11} className="text-white/50 group-hover:text-white transition-colors" />
+                  <button type="button" aria-label="Générer le clip" onClick={() => generateClip(scene.id)}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-colors group">
+                    <div className="w-10 h-10 rounded-full border-2 border-white/30 group-hover:border-white/60 flex items-center justify-center transition-all">
+                      <Film size={14} className="text-white/60 group-hover:text-white transition-colors" />
                     </div>
+                    <p className="font-mono text-[11px] text-white/40 group-hover:text-white/70 uppercase tracking-widest transition-colors">Generate</p>
                   </button>
                 )}
-                <span className="absolute bottom-1 left-1 font-mono text-[8px] bg-black/50 text-white/80 px-1.5 rounded">S{i + 1}</span>
-              </div>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className={cn('font-mono text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full',
-                    scene.clipStatus === 'done' ? 'bg-emerald-50 text-emerald-600' :
-                    scene.clipStatus === 'generating' ? 'bg-blue-50 text-blue-500' :
-                    scene.clipStatus === 'error' ? 'bg-red-50 text-red-600 border border-red-200' :
-                    'bg-card text-[--text-muted] border border-border')}>
-                    {scene.clipStatus === 'done' ? '✓ Ready' :
-                      scene.clipStatus === 'generating' ? 'Generating…' :
-                      scene.clipStatus === 'error' ? '✕ Error - Retry' :
-                      'En attente'}
+                {/* Scene badge */}
+                <span className="absolute top-2 left-2 font-mono text-[11px] uppercase tracking-wider bg-black/50 text-white px-2 py-0.5 rounded-full">
+                  Scène {i + 1}
+                </span>
+
+                {/* Status badge (bottom-left) */}
+                {scene.clipStatus === 'done' && (
+                  <span className="absolute bottom-2 left-2 font-mono text-[8px] uppercase tracking-wider bg-emerald-500/80 text-white px-1.5 py-0.5 rounded-full">
+                    Ready
                   </span>
-                  {scene.audioDuration && scene.duree_estimee && scene.audioDuration > scene.duree_estimee * 1.2 && (
-                    <span className="font-mono text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 flex items-center gap-1">
-                      <AlertTriangle size={10} />
-                      Audio +{Math.round((scene.audioDuration - scene.duree_estimee))}s
-                    </span>
+                )}
+
+                {/* Audio over-duration warning (bottom-right) */}
+                {scene.audioDuration && scene.duree_estimee && scene.audioDuration > scene.duree_estimee * 1.2 && (
+                  <span className="absolute bottom-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-amber-500/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                    <AlertTriangle size={8} />
+                    +{Math.round((scene.audioDuration - scene.duree_estimee))}s
+                  </span>
+                )}
+
+                {/* Controls (top-right) */}
+                <div className="absolute top-2 right-2 flex items-center gap-1">
+                  {scene.clipStatus === 'done' && scene.clipUrl && (
+                    <button
+                      type="button"
+                      aria-label="Prévisualiser le clip en grand"
+                      onClick={() => setPreviewIndex(i)}
+                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-black/70 flex items-center justify-center transition-all"
+                      title="Prévisualiser le clip en grand"
+                    >
+                      <Wand2 size={10} />
+                    </button>
                   )}
-                  <div className="flex-1" />
-                  <button type="button" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
-                    className={cn('flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] transition-all', editingId === scene.id ? 'bg-blue-500/10 text-blue-500' : 'text-[--text-muted] hover:text-foreground')}>
-                    <Edit3 size={10} /> Prompt
+                  <button type="button" aria-label="Modifier le prompt" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
+                    className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-blue-500 text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
+                    <Edit3 size={10} />
                   </button>
-                  <button type="button" onClick={() => generateClip(scene.id)} disabled={scene.clipStatus === 'generating'}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
-                    <RefreshCw size={10} /> Clip
+                  <button type="button" aria-label="Régénérer le clip" onClick={() => generateClip(scene.id)} disabled={scene.clipStatus === 'generating'}
+                    className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-black/60 flex items-center justify-center transition-all disabled:opacity-40">
+                    <RefreshCw size={10} />
                   </button>
                   {videoId && (
-                    <button type="button" onClick={() => regenImageAndClip(scene.id)} disabled={scene.clipStatus === 'generating' || scene.imageStatus === 'generating'}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] text-[--text-muted] hover:text-blue-500 transition-all disabled:opacity-40">
-                      <Sparkles size={10} /> Image+Clip
+                    <button type="button" aria-label="Régénérer image + clip" onClick={() => regenImageAndClip(scene.id)} disabled={scene.clipStatus === 'generating' || scene.imageStatus === 'generating'}
+                      title="Régénérer image + clip"
+                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-blue-500/80 flex items-center justify-center transition-all disabled:opacity-40">
+                      <Sparkles size={10} />
                     </button>
                   )}
                 </div>
+              </div>
 
+              {/* Animation prompt / editor */}
+              <div className="p-3">
                 {editingId === scene.id ? (
-                  <textarea value={scene.animationPrompt} onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
-                    rows={2} placeholder="Prompt animation…"
-                    className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none" />
+                  <div className="space-y-2">
+                    <textarea
+                      value={scene.animationPrompt}
+                      onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
+                      rows={3}
+                      placeholder="Prompt animation…"
+                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { generateClip(scene.id); setEditingId(null) }}
+                      className="w-full py-1.5 rounded-lg bg-blue-500 text-white text-xs font-display font-semibold hover:bg-blue-500/90 transition-all"
+                    >
+                      Régénérer
+                    </button>
+                  </div>
                 ) : (
-                  <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-2">{scene.animationPrompt}</p>
+                  <p className="text-[11px] font-body text-[--text-muted] leading-snug line-clamp-3">
+                    {scene.animationPrompt}
+                  </p>
                 )}
               </div>
             </div>
-
-            {/* Full video player when clip is done */}
-            {scene.clipStatus === 'done' && scene.clipUrl && (
-              <div className="px-4 pb-4">
-                <video
-                  src={scene.clipUrl}
-                  controls
-                  muted
-                  className="w-full rounded-xl max-h-64 bg-black/40"
-                  style={{ maxWidth: '100%' }}
-                />
-              </div>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
 
         {/* Voice-over section */}
         {voiceId && (
