@@ -7,7 +7,7 @@ const STYLE_PREFIXES: Record<string, string> = {
   'cinematique':      'cinematic lighting, dramatic composition, film grain,',
   'stock-vo':         'realistic photograph, natural light, documentary style,',
   'whiteboard':       'hand-drawn whiteboard sketch, black marker on white,',
-  'stickman':         'stick figure black line art on white background,',
+  'stickman':         'bold black stick figure, pure white background, thick lines, centered composition, large iconic pose, RSA animate style, no color,',
   'flat-design':      'flat vector illustration, bold solid colors,',
   'infographie':      'flat infographic illustration, bold colors, icons,',
   '3d-pixar':         'Pixar 3D CGI render, warm lighting, expressive character,',

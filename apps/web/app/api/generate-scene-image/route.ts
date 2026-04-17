@@ -10,7 +10,7 @@ const STYLE_CONFIGS: Record<string, { model: string; prefix: string }> = {
   'cinematique':     { model: 'fal-ai/flux/dev', prefix: 'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain, golden hour,' },
   'stock-vo':        { model: 'fal-ai/flux/dev', prefix: 'realistic cinematic photograph, professional lighting, Canon 5D, 4K ultra-detailed,' },
   'whiteboard':      { model: 'fal-ai/flux/dev', prefix: 'whiteboard animation style, black ink hand-drawn illustration on white background, sketch style, educational,' },
-  'stickman':        { model: 'fal-ai/flux/dev', prefix: 'simple stickman animation, black and white line art, minimalist cartoon, expressive poses,' },
+  'stickman':        { model: 'fal-ai/flux/dev', prefix: 'bold black stick figures on pure white background, thick confident black lines, centered full-frame composition, large expressive iconic pose, RSA animate educational illustration style, symbolic stick-figure storytelling, no color fills, no gradients, no shading,' },
   'flat-design':     { model: 'fal-ai/flux/dev', prefix: 'flat design illustration, vibrant colors, geometric shapes, material design style, clean vector art,' },
   '3d-pixar':        { model: 'fal-ai/flux/dev', prefix: '3D Pixar animation style, subsurface scattering, warm lighting, expressive characters, cinematic render,' },
   'minimaliste':     { model: 'fal-ai/flux/dev', prefix: 'minimalist design, clean white background, bold typography, geometric shapes, Bauhaus style,' },
