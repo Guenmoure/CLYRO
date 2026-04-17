@@ -70,7 +70,7 @@ export default async function DashboardPage() {
           .maybeSingle(),
         supabase
           .from('videos')
-          .select('id, title, module, style, status, output_url, created_at, thumbnail_url, duration_seconds')
+          .select('id, title, module, style, status, output_url, created_at')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(50),

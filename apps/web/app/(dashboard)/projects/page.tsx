@@ -56,7 +56,7 @@ export default function ProjectsPage() {
 
       let query = supabase
         .from('videos')
-        .select('id, title, module, style, status, output_url, thumbnail_url, created_at, duration_seconds', { count: 'exact' })
+        .select('id, title, module, style, status, output_url, created_at', { count: 'exact' })
         .eq('user_id', session.user.id)
         .neq('status', 'draft')   // drafts shown separately above
         .range(from, to)
