@@ -3,7 +3,7 @@ import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
 import { unlink } from 'fs/promises'
 import { logger } from '../lib/logger'
-import type { BrandOverlayProps } from '@clyro/video'
+import type { BrandOverlayProps, KenBurnsClipProps } from '@clyro/video'
 
 const FPS = 30
 
@@ -72,6 +72,89 @@ async function getBundle(): Promise<string> {
   cachedBundlePath = bundlePath
   logger.info({ bundlePath }, 'Remotion: bundle ready')
   return bundlePath
+}
+
+// ── Ken Burns movement presets — varied per scene index ────────────────────────
+
+type KBPreset = Omit<KenBurnsClipProps, 'imageUrl'>
+
+const KB_PRESETS: KBPreset[] = [
+  { zoomFrom: 1.0,  zoomTo: 1.15, panXFrom:  0, panXTo: -3, panYFrom: 0,  panYTo: -2 }, // zoom-in, pan top-left
+  { zoomFrom: 1.15, zoomTo: 1.0,  panXFrom: -3, panXTo:  0, panYFrom: -2, panYTo:  0 }, // zoom-out, pan bottom-right
+  { zoomFrom: 1.0,  zoomTo: 1.12, panXFrom:  3, panXTo:  0, panYFrom:  0, panYTo:  0 }, // zoom-in, pan right→center
+  { zoomFrom: 1.05, zoomTo: 1.15, panXFrom:  0, panXTo:  0, panYFrom:  2, panYTo: -2 }, // zoom-in, pan upward
+  { zoomFrom: 1.1,  zoomTo: 1.0,  panXFrom:  0, panXTo:  3, panYFrom:  0, panYTo:  0 }, // zoom-out, drift right
+  { zoomFrom: 1.0,  zoomTo: 1.1,  panXFrom: -2, panXTo:  2, panYFrom: -1, panYTo:  1 }, // zoom-in, diagonal
+]
+
+export interface RenderKenBurnsOptions {
+  imageUrl: string       // HTTPS URL of the source image
+  durationSeconds: number
+  sceneIndex?: number    // used to pick movement preset
+  format?: '16:9' | '9:16' | '1:1'
+}
+
+const FORMAT_DIMS = {
+  '16:9': { width: 1920, height: 1080 },
+  '9:16': { width: 1080, height: 1920 },
+  '1:1':  { width: 1080, height: 1080 },
+}
+
+/**
+ * Renders a Ken Burns clip (zoom+pan on a static image) using Remotion.
+ * $0 GPU cost — pure CPU/Chromium rendering.
+ * Replaces Kling i2v for illustration styles (whiteboard, minimaliste, infographie, stock-vo).
+ */
+export async function renderKenBurnsClip(options: RenderKenBurnsOptions): Promise<Buffer> {
+  const { imageUrl, durationSeconds, sceneIndex = 0, format = '16:9' } = options
+  const { readFile } = await import('fs/promises')
+  const { selectComposition, renderMedia } = await import('@remotion/renderer')
+
+  const preset = KB_PRESETS[sceneIndex % KB_PRESETS.length]
+  const { width, height } = FORMAT_DIMS[format]
+  const durationInFrames = Math.max(FPS, Math.round(durationSeconds * FPS))
+
+  // Convert image to base64 data URL — Chrome headless blocks CDN URLs
+  let imageDataUrl = imageUrl
+  try {
+    const res = await fetch(imageUrl)
+    if (res.ok) {
+      const buf = Buffer.from(await res.arrayBuffer())
+      const ext = (imageUrl.split('.').pop()?.split('?')[0] ?? 'jpeg').toLowerCase()
+      const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+      imageDataUrl = `data:${mime};base64,${buf.toString('base64')}`
+    }
+  } catch (err) {
+    logger.warn({ err, imageUrl }, 'KenBurns: could not prefetch image, using URL directly')
+  }
+
+  const bundlePath = await getBundle()
+  const inputProps: KenBurnsClipProps = { ...preset, imageUrl: imageDataUrl }
+
+  const composition = await selectComposition({
+    serveUrl: bundlePath,
+    id: 'KenBurnsClip',
+    inputProps: inputProps as unknown as Record<string, unknown>,
+  })
+
+  const outputPath = path.join(tmpdir(), `clyro-kb-${randomUUID()}.mp4`)
+
+  try {
+    await renderMedia({
+      composition: { ...composition, durationInFrames, width, height },
+      serveUrl: bundlePath,
+      codec: 'h264',
+      outputLocation: outputPath,
+      inputProps: inputProps as unknown as Record<string, unknown>,
+      concurrency: 2,
+    })
+
+    const mp4 = await readFile(outputPath)
+    logger.info({ sceneIndex, durationSeconds, format, outputSize: mp4.length }, 'KenBurns: clip rendered')
+    return mp4
+  } finally {
+    await unlink(outputPath).catch(() => null)
+  }
 }
 
 export interface RenderMotionVideoResult {

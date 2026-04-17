@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/ui/Logo'
 import type { User } from '@supabase/supabase-js'
 
 const NAV_ITEMS = [
@@ -169,13 +170,9 @@ export function Sidebar() {
     <aside className="hidden md:flex w-[72px] bg-card border-r border-border flex-col items-center py-4 shrink-0 relative z-20">
 
       {/* Logo */}
-      <Link
-        href="/dashboard"
-        className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mb-6 shrink-0 shadow-glow-blue hover:shadow-glow-purple transition-shadow"
-        title="CLYRO"
-      >
-        <span className="font-display font-extrabold text-white text-sm select-none">C</span>
-      </Link>
+      <div className="mb-6 shrink-0">
+        <Logo variant="icon" size="sm" href="/dashboard" />
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 flex flex-col items-center gap-1 w-full px-2">

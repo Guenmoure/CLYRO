@@ -10,6 +10,7 @@ import {
 import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/ui/Logo'
 import { SettingsModal, type SettingsSectionId } from '@/components/settings/SettingsModal'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -364,12 +365,11 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           'flex items-center h-14 border-b border-white/[0.07] dark:border-white/[0.06] shrink-0 relative',
           collapsed ? 'justify-center px-0' : 'px-5',
         )}>
-          <Link href="/dashboard">
-            {collapsed
-              ? <span className="font-display font-extrabold text-xl gradient-text select-none">C</span>
-              : <span className="font-display font-extrabold text-xl gradient-text select-none">CLYRO</span>
-            }
-          </Link>
+          <Logo
+            variant={collapsed ? 'icon' : 'full'}
+            size={collapsed ? 'sm' : 'md'}
+            href="/dashboard"
+          />
 
           {/* Toggle button */}
           <button

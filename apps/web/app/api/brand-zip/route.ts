@@ -22,23 +22,50 @@ async function fetchAsset(url: string): Promise<Buffer | null> {
   }
 }
 
+// CRC-32 lookup table (IEEE 802.3 polynomial)
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256)
+  for (let i = 0; i < 256; i++) {
+    let c = i
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+    table[i] = c
+  }
+  return table
+})()
+
+function crc32(buf: Buffer): number {
+  let crc = 0xffffffff
+  for (let i = 0; i < buf.length; i++) crc = CRC_TABLE[(crc ^ buf[i]) & 0xff] ^ (crc >>> 8)
+  return (crc ^ 0xffffffff) >>> 0
+}
+
+// DOS timestamp for "now" — avoids the pre-1980 bug that some unzippers reject
+function dosDateTime(): { time: number; date: number } {
+  const now = new Date()
+  const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)
+  const date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()
+  return { time, date }
+}
+
 // Minimal ZIP builder — no external deps, uses Node.js built-ins only
 function buildZip(files: Array<{ name: string; data: Buffer }>): Buffer {
   const parts: Buffer[] = []
   const centralDirs: Buffer[] = []
   let offset = 0
+  const { time: dosTime, date: dosDate } = dosDateTime()
 
   for (const file of files) {
     const name = Buffer.from(file.name, 'utf8')
+    const crc = crc32(file.data)
 
     const localHeader = Buffer.alloc(30 + name.length)
     localHeader.writeUInt32LE(0x04034b50, 0)
     localHeader.writeUInt16LE(20, 4)
     localHeader.writeUInt16LE(0, 6)
     localHeader.writeUInt16LE(0, 8)
-    localHeader.writeUInt16LE(0, 10)
-    localHeader.writeUInt16LE(0, 12)
-    localHeader.writeUInt32LE(0, 14)
+    localHeader.writeUInt16LE(dosTime, 10)
+    localHeader.writeUInt16LE(dosDate, 12)
+    localHeader.writeUInt32LE(crc, 14)
     localHeader.writeUInt32LE(file.data.length, 18)
     localHeader.writeUInt32LE(file.data.length, 22)
     localHeader.writeUInt16LE(name.length, 26)
@@ -51,9 +78,9 @@ function buildZip(files: Array<{ name: string; data: Buffer }>): Buffer {
     centralDir.writeUInt16LE(20, 6)
     centralDir.writeUInt16LE(0, 8)
     centralDir.writeUInt16LE(0, 10)
-    centralDir.writeUInt16LE(0, 12)
-    centralDir.writeUInt16LE(0, 14)
-    centralDir.writeUInt32LE(0, 16)
+    centralDir.writeUInt16LE(dosTime, 12)
+    centralDir.writeUInt16LE(dosDate, 14)
+    centralDir.writeUInt32LE(crc, 16)
     centralDir.writeUInt32LE(file.data.length, 20)
     centralDir.writeUInt32LE(file.data.length, 24)
     centralDir.writeUInt16LE(name.length, 28)

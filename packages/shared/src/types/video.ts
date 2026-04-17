@@ -74,7 +74,7 @@ export type FacelessStyle =
 
 export type MotionStyle = 'corporate' | 'dynamique' | 'luxe' | 'fun'
 export type VideoFormat = '9:16' | '1:1' | '16:9'
-export type VideoDuration = '6s' | '15s' | '30s' | '60s'
+export type VideoDuration = '6s' | '15s' | '30s' | '60s' | '120s' | '180s' | '300s' | 'auto'
 
 export type AnimationType = 'slide-in' | 'zoom' | 'fade' | 'particle-burst' | 'typewriter'
 export type SceneType = 'text_hero' | 'split_text_image' | 'product_showcase' | 'stats_counter' | 'cta_end' | 'image_full'

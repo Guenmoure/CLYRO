@@ -1,7 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
-import { Plus, Film, Loader2, AlertCircle, Check } from 'lucide-react'
+import { Plus, Film, Loader2, AlertCircle, Check, Sparkles, Clapperboard } from 'lucide-react'
 import type { Database } from '@/lib/database.types'
 import type { StudioProject } from '@/lib/studio-types'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,6 @@ export default async function StudioIndexPage() {
 
   let projects: StudioProject[] = []
   try {
-    // Cast via unknown — studio_projects isn't in the generated Database types yet
     const { data } = await (supabase as unknown as {
       from: (table: string) => {
         select: (s: string) => {
@@ -33,7 +32,6 @@ export default async function StudioIndexPage() {
       .order('created_at', { ascending: false })
     projects = (data ?? []) as StudioProject[]
   } catch {
-    // Table may not exist if migration hasn't been applied — show empty state
     projects = []
   }
 
@@ -54,9 +52,15 @@ export default async function StudioIndexPage() {
               HeyGen + ElevenLabs + Remotion, orchestrated by Claude.
             </p>
           </div>
-          <Button variant="primary" size="md" leftIcon={<Plus size={14} />} asChild>
-            <Link href="/studio/new">New project</Link>
-          </Button>
+
+          {/* CTA header — prominent gradient button */}
+          <Link href="/studio/new" className="group relative">
+            <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-rose-500 via-purple-500 to-blue-500 opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-purple-600 to-blue-600 text-white font-body text-sm font-semibold shadow-lg">
+              <Plus size={16} className="group-hover:rotate-90 transition-transform duration-200" />
+              New project
+            </div>
+          </Link>
         </div>
 
         {/* Projects grid */}
@@ -75,12 +79,20 @@ export default async function StudioIndexPage() {
                 with each scene regeneratable independently.
               </p>
             </div>
-            <Button variant="primary" size="md" leftIcon={<Plus size={14} />} asChild>
-              <Link href="/studio/new">Create my first Studio project</Link>
-            </Button>
+            {/* Empty state CTA — extra prominent */}
+            <Link href="/studio/new" className="group relative mt-2">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-rose-500 via-purple-500 to-blue-500 opacity-60 blur-md group-hover:opacity-90 transition-opacity duration-300" />
+              <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-rose-500 via-purple-600 to-blue-600 text-white font-body text-base font-semibold shadow-xl">
+                <Clapperboard size={18} />
+                Create my first Studio project
+                <Sparkles size={14} className="opacity-80" />
+              </div>
+            </Link>
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* New project card — always first, always prominent */}
+            <NewProjectCard />
             {projects.map((p) => <StudioProjectCard key={p.id} project={p} />)}
           </div>
         )}
@@ -89,16 +101,57 @@ export default async function StudioIndexPage() {
   )
 }
 
-// ── Project card ────────────────────────────────────────────────────────
+// ── New project card ─────────────────────────────────────────────────────
+
+function NewProjectCard() {
+  return (
+    <Link href="/studio/new" className="group relative block rounded-2xl overflow-hidden aspect-[4/3]">
+      {/* Animated gradient border */}
+      <div className="absolute inset-0 bg-gradient-to-br from-rose-500 via-purple-600 to-blue-600 opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-[1.5px] rounded-2xl bg-card group-hover:bg-card/90 transition-colors duration-300" />
+
+      {/* Inner glow */}
+      <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 via-purple-500/8 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+      {/* Content */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
+        {/* Plus icon in glowing circle */}
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-rose-500 via-purple-500 to-blue-500 blur-lg opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
+          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-rose-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <Plus size={24} className="text-white group-hover:rotate-90 transition-transform duration-300" />
+          </div>
+        </div>
+
+        <div className="text-center">
+          <p className="font-display text-base font-bold text-foreground group-hover:text-white transition-colors duration-200">
+            New project
+          </p>
+          <p className="font-body text-xs text-[--text-muted] mt-0.5 group-hover:text-white/60 transition-colors duration-200">
+            Script or YouTube URL
+          </p>
+        </div>
+
+        {/* Subtle badge */}
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-rose-500/15 to-purple-500/15 border border-rose-500/20 group-hover:from-rose-500/25 group-hover:to-purple-500/25 transition-all duration-200">
+          <Sparkles size={10} className="text-rose-400" />
+          <span className="font-mono text-[10px] text-rose-400 tracking-wider uppercase">AI Studio</span>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+// ── Project card ─────────────────────────────────────────────────────────
 
 const STATUS_META: Record<StudioProject['status'], { label: string; color: string; icon?: React.ReactNode }> = {
-  draft:      { label: 'Draft',       color: 'bg-muted text-[--text-muted]' },
-  analyzing:  { label: 'Analyzing',   color: 'bg-blue-500/15 text-blue-500',     icon: <Loader2 size={10} className="animate-spin" /> },
-  generating: { label: 'Generating',  color: 'bg-amber-500/15 text-amber-500',   icon: <Loader2 size={10} className="animate-spin" /> },
+  draft:      { label: 'Draft',         color: 'bg-muted text-[--text-muted]' },
+  analyzing:  { label: 'Analyzing',     color: 'bg-blue-500/15 text-blue-500',     icon: <Loader2 size={10} className="animate-spin" /> },
+  generating: { label: 'Generating',    color: 'bg-amber-500/15 text-amber-500',   icon: <Loader2 size={10} className="animate-spin" /> },
   editing:    { label: 'Ready to edit', color: 'bg-blue-500/15 text-blue-500' },
-  rendering:  { label: 'Rendering',   color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
-  done:       { label: 'Ready',       color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
-  error:      { label: 'Error',       color: 'bg-error/15 text-error', icon: <AlertCircle size={10} /> },
+  rendering:  { label: 'Rendering',     color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
+  done:       { label: 'Ready',         color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
+  error:      { label: 'Error',         color: 'bg-error/15 text-error',           icon: <AlertCircle size={10} /> },
 }
 
 function StudioProjectCard({ project }: { project: StudioProject }) {

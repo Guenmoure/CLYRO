@@ -1,5 +1,5 @@
 import { spawn } from 'child_process'
-import { writeFile, readFile, unlink, mkdir, rm } from 'fs/promises'
+import { writeFile, readFile, unlink, mkdir, rm, copyFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
@@ -376,6 +376,11 @@ export function generateKaraokeFromWords(
  * Timeout 90s pour éviter un hang infini sur des URLs qui ne répondent pas.
  */
 async function downloadVideoUrl(url: string, outputPath: string): Promise<void> {
+  // file:// URLs come from locally-rendered Ken Burns clips — just copy the file
+  if (url.startsWith('file://')) {
+    await copyFile(url.slice(7), outputPath)
+    return
+  }
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 90_000)
   try {
@@ -497,13 +502,19 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
       const subtitledPath = join(workDir, 'subtitled.mp4')
       await writeFile(srtPath, karaokeSubsContent, 'utf-8')
       tempFiles.push(srtPath, subtitledPath)
-      await runFFmpeg([
-        '-i', currentPath,
-        '-vf', `subtitles=${srtPath}:force_style='FontName=Arial,FontSize=28,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,Bold=1,Alignment=2'`,
-        '-c:a', 'copy',
-        subtitledPath,
-      ])
-      currentPath = subtitledPath
+      try {
+        // Use comma-escaped force_style (no shell quotes needed with spawn)
+        const forceStyle = 'FontName=Arial\\,FontSize=28\\,PrimaryColour=&H00FFFFFF\\,OutlineColour=&H00000000\\,Outline=2\\,Bold=1\\,Alignment=2'
+        await runFFmpeg([
+          '-i', currentPath,
+          '-vf', `subtitles=${srtPath}:force_style=${forceStyle}`,
+          '-c:a', 'copy',
+          subtitledPath,
+        ])
+        currentPath = subtitledPath
+      } catch (subErr) {
+        logger.warn({ subErr }, 'FFmpeg: karaoke subtitles failed, skipping (non-blocking)')
+      }
     }
 
     const finalBuffer = await readFile(currentPath)

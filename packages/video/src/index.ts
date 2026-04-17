@@ -6,3 +6,6 @@
 
 export { BrandOverlay } from './compositions/BrandOverlay'
 export type { BrandScene, BrandConfig, BrandOverlayProps, AnimationType } from './compositions/BrandOverlay'
+
+export { KenBurnsClip } from './compositions/KenBurnsClip'
+export type { KenBurnsClipProps } from './compositions/KenBurnsClip'

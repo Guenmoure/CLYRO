@@ -1,5 +1,6 @@
 import { LoginForm } from '@/components/auth/login-form'
 import Link from 'next/link'
+import { Logo } from '@/components/ui/Logo'
 
 export const metadata = {
   title: 'Sign in — CLYRO',
@@ -9,11 +10,9 @@ export default function LoginPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Logo */}
-      <div className="text-center">
-        <h1 className="font-display text-3xl font-extrabold text-foreground">
-          <span className="text-gradient-animated">C</span>LYRO
-        </h1>
-        <p className="text-[--text-muted] mt-2 font-body text-sm">
+      <div className="flex flex-col items-center gap-3">
+        <Logo variant="full" size="lg" href={false} />
+        <p className="text-[--text-muted] font-body text-sm">
           Content to video in minutes
         </p>
       </div>

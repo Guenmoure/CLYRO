@@ -12,7 +12,7 @@ import { VideoPlayer } from '@/components/ui/video-player'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { startFacelessGeneration, getPublicVoices, updateVideoMetadata, regenerateFacelessScene, regenerateFacelessClip, reassembleFacelessVideo } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
-import type { FacelessStyle, VideoFormat, VideoDuration } from '@clyro/shared'
+import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
 import { ContentTemplateGallery } from './ContentTemplateGallery'
 import { buildTemplateDescription, type ContentTemplate } from '@/lib/faceless-content-templates'
 
@@ -217,6 +217,7 @@ interface ProjectState {
   masterSeed?: number    // deterministic seed for visual consistency across scenes
   styleReference?: string // URL of first HD image for style consistency injection
   contentTemplateId?: string  // selected channel-style template (e.g. tmpl_easyway_actually)
+  animationMode?: AnimationMode // 'storyboard' = bypass Kling (Ken Burns), 'fast' | 'pro' = Kling variants
 }
 
 // ── Mock helpers ───────────────────────────────────────────────────────────────
@@ -1818,7 +1819,7 @@ function ScenePreviewLightbox({
 
 // ── Step 4 — Clips + Voice-over ────────────────────────────────────────────────
 
-function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, onReassembled, style }: {
+function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, onReassembled, style, animationMode, onAnimationModeChange }: {
   scenes: SceneData[]
   onScenesChange: (scenes: SceneData[] | ((prev: SceneData[]) => SceneData[])) => void
   voiceId: string
@@ -1827,6 +1828,8 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
   videoId?: string
   onReassembled?: (outputUrl: string) => void
   style?: string
+  animationMode: AnimationMode
+  onAnimationModeChange: (mode: AnimationMode) => void
 }) {
   const [generatingAll,  setGeneratingAll]  = useState(false)
   const [voiceStatus,    setVoiceStatus]    = useState<'idle' | 'generating' | 'done'>('idle')
@@ -1839,9 +1842,31 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
     onScenesChange((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s))
   }
 
+  // Quand l'utilisateur sélectionne 'storyboard' (bypass animation),
+  // toutes les scènes sont considérées comme prêtes (Ken Burns appliqué côté backend).
+  // Quand il repasse à 'fast'/'pro', on remet les scènes sans clipUrl en 'idle' pour générer.
+  useEffect(() => {
+    if (animationMode === 'storyboard') {
+      onScenesChange((prev) => prev.map((s) =>
+        s.clipStatus !== 'done' ? { ...s, clipStatus: 'done', clipUrl: undefined } : s
+      ))
+    } else {
+      onScenesChange((prev) => prev.map((s) =>
+        s.clipStatus === 'done' && !s.clipUrl ? { ...s, clipStatus: 'idle' } : s
+      ))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animationMode])
+
   async function generateClip(id: string) {
     const scene = scenes.find((s) => s.id === id)
     if (!scene) return
+    // Mode 'storyboard' → pas de génération Kling, Ken Burns appliqué côté backend.
+    // On marque simplement la scène comme prête (clipUrl reste vide).
+    if (animationMode === 'storyboard') {
+      updateScene(id, { clipStatus: 'done', clipUrl: undefined })
+      return
+    }
     // Si l'image n'est pas encore générée, marquer simplement comme prêt (la génération réelle se fait en pipeline)
     if (!scene.imageUrl) {
       updateScene(id, { clipStatus: 'done' })
@@ -1934,6 +1959,13 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
   }
 
   async function generateAll() {
+    // En mode 'storyboard' (Ken Burns), aucun clip Kling n'est nécessaire.
+    if (animationMode === 'storyboard') {
+      onScenesChange((prev) => prev.map((s) => ({ ...s, clipStatus: 'done', clipUrl: undefined })))
+      if (voiceId) setVoiceStatus('done')
+      toast.success('Scènes prêtes — Ken Burns appliqué à l\'assemblage')
+      return
+    }
     setGeneratingAll(true)
     const pending = scenes.filter((s) => s.clipStatus !== 'done')
     await Promise.all(pending.map((s) => generateClip(s.id)))
@@ -1942,7 +1974,9 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
     toast.success('Clips generated!')
   }
 
-  const allClipsDone = scenes.every((s) => s.clipStatus === 'done')
+  const allClipsDone = animationMode === 'storyboard'
+    ? true // Ken Burns géré côté backend : toutes les scènes sont prêtes dès que le mode est sélectionné
+    : scenes.every((s) => s.clipStatus === 'done')
   const doneCnt = scenes.filter((s) => s.clipStatus === 'done').length
 
   return (
@@ -1951,17 +1985,69 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
         <div>
           <h2 className="font-display text-base font-bold text-foreground">Génération des clips</h2>
-          <p className="font-body text-xs text-[--text-muted]">{doneCnt}/{scenes.length} clips · voix off {voiceStatus === 'done' ? '✓ ready' : 'en attente'}</p>
+          <p className="font-body text-xs text-[--text-muted]">
+            {animationMode === 'storyboard'
+              ? `Mode images fixes · ${scenes.length} scènes prêtes`
+              : `${doneCnt}/${scenes.length} clips`} · voix off {voiceStatus === 'done' ? '✓ ready' : 'en attente'}
+          </p>
         </div>
-        <button type="button" onClick={generateAll} disabled={generatingAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
-          {generatingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-          Tout générer
-        </button>
+        {animationMode !== 'storyboard' && (
+          <button type="button" onClick={generateAll} disabled={generatingAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
+            {generatingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+            Tout générer
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-        {/* Clips grid — same layout as the Images step */}
+        {/* Animation mode selector — Storyboard (bypass) | Fast (Kling Std) | Pro (Kling Pro) */}
+        <div className="rounded-2xl border border-border bg-muted p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-display text-sm font-semibold text-foreground">Animation des scènes</p>
+              <p className="font-body text-xs text-[--text-muted]">
+                Choisissez entre images fixes (rapide) ou clips animés IA (lent mais plus vivant).
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { id: 'storyboard', label: 'Images fixes', sub: 'Ken Burns · ~2 min', emoji: '🖼️' },
+              { id: 'fast',       label: 'Animation Fast', sub: 'Kling Std · ~5 min', emoji: '⚡' },
+              { id: 'pro',        label: 'Animation Pro',  sub: 'Kling Pro · ~10 min', emoji: '✨' },
+            ] as Array<{ id: AnimationMode; label: string; sub: string; emoji: string }>).map((opt) => {
+              const selected = animationMode === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => onAnimationModeChange(opt.id)}
+                  className={cn(
+                    'rounded-xl border px-3 py-2.5 text-left transition-all',
+                    selected
+                      ? 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30'
+                      : 'border-border bg-card hover:border-blue-500/40'
+                  )}
+                >
+                  <p className="font-display text-[13px] font-semibold text-foreground flex items-center gap-1.5">
+                    <span>{opt.emoji}</span> {opt.label}
+                  </p>
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] mt-0.5">{opt.sub}</p>
+                </button>
+              )
+            })}
+          </div>
+          {animationMode === 'storyboard' && (
+            <p className="font-body text-[11px] text-[--text-muted] border-t border-border pt-2">
+              ✓ Images fixes avec effets Ken Burns (zoom doux) et transitions cross-fade entre scènes.
+              Pas de génération de clips IA — assemblage plus rapide.
+            </p>
+          )}
+        </div>
+
+        {/* Clips grid — same layout as the Images step. Hidden in storyboard mode. */}
+        {animationMode !== 'storyboard' && (
         <div className="grid grid-cols-3 gap-4">
           {scenes.map((scene, i) => (
             <div key={scene.id} className="rounded-2xl border border-border overflow-hidden bg-muted">
@@ -2087,6 +2173,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
             </div>
           ))}
         </div>
+        )}
 
         {/* Voice-over section */}
         {voiceId && (
@@ -2368,6 +2455,7 @@ const DEFAULT_PROJECT: ProjectState = {
   inputType: 'script',
   scenes: [],
   step: 'setup',
+  animationMode: 'fast',  // default: Kling Standard (good quality/speed tradeoff)
 }
 
 const DRAFT_KEY = 'clyro-faceless-draft'
@@ -2506,6 +2594,13 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
         }
       }
 
+      // En mode 'storyboard' (bypass animation), ne pas envoyer de pre_generated_scenes
+      // avec clip_url vide — sinon le backend considère que les clips sont déjà prêts.
+      // On envoie seulement images + textes ; Ken Burns s'applique côté backend.
+      const sanitizedPreGenerated = project.animationMode === 'storyboard'
+        ? preGeneratedScenes?.map((s) => ({ ...s, clip_url: undefined }))
+        : preGeneratedScenes
+
       const { video_id, script_condensed } = await startFacelessGeneration({
         title: project.title || 'Faceless video',
         style: project.style ?? 'cinematique',
@@ -2514,9 +2609,10 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
         duration: project.duration,
         script: project.script || project.description || project.scenes.map((s) => s.scriptText).join(' '),
         voice_id: project.voiceId || undefined,
-        pre_generated_scenes: preGeneratedScenes,
+        pre_generated_scenes: sanitizedPreGenerated,
         dialogue_mode: dialogue.hasDialogue,
         speaker_voices: speakerVoices,
+        animation_mode: project.animationMode ?? 'fast',
       })
 
       // Display condensation warning if script was auto-condensed
@@ -2592,6 +2688,8 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
             voiceId={project.voiceId}
             videoId={project.videoId}
             style={project.style ?? undefined}
+            animationMode={project.animationMode ?? 'fast'}
+            onAnimationModeChange={(mode) => patch({ animationMode: mode })}
             onBack={() => patch({ step: 'images' })}
             onNext={goToFinal}
             onReassembled={(outputUrl) => {

@@ -8,8 +8,19 @@ import { generateStoryboard } from '../services/claude'
 import { generateSceneImages, generateSceneVideoAuto, uploadFalUrlToStorage } from '../services/fal'
 import { generateVoiceoverScenesWithTimestamps } from '../services/elevenlabs'
 import { assembleVideo, assembleVideoFromVideoClips, generateKaraokeFromWords } from '../services/ffmpeg'
+import { renderKenBurnsClip } from '../services/remotion'
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
+
+// AnimationMode: user-selectable global strategy for clip generation
+// - 'storyboard' → always Ken Burns (static images with smooth transitions, no GPU cost)
+// - 'fast'       → Kling Standard variant (faster, cheaper)
+// - 'pro'        → Kling Pro variant (highest quality, slower)
+export type AnimationMode = 'storyboard' | 'fast' | 'pro'
+
+// Styles that default to Ken Burns (Remotion CPU render) when no animation_mode is specified.
+// Savings: ~$0.021/clip × 6 clips = ~$0.13/video for 60% of generations
+const KENBURNS_STYLES = new Set(['minimaliste', 'infographie', 'whiteboard', 'stock-vo', 'stickman'])
 
 async function downloadMusicTrack(url: string): Promise<string> {
   const res = await fetch(url)
@@ -52,13 +63,19 @@ export interface FacelessPipelineParams {
   preGeneratedScenes?: PreGeneratedScene[]  // Scènes déjà générées côté frontend (skip fal.ai + Kling)
   dialogueMode?: boolean   // true = auto-detect & enable multi-character voices
   speakerVoices?: Record<string, string> // map speaker name → voice_id (optional override)
+  animationMode?: AnimationMode // global animation strategy; 'storyboard' bypasses Kling entirely
 }
 
 // Timeout global du pipeline : 30 min — au-delà, on considère qu'il est bloqué
 const PIPELINE_TIMEOUT_MS = Number(process.env.PIPELINE_TIMEOUT_MS ?? 30 * 60 * 1000)
 
 export async function runFacelessPipeline(params: FacelessPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, style, duration, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices } = params
+  const { videoId, userId, userEmail, title, style, duration, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices, animationMode } = params
+
+  // Resolve effective animation mode: explicit override > style default > 'fast' fallback
+  const effectiveAnimationMode: AnimationMode =
+    animationMode ?? (KENBURNS_STYLES.has(style) ? 'storyboard' : 'fast')
+  const skipAnimation = effectiveAnimationMode === 'storyboard'
 
   // Watchdog : si le pipeline n'a pas fini au bout de PIPELINE_TIMEOUT_MS,
   // on marque la vidéo en erreur pour débloquer le frontend
@@ -265,13 +282,59 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       sceneAudioDurations.set(audioResult.sceneId, audioDuration > 7.5 ? '10' : '5')
     }
 
-    // Clips vidéo : utiliser ceux du frontend si disponibles, sinon générer via Kling i2v
+    // Clips vidéo : utiliser ceux du frontend si disponibles, sinon générer via Ken Burns ou Kling i2v
     let sceneVideoUrls: Array<{ sceneId: string; videoUrl: string }>
+    const kenBurnsTmpDir = `clyro-kb-${videoId}`
 
     if (hasPreClips) {
       sceneVideoUrls = preGeneratedScenes!.map((s) => ({ sceneId: s.id, videoUrl: s.clip_url! }))
       logger.info({ videoId, clipCount: sceneVideoUrls.length }, 'Using pre-generated clips — skipped Kling i2v')
+    } else if (skipAnimation) {
+      // ── Ken Burns path: Remotion renders zoom+pan on each image ($0 GPU) ──
+      // Triggered when animation_mode='storyboard' OR style is in KENBURNS_STYLES
+      logger.info({ videoId, style, animationMode: effectiveAnimationMode, clipCount: sceneImages.length }, 'KenBurns: using Remotion for 0-GPU animation')
+
+      const videoFormat = (params.format === '9:16' || params.format === '1:1') ? params.format : '16:9'
+      const totalClips  = sceneImages.length
+      let completedClips = 0
+
+      const { join: pathJoin } = await import('path')
+      const { tmpdir } = await import('os')
+      const { writeFile: writeFileFn, mkdir: mkdirFn } = await import('fs/promises')
+      const workDir = pathJoin(tmpdir(), kenBurnsTmpDir)
+      await mkdirFn(workDir, { recursive: true })
+
+      const kbResults = await Promise.allSettled(
+        sceneImages.map(async ({ sceneId, imageUrl }, idx) => {
+          const durationSec = Number(sceneAudioDurations.get(sceneId) ?? 5)
+          const mp4Buffer = await renderKenBurnsClip({
+            imageUrl,
+            durationSeconds: durationSec,
+            sceneIndex: idx,
+            format: videoFormat as '16:9' | '9:16' | '1:1',
+          })
+          // Write to temp file and expose as file:// URL for assembleVideoFromVideoClips
+          const tmpPath = pathJoin(workDir, `kb_${sceneId}.mp4`)
+          await writeFileFn(tmpPath, mp4Buffer)
+          completedClips++
+          const clipProgress = 60 + Math.round((completedClips / totalClips) * 18)
+          await updateStatus('visuals', clipProgress)
+          logger.info({ sceneId, durationSec, idx }, 'KenBurns: clip rendered')
+          return { sceneId, videoUrl: `file://${tmpPath}` }
+        })
+      )
+
+      sceneVideoUrls = kbResults
+        .filter((r): r is PromiseFulfilledResult<{ sceneId: string; videoUrl: string }> => r.status === 'fulfilled')
+        .map((r) => r.value)
+
+      const kbFailCount = kbResults.filter((r) => r.status === 'rejected').length
+      if (kbFailCount > 0) {
+        logger.warn({ videoId, kbFailCount, total: sceneImages.length }, 'Some Ken Burns clips failed — falling back to static for failed scenes')
+      }
+      logger.info({ videoId, kbClips: sceneVideoUrls.length }, 'KenBurns clips complete')
     } else {
+      // ── Kling i2v path: GPU-powered video animation ──────────────────────
       const totalClips = sceneImages.length
       let completedClips = 0
 
@@ -283,7 +346,6 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
           const { videoUrl: falVideoUrl, model } = await generateSceneVideoAuto(imageUrl, animationPrompt, clipDuration, style)
           const storagePath = `${userId}/${videoId}/clips/scene-${sceneId}.mp4`
           const videoUrl = await uploadFalUrlToStorage(falVideoUrl, storagePath, 'videos')
-          // Granular progress: 60% → 78% spread across clips
           completedClips++
           const clipProgress = 60 + Math.round((completedClips / totalClips) * 18)
           await updateStatus('visuals', clipProgress)
@@ -300,7 +362,6 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       if (klingFailCount > 0) {
         logger.warn({ videoId, klingFailCount, total: sceneImages.length }, 'Some Kling clips failed — falling back to static for failed scenes')
       }
-
       logger.info({ videoId, klingClips: sceneVideoUrls.length }, 'Kling i2v complete')
     }
 
@@ -402,5 +463,11 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       .then(() => null, () => null)
 
     await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
+  } finally {
+    // Cleanup Ken Burns temp dir (non-blocking)
+    const { join: _pathJoin } = await import('path')
+    const { tmpdir: _tmpdir } = await import('os')
+    const { rm: _rmFn } = await import('fs/promises')
+    _rmFn(_pathJoin(_tmpdir(), `clyro-kb-${videoId}`), { recursive: true, force: true }).catch(() => null)
   }
 }

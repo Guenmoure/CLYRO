@@ -1,10 +1,12 @@
 import React from 'react'
 import { Composition, registerRoot } from 'remotion'
-import { BrandOverlay, BrandOverlayProps } from '@clyro/video'
+import { BrandOverlay, BrandOverlayProps, KenBurnsClip } from '@clyro/video'
 import type { ComponentType } from 'react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const BrandOverlayAny = BrandOverlay as ComponentType<any>
+const BrandOverlayAny  = BrandOverlay  as ComponentType<any>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const KenBurnsClipAny  = KenBurnsClip  as ComponentType<any>
 
 const DEFAULT_FPS = 30
 
@@ -60,6 +62,17 @@ const RemotionRoot: React.FC = () => (
       width={1080}
       height={1080}
       defaultProps={{ ...defaultProps, format: '1:1' }}
+    />
+
+    {/* Ken Burns — $0 GPU clip for illustration/whiteboard styles */}
+    <Composition
+      id="KenBurnsClip"
+      component={KenBurnsClipAny}
+      durationInFrames={DEFAULT_FPS * 10}
+      fps={DEFAULT_FPS}
+      width={1920}
+      height={1080}
+      defaultProps={{ imageUrl: 'https://via.placeholder.com/1920x1080' }}
     />
   </>
 )

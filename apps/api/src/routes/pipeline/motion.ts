@@ -78,7 +78,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
       style,
       format,
       duration,
-      brandConfig:   brand_config,
+      brandConfig:   { ...brand_config, style },
       voiceId:       voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
       musicTrackUrl: music_track_id ? getMusicTrackUrl(music_track_id) : undefined,
     }

@@ -30,6 +30,7 @@ import {
 } from '../../services/claude-prompts/f5'
 import {
   generateAvatarScene,
+  getVideoStatus,
   listAvatars,
 } from '../../services/heygen'
 import { transcribeYouTube, isValidYouTubeUrl } from '../../services/transcribe'
@@ -61,6 +62,54 @@ async function callClaude<T>(system: string, user: string, label: string): Promi
     logger.error({ err, raw: raw.slice(0, 400), label }, 'Claude JSON parse failed')
     throw new Error(`Claude ${label} returned invalid JSON`)
   }
+}
+
+// ── Polling helper ──────────────────────────────────────────────────────
+
+const POLL_INTERVAL_MS = 15_000   // 15 seconds between polls
+const POLL_TIMEOUT_MS  = 600_000  // 10 minutes max
+
+async function pollUntilDone(sceneId: string, heygenVideoId: string): Promise<void> {
+  const deadline = Date.now() + POLL_TIMEOUT_MS
+
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))
+
+    let status: Awaited<ReturnType<typeof getVideoStatus>>
+    try {
+      status = await getVideoStatus(heygenVideoId)
+    } catch (err) {
+      logger.warn({ err, sceneId, heygenVideoId }, 'pollUntilDone: getVideoStatus failed, will retry')
+      continue
+    }
+
+    logger.info({ sceneId, heygenVideoId, status: status.status }, 'pollUntilDone: tick')
+
+    if (status.status === 'completed') {
+      await supabaseAdmin.from('studio_scenes').update({
+        status:        'done',
+        video_url:     status.video_url ?? null,
+        thumbnail_url: status.thumbnail_url ?? null,
+        duration_actual: status.duration ?? null,
+      }).eq('id', sceneId)
+      return
+    }
+
+    if (status.status === 'failed') {
+      await supabaseAdmin.from('studio_scenes').update({
+        status:        'error',
+        error_message: status.error?.message ?? 'HeyGen reported failure',
+      }).eq('id', sceneId)
+      return
+    }
+    // status === 'processing' | 'pending' → keep waiting
+  }
+
+  // Timed out
+  await supabaseAdmin.from('studio_scenes').update({
+    status:        'error',
+    error_message: 'HeyGen generation timed out after 10 minutes',
+  }).eq('id', sceneId)
 }
 
 // ── POST /analyze ───────────────────────────────────────────────────────
@@ -212,7 +261,8 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
             await supabaseAdmin.from('studio_scenes')
               .update({ heygen_video_id: heygenVideoId })
               .eq('id', scene.id)
-            // Webhook will flip the scene to 'done' when HeyGen finishes.
+            // Poll HeyGen status until completed/failed (webhook fallback).
+            await pollUntilDone(scene.id, heygenVideoId)
           } else {
             // TODO(F5): infographic → Remotion Lambda render
             // TODO(F5): demo → Remotion Lambda render
@@ -280,9 +330,39 @@ studioRouter.post('/regenerate-scene', authMiddleware, async (req, res) => {
       previous_versions: prevVersions.slice(0, 10),
     }).eq('id', sceneId)
 
-    // TODO(F5): actually trigger the regeneration per type, same switch as
-    // /generate-all — extract into a `regenerateScene(sceneId)` helper.
-    logger.info({ sceneId }, 'scene regen queued (pipeline stubbed)')
+    // Fetch the project to get avatar/voice IDs
+    const { data: project } = await supabaseAdmin
+      .from('studio_projects').select('avatar_id, voice_id, background_color, format')
+      .eq('id', projectId).single()
+
+    if (project?.avatar_id && project?.voice_id) {
+      ;(async () => {
+        try {
+          const { heygenVideoId } = await generateAvatarScene({
+            avatarId: project.avatar_id,
+            voiceId:  project.voice_id,
+            script:   scriptToUse,
+            background: { type: 'color', value: project.background_color ?? '#0D1117' },
+            callbackId: `${projectId}_regen_${sceneId}`,
+            format: project.format === 'both' ? '16_9' : (project.format as '16_9' | '9_16') ?? '16_9',
+          })
+          await supabaseAdmin.from('studio_scenes')
+            .update({ heygen_video_id: heygenVideoId })
+            .eq('id', sceneId)
+          await pollUntilDone(sceneId, heygenVideoId)
+        } catch (err) {
+          logger.error({ err, sceneId }, 'regenerate-scene background task failed')
+          await supabaseAdmin.from('studio_scenes')
+            .update({ status: 'error', error_message: err instanceof Error ? err.message : 'Unknown error' })
+            .eq('id', sceneId)
+        }
+      })().catch((err) => logger.error({ err, sceneId }, 'regenerate-scene unhandled rejection'))
+    } else {
+      logger.info({ sceneId }, 'scene regen queued — no avatar/voice on project, marking error')
+      await supabaseAdmin.from('studio_scenes')
+        .update({ status: 'error', error_message: 'No avatar or voice configured on project' })
+        .eq('id', sceneId)
+    }
 
     res.json({ status: 'regenerating' })
   } catch (err) {

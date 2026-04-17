@@ -8,7 +8,7 @@ import { renderQueue, isRedisReady } from '../../queues/renderQueue'
 import { runFacelessPipeline } from '../../pipelines/faceless'
 import { getMusicTrackUrl } from '../../lib/music'
 import { checkScriptWpm, condenseScript } from '../../services/claude'
-import { uploadFalUrlToStorage, generateSceneVideoAuto } from '../../services/fal'
+import { uploadFalUrlToStorage, generateSceneVideoAuto, generateSceneVideoWan } from '../../services/fal'
 import { assembleVideoFromVideoClips } from '../../services/ffmpeg'
 import { writeFile, unlink } from 'fs/promises'
 import { join } from 'path'
@@ -58,6 +58,8 @@ const createFacelessSchema = z.object({
   pre_generated_scenes: z.array(preGeneratedSceneSchema).optional(),
   dialogue_mode: z.boolean().optional(),
   speaker_voices: z.record(z.string()).optional(),
+  animation_mode: z.enum(['storyboard', 'fast', 'pro']).optional(),
+  animation_overrides: z.record(z.string(), z.enum(['storyboard', 'fast', 'pro'])).optional(),
 })
 
 const regenerateSceneSchema = z.object({
@@ -90,7 +92,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
     return
   }
 
-  const { title, style, input_type, format, duration, script, audio_url, voice_id, brand_kit_id, music_track_id, pre_generated_scenes, dialogue_mode, speaker_voices } = parsed.data
+  const { title, style, input_type, format, duration, script, audio_url, voice_id, brand_kit_id, music_track_id, pre_generated_scenes, dialogue_mode, speaker_voices, animation_mode, animation_overrides } = parsed.data
 
   const hasPreGeneratedScenes = pre_generated_scenes && pre_generated_scenes.length > 0
   if (input_type === 'script' && !script && !hasPreGeneratedScenes) {
@@ -131,6 +133,8 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
         style,
         title,
         status: 'pending',
+        animation_mode: animation_mode ?? 'storyboard',
+        animation_overrides: animation_overrides ?? {},
         metadata: { voice_id, input_type, format, duration, brand_kit_id: brand_kit_id ?? null },
       })
       .select()
@@ -158,6 +162,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
       preGeneratedScenes: pre_generated_scenes ?? undefined,
       dialogueMode:   dialogue_mode,
       speakerVoices:  speaker_voices,
+      animationMode:  animation_mode,
     }
 
     // Enqueue si Redis est dispo ET qu'un worker consomme la queue, sinon inline
@@ -356,15 +361,17 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
 
   const { video_id } = parsed.data
 
+  let reassembleMetadata: Record<string, unknown> | null = null
   try {
     // Vérifier que la vidéo appartient à l'utilisateur
     const { data: video } = await supabaseAdmin
       .from('videos')
       .select('metadata, user_id')
       .eq('id', video_id)
+      .eq('user_id', req.userId)
       .single()
 
-    if (!video || video.user_id !== req.userId) {
+    if (!video) {
       res.status(404).json({ error: 'Video not found', code: 'NOT_FOUND' })
       return
     }
@@ -373,6 +380,7 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
       scenes?: Array<{ id: string; clip_url?: string }>
       storage_path?: string
     }
+    reassembleMetadata = metadata as Record<string, unknown>
 
     // Récupérer les URLs des clips depuis le metadata
     const sceneVideoUrls = (metadata.scenes ?? [])
@@ -461,12 +469,99 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
       .from('videos')
       .update({
         status: 'error',
-        metadata: { error_message: err instanceof Error ? err.message : String(err), error_at: new Date().toISOString() },
+        metadata: { ...(reassembleMetadata ?? {}), error_message: err instanceof Error ? err.message : String(err), error_at: new Date().toISOString() },
       })
       .eq('id', video_id)
       .then(() => null, () => null)
     res.status(500).json({ error: 'Failed to reassemble video', code: 'SERVICE_ERROR' })
   }
+})
+
+const animateSchema = z.object({
+  projectId: z.string().uuid(),
+  scenes: z.array(z.object({
+    sceneId:          z.string(),
+    mode:             z.enum(['storyboard', 'fast', 'pro']),
+    imageUrl:         z.string().url(),
+    animationPrompt:  z.string().max(500).optional(),
+  })),
+})
+
+/**
+ * POST /api/v1/pipeline/faceless/animate
+ * Génère des clips vidéo pour chaque scène selon le mode d'animation choisi.
+ * - storyboard → pas de GPU (Ken Burns géré côté Remotion)
+ * - fast        → fal-ai/wan-i2v 5s
+ * - pro         → fal-ai/kling-video/v1.5/pro 8s
+ */
+pipelineFacelessRouter.post('/faceless/animate', authMiddleware, async (req, res) => {
+  const parsed = animateSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
+    return
+  }
+
+  const { projectId, scenes } = parsed.data
+
+  // Vérifier que la vidéo appartient à l'utilisateur
+  const { data: video } = await supabaseAdmin
+    .from('videos')
+    .select('metadata, style, user_id')
+    .eq('id', projectId)
+    .eq('user_id', req.userId)
+    .single()
+
+  if (!video) {
+    res.status(404).json({ error: 'Project not found', code: 'NOT_FOUND' })
+    return
+  }
+
+  const results: Array<{ sceneId: string; clipUrl: string | null; mode: string; skipped?: boolean }> = []
+
+  for (const scene of scenes) {
+    const { sceneId, mode, imageUrl, animationPrompt } = scene
+    const prompt = animationPrompt ?? 'smooth cinematic camera movement, natural motion'
+
+    if (mode === 'storyboard') {
+      // Ken Burns is applied in Remotion — no GPU needed
+      results.push({ sceneId, clipUrl: null, mode, skipped: true })
+      continue
+    }
+
+    try {
+      let videoUrl: string
+      const storagePath = `${req.userId}/${projectId}/clips/scene-${sceneId}.mp4`
+
+      if (mode === 'fast') {
+        const r = await generateSceneVideoWan(imageUrl, prompt)
+        videoUrl = r.videoUrl
+      } else {
+        // pro → Kling v1.5
+        const r = await generateSceneVideoAuto(imageUrl, prompt, '5', 'cinematique')
+        videoUrl = r.videoUrl
+      }
+
+      const clipUrl = await uploadFalUrlToStorage(videoUrl, storagePath, 'videos', true)
+
+      // Mettre à jour le metadata de la scène
+      const metadata = video.metadata as { scenes?: Array<{ id: string; clip_url?: string; [key: string]: unknown }> }
+      const updatedScenes = (metadata.scenes ?? []).map((s) =>
+        s.id === sceneId ? { ...s, clip_url: clipUrl, animation_mode: mode } : s
+      )
+      await supabaseAdmin
+        .from('videos')
+        .update({ metadata: { ...metadata, scenes: updatedScenes } })
+        .eq('id', projectId)
+
+      results.push({ sceneId, clipUrl, mode })
+      logger.info({ projectId, sceneId, mode }, 'animate: clip generated')
+    } catch (err) {
+      logger.error({ err, projectId, sceneId, mode }, 'animate: clip generation failed')
+      results.push({ sceneId, clipUrl: null, mode })
+    }
+  }
+
+  res.json({ results })
 })
 
 /**
