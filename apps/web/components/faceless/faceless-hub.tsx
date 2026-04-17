@@ -1092,6 +1092,8 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
   // Batch selection state
   const [batchMode,  setBatchMode]  = useState(false)
   const [selected,   setSelected]   = useState<Set<string>>(new Set())
+  // Fullscreen preview lightbox (scene index being previewed, or null)
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   // Style reference tracking
   const [localStyleRef, setLocalStyleRef] = useState<string | undefined>(styleReference)
   // Keep a ref to scenes to avoid stale closures in async callbacks
@@ -1228,7 +1230,15 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
             setLocalStyleRef(hdData.imageUrl)
           }
         } else {
-          updateScene(id, { imageStatus: 'done', streamLog: undefined })
+          // HD returned 200 but no imageUrl. If we already have a draft, keep
+          // it; otherwise surface the failure instead of silently marking the
+          // scene done with an empty preview.
+          const currentScene = scenesRef.current.find((s) => s.id === id)
+          if (currentScene?.imageUrl) {
+            updateScene(id, { imageStatus: 'done', streamLog: undefined })
+          } else {
+            throw new Error('Génération HD sans URL — réessaie.')
+          }
         }
       }
     } catch (err) {
@@ -1458,8 +1468,15 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                   </div>
                 ) : scene.imageStatus === 'done' ? (
                   scene.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={scene.imageUrl} alt={`Scène ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setPreviewIndex(i)}
+                      aria-label={`Prévisualiser Scène ${i + 1} en grand`}
+                      className="absolute inset-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={scene.imageUrl} alt={`Scène ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                    </button>
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3">
                       <Check size={14} className="text-white" />
@@ -1514,6 +1531,18 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
                 {/* Edit / regen controls */}
                 <div className="absolute top-2 right-2 flex items-center gap-1">
+                  {/* Fullscreen preview button — only when an image exists */}
+                  {scene.imageUrl && scene.imageStatus === 'done' && (
+                    <button
+                      type="button"
+                      aria-label="Prévisualiser en grand"
+                      onClick={() => setPreviewIndex(i)}
+                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-black/70 flex items-center justify-center transition-all"
+                      title="Prévisualiser l'image en grand"
+                    >
+                      <Wand2 size={10} />
+                    </button>
+                  )}
                   {/* Compare button — shown when there's a previous version */}
                   {scene.imageUrl && scene.imageHistory && scene.imageHistory.length > 0 && (
                     <button
@@ -1609,6 +1638,180 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
           </button>
         </div>
       </div>
+
+      {/* Fullscreen preview lightbox */}
+      {previewIndex !== null && scenes[previewIndex] && (
+        <ScenePreviewLightbox
+          scenes={scenes}
+          index={previewIndex}
+          onClose={() => setPreviewIndex(null)}
+          onNavigate={(newIndex) => setPreviewIndex(newIndex)}
+          onRegenerate={(id) => generateImage(id)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Scene preview lightbox (images + clips) ───────────────────────────────────
+
+function ScenePreviewLightbox({
+  scenes,
+  index,
+  onClose,
+  onNavigate,
+  onRegenerate,
+  mode = 'image',
+}: {
+  scenes: SceneData[]
+  index: number
+  onClose: () => void
+  onNavigate: (newIndex: number) => void
+  onRegenerate?: (id: string) => void
+  mode?: 'image' | 'clip'
+}) {
+  const scene = scenes[index]
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft' && index > 0) onNavigate(index - 1)
+      if (e.key === 'ArrowRight' && index < scenes.length - 1) onNavigate(index + 1)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [index, scenes.length, onClose, onNavigate])
+
+  if (!scene) return null
+
+  const mediaUrl = mode === 'clip' ? scene.clipUrl : scene.imageUrl
+  const hasPrev = index > 0
+  const hasNext = index < scenes.length - 1
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Prévisualisation scène ${index + 1}`}
+      className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      {/* Close */}
+      <button
+        type="button"
+        aria-label="Fermer la prévisualisation"
+        onClick={onClose}
+        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+      >
+        <X size={18} />
+      </button>
+
+      {/* Prev */}
+      {hasPrev && (
+        <button
+          type="button"
+          aria-label="Scène précédente"
+          onClick={(e) => { e.stopPropagation(); onNavigate(index - 1) }}
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+        >
+          <ArrowLeft size={18} />
+        </button>
+      )}
+
+      {/* Next */}
+      {hasNext && (
+        <button
+          type="button"
+          aria-label="Scène suivante"
+          onClick={(e) => { e.stopPropagation(); onNavigate(index + 1) }}
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+        >
+          <ArrowRight size={18} />
+        </button>
+      )}
+
+      {/* Content */}
+      <div
+        className="max-w-5xl w-full max-h-full flex flex-col gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Media */}
+        <div className="flex-1 min-h-0 flex items-center justify-center bg-black/40 rounded-2xl overflow-hidden">
+          {mediaUrl ? (
+            mode === 'clip' ? (
+              <video
+                src={mediaUrl}
+                controls
+                autoPlay
+                playsInline
+                className="max-w-full max-h-[75vh] object-contain"
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={mediaUrl}
+                alt={`Scène ${index + 1}`}
+                className="max-w-full max-h-[75vh] object-contain"
+              />
+            )
+          ) : (
+            <div className="p-12 text-white/60 font-mono text-sm">
+              Aucun aperçu disponible — régénère la scène.
+            </div>
+          )}
+        </div>
+
+        {/* Info bar */}
+        <div className="flex items-start justify-between gap-4 px-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="font-mono text-[11px] uppercase tracking-widest bg-white/10 text-white px-2 py-0.5 rounded-full">
+                Scène {index + 1} / {scenes.length}
+              </span>
+              {mode === 'image' && scene.qualityHint === 'hd' && (
+                <span className="font-mono text-[10px] uppercase tracking-wider bg-emerald-500/80 text-white px-1.5 py-0.5 rounded-full">HD</span>
+              )}
+              {mode === 'image' && scene.qualityHint === 'draft' && (
+                <span className="font-mono text-[10px] uppercase tracking-wider bg-amber-500/80 text-white px-1.5 py-0.5 rounded-full">Draft</span>
+              )}
+            </div>
+            <p className="text-sm text-white/80 leading-relaxed line-clamp-3">
+              {scene.scriptText}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {mediaUrl && (
+              <a
+                href={mediaUrl}
+                download
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Télécharger"
+                className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+                title="Télécharger"
+              >
+                <Download size={14} />
+              </a>
+            )}
+            {onRegenerate && (
+              <button
+                type="button"
+                onClick={() => onRegenerate(scene.id)}
+                aria-label="Régénérer"
+                className="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-display font-semibold transition-all"
+              >
+                <RefreshCw size={13} /> Régénérer
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Keyboard hint */}
+        <p className="text-center text-[11px] text-white/40 font-mono">
+          ← / → pour naviguer · Échap pour fermer
+        </p>
+      </div>
     </div>
   )
 }
@@ -1630,6 +1833,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
   const [editingId,      setEditingId]      = useState<string | null>(null)
   const [hasRegenerated, setHasRegenerated] = useState(false)
   const [reassembling,   setReassembling]   = useState(false)
+  const [previewIndex,   setPreviewIndex]   = useState<number | null>(null)
 
   function updateScene(id: string, patch: Partial<SceneData>) {
     onScenesChange((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s))
@@ -1768,8 +1972,18 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     <Loader2 size={16} className="text-white/60 animate-spin" />
                   </div>
                 ) : scene.clipStatus === 'done' && scene.clipUrl ? (
-                  // Show actual video preview when clip is ready
-                  <video src={scene.clipUrl} className="w-full h-full object-cover" muted autoPlay playsInline />
+                  // Show actual video preview when clip is ready; click to open lightbox
+                  <button
+                    type="button"
+                    onClick={() => setPreviewIndex(i)}
+                    aria-label={`Prévisualiser clip Scène ${i + 1} en grand`}
+                    className="absolute inset-0 cursor-zoom-in group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  >
+                    <video src={scene.clipUrl} className="w-full h-full object-cover" muted autoPlay playsInline />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Play size={14} className="text-white fill-white" />
+                    </div>
+                  </button>
                 ) : scene.clipStatus === 'done' ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
@@ -1935,6 +2149,18 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
           </button>
         </div>
       </div>
+
+      {/* Fullscreen clip preview lightbox */}
+      {previewIndex !== null && scenes[previewIndex] && (
+        <ScenePreviewLightbox
+          scenes={scenes}
+          index={previewIndex}
+          mode="clip"
+          onClose={() => setPreviewIndex(null)}
+          onNavigate={(newIndex) => setPreviewIndex(newIndex)}
+          onRegenerate={(id) => generateClip(id)}
+        />
+      )}
     </div>
   )
 }
