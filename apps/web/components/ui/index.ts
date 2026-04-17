@@ -1,6 +1,9 @@
 export { Button, buttonVariants } from './button'
 export type { ButtonProps } from './button'
 
+export { IconButton, iconButtonVariants } from './icon-button'
+export type { IconButtonProps } from './icon-button'
+
 export { Input, Textarea, InputGroup } from './input'
 export type { InputProps, TextareaProps, InputGroupProps } from './input'
 
