@@ -454,18 +454,19 @@ export async function generateSocialAsset(
 const HIGH_QUALITY_VIDEO_STYLES = new Set(['cinematique', 'stock-vo', 'luxe', '3d-pixar'])
 
 /**
- * Kling v1 Standard — modèle rapide (~30-60 s).
- * Utilisé pour la majorité des styles (illustration, flat-design, motion, etc.)
+ * Kling v2.5 Turbo Standard — variante turbo du modèle Kling (~20-40 s).
+ * ~2× plus rapide que Kling v1 Standard tout en gardant une qualité comparable
+ * sur les styles d'animation/illustration. Utilisé pour la majorité des styles.
  */
 async function generateSceneVideoKlingStandard(
   imageUrl: string,
   animationPrompt: string,
   duration: '5' | '10' = '5'
 ): Promise<{ videoUrl: string }> {
-  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v1 Standard')
+  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v2.5-turbo Standard')
 
   const result = await Promise.race([
-    fal.subscribe('fal-ai/kling-video/v1/standard/image-to-video', {
+    fal.subscribe('fal-ai/kling-video/v2.5-turbo/standard/image-to-video', {
       input: {
         image_url: imageUrl,
         prompt: animationPrompt,
@@ -474,20 +475,21 @@ async function generateSceneVideoKlingStandard(
       },
     }),
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Kling Standard timeout')), TIMEOUT_VIDEO_MS)
+      setTimeout(() => reject(new Error('Kling v2.5-turbo Standard timeout')), TIMEOUT_VIDEO_MS)
     ),
   ])
 
   const output = ((result as any).data ?? result) as { video?: { url: string } }
   const videoUrl = output.video?.url
-  if (!videoUrl) throw new Error('No video URL in Kling Standard response')
+  if (!videoUrl) throw new Error('No video URL in Kling v2.5-turbo Standard response')
 
-  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling Standard complete')
+  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling v2.5-turbo Standard complete')
   return { videoUrl }
 }
 
 /**
- * Kling v1.5 Pro — modèle premium (~90-120 s).
+ * Kling v2.5 Turbo Pro — variante turbo premium (~40-90 s).
+ * ~2× plus rapide que Kling v1.5 Pro, avec qualité photoréaliste conservée.
  * Réservé aux styles photoréalistes (cinematique, stock-vo, luxe, 3d-pixar).
  */
 async function generateSceneVideoKlingPro(
@@ -495,10 +497,10 @@ async function generateSceneVideoKlingPro(
   animationPrompt: string,
   duration: '5' | '10' = '5'
 ): Promise<{ videoUrl: string }> {
-  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v1.5 Pro')
+  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v2.5-turbo Pro')
 
   const result = await Promise.race([
-    fal.subscribe('fal-ai/kling-video/v1.5/pro/image-to-video', {
+    fal.subscribe('fal-ai/kling-video/v2.5-turbo/pro/image-to-video', {
       input: {
         image_url: imageUrl,
         prompt: animationPrompt,
@@ -507,15 +509,15 @@ async function generateSceneVideoKlingPro(
       },
     }),
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Kling Pro timeout')), TIMEOUT_VIDEO_MS * 2)
+      setTimeout(() => reject(new Error('Kling v2.5-turbo Pro timeout')), TIMEOUT_VIDEO_MS * 2)
     ),
   ])
 
   const output = ((result as any).data ?? result) as { video?: { url: string } }
   const videoUrl = output.video?.url
-  if (!videoUrl) throw new Error('No video URL in Kling Pro response')
+  if (!videoUrl) throw new Error('No video URL in Kling v2.5-turbo Pro response')
 
-  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling Pro complete')
+  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling v2.5-turbo Pro complete')
   return { videoUrl }
 }
 
@@ -549,15 +551,15 @@ export async function generateSceneVideoAuto(
   const usePro = HIGH_QUALITY_VIDEO_STYLES.has(style ?? '')
 
   if (usePro) {
-    logger.info({ style, duration }, 'Kling router → Pro (premium style)')
+    logger.info({ style, duration }, 'Kling router → v2.5-turbo Pro (premium style)')
     const result = await generateSceneVideoKlingPro(imageUrl, animationPrompt, duration)
-    return { ...result, model: 'kling-pro' }
+    return { ...result, model: 'kling-v2.5-turbo-pro' }
   }
 
   // Standard uniquement — pas de fallback Pro (économie de crédits)
-  logger.info({ style, duration }, 'Kling router → Standard (default)')
+  logger.info({ style, duration }, 'Kling router → v2.5-turbo Standard (default)')
   const result = await generateSceneVideoKlingStandard(imageUrl, animationPrompt, duration)
-  return { ...result, model: 'kling-standard' }
+  return { ...result, model: 'kling-v2.5-turbo-standard' }
 }
 
 /**
@@ -591,6 +593,40 @@ export async function generateLipSync(
 
   logger.info({ resultUrl: resultUrl.slice(0, 60) }, 'fal.ai: lip-sync complete')
   return { videoUrl: resultUrl }
+}
+
+/**
+ * Wan i2v — modèle rapide image-to-video (~30-60 s, 5 s clip).
+ * Utilisé pour le mode 'fast' de l'Animation Mode Selector.
+ */
+export async function generateSceneVideoWan(
+  imageUrl: string,
+  animationPrompt: string
+): Promise<{ videoUrl: string }> {
+  logger.info({ imageUrl: imageUrl.slice(0, 60) }, 'fal.ai: starting Wan i2v')
+
+  const result = await Promise.race([
+    fal.subscribe('fal-ai/wan-i2v', {
+      input: {
+        image_url: imageUrl,
+        prompt: animationPrompt,
+        num_frames: 81, // ~5s at 16fps
+      },
+    } as any),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Wan i2v timeout')), TIMEOUT_VIDEO_MS)
+    ),
+  ])
+
+  const output = ((result as any).data ?? result) as { video?: { url: string } | string; video_url?: string }
+  const videoUrl =
+    (typeof output.video === 'string' ? output.video : output.video?.url) ??
+    output.video_url
+
+  if (!videoUrl) throw new Error('No video URL in Wan i2v response')
+
+  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Wan i2v complete')
+  return { videoUrl }
 }
 
 function sleep(ms: number): Promise<void> {
@@ -632,7 +668,7 @@ export async function uploadFalUrlToStorage(
 
     const { data: signedData } = await supabaseAdmin.storage
       .from(bucket)
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7) // 7-day signed URL (bucket is private)
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 365) // 1-year signed URL
     if (signedData?.signedUrl) {
       logger.info({ storagePath, bucket }, 'fal.ai: asset uploaded to Supabase Storage')
       return signedData.signedUrl

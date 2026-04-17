@@ -3,7 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300  // 5 min — Kling Standard ~45-90s, Pro ~2-3min
+export const maxDuration = 300  // 5 min — Kling v2.5-turbo Standard ~20-40s, Pro ~40-90s
 
 // Styles premium qui méritent Kling Pro (plus cher, plus qualitatif)
 const PREMIUM_STYLES = new Set(['cinematique', 'stock-vo', 'luxe', '3d-pixar'])
@@ -38,17 +38,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
     }
 
-    // Par défaut : Kling Standard (0.017$/sec, plus rapide)
-    // Pro uniquement pour les styles premium
+    // Par défaut : Kling v2.5-turbo Standard (~20-40s, ~2× plus rapide que v1)
+    // Pro uniquement pour les styles premium (~40-90s vs 90-180s pour v1.5 pro)
     const usePro = PREMIUM_STYLES.has(style)
     const endpoint = usePro
-      ? 'fal-ai/kling-video/v1.5/pro/image-to-video'
-      : 'fal-ai/kling-video/v1/standard/image-to-video'
+      ? 'fal-ai/kling-video/v2.5-turbo/pro/image-to-video'
+      : 'fal-ai/kling-video/v2.5-turbo/standard/image-to-video'
 
-    console.log(`[generate-scene-clip] Using ${usePro ? 'Pro' : 'Standard'} Kling, duration=${duration}s`)
+    console.log(`[generate-scene-clip] Using Kling v2.5-turbo ${usePro ? 'Pro' : 'Standard'}, duration=${duration}s`)
 
-    // Timeout explicite (5 min pour Standard, 8 min pour Pro)
-    const timeoutMs = usePro ? 8 * 60 * 1000 : 5 * 60 * 1000
+    // Timeout explicite (3 min pour Standard, 5 min pour Pro — turbo is faster)
+    const timeoutMs = usePro ? 5 * 60 * 1000 : 3 * 60 * 1000
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         videoUrl,
-        model: usePro ? 'kling-pro' : 'kling-standard',
+        model: usePro ? 'kling-v2.5-turbo-pro' : 'kling-v2.5-turbo-standard',
       })
     } catch (fetchErr) {
       clearTimeout(timeout)
