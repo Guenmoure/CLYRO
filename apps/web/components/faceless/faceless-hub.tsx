@@ -2678,6 +2678,10 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
     contentTemplateId: project.contentTemplateId,
     animationMode:     project.animationMode,
   }
+  // Pre-scene-breakdown: prompt the user before letting them close/refresh
+  // so they have a chance to cancel. Once the script has been broken into
+  // scenes (hasScenes), leave silently — the draft is always auto-saved.
+  const hasScenes = project.scenes.length > 0
   const { clearDraft } = useDraftSave({
     module:         'faceless',
     title:          project.title || 'Faceless draft',
@@ -2689,6 +2693,10 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
     // Once the pipeline has been kicked off, stop upserting as draft —
     // the videoId lives in a separate non-draft row from now on.
     initialDraftId: project.videoId ? null : (initialDraft?.id ?? null),
+    // Native "Leave site?" prompt only before scenes exist AND before the
+    // final generation has started. Post-scenes, losing work is impossible
+    // (everything is already persisted) so we don't interrupt the user.
+    promptOnLeave:  !hasScenes && !project.videoId,
   })
 
   function patch(p: Partial<ProjectState>) {

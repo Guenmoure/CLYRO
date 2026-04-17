@@ -15,6 +15,14 @@ export interface DraftSaveOptions {
   state:        Record<string, unknown>
   /** Pass a video ID to resume an existing draft (e.g. from ?draft= URL param) */
   initialDraftId?: string | null
+  /**
+   * When true, trigger the browser's native "Leave site?" confirmation on
+   * tab close / refresh so the user has a chance to cancel. When false,
+   * leave silently (draft is still saved via sendBeacon).
+   * Typical usage: true before the user has committed real work
+   * (pre-scene-breakdown), false afterwards so saves are seamless.
+   */
+  promptOnLeave?: boolean
 }
 
 export interface DraftSaveResult {
@@ -34,6 +42,7 @@ export function useDraftSave({
   stepLabel,
   state,
   initialDraftId,
+  promptOnLeave = false,
 }: DraftSaveOptions): DraftSaveResult {
   const [draftId,    setDraftId]    = useState<string | null>(initialDraftId ?? null)
   const [lastSaved,  setLastSaved]  = useState<Date | null>(null)
@@ -136,12 +145,26 @@ export function useDraftSave({
   }, [save])
 
   // ── sendBeacon on tab close ─────────────────────────────────
+  // If `promptOnLeave` is true AND we have nothing to lose silently (draft
+  // exists but user hasn't passed the "real work" threshold), trigger the
+  // native confirmation so the user has a chance to cancel. Either way,
+  // when unload proceeds the beacon fires and the draft is persisted.
+  const promptOnLeaveRef = useRef(promptOnLeave)
+  promptOnLeaveRef.current = promptOnLeave
   useEffect(() => {
-    function onBeforeUnload() {
+    function onBeforeUnload(e: BeforeUnloadEvent) {
       const { draftId: id, module: mod, title: t, style: s, currentStep: step, state: st } = latestRef.current
-      if (!id) return
-      const body = JSON.stringify({ draftId: id, module: mod, title: t, style: s, currentStep: step, state: st })
-      navigator.sendBeacon('/api/draft-save', body)
+      if (id) {
+        const body = JSON.stringify({ draftId: id, module: mod, title: t, style: s, currentStep: step, state: st })
+        navigator.sendBeacon('/api/draft-save', body)
+      }
+      if (promptOnLeaveRef.current) {
+        e.preventDefault()
+        // Most browsers ignore the string but require returnValue to be set
+        e.returnValue = ''
+        return ''
+      }
+      return undefined
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
