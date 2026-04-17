@@ -44,12 +44,6 @@ function useNavSections() {
         { href: '/assets',    label: t('assets'),          icon: Package },
       ],
     },
-    {
-      label: t('account'),
-      items: [
-        { href: 'mailto:support@clyro.app', label: t('help'), icon: HelpCircle, external: true },
-      ],
-    },
   ]
 }
 
@@ -88,7 +82,7 @@ function NavItem({
     : pathname === href || pathname.startsWith(href + '/')
 
   const baseClass = cn(
-    'relative group flex items-center gap-3 rounded-xl transition-colors duration-150 w-full',
+    'relative group flex items-center gap-3 rounded-xl transition-colors duration-150 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
     collapsed ? 'h-10 justify-center px-0' : 'h-10 px-3',
     isActive
       ? 'bg-blue-500/15 border-l-2 border-blue-500 text-foreground pl-[10px]'
@@ -192,7 +186,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
         aria-expanded={dropdownOpen}
         aria-haspopup="menu"
         className={cn(
-          'group flex items-center gap-3 py-2 rounded-xl w-full transition-colors',
+          'group flex items-center gap-3 py-2 rounded-xl w-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           collapsed ? 'justify-center px-0' : 'px-2',
           dropdownOpen ? 'bg-muted' : 'hover:bg-muted',
         )}
@@ -203,7 +197,7 @@ function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () 
         {!collapsed && name && (
           <div className="min-w-0 flex-1 text-left">
             <p className="font-body text-sm text-foreground truncate leading-none mb-0.5">{name}</p>
-            <p className="font-mono text-[10px] text-[--text-secondary] truncate">{planLabel}</p>
+            <p className="font-mono text-[11px] text-[--text-secondary] truncate">{planLabel}</p>
           </div>
         )}
         {!collapsed && <ChevronUp size={14} className={cn('shrink-0 text-[--text-muted] transition-transform', dropdownOpen && 'rotate-180')} />}
@@ -381,7 +375,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           <button
             type="button"
             onClick={() => onToggle(!collapsed)}
-            className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-muted border border-border rounded-full items-center justify-center shadow-card hover:bg-border transition-colors z-10"
+            className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted border border-border rounded-full items-center justify-center shadow-card hover:bg-border transition-colors z-10 after:absolute after:inset-[-6px] after:content-['']"
             aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')}
           >
             <ChevronRight

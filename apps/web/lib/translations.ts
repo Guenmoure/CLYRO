@@ -275,6 +275,23 @@ export const translations = {
     billing: 'Billing',
     mobileMoney: 'Mobile Money (Africa)',
 
+    // Extended labels
+    gender: 'Gender',
+    premadeVoices: 'Premade',
+    contentLanguage: 'Video language',
+    videoLanguageHint: 'The language of the generated video audio.',
+    looksLabel: 'looks',
+    look: 'look',
+    avatarsCount: 'avatar',
+    avatarsCountPlural: 'avatars',
+    totalLooks: 'total looks',
+    totalLook: 'total look',
+    retry: 'Retry',
+    createYourFirstAvatar: 'Create your first avatar',
+    pageStudio: 'Studio',
+    pageVoices: 'Voices',
+    pageAvatars: 'Avatars',
+
     // Notifications
   },
 
@@ -533,6 +550,23 @@ export const translations = {
     myVoices: 'Mes voix',
     billing: 'Facturation',
     mobileMoney: 'Mobile Money (Afrique)',
+
+    // Extended labels
+    gender: 'Genre',
+    premadeVoices: 'Préconçues',
+    contentLanguage: 'Langue de la vidéo',
+    videoLanguageHint: 'La langue de l\'audio de la vidéo générée.',
+    looksLabel: 'looks',
+    look: 'look',
+    avatarsCount: 'avatar',
+    avatarsCountPlural: 'avatars',
+    totalLooks: 'looks au total',
+    totalLook: 'look au total',
+    retry: 'Réessayer',
+    createYourFirstAvatar: 'Créez votre premier avatar',
+    pageStudio: 'Studio',
+    pageVoices: 'Voix',
+    pageAvatars: 'Avatars',
 
     // Notifications
   },
@@ -793,6 +827,23 @@ export const translations = {
     billing: 'Facturación',
     mobileMoney: 'Mobile Money (África)',
 
+    // Extended labels
+    gender: 'Género',
+    premadeVoices: 'Prediseñadas',
+    contentLanguage: 'Idioma del video',
+    videoLanguageHint: 'El idioma del audio del video generado.',
+    looksLabel: 'estilos',
+    look: 'estilo',
+    avatarsCount: 'avatar',
+    avatarsCountPlural: 'avatares',
+    totalLooks: 'estilos en total',
+    totalLook: 'estilo en total',
+    retry: 'Reintentar',
+    createYourFirstAvatar: 'Crea tu primer avatar',
+    pageStudio: 'Estudio',
+    pageVoices: 'Voces',
+    pageAvatars: 'Avatares',
+
     // Notifications
   },
 
@@ -1052,6 +1103,23 @@ export const translations = {
     billing: 'Abrechnung',
     mobileMoney: 'Mobile Money (Afrika)',
 
+    // Extended labels
+    gender: 'Geschlecht',
+    premadeVoices: 'Vorgefertigt',
+    contentLanguage: 'Videosprache',
+    videoLanguageHint: 'Die Sprache des generierten Video-Audios.',
+    looksLabel: 'Looks',
+    look: 'Look',
+    avatarsCount: 'Avatar',
+    avatarsCountPlural: 'Avatare',
+    totalLooks: 'Looks insgesamt',
+    totalLook: 'Look insgesamt',
+    retry: 'Erneut versuchen',
+    createYourFirstAvatar: 'Erstellen Sie Ihren ersten Avatar',
+    pageStudio: 'Studio',
+    pageVoices: 'Stimmen',
+    pageAvatars: 'Avatare',
+
     // Notifications
   },
 
@@ -1310,6 +1378,23 @@ export const translations = {
     myVoices: 'Minhas vozes',
     billing: 'Faturamento',
     mobileMoney: 'Mobile Money (África)',
+
+    // Extended labels
+    gender: 'Gênero',
+    premadeVoices: 'Predefinidas',
+    contentLanguage: 'Idioma do vídeo',
+    videoLanguageHint: 'O idioma do áudio do vídeo gerado.',
+    looksLabel: 'estilos',
+    look: 'estilo',
+    avatarsCount: 'avatar',
+    avatarsCountPlural: 'avatares',
+    totalLooks: 'estilos no total',
+    totalLook: 'estilo no total',
+    retry: 'Tentar novamente',
+    createYourFirstAvatar: 'Crie seu primeiro avatar',
+    pageStudio: 'Estúdio',
+    pageVoices: 'Vozes',
+    pageAvatars: 'Avatares',
 
     // Notifications
   },

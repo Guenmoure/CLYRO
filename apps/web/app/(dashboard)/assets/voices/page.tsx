@@ -115,11 +115,16 @@ export default function VoicesAssetsPage() {
   const TABS: { key: VoiceTab; label: string; count?: number }[] = [
     { key: 'explore',   label: t('exploreVoices'),        count: allVoices.length },
     { key: 'my_voices', label: t('myVoicesTab'),       count: myVoices.length },
-    { key: 'default',   label: t('defaultVoices') },
+    { key: 'default',   label: t('premadeVoices') },
   ]
 
   return (
     <>
+      {/* Page heading */}
+      <div className="px-6 py-4 border-b border-border/30 bg-card/40">
+        <h1 className="font-body text-lg font-bold text-foreground">{t('pageVoices')}</h1>
+      </div>
+
       {/* Sub-header: tabs + CTA */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border/30 bg-card/40">
         <div className="flex gap-1">
@@ -138,7 +143,7 @@ export default function VoicesAssetsPage() {
               {label}
               {count !== undefined && (
                 <span className={cn(
-                  'font-body text-[10px] rounded-full px-1.5 py-0.5',
+                  'font-body text-[11px] rounded-full px-1.5 py-0.5',
                   activeTab === key ? 'bg-blue-500/20 text-blue-500' : 'bg-muted text-[--text-muted]',
                 )}>
                   {count}

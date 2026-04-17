@@ -143,13 +143,13 @@ function VoiceCard({ voice, onToggleFavorite, compact }: {
               onClick={() => onToggleFavorite(voice.id, voice.isFavorite ?? false)}
               aria-label={voice.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
               className={cn(
-                'w-8 h-8 rounded-full border flex items-center justify-center transition-all',
+                'w-10 h-10 rounded-full border flex items-center justify-center transition-all',
                 voice.isFavorite
                   ? 'bg-yellow-400/15 border-yellow-400/30 text-yellow-400'
                   : 'border-border text-[--text-muted] hover:text-yellow-400 hover:border-yellow-400/30'
               )}
             >
-              <Star size={13} fill={voice.isFavorite ? 'currentColor' : 'none'} />
+              <Star size={14} fill={voice.isFavorite ? 'currentColor' : 'none'} />
             </button>
           )}
         </div>
@@ -165,6 +165,14 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
   const [name, setName]           = useState('')
   const [file, setFile]           = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [onClose])
 
   async function handleSubmit() {
     if (!name.trim() || !file) return
@@ -188,15 +196,15 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="rounded-2xl border border-border bg-card p-6 w-full max-w-md shadow-xl">
-        <h3 className="font-body text-lg font-semibold text-foreground mb-1">{t('cloneVoice')}</h3>
+      <div className="rounded-2xl border border-border bg-card p-6 w-full max-w-md shadow-xl" role="dialog" aria-modal="true" aria-labelledby="clone-voice-title">
+        <h3 id="clone-voice-title" className="font-body text-lg font-semibold text-foreground mb-1">{t('cloneVoice')}</h3>
         <p className="text-[--text-muted] text-sm font-body mb-5">{t('cloneVoiceDesc')}</p>
         <div className="space-y-4 mb-5">
           <div>
             <label htmlFor="voice-name" className="font-body text-xs font-medium text-[--text-secondary] mb-2 block">{t('name')}</label>
             <input id="voice-name" type="text" value={name} onChange={(e) => setName(e.target.value)}
               placeholder="My main voice"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-all"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-all"
             />
           </div>
           <div>
@@ -258,9 +266,9 @@ function PersonalVoiceCard({ voice, onDeleted }: { voice: ClonedVoice; onDeleted
         <div className="flex items-center gap-2">
           {!showConfirm ? (
             <button type="button" onClick={() => setShowConfirm(true)} aria-label="Delete voice"
-              className="w-8 h-8 rounded-full border border-red-500/20 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-all"
+              className="w-10 h-10 rounded-full border border-red-500/20 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-all"
             >
-              <Trash2 size={13} />
+              <Trash2 size={14} />
             </button>
           ) : (
             <div className="flex gap-2">
@@ -393,7 +401,7 @@ export default function VoicesPage() {
   const TABS = [
     { key: 'explore' as Tab,   label: t('exploreVoices') },
     { key: 'my-voices' as Tab, label: t('myVoicesTab') },
-    { key: 'default' as Tab,   label: t('defaultVoices') },
+    { key: 'default' as Tab,   label: t('premadeVoices') },
   ]
 
   return (
@@ -448,7 +456,7 @@ export default function VoicesPage() {
                   onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
                   placeholder={t('searchVoices')}
                   aria-label="Search voices"
-                  className="w-full pl-10 pr-9 py-2.5 border border-border bg-card rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-all"
+                  className="w-full pl-10 pr-9 py-2.5 border border-border bg-card rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-all"
                 />
                 {filters.search && (
                   <button type="button" onClick={() => setFilters((p) => ({ ...p, search: '' }))} aria-label="Clear search"
@@ -466,7 +474,7 @@ export default function VoicesPage() {
                   value={filters.language}
                   onChange={(e) => setFilters((p) => ({ ...p, language: e.target.value }))}
                   aria-label="Filter by language"
-                  className="bg-transparent text-sm font-body text-foreground focus:outline-none appearance-none cursor-pointer pr-2"
+                  className="bg-transparent text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 appearance-none cursor-pointer pr-2"
                 >
                   <option value="">{t('languageLabel')}</option>
                   {filterOptions.languages.map((l) => (
@@ -479,10 +487,10 @@ export default function VoicesPage() {
               <select
                 value={filters.gender}
                 onChange={(e) => setFilters((p) => ({ ...p, gender: e.target.value }))}
-                aria-label="Filter by gender"
-                className="border border-border bg-card rounded-xl px-3 py-2.5 text-sm font-body text-foreground focus:outline-none appearance-none cursor-pointer"
+                aria-label={t('gender')}
+                className="border border-border bg-card rounded-xl px-3 py-2.5 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 appearance-none cursor-pointer"
               >
-                <option value="">{t('accent')}</option>
+                <option value="">{t('gender')}</option>
                 {filterOptions.genders.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
@@ -535,7 +543,7 @@ export default function VoicesPage() {
             <section>
               {!filters.search && !activeCategory && (
                 <h2 className="font-body text-base font-semibold text-foreground mb-3">
-                  {tab === 'default' ? t('defaultVoices') : t('allVoices')}
+                  {tab === 'default' ? t('premadeVoices') : t('allVoices')}
                 </h2>
               )}
               {loadingPublic ? (

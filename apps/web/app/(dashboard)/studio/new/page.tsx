@@ -20,12 +20,21 @@ export const dynamic = 'force-dynamic'
 
 type Mode = 'script' | 'youtube'
 
+// Languages supported by HeyGen/ElevenLabs for video output.
+// Distinct from UI language (LanguageSwitcher) — this is the narration language.
 const LANGUAGES = [
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'en', label: 'English',  flag: '🇬🇧' },
-  { code: 'es', label: 'Español',  flag: '🇪🇸' },
-  { code: 'ar', label: 'العربية',  flag: '🇸🇦' },
-  { code: 'de', label: 'Deutsch',  flag: '🇩🇪' },
+  { code: 'en', label: 'English',    flag: '🇬🇧' },
+  { code: 'fr', label: 'Français',   flag: '🇫🇷' },
+  { code: 'es', label: 'Español',    flag: '🇪🇸' },
+  { code: 'de', label: 'Deutsch',    flag: '🇩🇪' },
+  { code: 'pt', label: 'Português',  flag: '🇵🇹' },
+  { code: 'it', label: 'Italiano',   flag: '🇮🇹' },
+  { code: 'nl', label: 'Nederlands', flag: '🇳🇱' },
+  { code: 'pl', label: 'Polski',     flag: '🇵🇱' },
+  { code: 'ar', label: 'العربية',    flag: '🇸🇦' },
+  { code: 'ja', label: '日本語',      flag: '🇯🇵' },
+  { code: 'ko', label: '한국어',      flag: '🇰🇷' },
+  { code: 'zh', label: '中文',        flag: '🇨🇳' },
 ]
 
 const YOUTUBE_RE = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/
@@ -208,7 +217,7 @@ function StudioNewPageInner() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('titlePlaceholder')}
-            className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors"
             maxLength={120}
           />
         </div>
@@ -225,7 +234,7 @@ function StudioNewPageInner() {
               onChange={(e) => setScript(e.target.value)}
               rows={12}
               placeholder={t('scriptPlaceholder')}
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus:outline-none focus:border-blue-500 transition-colors resize-y"
+              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors resize-y"
             />
             <div className="flex items-center justify-between">
               <p className="font-mono text-xs text-[--text-muted]">
@@ -247,7 +256,7 @@ function StudioNewPageInner() {
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
                 placeholder="https://youtube.com/watch?v=..."
-                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors"
               />
             </div>
             <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
@@ -259,18 +268,21 @@ function StudioNewPageInner() {
           </div>
         )}
 
-        {/* Language */}
+        {/* Video language */}
         <div className="space-y-2">
-          <label htmlFor="lang" className="font-body text-sm font-semibold text-foreground">
-            {t('languageLabel')}
-          </label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="lang" className="font-body text-sm font-semibold text-foreground">
+              {t('contentLanguage')}
+            </label>
+            <span className="font-body text-xs text-[--text-muted]">{t('videoLanguageHint')}</span>
+          </div>
           <div className="relative">
-            <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
+            <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
             <select
               id="lang"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2.5 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+              className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors appearance-none cursor-pointer"
             >
               {LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>{l.flag}  {l.label}</option>
@@ -334,7 +346,7 @@ function StudioNewPageInner() {
                   value={avatarSearch}
                   onChange={(e) => setAvatarSearch(e.target.value)}
                   placeholder={t('searchAvatars')}
-                  className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors"
                 />
               </div>
 
@@ -349,6 +361,8 @@ function StudioNewPageInner() {
                         setAvatarId(av.avatar_id)
                         setSelectedLookId('')
                       }}
+                      aria-label={`${t('avatarLabel')}: ${av.avatar_name}`}
+                      aria-pressed={avatarId === av.avatar_id}
                       className={cn(
                         'relative rounded-xl overflow-hidden border transition-all card-interactive',
                         avatarId === av.avatar_id
@@ -370,7 +384,7 @@ function StudioNewPageInner() {
                           {av.avatar_name}
                         </p>
                         {av.looks_count > 1 && (
-                          <span className="font-body text-[10px] text-[--text-muted] whitespace-nowrap ml-1">
+                          <span className="font-body text-[11px] text-[--text-muted] whitespace-nowrap ml-1">
                             {av.looks_count} looks
                           </span>
                         )}
@@ -413,7 +427,7 @@ function StudioNewPageInner() {
                             <Check size={9} className="text-white" />
                           </div>
                         )}
-                        <p className="font-body text-[9px] text-foreground px-1 py-0.5 truncate bg-card text-center">
+                        <p className="font-body text-[10px] text-foreground px-1 py-0.5 truncate bg-card text-center">
                           {look.name}
                         </p>
                       </button>
@@ -489,6 +503,7 @@ function ModeCard({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
         'relative text-left rounded-2xl border p-5 transition-all card-interactive',
         active

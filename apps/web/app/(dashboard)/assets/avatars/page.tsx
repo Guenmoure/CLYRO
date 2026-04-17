@@ -97,7 +97,9 @@ function AvatarGroupCard({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full text-left"
+        aria-expanded={isExpanded}
+        aria-label={`${group.baseName}, ${group.totalLooks} looks`}
+        className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <div className="relative aspect-[3/4] bg-muted overflow-hidden group">
           {group.mainPreview ? (
@@ -150,13 +152,13 @@ function AvatarGroupCard({
                     key={look.look_id}
                     type="button"
                     onClick={() => onSelectAvatar(av)}
-                    className="relative rounded-xl overflow-hidden border border-border hover:border-blue-500 transition-all group/look"
+                    className="relative rounded-xl overflow-hidden border border-border hover:border-blue-500 transition-all group/look focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <div
                       className="aspect-[3/4] bg-cover bg-center bg-muted"
                       style={{ backgroundImage: `url(${look.preview_image_url})` }}
                     />
-                    <p className="font-body text-[10px] text-foreground px-1.5 py-1 truncate bg-card text-center">
+                    <p className="font-body text-[11px] text-foreground px-1.5 py-1 truncate bg-card text-center">
                       {look.name || av.avatar_name}
                     </p>
                   </button>
@@ -168,13 +170,13 @@ function AvatarGroupCard({
                   key={av.avatar_id}
                   type="button"
                   onClick={() => onSelectAvatar(av)}
-                  className="relative rounded-xl overflow-hidden border border-border hover:border-blue-500 transition-all"
+                  className="relative rounded-xl overflow-hidden border border-border hover:border-blue-500 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   <div
                     className="aspect-[3/4] bg-cover bg-center bg-muted"
                     style={{ backgroundImage: `url(${av.preview_image_url})` }}
                   />
-                  <p className="font-body text-[10px] text-foreground px-1.5 py-1 truncate bg-card text-center">
+                  <p className="font-body text-[11px] text-foreground px-1.5 py-1 truncate bg-card text-center">
                     {av.avatar_name}
                   </p>
                 </button>
@@ -239,7 +241,9 @@ export default function AvatarsPage() {
     <>
       {/* Sub-header: avatar tabs + CTA */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border/30 bg-card/40">
-        <div className="flex gap-1">
+        <div className="flex items-center gap-4">
+          <h1 className="font-body text-lg font-bold text-foreground">{t('pageAvatars')}</h1>
+          <div className="flex gap-1">
           {tabs.map(({ key, label, count }) => (
             <button
               key={key}
@@ -261,6 +265,7 @@ export default function AvatarsPage() {
               </span>
             </button>
           ))}
+          </div>
         </div>
 
         <Button
