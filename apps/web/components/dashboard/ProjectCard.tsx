@@ -185,6 +185,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   const [reverting,      setReverting]      = useState(false)
   const [localTitle,     setLocalTitle]     = useState<string | null>(project.title)
   const [renaming,       setRenaming]       = useState(false)
+  const [duplicating,    setDuplicating]    = useState(false)
 
   const isProcessing = ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly'].includes(project.status)
   const isError      = project.status === 'error'
@@ -228,11 +229,21 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
     }
   }
 
-  function handleEditAsNew() {
-    const mod = project.module ?? 'faceless'
-    // Route to the feature's working hub (FacelessHub / MotionStudio / BrandHub)
-    // rather than the /new wizard. The hub is where authoring happens.
-    router.push(`/${mod}/hub?from=${project.id}`)
+  async function handleEditAsNew() {
+    if (duplicating) return
+    setDuplicating(true)
+    try {
+      // Duplicate the project as a fresh draft: status='draft', new id, cloned
+      // metadata + wizard_state, wizard_step set to the last step. The user
+      // lands on the review/scene-editor view with every field pre-filled and
+      // the original project stays untouched.
+      const res = await fetch(`/api/videos/${project.id}/duplicate`, { method: 'POST' })
+      if (!res.ok) throw new Error()
+      const { id: newId, module } = await res.json() as { id: string; module: string }
+      router.push(`/${module}/new?draft=${newId}`)
+    } catch {
+      setDuplicating(false)
+    }
   }
 
   const ModuleIcon    = MODULE_ICONS[project.module ?? ''] ?? Video
