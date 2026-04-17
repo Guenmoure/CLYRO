@@ -1690,6 +1690,7 @@ function ScenePreviewLightbox({
 }) {
   const scene = scenes[index]
   const [mediaError, setMediaError] = useState(false)
+  const [mediaLoading, setMediaLoading] = useState(true)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1701,17 +1702,18 @@ function ScenePreviewLightbox({
     return () => window.removeEventListener('keydown', onKey)
   }, [index, scenes.length, onClose, onNavigate])
 
-  // Reset load error when navigating to another scene
-  useEffect(() => {
-    setMediaError(false)
-  }, [index, mode])
-
   if (!scene) return null
 
   // En mode clip, si le clipUrl est absent (ex: mode storyboard / non encore animé),
   // on retombe proprement sur l'image afin d'afficher quelque chose d'utile.
   const effectiveMode: 'image' | 'clip' = mode === 'clip' && !scene.clipUrl && scene.imageUrl ? 'image' : mode
   const mediaUrl = effectiveMode === 'clip' ? scene.clipUrl : scene.imageUrl
+
+  // Reset load state when the media URL changes (navigation / mode switch / regeneration)
+  useEffect(() => {
+    setMediaError(false)
+    setMediaLoading(Boolean(mediaUrl))
+  }, [mediaUrl])
   const hasPrev = index > 0
   const hasNext = index < scenes.length - 1
 
@@ -1797,15 +1799,23 @@ function ScenePreviewLightbox({
               )}
             </div>
           ) : effectiveMode === 'clip' ? (
-            <video
-              key={mediaUrl}
-              src={mediaUrl}
-              controls
-              autoPlay
-              playsInline
-              onError={() => setMediaError(true)}
-              className="max-w-full max-h-full object-contain relative z-10"
-            />
+            <>
+              <video
+                key={mediaUrl}
+                src={mediaUrl}
+                controls
+                autoPlay
+                playsInline
+                onError={() => { setMediaError(true); setMediaLoading(false) }}
+                onLoadedData={() => setMediaLoading(false)}
+                className="max-w-full max-h-full object-contain relative z-10"
+              />
+              {mediaLoading && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
+                  <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" aria-label="Chargement" />
+                </div>
+              )}
+            </>
           ) : (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1813,10 +1823,16 @@ function ScenePreviewLightbox({
                 key={mediaUrl}
                 src={mediaUrl}
                 alt={`Scène ${index + 1}`}
-                onError={() => setMediaError(true)}
+                onError={() => { setMediaError(true); setMediaLoading(false) }}
+                onLoad={() => setMediaLoading(false)}
                 className="max-w-full max-h-full object-contain relative z-10 shadow-2xl"
                 style={{ border: '1px solid rgba(255,255,255,0.15)' }}
               />
+              {mediaLoading && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
+                  <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" aria-label="Chargement" />
+                </div>
+              )}
             </>
           )}
         </div>
