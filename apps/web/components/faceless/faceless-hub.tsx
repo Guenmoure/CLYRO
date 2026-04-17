@@ -12,6 +12,7 @@ import { VideoPlayer } from '@/components/ui/video-player'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { startFacelessGeneration, getPublicVoices, updateVideoMetadata, regenerateFacelessScene, regenerateFacelessClip, reassembleFacelessVideo } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
+import { useDraftSave } from '@/hooks/use-draft-save'
 import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
 import { ContentTemplateGallery } from './ContentTemplateGallery'
 import { buildTemplateDescription, type ContentTemplate } from '@/lib/faceless-content-templates'
@@ -2580,15 +2581,115 @@ const DEFAULT_PROJECT: ProjectState = {
 
 const DRAFT_KEY = 'clyro-faceless-draft'
 
-function FacelessPipeline({ onGenerated, onVideoReady }: {
+/** Draft payload persisted in videos.wizard_state (JSONB). Keeps only
+ *  serializable fields — audioFile/videoId/finalVideoUrl are excluded. */
+interface FacelessHubDraftState {
+  hub: true
+  title: string
+  style: FacelessStyle | null
+  voiceId: string
+  format: VideoFormat
+  duration: VideoDuration
+  description: string
+  script: string
+  inputType: 'script' | 'audio'
+  scenes: SceneData[]
+  step: PipelineStep
+  masterSeed?: number
+  styleReference?: string
+  contentTemplateId?: string
+  animationMode?: AnimationMode
+}
+
+export interface InitialHubDraft {
+  id: string
+  wizard_state: Partial<FacelessHubDraftState> & { hub?: boolean } | null
+}
+
+function hydrateProjectFromDraft(w: InitialHubDraft['wizard_state']): ProjectState {
+  const s = (w ?? {}) as Partial<FacelessHubDraftState>
+  return {
+    ...DEFAULT_PROJECT,
+    title:             s.title            ?? DEFAULT_PROJECT.title,
+    style:             (s.style           ?? DEFAULT_PROJECT.style) as FacelessStyle | null,
+    voiceId:           s.voiceId          ?? DEFAULT_PROJECT.voiceId,
+    format:            (s.format          ?? DEFAULT_PROJECT.format)   as VideoFormat,
+    duration:          (s.duration        ?? DEFAULT_PROJECT.duration) as VideoDuration,
+    description:       s.description      ?? DEFAULT_PROJECT.description,
+    script:            s.script           ?? DEFAULT_PROJECT.script,
+    inputType:         (s.inputType       ?? DEFAULT_PROJECT.inputType) as 'script' | 'audio',
+    scenes:            Array.isArray(s.scenes) ? s.scenes : DEFAULT_PROJECT.scenes,
+    step:              (s.step            ?? DEFAULT_PROJECT.step) as PipelineStep,
+    masterSeed:        s.masterSeed,
+    styleReference:    s.styleReference,
+    contentTemplateId: s.contentTemplateId,
+    animationMode:     (s.animationMode   ?? DEFAULT_PROJECT.animationMode) as AnimationMode,
+  }
+}
+
+function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
   onGenerated: (title: string, videoId: string) => void
   onVideoReady?: (videoId: string, outputUrl: string) => void
+  initialDraft?: InitialHubDraft | null
 }) {
-  const [project,    setProject]   = useState<ProjectState>(DEFAULT_PROJECT)
+  const [project,    setProject]   = useState<ProjectState>(() =>
+    initialDraft?.wizard_state ? hydrateProjectFromDraft(initialDraft.wizard_state) : DEFAULT_PROJECT
+  )
   const [loading,    setLoading]   = useState(false)
   const [savedState, setSavedState] = useState<'saving' | 'saved' | null>(null)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Toast once on hydration so the user knows credits weren't re-consumed
+  const hydrationToastedRef = useRef(false)
+  useEffect(() => {
+    if (hydrationToastedRef.current) return
+    if (initialDraft?.wizard_state) {
+      hydrationToastedRef.current = true
+      const hasImages = project.scenes.some((sc) => sc.imageUrl)
+      toast.success(
+        hasImages
+          ? 'Projet restauré — tes images sont intactes, aucun crédit re-consommé'
+          : 'Projet restauré — tu peux continuer là où tu t\'étais arrêté'
+      )
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Server-backed draft auto-save ────────────────────────────
+  // Creates a row in videos with status='draft' as soon as the user
+  // does something meaningful, so closing the tab never loses work
+  // and the project appears in /projects (DraftsSection) + /drafts.
+  const stepIdx = PIPELINE_STEPS.findIndex((s) => s.id === project.step)
+  const draftState: FacelessHubDraftState = {
+    hub:               true,
+    title:             project.title,
+    style:             project.style,
+    voiceId:           project.voiceId,
+    format:            project.format,
+    duration:          project.duration,
+    description:       project.description,
+    script:            project.script,
+    inputType:         project.inputType,
+    scenes:            project.scenes,
+    step:              project.step,
+    masterSeed:        project.masterSeed,
+    styleReference:    project.styleReference,
+    contentTemplateId: project.contentTemplateId,
+    animationMode:     project.animationMode,
+  }
+  const { clearDraft } = useDraftSave({
+    module:         'faceless',
+    title:          project.title || 'Faceless draft',
+    style:          (project.style as string | null) ?? 'draft',
+    currentStep:    stepIdx >= 0 ? stepIdx : 0,
+    totalSteps:     PIPELINE_STEPS.length,
+    stepLabel:      PIPELINE_STEPS[stepIdx]?.label ?? 'Setup',
+    state:          draftState as unknown as Record<string, unknown>,
+    // Once the pipeline has been kicked off, stop upserting as draft —
+    // the videoId lives in a separate non-draft row from now on.
+    initialDraftId: project.videoId ? null : (initialDraft?.id ?? null),
+  })
 
   function patch(p: Partial<ProjectState>) {
     setProject((prev) => ({ ...prev, ...p }))
@@ -2745,6 +2846,9 @@ function FacelessPipeline({ onGenerated, onVideoReady }: {
 
       patch({ videoId: video_id, step: 'final' })
       onGenerated(project.title || project.script.slice(0, 60) || 'New video', video_id)
+      // Pipeline row now owns this project — remove the draft row so
+      // it no longer appears in /drafts or the DraftsSection of /projects.
+      await clearDraft().catch(() => null)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error('[goToFinal] Pipeline start failed:', msg, err)
@@ -2843,7 +2947,10 @@ interface VideoSession {
 
 // ── Main Hub ───────────────────────────────────────────────────────────────────
 
-export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }) {
+export function FacelessHub({ initialVideos, initialDraft }: {
+  initialVideos: VideoSession[]
+  initialDraft?: InitialHubDraft | null
+}) {
   const [sessions, setSessions] = useState<VideoSession[]>(initialVideos)
   const [viewId,   setViewId]   = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
@@ -2968,7 +3075,7 @@ export function FacelessHub({ initialVideos }: { initialVideos: VideoSession[] }
             </div>
           </div>
         ) : (
-          <FacelessPipeline onGenerated={handleGenerated} onVideoReady={handleVideoReady} />
+          <FacelessPipeline onGenerated={handleGenerated} onVideoReady={handleVideoReady} initialDraft={initialDraft ?? null} />
         )}
       </div>
     </div>

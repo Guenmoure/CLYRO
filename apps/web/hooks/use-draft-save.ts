@@ -115,6 +115,20 @@ export function useDraftSave({
     }
   }, [currentStep, save])
 
+  // ── Debounced save on state change (1.5s) ───────────────────
+  // Ensures a draft row is created quickly after the user starts
+  // working, so tab-close/unload is never catastrophic.
+  const lastStateJsonRef = useRef<string>('')
+  useEffect(() => {
+    const json = JSON.stringify(state)
+    if (json === lastStateJsonRef.current) return
+    const isFirstObserved = lastStateJsonRef.current === ''
+    lastStateJsonRef.current = json
+    if (isFirstObserved) return // skip initial mount
+    const handle = setTimeout(() => { void save() }, 1500)
+    return () => clearTimeout(handle)
+  }, [state, save])
+
   // ── Auto-save every 30s ─────────────────────────────────────
   useEffect(() => {
     const interval = setInterval(save, AUTOSAVE_MS)

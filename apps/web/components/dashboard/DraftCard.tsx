@@ -86,7 +86,17 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
   const step        = draft.wizard_step ?? 1
   const totalSteps  = config.totalSteps
   const progressPct = Math.round((step / totalSteps) * 100)
-  const href        = `/${draft.module}/new?draft=${draft.id}`
+  // Hub-originated drafts (faceless editor at /faceless) use a `hub: true`
+  // marker in wizard_state. Route them back into the hub instead of the
+  // /new setup wizard so the scenes + images are rehydrated.
+  const isHubDraft =
+    draft.module === 'faceless' &&
+    !!draft.wizard_state &&
+    typeof draft.wizard_state === 'object' &&
+    (draft.wizard_state as Record<string, unknown>).hub === true
+  const href = isHubDraft
+    ? `/faceless?draft=${draft.id}`
+    : `/${draft.module}/new?draft=${draft.id}`
 
   return (
     <div className={cn(
