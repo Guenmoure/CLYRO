@@ -69,6 +69,27 @@ export interface VoiceFilters {
   search?: string
 }
 
+// Mapping chip frontend → labels ElevenLabs possibles (labels.use_case).
+// ElevenLabs renvoie des valeurs variées comme `narrative_story`,
+// `social_media`, `characters_animation`, `news_presentation`, etc. On
+// matche avec inclusion (pas égalité) et on mappe les variantes courantes.
+const USE_CASE_SYNONYMS: Record<string, string[]> = {
+  'narration':      ['narration', 'narrative', 'audiobook', 'story', 'documentary'],
+  'conversational': ['conversational', 'conversation', 'chat', 'interactive'],
+  'characters':     ['characters', 'character', 'animation', 'gaming', 'video game', 'cartoon'],
+  'social media':   ['social media', 'social_media', 'social-media', 'social', 'podcast', 'youtube'],
+  'educational':    ['educational', 'education', 'training', 'e-learning', 'elearning', 'tutorial'],
+  'news':           ['news', 'broadcast', 'presentation', 'informative'],
+  'advertisement':  ['advertisement', 'advertising', 'commercial', 'marketing'],
+  'entertainment':  ['entertainment', 'entertain', 'tv'],
+}
+
+/** Normalize a use-case label: lower-case, strip separators so
+ * "social_media" and "Social-Media" collapse to "social media". */
+function normalizeUseCase(s: string): string {
+  return s.toLowerCase().trim().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ')
+}
+
 // Mapping langue → accents ElevenLabs (labels.accent)
 const LANGUAGE_ACCENT_MAP: Record<string, string[]> = {
   'français':    ['french'],
@@ -208,10 +229,21 @@ export async function listPublicVoices(filters?: VoiceFilters): Promise<ClyroVoi
         return targetAccents.some((a) => accent.includes(a))
       })
     }
-    if (filters?.useCase)
-      voices = voices.filter(
-        (v) => v.useCase?.toLowerCase() === filters.useCase!.toLowerCase()
-      )
+    if (filters?.useCase) {
+      const target = normalizeUseCase(filters.useCase)
+      // Expand the chip value into its list of synonyms (fallback to the raw value).
+      const synonyms = USE_CASE_SYNONYMS[target] ?? [target]
+      voices = voices.filter((v) => {
+        if (!v.useCase) return false
+        const vUc = normalizeUseCase(v.useCase)
+        // Match either direction: voice label contains a synonym, or a
+        // synonym contains the label (handles short labels like "news").
+        return synonyms.some((syn) => {
+          const normSyn = normalizeUseCase(syn)
+          return vUc.includes(normSyn) || normSyn.includes(vUc)
+        })
+      })
+    }
     if (filters?.search) {
       const q = filters.search.toLowerCase()
       voices = voices.filter(
