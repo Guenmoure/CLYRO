@@ -1762,10 +1762,19 @@ function ScenePreviewLightbox({
         className="max-w-5xl w-full h-full max-h-[90vh] flex flex-col gap-4"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Media */}
-        <div className="flex-1 min-h-[40vh] flex items-center justify-center bg-black/40 rounded-2xl overflow-hidden">
+        {/* Media — checkered background so white / light images are visible */}
+        <div
+          className="flex-1 min-h-[40vh] flex items-center justify-center rounded-2xl overflow-hidden relative"
+          style={{
+            backgroundColor: '#1a1a1a',
+            backgroundImage:
+              'linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%)',
+            backgroundSize: '24px 24px',
+            backgroundPosition: '0 0, 0 12px, 12px -12px, -12px 0',
+          }}
+        >
           {!mediaUrl || mediaError ? (
-            <div className="flex flex-col items-center gap-3 p-12 text-center">
+            <div className="flex flex-col items-center gap-3 p-12 text-center bg-black/60 rounded-xl">
               <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
                 <AlertTriangle size={22} className="text-amber-300" />
               </div>
@@ -1795,17 +1804,20 @@ function ScenePreviewLightbox({
               autoPlay
               playsInline
               onError={() => setMediaError(true)}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain relative z-10"
             />
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={mediaUrl}
-              src={mediaUrl}
-              alt={`Scène ${index + 1}`}
-              onError={() => setMediaError(true)}
-              className="max-w-full max-h-full object-contain"
-            />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                key={mediaUrl}
+                src={mediaUrl}
+                alt={`Scène ${index + 1}`}
+                onError={() => setMediaError(true)}
+                className="max-w-full max-h-full object-contain relative z-10 shadow-2xl"
+                style={{ border: '1px solid rgba(255,255,255,0.15)' }}
+              />
+            </>
           )}
         </div>
 
@@ -1829,18 +1841,31 @@ function ScenePreviewLightbox({
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {mediaUrl && (
-              <a
-                href={mediaUrl}
-                download
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                aria-label="Télécharger"
-                className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
-                title="Télécharger"
-              >
-                <Download size={14} />
-              </a>
+              <>
+                <a
+                  href={mediaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Ouvrir dans un nouvel onglet"
+                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+                  title="Ouvrir dans un nouvel onglet"
+                >
+                  <ArrowRight size={14} className="rotate-[-45deg]" />
+                </a>
+                <a
+                  href={mediaUrl}
+                  download
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Télécharger"
+                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+                  title="Télécharger"
+                >
+                  <Download size={14} />
+                </a>
+              </>
             )}
             {onRegenerate && (
               <button
@@ -1857,7 +1882,7 @@ function ScenePreviewLightbox({
 
         {/* Keyboard hint */}
         <p className="text-center text-[11px] text-white/40 font-mono">
-          ← / → pour naviguer · Échap pour fermer
+          ← / → pour naviguer · Échap pour fermer · Clique sur l'icône ↗ pour ouvrir l'image source
         </p>
       </div>
     </div>
