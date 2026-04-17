@@ -249,9 +249,21 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
     Sentry.captureException(err, { extra: { videoId, userId } })
     logger.error({ err, videoId }, 'Motion pipeline error')
 
+    // Preserve existing metadata (brief, brand_config, voice_id, etc.) for draft recovery.
+    const { data: existingVideo } = await supabaseAdmin
+      .from('videos')
+      .select('metadata')
+      .eq('id', videoId)
+      .single()
+      .then((r) => r, () => ({ data: null }))
+    const existingMeta = (existingVideo?.metadata ?? {}) as Record<string, unknown>
+
     await supabaseAdmin
       .from('videos')
-      .update({ status: 'error', metadata: { error_message: errorMessage, progress: 0 } })
+      .update({
+        status: 'error',
+        metadata: { ...existingMeta, error_message: errorMessage, progress: 0, error_at: new Date().toISOString() },
+      })
       .eq('id', videoId)
       .then(() => null, () => null)
 

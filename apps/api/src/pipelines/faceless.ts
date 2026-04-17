@@ -456,9 +456,22 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
     Sentry.captureException(err, { extra: { videoId, userId } })
     logger.error({ err, videoId }, 'Faceless pipeline error')
 
+    // Preserve existing metadata (scenes, script_draft, voice_id, etc.) so the
+    // "revert to draft" flow can reconstruct wizard state without re-entering everything.
+    const { data: existingVideo } = await supabaseAdmin
+      .from('videos')
+      .select('metadata')
+      .eq('id', videoId)
+      .single()
+      .then((r) => r, () => ({ data: null }))
+    const existingMeta = (existingVideo?.metadata ?? {}) as Record<string, unknown>
+
     await supabaseAdmin
       .from('videos')
-      .update({ status: 'error', metadata: { error_message: errorMessage, progress: 0 } })
+      .update({
+        status: 'error',
+        metadata: { ...existingMeta, error_message: errorMessage, progress: 0, error_at: new Date().toISOString() },
+      })
       .eq('id', videoId)
       .then(() => null, () => null)
 

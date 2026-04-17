@@ -70,6 +70,9 @@ export default function ProjectsPage() {
       }
 
       const { data, count, error } = await query
+      if (error) {
+        console.error('[projects] Supabase query error:', error)
+      }
       if (!error && data) {
         setVideos(data as VideoRow[])
         setTotal(count ?? 0)

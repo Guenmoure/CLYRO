@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import {
   Video, Sparkles, Palette, MoreVertical,
   Copy, Download, FilePlus, Users, Pencil,
-  FolderInput, Trash2, Gem, Camera,
+  FolderInput, Trash2, Gem, Camera, RotateCcw, Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -153,12 +154,27 @@ function ContextMenu({
 // ── ProjectCard ────────────────────────────────────────────────────────────────
 
 export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [deleted,  setDeleted]  = useState(false)
+  const router = useRouter()
+  const [menuOpen,   setMenuOpen]   = useState(false)
+  const [deleting,   setDeleting]   = useState(false)
+  const [deleted,    setDeleted]    = useState(false)
+  const [reverting,  setReverting]  = useState(false)
 
   const isProcessing = ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly'].includes(project.status)
   const isError      = project.status === 'error'
+
+  async function handleRevertToDraft() {
+    if (reverting) return
+    setReverting(true)
+    try {
+      const res = await fetch(`/api/videos/${project.id}/revert-draft`, { method: 'POST' })
+      if (!res.ok) throw new Error()
+      const { module } = await res.json() as { id: string; module: string }
+      router.push(`/${module}/new?draft=${project.id}`)
+    } catch {
+      setReverting(false)
+    }
+  }
 
   const ModuleIcon = MODULE_ICONS[project.module ?? ''] ?? Video
   const iconColor  = MODULE_ICON_COLORS[project.module ?? ''] ?? 'text-[--text-muted]'
@@ -248,6 +264,26 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
         <p className="font-mono text-xs text-[--text-muted] mt-0.5">
           {formatRelativeDate(project.created_at)} · {moduleLabel}
         </p>
+
+        {/* Error recovery — save as draft so the user can resume without re-entering everything */}
+        {isError && (
+          <button
+            type="button"
+            onClick={handleRevertToDraft}
+            disabled={reverting}
+            className={cn(
+              'mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg',
+              'border border-amber-500/30 bg-amber-500/5',
+              'font-mono text-[11px] text-amber-500 hover:bg-amber-500/10',
+              'transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+            )}
+          >
+            {reverting
+              ? <Loader2 size={11} className="animate-spin" />
+              : <RotateCcw size={11} />}
+            {reverting ? 'Saving…' : 'Save as draft to resume'}
+          </button>
+        )}
       </div>
     </div>
   )

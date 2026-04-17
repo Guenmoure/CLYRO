@@ -153,6 +153,10 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
           brand_kit_id: brand_kit_id ?? null,
           animation_mode: resolvedAnimationMode,
           animation_overrides: resolvedAnimationOverrides,
+          // Store script for draft recovery on pipeline failure (max 50KB)
+          script_draft: input_type === 'script' && script
+            ? script.substring(0, 50_000)
+            : undefined,
         },
       })
       .select()
