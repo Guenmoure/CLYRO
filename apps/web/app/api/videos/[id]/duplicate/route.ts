@@ -7,24 +7,35 @@ import { cookies } from 'next/headers'
  *
  * "Edit as New" — clones a video row as a fresh draft owned by the same user.
  *
- *   • The new row has status='draft' and a fresh id.
- *   • metadata is copied verbatim so all per-scene assets (image URLs, clip
- *     URLs, voice ids, prompts, etc.) are preserved. That lets the user
- *     regenerate a single element on the copy without re-paying for the rest.
- *   • wizard_state is copied when present. For completed videos (which
- *     typically have no wizard_state left) we rehydrate it from metadata the
- *     same way /api/videos/:id/revert-draft does.
- *   • wizard_step lands the user on the *last* wizard step, so the copy opens
- *     directly on the review / scene-editor view with every field filled in.
+ *   • New id, status='draft', " (copy)" suffix on title.
+ *   • metadata is copied verbatim so every per-scene asset (image urls, clip
+ *     urls, voice id, prompts) is preserved. That lets the user regenerate a
+ *     single element on the copy without re-paying for the rest.
+ *   • wizard_state is either cloned (when the source already has a usable
+ *     one — typical for drafts) or rehydrated from metadata (typical for
+ *     finished videos). Faceless gets the hub-shape state so the new draft
+ *     opens directly in the scene editor with all scenes intact. Motion /
+ *     brand get the /new wizard shape so they land on the review step.
  *   • The original is never mutated.
+ *
+ *   Response: { id, module, target } where `target` is 'hub' | 'new' — tells
+ *   the caller which route the copy belongs on.
  */
 
-// Last wizard step (1-indexed) per module. The /new pages subtract 1 on load
-// to convert to their 0-indexed currentStep state.
+// Last wizard step (1-indexed) per module — used only for the /new wizard
+// target. The wizard pages subtract 1 on load to get their 0-indexed step.
 const LAST_STEP_BY_MODULE: Record<string, number> = {
   faceless: 6,
   motion:   5,
   brand:    6,
+}
+
+type Target = 'hub' | 'new'
+
+// Faceless: route the copy into the hub's scene editor. Motion/Brand don't
+// have a scene editor yet, so they land on the review step of /new.
+function targetForModule(module: string): Target {
+  return module === 'faceless' ? 'hub' : 'new'
 }
 
 export async function POST(
@@ -38,7 +49,6 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Fetch source + enforce ownership in a single query
   const { data: source, error: fetchErr } = await supabase
     .from('videos')
     .select(
@@ -52,36 +62,75 @@ export async function POST(
     return NextResponse.json({ error: 'Video not found' }, { status: 404 })
   }
 
-  const module = (source.module ?? 'faceless') as string
+  const module   = (source.module ?? 'faceless') as string
+  const target   = targetForModule(module)
   const lastStep = LAST_STEP_BY_MODULE[module] ?? 6
 
-  // ── Rehydrate wizard_state when it's missing (typical for finished videos) ─
+  const meta = (source.metadata ?? {}) as Record<string, unknown>
   const existingState = (source.wizard_state ?? null) as Record<string, unknown> | null
-  const hasUsableState = existingState && Object.keys(existingState).length > 0
+  const hasUsableState = !!existingState && Object.keys(existingState).length > 0
+  const isHubState = hasUsableState && existingState.hub === true
 
+  // ── Build the wizard_state for the duplicate ─────────────────────────────
   let wizardState: Record<string, unknown>
-  if (hasUsableState) {
-    wizardState = existingState
-  } else {
-    const meta = (source.metadata ?? {}) as Record<string, unknown>
+  let wizardStep: number
 
-    if (module === 'faceless') {
-      const scenes = (meta.scenes as Array<{ texte_voix?: string }>) ?? []
-      const scriptFromScenes = scenes
-        .map((s) => s.texte_voix ?? '')
-        .filter(Boolean)
-        .join('\n\n')
-      const script = (meta.script_draft as string | undefined) ?? scriptFromScenes
-
+  if (target === 'hub') {
+    // Hub-shape state. Faceless Hub's FacelessPipeline hydrates from this.
+    if (isHubState) {
+      // Source already uses hub-shape — clone verbatim, but reset transient
+      // statuses so the Regenerate buttons aren't stuck in 'generating'.
+      const src = existingState as Record<string, unknown>
+      const srcScenes = Array.isArray(src.scenes) ? (src.scenes as Array<Record<string, unknown>>) : []
       wizardState = {
-        script,
-        style:         source.style ?? 'cinematique',
-        selectedVoice: meta.voice_id,
-        format:        meta.format  ?? '9:16',
-        duration:      meta.duration ?? '60s',
-        animationMode: meta.animation_mode ?? 'storyboard',
-        dialogueMode:  meta.dialogue_mode ?? false,
+        ...src,
+        scenes: srcScenes.map((s) => ({
+          ...s,
+          imageStatus: s.imageUrl ? 'done' : 'idle',
+          clipStatus:  s.clipUrl  ? 'done' : 'idle',
+        })),
       }
+    } else {
+      // Rehydrate hub-shape state from backend metadata (finished video).
+      const metaScenes = (meta.scenes as Array<Record<string, unknown>> | undefined) ?? []
+      const scenes = metaScenes.map((s, i) => ({
+        id:              (s.scene_id as string | undefined) ?? `scene-${i}-${Date.now()}`,
+        index:           (s.index as number | undefined) ?? i,
+        scriptText:      (s.texte_voix         as string | undefined) ?? '',
+        imagePrompt:     (s.description_visuelle as string | undefined) ?? '',
+        animationPrompt: (s.animation_prompt   as string | undefined) ?? '',
+        imageUrl:        (s.image_url          as string | undefined) ?? undefined,
+        imageStatus:     s.image_url ? 'done' : 'idle',
+        clipUrl:         (s.clip_url           as string | undefined) ?? undefined,
+        clipStatus:      s.clip_url  ? 'done' : 'idle',
+        duree_estimee:   (s.duree_estimee      as number | undefined) ?? undefined,
+      }))
+      wizardState = {
+        hub:         true,
+        title:       source.title ?? '',
+        style:       source.style ?? 'cinematique',
+        voiceId:     (meta.voice_id as string | undefined) ?? '',
+        format:      (meta.format    as string | undefined) ?? '9:16',
+        duration:    (meta.duration  as string | undefined) ?? '60s',
+        description: (meta.description as string | undefined) ?? '',
+        script:      (meta.script_draft as string | undefined)
+                     ?? scenes.map((s) => s.scriptText).filter(Boolean).join('\n\n'),
+        inputType:   'script',
+        scenes,
+        // Land on the scenes/images editor by default — that's where the user
+        // picks an element to regenerate. If the source has clips already,
+        // open the clips editor instead so they see the animation previews.
+        step:        scenes.some((s) => s.clipUrl) ? 'clips' : 'images',
+        animationMode: (meta.animation_mode as string | undefined) ?? 'fast',
+      }
+    }
+    // Hub ignores wizard_step; we still set a sensible value for /new users.
+    wizardStep = lastStep
+  } else {
+    // /new wizard target (motion, brand, or any future module). Reuse the
+    // Phase-1 logic: copy wizard_state if present, else rehydrate from meta.
+    if (hasUsableState) {
+      wizardState = existingState
     } else if (module === 'motion') {
       const brand = (meta.brand_config ?? {}) as Record<string, string>
       wizardState = {
@@ -111,23 +160,19 @@ export async function POST(
     } else {
       wizardState = {}
     }
+    const sourceStep = typeof source.wizard_step === 'number' ? source.wizard_step : null
+    wizardStep = hasUsableState && sourceStep
+      ? Math.min(sourceStep, lastStep)
+      : lastStep
   }
 
-  // Land the copy on the last wizard step when the source was a finished
-  // video. For an in-progress draft, respect whatever step the user had
-  // reached — unless it's beyond the known last step, in which case clamp.
-  const sourceStep = typeof source.wizard_step === 'number' ? source.wizard_step : null
-  const wizardStep = hasUsableState && sourceStep
-    ? Math.min(sourceStep, lastStep)
-    : lastStep
-
-  // ── Title: suffix with " (copy)" unless it already ends with one ──────────
+  // ── Title: suffix with " (copy)" unless it already ends with one ─────────
   const baseTitle = (source.title ?? 'Untitled').trim()
   const copyTitle = /\(copy( \d+)?\)\s*$/i.test(baseTitle)
     ? baseTitle
     : `${baseTitle} (copy)`
 
-  // ── Insert the clone ──────────────────────────────────────────────────────
+  // ── Insert the clone ─────────────────────────────────────────────────────
   const { data: inserted, error: insertErr } = await supabase
     .from('videos')
     .insert({
@@ -136,8 +181,6 @@ export async function POST(
       module:        source.module,
       style:         source.style,
       status:        'draft',
-      // Keep asset URLs so the grid thumbnail and any per-scene previews still
-      // render. They'll be overwritten once the user re-renders.
       output_url:    source.output_url,
       thumbnail_url: source.thumbnail_url,
       metadata:      source.metadata,
@@ -157,5 +200,6 @@ export async function POST(
   return NextResponse.json({
     id:     inserted.id,
     module: inserted.module ?? module,
+    target,
   })
 }

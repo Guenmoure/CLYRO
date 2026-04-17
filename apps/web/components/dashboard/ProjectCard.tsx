@@ -234,13 +234,15 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
     setDuplicating(true)
     try {
       // Duplicate the project as a fresh draft: status='draft', new id, cloned
-      // metadata + wizard_state, wizard_step set to the last step. The user
-      // lands on the review/scene-editor view with every field pre-filled and
-      // the original project stays untouched.
+      // metadata + wizard_state. The original stays untouched and the server
+      // tells us whether the copy belongs in the feature's hub (per-scene
+      // editor) or on the /new wizard's review step.
       const res = await fetch(`/api/videos/${project.id}/duplicate`, { method: 'POST' })
       if (!res.ok) throw new Error()
-      const { id: newId, module } = await res.json() as { id: string; module: string }
-      router.push(`/${module}/new?draft=${newId}`)
+      const { id: newId, module, target } = await res.json() as {
+        id: string; module: string; target: 'hub' | 'new'
+      }
+      router.push(`/${module}/${target}?draft=${newId}`)
     } catch {
       setDuplicating(false)
     }
