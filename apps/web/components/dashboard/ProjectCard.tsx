@@ -82,10 +82,14 @@ function ContextMenu({
   project,
   onClose,
   onDelete,
+  onRename,
+  onEditAsNew,
 }: {
   project: VideoProject
   onClose: () => void
   onDelete: () => void
+  onRename: () => void
+  onEditAsNew: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -103,6 +107,8 @@ function ContextMenu({
   }
 
   const item = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left'
+  const itemDisabled = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-muted] w-full text-left cursor-not-allowed'
+  const soonBadge = 'ml-auto inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[--text-muted]'
 
   return (
     <div
@@ -124,23 +130,33 @@ function ContextMenu({
             <Download size={14} /> Download
           </a>
         ) : (
-          <button type="button" disabled onClick={onClose} className={cn(item, 'opacity-40 cursor-not-allowed')}>
+          <button type="button" disabled className={cn(item, 'opacity-40 cursor-not-allowed')}>
             <Download size={14} /> Download
           </button>
         )}
-        <button type="button" onClick={onClose} className={item}>
+        <button
+          type="button"
+          onClick={() => { onClose(); onEditAsNew() }}
+          className={item}
+        >
           <FilePlus size={14} /> Edit as New
         </button>
-        <button type="button" onClick={onClose} className={item}>
+        <button type="button" disabled className={itemDisabled} aria-disabled="true">
           <Users size={14} />
-          <span className="flex-1">Collaborate</span>
-          <Gem size={13} className="text-warning" />
+          <span>Collaborate</span>
+          <Gem size={12} className="text-warning ml-auto" />
         </button>
-        <button type="button" onClick={onClose} className={item}>
+        <button
+          type="button"
+          onClick={() => { onClose(); onRename() }}
+          className={item}
+        >
           <Pencil size={14} /> Rename
         </button>
-        <button type="button" onClick={onClose} className={item}>
-          <FolderInput size={14} /> Move
+        <button type="button" disabled className={itemDisabled} aria-disabled="true">
+          <FolderInput size={14} />
+          <span>Move</span>
+          <span className={soonBadge}>Soon</span>
         </button>
       </div>
 
@@ -163,10 +179,12 @@ function ContextMenu({
 
 export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   const router = useRouter()
-  const [menuOpen,   setMenuOpen]   = useState(false)
-  const [deleting,   setDeleting]   = useState(false)
-  const [deleted,    setDeleted]    = useState(false)
-  const [reverting,  setReverting]  = useState(false)
+  const [menuOpen,       setMenuOpen]       = useState(false)
+  const [deleting,       setDeleting]       = useState(false)
+  const [deleted,        setDeleted]        = useState(false)
+  const [reverting,      setReverting]      = useState(false)
+  const [localTitle,     setLocalTitle]     = useState<string | null>(project.title)
+  const [renaming,       setRenaming]       = useState(false)
 
   const isProcessing = ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly'].includes(project.status)
   const isError      = project.status === 'error'
@@ -182,6 +200,37 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
     } catch {
       setReverting(false)
     }
+  }
+
+  async function handleRename() {
+    if (renaming) return
+    const current = localTitle ?? 'Untitled'
+    const next = typeof window === 'undefined' ? null : window.prompt('Rename project', current)
+    if (next === null) return              // user cancelled
+    const trimmed = next.trim()
+    if (!trimmed || trimmed === current) return
+
+    setRenaming(true)
+    try {
+      const res = await fetch(`/api/videos/${project.id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ title: trimmed }),
+      })
+      if (!res.ok) throw new Error()
+      const updated = await res.json() as { title: string | null }
+      setLocalTitle(updated.title ?? trimmed)
+      router.refresh()
+    } catch {
+      // silent — keep previous title
+    } finally {
+      setRenaming(false)
+    }
+  }
+
+  function handleEditAsNew() {
+    const mod = project.module ?? 'faceless'
+    router.push(`/${mod}/new?from=${project.id}`)
   }
 
   const ModuleIcon    = MODULE_ICONS[project.module ?? ''] ?? Video
@@ -282,6 +331,8 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
             project={project}
             onClose={() => setMenuOpen(false)}
             onDelete={handleDelete}
+            onRename={handleRename}
+            onEditAsNew={handleEditAsNew}
           />
         )}
       </div>
@@ -289,7 +340,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
       {/* Info */}
       <div className="px-3 py-2.5">
         <p className="font-display text-sm font-semibold text-foreground truncate leading-snug">
-          {project.title ?? 'Untitled'}
+          {localTitle ?? 'Untitled'}
         </p>
         <p className="font-mono text-xs text-[--text-muted] mt-0.5">
           {formatRelativeDate(project.created_at)} · {moduleLabel}
