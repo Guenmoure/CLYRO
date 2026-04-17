@@ -230,7 +230,9 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
 
   function handleEditAsNew() {
     const mod = project.module ?? 'faceless'
-    router.push(`/${mod}/new?from=${project.id}`)
+    // Route to the feature's working hub (FacelessHub / MotionStudio / BrandHub)
+    // rather than the /new wizard. The hub is where authoring happens.
+    router.push(`/${mod}/hub?from=${project.id}`)
   }
 
   const ModuleIcon    = MODULE_ICONS[project.module ?? ''] ?? Video
