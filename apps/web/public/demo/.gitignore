@@ -1,0 +1,11 @@
+# Allow video + image assets committed for the landing page demo.
+# The root .gitignore excludes *.mp4 globally — this file overrides that
+# rule specifically for public/demo/ so the hero video and showcase
+# thumbnails can be versioned without needing a CDN during development.
+
+!*.mp4
+!*.jpg
+!*.jpeg
+!*.png
+!*.gif
+!*.webp
