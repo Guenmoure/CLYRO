@@ -1476,12 +1476,29 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                       className="absolute inset-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={scene.imageUrl} alt={`Scène ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                      <img
+                        src={scene.imageUrl}
+                        alt={`Scène ${i + 1}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={() => {
+                          // URL expirée ou inaccessible → remet la scène en état de régénération
+                          console.warn(`[image] Scene ${i + 1} failed to load: ${scene.imageUrl?.slice(0, 80)}`)
+                          updateScene(scene.id, { imageStatus: 'error', imageUrl: undefined })
+                        }}
+                      />
                     </button>
                   ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3">
-                      <Check size={14} className="text-white" />
-                    </div>
+                    <button
+                      type="button"
+                      aria-label="Régénérer la scène"
+                      onClick={() => generateImage(scene.id)}
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-colors group"
+                    >
+                      <div className="w-10 h-10 rounded-full border-2 border-amber-300/60 group-hover:border-amber-200 flex items-center justify-center transition-all">
+                        <RefreshCw size={14} className="text-amber-200" />
+                      </div>
+                      <p className="font-mono text-[10px] text-amber-200/80 uppercase tracking-wider">Aperçu indisponible</p>
+                    </button>
                   )
                 ) : scene.imageStatus === 'error' ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
@@ -1672,6 +1689,7 @@ function ScenePreviewLightbox({
   mode?: 'image' | 'clip'
 }) {
   const scene = scenes[index]
+  const [mediaError, setMediaError] = useState(false)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1683,9 +1701,17 @@ function ScenePreviewLightbox({
     return () => window.removeEventListener('keydown', onKey)
   }, [index, scenes.length, onClose, onNavigate])
 
+  // Reset load error when navigating to another scene
+  useEffect(() => {
+    setMediaError(false)
+  }, [index, mode])
+
   if (!scene) return null
 
-  const mediaUrl = mode === 'clip' ? scene.clipUrl : scene.imageUrl
+  // En mode clip, si le clipUrl est absent (ex: mode storyboard / non encore animé),
+  // on retombe proprement sur l'image afin d'afficher quelque chose d'utile.
+  const effectiveMode: 'image' | 'clip' = mode === 'clip' && !scene.clipUrl && scene.imageUrl ? 'image' : mode
+  const mediaUrl = effectiveMode === 'clip' ? scene.clipUrl : scene.imageUrl
   const hasPrev = index > 0
   const hasNext = index < scenes.length - 1
 
@@ -1733,32 +1759,53 @@ function ScenePreviewLightbox({
 
       {/* Content */}
       <div
-        className="max-w-5xl w-full max-h-full flex flex-col gap-4"
+        className="max-w-5xl w-full h-full max-h-[90vh] flex flex-col gap-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Media */}
-        <div className="flex-1 min-h-0 flex items-center justify-center bg-black/40 rounded-2xl overflow-hidden">
-          {mediaUrl ? (
-            mode === 'clip' ? (
-              <video
-                src={mediaUrl}
-                controls
-                autoPlay
-                playsInline
-                className="max-w-full max-h-[75vh] object-contain"
-              />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={mediaUrl}
-                alt={`Scène ${index + 1}`}
-                className="max-w-full max-h-[75vh] object-contain"
-              />
-            )
-          ) : (
-            <div className="p-12 text-white/60 font-mono text-sm">
-              Aucun aperçu disponible — régénère la scène.
+        <div className="flex-1 min-h-[40vh] flex items-center justify-center bg-black/40 rounded-2xl overflow-hidden">
+          {!mediaUrl || mediaError ? (
+            <div className="flex flex-col items-center gap-3 p-12 text-center">
+              <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
+                <AlertTriangle size={22} className="text-amber-300" />
+              </div>
+              <p className="text-white/80 font-display text-sm font-semibold">
+                {mediaError ? 'Impossible de charger l\'aperçu' : 'Aucun aperçu disponible'}
+              </p>
+              <p className="text-white/50 font-body text-xs max-w-sm">
+                {mediaError
+                  ? 'Le lien a peut-être expiré ou est temporairement inaccessible. Régénère la scène pour obtenir un nouveau lien.'
+                  : 'Régénère la scène pour créer un aperçu.'}
+              </p>
+              {onRegenerate && (
+                <button
+                  type="button"
+                  onClick={() => onRegenerate(scene.id)}
+                  className="mt-2 flex items-center gap-1.5 px-3 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-display font-semibold transition-all"
+                >
+                  <RefreshCw size={13} /> Régénérer
+                </button>
+              )}
             </div>
+          ) : effectiveMode === 'clip' ? (
+            <video
+              key={mediaUrl}
+              src={mediaUrl}
+              controls
+              autoPlay
+              playsInline
+              onError={() => setMediaError(true)}
+              className="max-w-full max-h-full object-contain"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={mediaUrl}
+              src={mediaUrl}
+              alt={`Scène ${index + 1}`}
+              onError={() => setMediaError(true)}
+              className="max-w-full max-h-full object-contain"
+            />
           )}
         </div>
 
@@ -1769,10 +1816,10 @@ function ScenePreviewLightbox({
               <span className="font-mono text-[11px] uppercase tracking-widest bg-white/10 text-white px-2 py-0.5 rounded-full">
                 Scène {index + 1} / {scenes.length}
               </span>
-              {mode === 'image' && scene.qualityHint === 'hd' && (
+              {effectiveMode === 'image' && scene.qualityHint === 'hd' && (
                 <span className="font-mono text-[10px] uppercase tracking-wider bg-emerald-500/80 text-white px-1.5 py-0.5 rounded-full">HD</span>
               )}
-              {mode === 'image' && scene.qualityHint === 'draft' && (
+              {effectiveMode === 'image' && scene.qualityHint === 'draft' && (
                 <span className="font-mono text-[10px] uppercase tracking-wider bg-amber-500/80 text-white px-1.5 py-0.5 rounded-full">Draft</span>
               )}
             </div>
@@ -2065,7 +2112,18 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     aria-label={`Prévisualiser clip Scène ${i + 1} en grand`}
                     className="absolute inset-0 cursor-zoom-in group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
-                    <video src={scene.clipUrl} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop playsInline />
+                    <video
+                      src={scene.clipUrl}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      muted
+                      autoPlay
+                      loop
+                      playsInline
+                      onError={() => {
+                        console.warn(`[clip] Scene ${i + 1} failed to load: ${scene.clipUrl?.slice(0, 80)}`)
+                        updateScene(scene.id, { clipStatus: 'error', clipUrl: undefined })
+                      }}
+                    />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
                         <Play size={14} className="text-black fill-black translate-x-0.5" />
@@ -2073,9 +2131,30 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     </div>
                   </button>
                 ) : scene.clipStatus === 'done' ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3">
-                    <Check size={14} className="text-white" />
-                  </div>
+                  // Clip marqué done sans URL → image fixe (mode storyboard) : on affiche l'aperçu image
+                  scene.imageUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewIndex(i)}
+                      aria-label={`Prévisualiser Scène ${i + 1} en grand`}
+                      className="absolute inset-0 cursor-zoom-in group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={scene.imageUrl}
+                        alt={`Scène ${i + 1}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={() => {
+                          console.warn(`[image] Scene ${i + 1} thumb failed to load`)
+                          updateScene(scene.id, { imageUrl: undefined })
+                        }}
+                      />
+                    </button>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3">
+                      <Check size={14} className="text-white" />
+                    </div>
+                  )
                 ) : scene.clipStatus === 'error' ? (
                   <button type="button" aria-label="Réessayer le clip" onClick={() => generateClip(scene.id)}
                     className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 transition-colors group">
