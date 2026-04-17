@@ -97,6 +97,7 @@ export function NewProjectDropdown() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        data-new-project
         aria-haspopup="true"
         aria-expanded={open}
         className={cn(

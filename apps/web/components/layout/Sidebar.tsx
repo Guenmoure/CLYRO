@@ -1,411 +1,502 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
-import {
-  LayoutGrid, Video, Sparkles, Palette, History, Mic, Film, Package,
-  Settings, HelpCircle, ChevronRight, ChevronUp, LogOut, Gem, Code2,
-} from 'lucide-react'
-import { createBrowserClient } from '@/lib/supabase'
-import { useLanguage } from '@/lib/i18n'
+/**
+ * Sidebar — navigation principale du dashboard.
+ *
+ * Deux groupes de navigation :
+ *   CRÉER     → Avatar Studio, Faceless Videos, Motion Design, Brand Kit
+ *   WORKSPACE → Projets (avec compteur), Assets
+ *
+ * Fonctionnalités :
+ *   • Mode collapsed (72px) / expanded (240px) — toggle + localStorage
+ *   • Logo CLYRO cliquable → /dashboard
+ *   • Tooltips en mode collapsed (hover)
+ *   • Compteur sur "Projets" (ambre si drafts existent)
+ *   • User card bas de page : avatar + nom + plan + crédits
+ *   • Menu déroulant : Paramètres, Facturation, Updates, Aide, Déconnexion
+ *   • Support light / dark mode via CSS variables
+ *   • Mobile drawer (géré par le parent DashboardShell)
+ */
+
+import { useState, useEffect, useRef } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/ui/Logo'
-import { SettingsModal, type SettingsSectionId } from '@/components/settings/SettingsModal'
+import { createBrowserClient } from '@/lib/supabase'
+import {
+  Film, Video, Sparkles, Palette,
+  FolderOpen, Package,
+  ChevronLeft, ChevronRight, ChevronUp,
+  Settings, HelpCircle, Bell, LogOut,
+  CreditCard, ExternalLink, X,
+} from 'lucide-react'
+import type { SidebarUser } from './DashboardShell'
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// ── Nav structure ──────────────────────────────────────────────────────────────
 
-interface Profile {
-  full_name: string | null
-  plan: string
-  credits: number
-}
+const CREATE_ITEMS = [
+  { id: 'studio',   icon: Film,     label: 'Avatar Studio',   href: '/studio' },
+  { id: 'faceless', icon: Video,    label: 'Faceless Videos', href: '/faceless' },
+  { id: 'motion',   icon: Sparkles, label: 'Motion Design',   href: '/motion' },
+  { id: 'brand',    icon: Palette,  label: 'Brand Kit',       href: '/brand' },
+]
+
+const WORKSPACE_ITEMS = [
+  { id: 'projects', icon: FolderOpen, label: 'Projects', href: '/projects' },
+  { id: 'assets',   icon: Package,    label: 'Assets',   href: '/assets' },
+]
+
+// ── Props ──────────────────────────────────────────────────────────────────────
 
 interface SidebarProps {
-  collapsed: boolean
-  onToggle: (val: boolean) => void
-  mobileOpen: boolean
+  user:          SidebarUser
+  projectsCount: number
+  draftsCount:   number
+  collapsed:     boolean
+  onToggle:      (val: boolean) => void
+  mobileOpen:    boolean
   onMobileClose: () => void
 }
 
-// ── Nav structure (translation keys) ──────────────────────────────────────────
+// ── Sidebar ────────────────────────────────────────────────────────────────────
 
-function useNavSections() {
-  const { t } = useLanguage()
-  return [
-    {
-      label: t('workspace'),
-      items: [
-        { href: '/dashboard', label: t('dashboard'),       icon: LayoutGrid, exact: true },
-        { href: '/studio',    label: t('aiAvatarStudio'),  icon: Film },
-        { href: '/faceless',  label: t('facelessVideos'),  icon: Video },
-        { href: '/motion',    label: t('motionDesign'),    icon: Sparkles },
-        { href: '/brand',     label: t('brandKit'),        icon: Palette },
-        { href: '/projects',  label: t('projects'),        icon: History },
-        { href: '/assets',    label: t('assets'),          icon: Package },
-      ],
-    },
-  ]
-}
+export function Sidebar({
+  user,
+  projectsCount,
+  draftsCount,
+  collapsed,
+  onToggle,
+  mobileOpen,
+  onMobileClose,
+}: SidebarProps) {
+  const pathname = usePathname()
+  const router   = useRouter()
 
-// ── Tooltip helper ─────────────────────────────────────────────────────────────
+  // User menu state
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
-function NavTooltip({ label }: { label: string }) {
-  return (
-    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-      <div className="bg-muted border border-border text-foreground font-mono text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-card">
-        {label}
+  useEffect(() => {
+    if (!userMenuOpen) return
+    function handler(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
+        setUserMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [userMenuOpen])
+
+  // Close mobile drawer when route changes
+  useEffect(() => {
+    onMobileClose()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  // ── Path matching ──────────────────────────────────────────────────────────
+
+  function isActive(href: string): boolean {
+    if (href === '/dashboard') return pathname === '/dashboard'
+    return pathname === href || pathname.startsWith(href + '/')
+  }
+
+  // ── Sign out ───────────────────────────────────────────────────────────────
+
+  async function handleSignOut() {
+    try {
+      const supabase = createBrowserClient()
+      await supabase.auth.signOut()
+    } finally {
+      window.location.href = '/login'
+    }
+  }
+
+  // ── Sidebar inner (shared between desktop and mobile drawer) ───────────────
+
+  const sidebarInner = (
+    <aside className={cn(
+      'flex flex-col h-full',
+      'bg-card border-r border-border/50',
+      'transition-[width] duration-300 ease-in-out overflow-hidden',
+      collapsed && !mobileOpen ? 'w-[72px]' : 'w-[240px]',
+    )}>
+
+      {/* ── HEADER — Logo + collapse toggle ────────────────────── */}
+      <div className={cn(
+        'flex items-center px-4 pt-5 pb-3 shrink-0',
+        collapsed && !mobileOpen ? 'justify-center' : 'justify-between',
+      )}>
+        {/* Logo → /dashboard */}
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard')}
+          className="hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+          aria-label="Go to dashboard"
+        >
+          {collapsed && !mobileOpen
+            ? <Logo variant="icon" size="sm" />
+            : <Logo variant="full" size="sm" />
+          }
+        </button>
+
+        {/* Collapse toggle — desktop only */}
+        {!mobileOpen && (
+          <button
+            type="button"
+            onClick={() => onToggle(!collapsed)}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={cn(
+              'w-6 h-6 rounded-full flex items-center justify-center shrink-0',
+              'border border-border bg-card text-[--text-muted]',
+              'hover:bg-muted hover:text-foreground',
+              'transition-all duration-150 shadow-sm',
+              collapsed && 'ml-0',
+            )}
+          >
+            {collapsed
+              ? <ChevronRight size={12} />
+              : <ChevronLeft  size={12} />
+            }
+          </button>
+        )}
+
+        {/* Mobile close button */}
+        {mobileOpen && (
+          <button
+            type="button"
+            onClick={onMobileClose}
+            aria-label="Close sidebar"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
-    </div>
+
+      {/* ── SECTION — CRÉER ─────────────────────────────────────── */}
+      <div className="mt-2 px-3 shrink-0">
+        {(!collapsed || mobileOpen) && (
+          <p className="px-2 mb-1.5 text-[10px] font-mono font-medium uppercase tracking-widest text-[--text-muted]">
+            Create
+          </p>
+        )}
+        <nav className="space-y-0.5">
+          {CREATE_ITEMS.map(item => (
+            <NavItem
+              key={item.id}
+              icon={item.icon}
+              label={item.label}
+              active={isActive(item.href)}
+              collapsed={collapsed && !mobileOpen}
+              onClick={() => router.push(item.href)}
+            />
+          ))}
+        </nav>
+      </div>
+
+      {/* ── DIVIDER ─────────────────────────────────────────────── */}
+      <div className={cn(
+        'my-3 h-px bg-border/60 shrink-0',
+        collapsed && !mobileOpen ? 'mx-4' : 'mx-3',
+      )} />
+
+      {/* ── SECTION — WORKSPACE ─────────────────────────────────── */}
+      <div className="px-3 shrink-0">
+        {(!collapsed || mobileOpen) && (
+          <p className="px-2 mb-1.5 text-[10px] font-mono font-medium uppercase tracking-widest text-[--text-muted]">
+            Workspace
+          </p>
+        )}
+        <nav className="space-y-0.5">
+          {WORKSPACE_ITEMS.map(item => {
+            const count      = item.id === 'projects' ? projectsCount : undefined
+            const countColor = item.id === 'projects' && draftsCount > 0 ? 'amber' : 'default'
+            return (
+              <NavItem
+                key={item.id}
+                icon={item.icon}
+                label={item.label}
+                active={isActive(item.href)}
+                collapsed={collapsed && !mobileOpen}
+                count={count}
+                countColor={countColor}
+                onClick={() => router.push(item.href)}
+              />
+            )
+          })}
+        </nav>
+      </div>
+
+      {/* ── SPACER ──────────────────────────────────────────────── */}
+      <div className="flex-1" />
+
+      {/* ── DIVIDER BOTTOM ──────────────────────────────────────── */}
+      <div className={cn(
+        'h-px bg-border/60 shrink-0',
+        collapsed && !mobileOpen ? 'mx-4' : 'mx-3',
+      )} />
+
+      {/* ── USER CARD + DROPDOWN ────────────────────────────────── */}
+      <div ref={userMenuRef} className="relative p-3 shrink-0">
+        {/* Trigger */}
+        <button
+          type="button"
+          onClick={() => setUserMenuOpen(v => !v)}
+          className={cn(
+            'w-full flex items-center gap-3 rounded-xl p-2.5 transition-colors duration-150',
+            'hover:bg-muted',
+            userMenuOpen && 'bg-muted',
+            collapsed && !mobileOpen && 'justify-center',
+          )}
+        >
+          {/* Avatar */}
+          <div className="w-8 h-8 rounded-full shrink-0 bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-medium font-display">
+            {user.initials}
+          </div>
+
+          {(!collapsed || mobileOpen) && (
+            <>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="font-display text-sm font-medium text-foreground truncate leading-tight">
+                  {user.fullName}
+                </p>
+                <p className="font-mono text-[11px] text-[--text-muted] leading-tight">
+                  {user.plan}
+                  <span className="text-blue-400 ml-1">· {user.creditsLeft} cr</span>
+                </p>
+              </div>
+              <ChevronUp size={13} className={cn(
+                'shrink-0 text-[--text-muted] transition-transform duration-150',
+                !userMenuOpen && 'rotate-180',
+              )} />
+            </>
+          )}
+        </button>
+
+        {/* Tooltip collapsed mode */}
+        {(collapsed && !mobileOpen) && (
+          <div className="absolute left-full bottom-3 ml-3 z-50 pointer-events-none opacity-0 group-hover:opacity-100">
+            {/* handled via group in NavItem pattern below */}
+          </div>
+        )}
+
+        {/* ── Dropdown menu ── */}
+        {userMenuOpen && (
+          <div className={cn(
+            'absolute bottom-full mb-2 z-50 rounded-2xl overflow-hidden',
+            'bg-card border border-border shadow-xl',
+            collapsed && !mobileOpen
+              ? 'left-full ml-2 w-56'
+              : 'left-3 right-3',
+          )}>
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-border/60">
+              <p className="font-display text-sm font-semibold text-foreground">
+                {user.fullName}
+              </p>
+              <p className="font-mono text-xs text-[--text-muted] mt-0.5">
+                {user.plan} · {user.creditsLeft} credits remaining
+              </p>
+            </div>
+
+            {/* Menu items */}
+            <div className="py-1.5">
+              <UserMenuItem icon={Settings}     label="Settings"       href="/settings" onClose={() => setUserMenuOpen(false)} />
+              <UserMenuItem icon={CreditCard}   label="Billing"        href="/settings" onClose={() => setUserMenuOpen(false)} />
+              <UserMenuItem icon={Bell}         label="Updates"        href="/dashboard" onClose={() => setUserMenuOpen(false)} badge="2" />
+              <UserMenuItem icon={HelpCircle}   label="Help & Support" href="/dashboard" onClose={() => setUserMenuOpen(false)} />
+              <UserMenuItem icon={ExternalLink} label="Documentation"  href="https://docs.clyro.ai" onClose={() => setUserMenuOpen(false)} external />
+            </div>
+
+            {/* Sign out */}
+            <div className="border-t border-border/60 py-1.5">
+              <button
+                type="button"
+                onClick={() => { setUserMenuOpen(false); handleSignOut() }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error hover:bg-error/10 transition-colors text-left"
+              >
+                <LogOut size={14} className="shrink-0 opacity-70" />
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </aside>
+  )
+
+  // ── Desktop — fixed sidebar ────────────────────────────────────────────────
+
+  return (
+    <>
+      {/* Desktop sidebar — fixed, hidden on mobile */}
+      <div className="hidden md:block fixed left-0 top-0 h-full z-40">
+        {sidebarInner}
+      </div>
+
+      {/* Mobile overlay + drawer */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-50 md:hidden"
+          aria-modal="true"
+          role="dialog"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={onMobileClose}
+          />
+          {/* Drawer */}
+          <div className="absolute left-0 top-0 h-full">
+            {sidebarInner}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
 // ── NavItem ────────────────────────────────────────────────────────────────────
 
 function NavItem({
-  href,
-  label,
   icon: Icon,
+  label,
+  active,
   collapsed,
-  exact = false,
-  external = false,
+  count,
+  countColor = 'default',
+  onClick,
 }: {
-  href: string
-  label: string
-  icon: React.ElementType
-  collapsed: boolean
-  exact?: boolean
-  external?: boolean
+  icon:        React.ElementType
+  label:       string
+  active:      boolean
+  collapsed:   boolean
+  count?:      number
+  countColor?: 'default' | 'amber'
+  onClick:     () => void
 }) {
-  const pathname = usePathname()
-  const isActive = exact
-    ? pathname === href
-    : pathname === href || pathname.startsWith(href + '/')
-
-  const baseClass = cn(
-    'relative group flex items-center gap-3 rounded-xl transition-colors duration-150 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
-    collapsed ? 'h-10 justify-center px-0' : 'h-10 px-3',
-    isActive
-      ? 'bg-blue-500/15 border-l-2 border-blue-500 text-foreground pl-[10px]'
-      : 'text-[--text-secondary] hover:bg-muted hover:text-foreground border-l-2 border-transparent'
-  )
-
-  const inner = (
-    <>
-      <Icon
-        size={18}
-        className={cn('shrink-0 transition-colors', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-[--text-secondary] group-hover:text-foreground')}
-      />
-      {!collapsed && (
-        <span className="font-body text-sm truncate">{label}</span>
-      )}
-      {collapsed && <NavTooltip label={label} />}
-    </>
-  )
-
-  if (external) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={baseClass}>
-        {inner}
-      </a>
-    )
-  }
-
   return (
-    <Link href={href} className={baseClass}>
-      {inner}
-    </Link>
-  )
-}
-
-// ── UserCard ───────────────────────────────────────────────────────────────────
-
-function UserCard({ collapsed, onSignOut }: { collapsed: boolean; onSignOut: () => void }) {
-  const supabase = createBrowserClient()
-  const { t } = useLanguage()
-  const [name, setName]       = useState<string | null>(null)
-  const [email, setEmail]     = useState<string>('')
-  const [plan, setPlan]       = useState<string>('free')
-  const [initials, setInitials] = useState('?')
-
-  // Dropdown + modal state
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [settingsSection, setSettingsSection] = useState<SettingsSectionId>('account')
-  const cardRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    async function load() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
-      setEmail(session.user.email ?? '')
-      const { data } = await supabase
-        .from('profiles')
-        .select('full_name, plan')
-        .eq('id', session.user.id)
-        .single()
-      if (data) {
-        const n = data.full_name ?? session.user.email?.split('@')[0] ?? 'User'
-        setName(n)
-        setPlan(data.plan ?? 'free')
-        setInitials(n.charAt(0).toUpperCase())
-      }
-    }
-    load()
-  }, [supabase])
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!dropdownOpen) return
-    function handler(e: MouseEvent) {
-      if (cardRef.current && !cardRef.current.contains(e.target as Node)) setDropdownOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [dropdownOpen])
-
-  function openSettings(section: SettingsSectionId) {
-    setSettingsSection(section)
-    setDropdownOpen(false)
-    setSettingsOpen(true)
-  }
-
-  const planLabel = plan === 'pro' ? 'Pro' : plan === 'studio' ? 'Studio' : t('freePlan')
-
-  return (
-    <div
-      ref={cardRef}
-      className={cn(
-        'relative border-t border-white/[0.07] dark:border-white/[0.06] mt-auto pt-3',
-        collapsed ? 'px-2' : 'px-3',
-      )}
-    >
-      {/* Trigger */}
+    <div className="relative group">
       <button
         type="button"
-        onClick={() => setDropdownOpen((v) => !v)}
-        aria-expanded={dropdownOpen}
-        aria-haspopup="menu"
+        onClick={onClick}
         className={cn(
-          'group flex items-center gap-3 py-2 rounded-xl w-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-          collapsed ? 'justify-center px-0' : 'px-2',
-          dropdownOpen ? 'bg-muted' : 'hover:bg-muted',
+          'w-full flex items-center gap-3 rounded-xl transition-all duration-150',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
+          collapsed ? 'justify-center h-10 px-0' : 'px-3 h-10',
+          active
+            ? cn(
+                'bg-blue-500/10 text-blue-500 dark:text-blue-400',
+                !collapsed && 'border-l-2 border-blue-500 rounded-l-none pl-[10px]',
+              )
+            : 'text-[--text-secondary] hover:bg-muted hover:text-foreground border-l-2 border-transparent',
         )}
       >
-        <div className="w-8 h-8 rounded-full bg-grad-primary flex items-center justify-center shrink-0">
-          <span className="font-mono text-xs font-bold text-white">{initials}</span>
-        </div>
-        {!collapsed && name && (
-          <div className="min-w-0 flex-1 text-left">
-            <p className="font-body text-sm text-foreground truncate leading-none mb-0.5">{name}</p>
-            <p className="font-mono text-[11px] text-[--text-secondary] truncate">{planLabel}</p>
-          </div>
+        <Icon
+          size={18}
+          className={cn(
+            'shrink-0 transition-colors',
+            active ? 'text-blue-500 dark:text-blue-400' : 'text-[--text-muted] group-hover:text-foreground',
+          )}
+        />
+        {!collapsed && (
+          <>
+            <span className={cn(
+              'flex-1 text-left font-body text-sm transition-colors truncate',
+              active ? 'font-medium' : 'group-hover:text-foreground',
+            )}>
+              {label}
+            </span>
+            {count !== undefined && count > 0 && (
+              <span className={cn(
+                'text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-full shrink-0',
+                countColor === 'amber'
+                  ? 'bg-amber-500/15 text-amber-500'
+                  : 'bg-muted text-[--text-muted]',
+              )}>
+                {count > 99 ? '99+' : count}
+              </span>
+            )}
+          </>
         )}
-        {!collapsed && <ChevronUp size={14} className={cn('shrink-0 text-[--text-muted] transition-transform', dropdownOpen && 'rotate-180')} />}
-        {collapsed && <NavTooltip label={name ?? email.split('@')[0] ?? t('account')} />}
       </button>
 
-      {/* Dropdown — HeyGen-style */}
-      {dropdownOpen && (
-        <div
-          role="menu"
-          className={cn(
-            'absolute z-50 rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-fade-up',
-            collapsed
-              ? 'left-full ml-2 bottom-0 w-64'
-              : 'left-2 right-2 bottom-full mb-2',
+      {/* Tooltip — collapsed mode only */}
+      {collapsed && (
+        <div className={cn(
+          'absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50',
+          'pointer-events-none whitespace-nowrap',
+          'px-2.5 py-1.5 rounded-lg text-xs font-medium',
+          'bg-foreground text-background shadow-lg',
+          'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
+        )}>
+          {label}
+          {count !== undefined && count > 0 && (
+            <span className="ml-1.5 font-mono text-[10px] bg-white/20 px-1 py-0.5 rounded">
+              {count}
+            </span>
           )}
-        >
-          {/* Header: email + profile */}
-          <div className="px-4 pt-3 pb-3 border-b border-border">
-            <p className="font-body text-xs text-[--text-secondary] truncate mb-2">{email}</p>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-grad-primary flex items-center justify-center shrink-0">
-                <span className="font-mono text-sm font-bold text-white">{initials}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-display text-sm font-semibold text-foreground truncate">{name ?? 'User'}</p>
-                <p className="font-mono text-[11px] text-[--text-secondary]">{planLabel}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Main actions */}
-          <div className="p-2 space-y-0.5">
-            <DropdownItem
-              icon={<Gem size={15} className="text-amber-500" />}
-              label={t('upgradePlan')}
-              href="/pricing"
-              primary
-            />
-            <DropdownItem
-              icon={<Settings size={15} />}
-              label={t('userSettings')}
-              onClick={() => openSettings('account')}
-            />
-          </div>
-
-          {/* Secondary — Help */}
-          <div className="p-2 space-y-0.5 border-t border-border">
-            <DropdownItem
-              icon={<Code2 size={15} />}
-              label={t('developers')}
-              onClick={() => openSettings('api')}
-              trailing={<ChevronRight size={13} className="text-[--text-muted]" />}
-            />
-            <DropdownItem
-              icon={<HelpCircle size={15} />}
-              label={t('help')}
-              href="mailto:support@clyro.app"
-              external
-              trailing={<ChevronRight size={13} className="text-[--text-muted]" />}
-            />
-          </div>
-
-          {/* Log out */}
-          <div className="p-2 border-t border-border">
-            <DropdownItem
-              icon={<LogOut size={15} />}
-              label={t('userLogout')}
-              onClick={onSignOut}
-              danger
-            />
-          </div>
+          {/* Arrow */}
+          <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-foreground" />
         </div>
       )}
 
-      {/* Settings modal */}
-      <SettingsModal
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        initialSection={settingsSection}
-      />
+      {/* Badge (count) in collapsed mode */}
+      {collapsed && count !== undefined && count > 0 && (
+        <span className={cn(
+          'absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full',
+          'text-[8px] font-mono font-bold text-white',
+          'flex items-center justify-center',
+          countColor === 'amber' ? 'bg-amber-500' : 'bg-blue-500',
+        )}>
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
     </div>
   )
 }
 
-// ── DropdownItem ────────────────────────────────────────────────────────────
+// ── UserMenuItem ───────────────────────────────────────────────────────────────
 
-function DropdownItem({
-  icon, label, onClick, href, external, primary, danger, trailing,
+function UserMenuItem({
+  icon: Icon,
+  label,
+  href,
+  onClose,
+  badge,
+  external,
 }: {
-  icon: React.ReactNode
-  label: string
-  onClick?: () => void
-  href?: string
+  icon:      React.ElementType
+  label:     string
+  href:      string
+  onClose:   () => void
+  badge?:    string
   external?: boolean
-  primary?: boolean
-  danger?: boolean
-  trailing?: React.ReactNode
 }) {
-  const className = cn(
-    'flex items-center gap-3 w-full rounded-lg px-3 py-2 text-sm font-body transition-colors',
-    danger
-      ? 'text-error hover:bg-error/10'
-      : primary
-        ? 'text-foreground font-semibold hover:bg-muted'
-        : 'text-foreground hover:bg-muted',
-  )
-  const content = (
-    <>
-      <span className={cn('shrink-0', danger ? 'text-error' : 'text-[--text-secondary]')}>{icon}</span>
-      <span className="flex-1 text-left truncate">{label}</span>
-      {trailing}
-    </>
-  )
-  if (href) {
-    return (
-      <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} className={className}>
-        {content}
-      </a>
-    )
-  }
-  return (
-    <button type="button" onClick={onClick} className={className} role="menuitem">
-      {content}
-    </button>
-  )
-}
+  const router = useRouter()
 
-// ── Sidebar ────────────────────────────────────────────────────────────────────
-
-export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
-  const supabase = createBrowserClient()
-  const { t } = useLanguage()
-  const navSections = useNavSections()
-
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+  function handleClick() {
+    onClose()
+    if (external) {
+      window.open(href, '_blank', 'noopener noreferrer')
+    } else {
+      router.push(href)
+    }
   }
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-background/60 backdrop-blur-sm z-30 md:hidden"
-          onClick={onMobileClose}
-        />
+    <button
+      type="button"
+      onClick={handleClick}
+      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-secondary] hover:bg-muted transition-colors text-left"
+    >
+      <Icon size={14} className="shrink-0 opacity-60" />
+      <span className="flex-1">{label}</span>
+      {badge && (
+        <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400">
+          {badge}
+        </span>
       )}
-
-      <aside
-        className={cn(
-          'fixed inset-y-3 left-3 z-40',
-          'glass rounded-2xl',
-          'flex flex-col',
-          'transition-all duration-300 ease-in-out',
-          collapsed ? 'w-[72px]' : 'w-60',
-          // Mobile: slide in/out
-          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-        )}
-      >
-        {/* Header */}
-        <div className={cn(
-          'flex items-center h-14 border-b border-white/[0.07] dark:border-white/[0.06] shrink-0 relative',
-          collapsed ? 'justify-center px-0' : 'px-5',
-        )}>
-          <Logo
-            variant={collapsed ? 'icon' : 'full'}
-            size={collapsed ? 'sm' : 'md'}
-            href="/dashboard"
-          />
-
-          {/* Toggle button */}
-          <button
-            type="button"
-            onClick={() => onToggle(!collapsed)}
-            className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted border border-border rounded-full items-center justify-center shadow-card hover:bg-border transition-colors z-10 after:absolute after:inset-[-6px] after:content-['']"
-            aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')}
-          >
-            <ChevronRight
-              size={13}
-              className={cn('text-[--text-muted] transition-transform duration-300', !collapsed && 'rotate-180')}
-            />
-          </button>
-        </div>
-
-        {/* Nav sections */}
-        <nav className="flex-1 overflow-y-auto py-2 space-y-4">
-          {navSections.map((section) => (
-            <div key={section.label} className={cn('space-y-0.5', collapsed ? 'px-2' : 'px-3')}>
-              {!collapsed && (
-                <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold px-1 mb-2">
-                  {section.label}
-                </p>
-              )}
-              {section.items.map((item) => (
-                <NavItem key={item.href} collapsed={collapsed} {...item} />
-              ))}
-            </div>
-          ))}
-        </nav>
-
-        {/* User card */}
-        <div className="shrink-0 pb-4">
-          <UserCard collapsed={collapsed} onSignOut={handleSignOut} />
-        </div>
-      </aside>
-    </>
+      {external && <ExternalLink size={11} className="shrink-0 opacity-40" />}
+    </button>
   )
 }

@@ -194,8 +194,16 @@ const config: Config = {
         },
         // Flottement hero elements
         float: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%':      { transform: 'translateY(-6px)' },
+          '0%, 100%': { transform: 'translateY(0) rotate(12deg)' },
+          '50%':      { transform: 'translateY(-8px) rotate(12deg)' },
+        },
+        'float-delayed': {
+          '0%, 100%': { transform: 'translateY(0) rotate(-6deg)' },
+          '50%':      { transform: 'translateY(-6px) rotate(-6deg)' },
+        },
+        'float-slow': {
+          '0%, 100%': { transform: 'translateY(0) rotate(3deg)' },
+          '50%':      { transform: 'translateY(-10px) rotate(3deg)' },
         },
         // Entrée depuis le bas
         'fade-up': {
@@ -236,7 +244,9 @@ const config: Config = {
         'accordion-up':    'accordion-up 0.2s ease-out',
         shimmer:           'shimmer 2s linear infinite',
         'glow-pulse':      'glow-pulse 2.5s ease-in-out infinite',
-        float:             'float 4s ease-in-out infinite',
+        float:             'float 3s ease-in-out infinite',
+        'float-delayed':   'float-delayed 3s ease-in-out infinite 0.5s',
+        'float-slow':      'float-slow 4s ease-in-out infinite 1s',
         'fade-up':         'fade-up 0.4s ease-out forwards',
         'fade-in':         'fade-in 0.3s ease-out',
         'slide-in-right':  'slide-in-right 0.3s ease-out',

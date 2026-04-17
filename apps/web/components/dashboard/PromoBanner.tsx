@@ -1,79 +1,26 @@
 'use client'
 
 /**
- * PromoBanner — compact 48px dismissable banner at the top of the dashboard.
- * Replaces the heavy 300px HeroBanner carousel.
+ * PromoBanner — compact ~48px dismissable info strip.
  *
- * Dismiss is stored in localStorage so it doesn't re-appear after a refresh.
- * The banner rotates among a set of messages on each page load.
+ * Replaces the 300px HeroBanner carousel with a single-line tip.
+ * Dismissed state persisted via localStorage (versioned key).
  */
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { X, Zap, ArrowRight, Mic2, Video, Palette, Sparkles } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { X, Mic, ArrowRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
-// ── Config ─────────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = 'clyro_promo_dismissed'
-
-interface PromoMessage {
-  icon:    React.ElementType
-  accent:  string
-  text:    string
-  cta:     string
-  href:    string
-}
-
-const MESSAGES: PromoMessage[] = [
-  {
-    icon:   Mic2,
-    accent: 'text-blue-400',
-    text:   'Clone your voice once — use it across all your videos.',
-    cta:    'Try Voice Clone',
-    href:   '/voices',
-  },
-  {
-    icon:   Video,
-    accent: 'text-cyan-400',
-    text:   'Script to video in 5 steps. Fully automated.',
-    cta:    'Start a Faceless video',
-    href:   '/faceless/new',
-  },
-  {
-    icon:   Palette,
-    accent: 'text-purple-400',
-    text:   'Build your brand identity in one click — logo, colors, guidelines.',
-    cta:    'Create Brand Kit',
-    href:   '/brand',
-  },
-  {
-    icon:   Sparkles,
-    accent: 'text-pink-400',
-    text:   'Animate any image into a dynamic video clip.',
-    cta:    'Try Motion Design',
-    href:   '/motion/new',
-  },
-]
-
-// Pick a deterministic message index based on the day so it feels fresh daily
-function getTodayMessageIndex() {
-  const day = Math.floor(Date.now() / 86_400_000)
-  return day % MESSAGES.length
-}
-
-// ── Component ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'clyro_promo_dismissed_v1'
 
 export function PromoBanner() {
-  const [visible, setVisible] = useState(false) // start hidden to avoid SSR mismatch
+  const [visible, setVisible] = useState(false) // hidden until after mount
+  const router = useRouter()
 
   useEffect(() => {
     try {
-      const dismissed = localStorage.getItem(STORAGE_KEY)
-      if (!dismissed) setVisible(true)
-    } catch {
-      // localStorage unavailable (e.g. SSR or privacy mode) — just hide banner
-    }
+      if (!localStorage.getItem(STORAGE_KEY)) setVisible(true)
+    } catch { /* privacy mode — just hide */ }
   }, [])
 
   function dismiss() {
@@ -83,51 +30,37 @@ export function PromoBanner() {
 
   if (!visible) return null
 
-  const msg  = MESSAGES[getTodayMessageIndex()]
-  const Icon = msg.icon
-
   return (
-    <div
-      role="banner"
-      className={cn(
-        'flex items-center gap-3 rounded-2xl border border-border/60 bg-card',
-        'px-4 h-12 overflow-hidden',
-      )}
-    >
-      {/* Icon */}
-      <Icon size={15} className={cn('shrink-0', msg.accent)} />
+    <div className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl border bg-gradient-to-r from-blue-500/8 to-purple-500/8 border-blue-500/15 dark:from-blue-500/6 dark:to-purple-500/6 dark:border-blue-500/12">
+      {/* Icon + text */}
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="shrink-0 w-7 h-7 rounded-lg bg-purple-500/15 dark:bg-purple-500/20 flex items-center justify-center">
+          <Mic size={14} className="text-purple-500 dark:text-purple-400" />
+        </div>
+        <p className="font-body text-sm text-[--text-secondary] truncate">
+          <span className="font-medium text-foreground">New:</span>
+          {' '}Clone your voice in 30 seconds and use it in all your videos.
+        </p>
+      </div>
 
-      {/* Text */}
-      <p className="font-body text-sm text-[--text-secondary] truncate flex-1 min-w-0">
-        {msg.text}
-      </p>
-
-      {/* CTA */}
-      <Link
-        href={msg.href}
-        className={cn(
-          'shrink-0 inline-flex items-center gap-1',
-          'font-mono text-xs font-medium',
-          msg.accent,
-          'hover:opacity-80 transition-opacity',
-        )}
-      >
-        {msg.cta}
-        <ArrowRight size={11} />
-      </Link>
-
-      {/* Divider */}
-      <div className="shrink-0 h-4 w-px bg-border/60" />
-
-      {/* Dismiss */}
-      <button
-        type="button"
-        aria-label="Dismiss banner"
-        onClick={dismiss}
-        className="shrink-0 -mr-1 p-1 rounded-md text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
-      >
-        <X size={13} />
-      </button>
+      {/* CTA + dismiss */}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => router.push('/assets')}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-500/15 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 hover:bg-purple-500/25 transition-colors"
+        >
+          Try it <ArrowRight size={11} />
+        </button>
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Dismiss"
+          className="p-1 rounded-md text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <X size={14} />
+        </button>
+      </div>
     </div>
   )
 }

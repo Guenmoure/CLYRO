@@ -1,105 +1,111 @@
-import Link from 'next/link'
-import { Video, ArrowRight, Sparkles, Palette, Film } from 'lucide-react'
-import { cn } from '@/lib/utils'
+'use client'
 
-// ── Component ──────────────────────────────────────────────────────────────────
+/**
+ * EmptyDashboard — shown on first login or when the user has no projects.
+ *
+ * Contains:
+ *   • Floating-shape illustration
+ *   • Textarea to paste a script
+ *   • "Generate my video" CTA (⌘+Enter shortcut)
+ *   • Secondary links to other project types
+ */
+
+import { Video, Zap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 interface EmptyDashboardProps {
   firstName?: string
 }
 
-const STARTER_PROJECTS = [
-  {
-    title:       'My first faceless video',
-    description: 'Paste a script and get a fully edited video with voiceover and visuals.',
-    href:        '/faceless/new',
-    icon:        Video,
-    iconColor:   'text-blue-400',
-    iconBg:      'bg-blue-500/10',
-    cta:         'Start now',
-  },
-  {
-    title:       'Animate an image',
-    description: 'Turn any static image into a dynamic video clip using AI motion.',
-    href:        '/motion/new',
-    icon:        Sparkles,
-    iconColor:   'text-purple-400',
-    iconBg:      'bg-purple-500/10',
-    cta:         'Try Motion Design',
-  },
-  {
-    title:       'Build a brand identity',
-    description: 'Generate your logo, color palette, and guidelines in one click.',
-    href:        '/brand',
-    icon:        Palette,
-    iconColor:   'text-cyan-400',
-    iconBg:      'bg-cyan-400/10',
-    cta:         'Create Brand Kit',
-  },
-] as const
-
 export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
+  const router = useRouter()
+
+  function handleGenerate() {
+    const textarea = document.querySelector<HTMLTextAreaElement>('[data-empty-script]')
+    const text     = textarea?.value?.trim() ?? ''
+    if (text.length > 10) {
+      router.push(`/faceless/new?script=${encodeURIComponent(text)}`)
+    }
+  }
+
   return (
-    <div className="flex flex-col items-center gap-10 py-6">
-      {/* Hero message */}
-      <div className="text-center space-y-3 max-w-md">
-        {/* Glow orb */}
-        <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-border/60 flex items-center justify-center mb-4">
-          <Film size={28} className="text-blue-400" />
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+
+      {/* ── Floating shapes illustration ── */}
+      <div className="relative w-32 h-32 mb-6">
+        <div className="absolute w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 top-0 left-4 animate-float" />
+        <div className="absolute w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 bottom-2 right-2 animate-float-delayed" />
+        <div className="absolute w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/20 bottom-0 left-0 animate-float-slow" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Video size={28} className="text-[--text-muted]" />
         </div>
-
-        <h2 className="font-display text-2xl font-bold text-foreground">
-          {firstName ? `Welcome, ${firstName}!` : 'Welcome to CLYRO!'}
-        </h2>
-        <p className="font-body text-sm text-[--text-secondary] leading-relaxed">
-          You don&apos;t have any projects yet. Start with one of these or explore the full creation suite.
-        </p>
       </div>
 
-      {/* Starter project cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
-        {STARTER_PROJECTS.map((item) => {
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'group flex flex-col gap-4 p-5 rounded-2xl',
-                'bg-card border border-border/60 hover:border-border',
-                'hover:shadow-card-hover transition-all duration-200',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-              )}
-            >
-              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', item.iconBg)}>
-                <Icon size={18} className={item.iconColor} />
-              </div>
-
-              <div className="flex-1">
-                <p className="font-display text-sm font-semibold text-foreground">{item.title}</p>
-                <p className="font-body text-xs text-[--text-muted] mt-1 leading-relaxed">{item.description}</p>
-              </div>
-
-              <span className={cn(
-                'inline-flex items-center gap-1',
-                'font-mono text-xs font-medium',
-                item.iconColor,
-              )}>
-                {item.cta}
-                <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform duration-150" />
-              </span>
-            </Link>
-          )
-        })}
-      </div>
-
-      {/* Secondary CTA */}
-      <p className="font-body text-xs text-[--text-muted]">
-        Need inspiration?{' '}
-        <Link href="/#showcase" className="text-blue-400 hover:text-blue-300 transition-colors">
-          Watch examples made with CLYRO
-        </Link>
+      {/* ── Heading ── */}
+      <h3 className="font-display text-xl font-bold text-foreground">
+        {firstName ? `Welcome, ${firstName}!` : 'Create your first video'}
+      </h3>
+      <p className="font-body text-sm text-[--text-secondary] max-w-sm mt-2 leading-relaxed">
+        Paste a script, choose a style, and CLYRO generates your complete video in under 5 minutes.
       </p>
+
+      {/* ── Script textarea ── */}
+      <div className="mt-6 w-full max-w-md">
+        <textarea
+          data-empty-script
+          placeholder="Paste your script here to get started..."
+          rows={3}
+          className={cn(
+            'w-full px-4 py-3 rounded-xl font-body text-sm resize-none',
+            'bg-muted border border-border',
+            'focus:border-blue-500 focus:outline-none',
+            'text-foreground placeholder:text-[--text-muted]',
+            'transition-colors duration-150',
+          )}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault()
+              handleGenerate()
+            }
+          }}
+        />
+
+        <div className="flex items-center justify-between mt-2">
+          <span className="font-mono text-[10px] text-[--text-muted]">
+            ⌘ + Enter to generate
+          </span>
+          <button
+            type="button"
+            onClick={handleGenerate}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 hover:shadow-lg transition-all"
+          >
+            <Zap size={12} />
+            Generate my video
+          </button>
+        </div>
+      </div>
+
+      {/* ── Secondary options ── */}
+      <p className="font-mono text-xs text-[--text-muted] mt-8">
+        or choose directly:
+      </p>
+      <div className="flex flex-wrap justify-center gap-2 mt-3">
+        {[
+          { label: 'Avatar Studio', href: '/studio/new'  },
+          { label: 'Motion Design', href: '/motion/new'  },
+          { label: 'Brand Kit',     href: '/brand'       },
+        ].map(opt => (
+          <button
+            key={opt.label}
+            type="button"
+            onClick={() => router.push(opt.href)}
+            className="px-3 py-1.5 rounded-xl text-xs font-body border border-border text-[--text-secondary] hover:border-border/80 hover:text-foreground hover:bg-muted transition-colors"
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

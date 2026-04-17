@@ -1,114 +1,105 @@
-import Link from 'next/link'
-import { Video, Film, Sparkles, Palette, ArrowRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+'use client'
 
-// ── Data ───────────────────────────────────────────────────────────────────────
+/**
+ * QuickActions — 4 creation cards on one row (2×2 on mobile).
+ * Replaces the 7-card FeatureCards grid.
+ */
+
+import { Film, Video, Sparkles, Palette, ArrowRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 const ACTIONS = [
   {
-    category:  'AI Studio',
-    title:     'Faceless Video',
-    blurb:     'Script → voiceover → visuals',
-    href:      '/faceless/new',
-    icon:      Video,
-    iconColor: 'text-blue-400',
-    iconBg:    'bg-blue-500/10',
-    hoverGlow: 'hover:shadow-[0_0_40px_-12px_rgba(59,130,246,0.35)]',
-    accentBar: 'bg-blue-500',
-  },
-  {
-    category:  'AI Avatar',
-    title:     'Avatar Studio',
-    blurb:     'Present with your AI clone',
-    href:      '/studio/new',
+    id:        'avatar',
     icon:      Film,
-    iconColor: 'text-rose-400',
-    iconBg:    'bg-rose-500/10',
-    hoverGlow: 'hover:shadow-[0_0_40px_-12px_rgba(251,113,133,0.35)]',
-    accentBar: 'bg-rose-500',
+    label:     'Avatar Studio',
+    tag:       'AI AVATAR',
+    href:      '/studio/new',
+    gradient:  'from-pink-500/10 to-pink-500/3',
+    iconBg:    'bg-pink-500/15',
+    iconColor: 'text-pink-500',
+    tagColor:  'text-pink-500/60',
   },
   {
-    category:  'Animation',
-    title:     'Motion Design',
-    blurb:     'Animate images into clips',
-    href:      '/motion/new',
+    id:        'faceless',
+    icon:      Video,
+    label:     'Faceless Videos',
+    tag:       'AI STUDIO',
+    href:      '/faceless/new',
+    gradient:  'from-blue-500/10 to-blue-500/3',
+    iconBg:    'bg-blue-500/15',
+    iconColor: 'text-blue-500',
+    tagColor:  'text-blue-500/60',
+  },
+  {
+    id:        'motion',
     icon:      Sparkles,
-    iconColor: 'text-purple-400',
-    iconBg:    'bg-purple-500/10',
-    hoverGlow: 'hover:shadow-[0_0_40px_-12px_rgba(168,85,247,0.35)]',
-    accentBar: 'bg-purple-500',
+    label:     'Motion Design',
+    tag:       'ANIMATION',
+    href:      '/motion/new',
+    gradient:  'from-purple-500/10 to-purple-500/3',
+    iconBg:    'bg-purple-500/15',
+    iconColor: 'text-purple-500',
+    tagColor:  'text-purple-500/60',
   },
   {
-    category:  'Branding',
-    title:     'Brand Kit',
-    blurb:     'Logo, palette, guidelines',
-    href:      '/brand',
+    id:        'brand',
     icon:      Palette,
-    iconColor: 'text-cyan-400',
-    iconBg:    'bg-cyan-400/10',
-    hoverGlow: 'hover:shadow-[0_0_40px_-12px_rgba(34,211,238,0.35)]',
-    accentBar: 'bg-cyan-400',
+    label:     'Brand Kit',
+    tag:       'IDENTITY',
+    href:      '/brand',
+    gradient:  'from-teal-500/10 to-teal-500/3',
+    iconBg:    'bg-teal-500/15',
+    iconColor: 'text-teal-500',
+    tagColor:  'text-teal-500/60',
   },
 ] as const
 
-// ── Component ──────────────────────────────────────────────────────────────────
-
 export function QuickActions() {
+  const router = useRouter()
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {ACTIONS.map((action) => {
-        const Icon = action.icon
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {ACTIONS.map(a => {
+        const Icon = a.icon
         return (
-          <Link
-            key={action.href}
-            href={action.href}
+          <button
+            key={a.id}
+            type="button"
+            onClick={() => router.push(a.href)}
             className={cn(
-              'group relative flex flex-col gap-4 p-4 rounded-2xl',
-              'bg-card border border-border/60 hover:border-border',
-              'transition-all duration-200',
-              action.hoverGlow,
+              'relative group p-4 rounded-2xl text-left border',
+              'bg-gradient-to-br',
+              a.gradient,
+              'border-border/60 hover:border-border',
+              'hover:shadow-md transition-all duration-200',
+              'active:scale-[0.98]',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
           >
-            {/* Accent bar — top edge */}
-            <div className={cn(
-              'absolute inset-x-0 top-0 h-0.5 rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-              action.accentBar,
-            )} />
-
             {/* Icon */}
             <div className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center',
-              action.iconBg,
+              'w-10 h-10 rounded-xl flex items-center justify-center mb-3',
+              a.iconBg,
               'group-hover:scale-110 transition-transform duration-200',
             )}>
-              <Icon size={18} className={action.iconColor} />
+              <Icon size={18} className={a.iconColor} />
             </div>
 
-            {/* Text */}
-            <div className="flex-1 min-w-0">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1">
-                {action.category}
-              </p>
-              <p className="font-display text-base font-semibold text-foreground leading-tight">
-                {action.title}
-              </p>
-              <p className="font-mono text-xs text-[--text-muted] mt-1 leading-snug">
-                {action.blurb}
-              </p>
-            </div>
+            {/* Tag + label */}
+            <p className={cn('text-[10px] font-mono font-medium uppercase tracking-wider mb-1', a.tagColor)}>
+              {a.tag}
+            </p>
+            <p className="font-display text-sm font-semibold text-foreground">
+              {a.label}
+            </p>
 
-            {/* Arrow — revealed on hover */}
-            <ArrowRight
-              size={14}
-              className={cn(
-                'absolute bottom-4 right-4',
-                'text-[--text-muted] opacity-0 group-hover:opacity-100',
-                'translate-x-1 group-hover:translate-x-0',
-                'transition-all duration-200',
-              )}
-            />
-          </Link>
+            {/* Arrow on hover */}
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ArrowRight size={13} className="text-[--text-muted]" />
+            </div>
+          </button>
         )
       })}
     </div>
