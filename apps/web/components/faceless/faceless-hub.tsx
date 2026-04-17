@@ -31,10 +31,10 @@ interface StyleTemplate {
 }
 
 const TEMPLATE_CATEGORIES: Array<{ id: TemplateCategory; label: string }> = [
-  { id: 'all',        label: 'All styles'      },
-  { id: 'cinematic',  label: 'Cinematic'     },
+  { id: 'all',        label: 'Tous les styles' },
+  { id: 'cinematic',  label: 'Cinématique'     },
   { id: 'animation',  label: 'Animation'       },
-  { id: 'handmade',   label: 'Handmade'        },
+  { id: 'handmade',   label: 'Fait main'       },
   { id: '3d',         label: '3D & VFX'        },
 ]
 
@@ -170,14 +170,14 @@ function PreviewAnimation2d({ selected: _s }: { selected: boolean }) {
 }
 
 const STYLE_TEMPLATES: StyleTemplate[] = [
-  { id: 'cinematique',     label: 'Cinematic',    desc: 'Dramatic lighting, 8K',          category: 'cinematic', preview: PreviewCinematic    },
-  { id: 'stock-vo',        label: 'Stock + VO',      desc: 'National Geo documentary style',  category: 'cinematic', preview: PreviewStockVo      },
-  { id: 'whiteboard',      label: 'Whiteboard',      desc: 'Marker on whiteboard',            category: 'handmade',  preview: PreviewWhiteboard   },
-  { id: 'stickman',        label: 'Stickman',        desc: 'Stickman & geo shapes',           category: 'handmade',  badge: 'New', preview: PreviewStickman    },
-  { id: 'flat-design',     label: 'Flat Design',     desc: 'Flat illustration, vibrant colors', category: 'animation', badge: 'New', preview: PreviewFlatDesign  },
-  { id: '3d-pixar',        label: '3D Pixar',        desc: 'Claymation style Pixar',          category: '3d',        badge: 'New', preview: Preview3dPixar     },
-  { id: 'motion-graphics', label: 'Motion Graphics', desc: 'Geo shapes, animated type',         category: '3d',        preview: PreviewMotionGraphics },
-  { id: 'animation-2d',    label: 'Animation 2D',    desc: 'Vector animation',          category: 'animation', preview: PreviewAnimation2d  },
+  { id: 'cinematique',     label: 'Cinématique',     desc: 'Lumière dramatique, 8K',               category: 'cinematic', preview: PreviewCinematic    },
+  { id: 'stock-vo',        label: 'Stock + VO',      desc: 'Style documentaire National Geo',       category: 'cinematic', preview: PreviewStockVo      },
+  { id: 'whiteboard',      label: 'Whiteboard',      desc: 'Marqueur sur tableau blanc',            category: 'handmade',  preview: PreviewWhiteboard   },
+  { id: 'stickman',        label: 'Stickman',        desc: 'Personnages simples & formes',          category: 'handmade',  badge: 'Nouveau', preview: PreviewStickman    },
+  { id: 'flat-design',     label: 'Flat Design',     desc: 'Illustration plate, couleurs vives',    category: 'animation', badge: 'Nouveau', preview: PreviewFlatDesign  },
+  { id: '3d-pixar',        label: '3D Pixar',        desc: 'Style Pixar 3D',                        category: '3d',        badge: 'Nouveau', preview: Preview3dPixar     },
+  { id: 'motion-graphics', label: 'Motion Graphics', desc: 'Formes géométriques, typo animée',      category: '3d',        preview: PreviewMotionGraphics },
+  { id: 'animation-2d',    label: 'Animation 2D',    desc: 'Animation vectorielle',                  category: 'animation', preview: PreviewAnimation2d  },
 ]
 
 // ── Pipeline types ─────────────────────────────────────────────────────────────
@@ -320,10 +320,10 @@ function detectDialogueInScript(script: string): { hasDialogue: boolean; speaker
 
 const PIPELINE_STEPS: Array<{ id: PipelineStep; label: string }> = [
   { id: 'setup',      label: 'Script'      },
-  { id: 'storyboard', label: 'Storyboard'  },
+  { id: 'storyboard', label: 'Scènes'      },
   { id: 'images',     label: 'Images'      },
   { id: 'clips',      label: 'Clips'       },
-  { id: 'final',      label: 'Video'       },
+  { id: 'final',      label: 'Vidéo'       },
 ]
 
 function StepIndicator({ current, savedState }: { current: PipelineStep; savedState?: 'saving' | 'saved' | null }) {
@@ -574,7 +574,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               <textarea
                 value={project.description}
                 onChange={(e) => onChange({ description: e.target.value })}
-                placeholder="Describe your video: characters, mood, main message... E.g.: educational video about black holes with scientific narrator and epic space animations."
+                placeholder="Décris ta vidéo : personnages, ambiance, message principal… Ex : vidéo éducative sur les trous noirs avec narrateur scientifique et animations spatiales épiques."
                 rows={3}
                 className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-secondary] focus:outline-none resize-none"
               />
@@ -611,7 +611,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                     onNext()
                   }
                 }}
-                placeholder="Paste or write your complete script here. AI will automatically split it into scenes. ⌘↵ to launch generation."
+                placeholder="Colle ou écris ton script complet ici. L'IA le découpera automatiquement en scènes. ⌘↵ pour lancer la génération."
                 maxLength={8000}
                 rows={6}
                 className="w-full bg-transparent px-4 pb-3 text-foreground font-body text-sm placeholder:text-[--text-secondary] focus:outline-none resize-none"
@@ -798,7 +798,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
   function deleteScene(id: string) {
     onScenesChange((prev) => prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, index: i })))
     if (editingId === id) setEditingId(null)
-    toast.success('Scene deleted')
+    toast.success('Scène supprimée')
   }
 
   function mergeWithNext(id: string) {
@@ -814,7 +814,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
     onScenesChange(
       [...scenes.slice(0, idx), merged, ...scenes.slice(idx + 2)].map((s, i) => ({ ...s, index: i }))
     )
-    toast.success('Scenes merged')
+    toast.success('Scènes fusionnées')
   }
 
   function handleDragStart(i: number) { setDragIndex(i) }
@@ -842,10 +842,10 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
       if (!res.ok) throw new Error('Prompt regen failed')
       const data = await res.json() as { imagePrompt: string; animationPrompt: string }
       updateScene(id, { imageStatus: 'idle', imagePrompt: data.imagePrompt, animationPrompt: data.animationPrompt })
-      toast.success('Prompts regenerated')
+      toast.success('Prompts régénérés')
     } catch {
       updateScene(id, { imageStatus: 'idle' })
-      toast.error('Prompt regeneration error')
+      toast.error('Impossible de régénérer les prompts — réessaie')
     }
   }
 
@@ -853,7 +853,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
     setGenerating(true)
     await Promise.all(scenes.map((s) => regenScene(s.id)))
     setGenerating(false)
-    toast.success('Storyboard regenerated')
+    toast.success('Scènes régénérées')
   }
 
   function addScene() {
@@ -867,7 +867,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
       clipStatus: 'idle',
     }
     onScenesChange((prev) => [...prev, newScene])
-    toast.success('New scene added')
+    toast.success('Scène ajoutée')
   }
 
   return (
@@ -875,7 +875,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
         <div>
-          <h2 className="font-display text-base font-bold text-foreground">Storyboard</h2>
+          <h2 className="font-display text-base font-bold text-foreground">Scènes de ta vidéo</h2>
           <p className="font-body text-xs text-[--text-muted]">{scenes.length} scènes générées — modifie le script et les prompts avant de générer les images</p>
         </div>
         <button type="button" onClick={regenAll} disabled={generating}
@@ -928,7 +928,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               {/* Merge with next */}
               {i < scenes.length - 1 && (
                 <button type="button" onClick={() => mergeWithNext(scene.id)}
-                  title="Merge with next scene"
+                  title="Fusionner avec la scène suivante"
                   className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[--text-muted] hover:text-amber-600 transition-all">
                   <Merge size={11} />
                 </button>
@@ -2274,7 +2274,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                       value={scene.animationPrompt}
                       onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
                       rows={3}
-                      placeholder="Prompt animation…"
+                      placeholder="Prompt d'animation…"
                       className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none"
                     />
                     <button
@@ -2469,7 +2469,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
       document.body.removeChild(a)
       URL.revokeObjectURL(blobUrl)
     } catch {
-      toast.error('Download error')
+      toast.error('Téléchargement impossible — réessaie')
     } finally {
       setDownloading(false)
     }
@@ -2772,7 +2772,7 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
       const masterSeed = Math.floor(Math.random() * 2147483647)
       patch({ scenes, step: 'storyboard', masterSeed })
     } catch {
-      toast.error('Storyboard generation error')
+      toast.error('Impossible de générer les scènes — réessaie')
       const scenes = splitScriptToScenes(project.script || project.description || 'Introduction. Development. Conclusion.')
       const masterSeed = Math.floor(Math.random() * 2147483647)
       patch({ scenes, step: 'storyboard', masterSeed })
@@ -2862,9 +2862,9 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
       console.error('[goToFinal] Pipeline start failed:', msg, err)
       // Si session expirée → message explicite pour que l'utilisateur se reconnecte
       if (msg.includes('Session expired') || msg.includes('reconnecter')) {
-        toast.error('Session expired - please reconnect and restart generation')
+        toast.error('Session expirée — reconnecte-toi puis relance la génération')
       } else {
-        toast.error(`Generation error: ${msg}`)
+        toast.error(`La génération a échoué : ${msg}`)
       }
     } finally {
       setLoading(false)
@@ -2968,7 +2968,7 @@ export function FacelessHub({ initialVideos, initialDraft }: {
   async function handleSessionDownload(session: VideoSession) {
     // IDs locaux (local-timestamp) = session pas encore en DB, pas de URL disponible
     if (!session.output_url && session.id.startsWith('local-')) {
-      toast.error('Video saving, try again in a few seconds')
+      toast.error('La vidéo est en cours de sauvegarde — réessaie dans quelques secondes')
       return
     }
     setDownloading(true)
@@ -2986,7 +2986,7 @@ export function FacelessHub({ initialVideos, initialDraft }: {
       document.body.removeChild(a)
       URL.revokeObjectURL(blobUrl)
     } catch {
-      toast.error('Download error')
+      toast.error('Téléchargement impossible — réessaie')
     } finally {
       setDownloading(false)
     }
