@@ -102,6 +102,7 @@ export function GeneralSection() {
         </label>
         <input
           id="workspace-name"
+          name="workspace_name"
           type="text"
           value={workspaceName}
           onChange={(e) => setWorkspaceName(e.target.value)}

@@ -78,8 +78,10 @@ export function LoginForm() {
       {/* Email/Password form */}
       <form onSubmit={handleEmailLogin} className="space-y-4">
         <div>
-          <label className="label-mono block mb-2">{t('email')}</label>
+          <label htmlFor="login-email" className="label-mono block mb-2">{t('email')}</label>
           <input
+            id="login-email"
+            name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -89,8 +91,10 @@ export function LoginForm() {
           />
         </div>
         <div>
-          <label className="label-mono block mb-2">{t('password')}</label>
+          <label htmlFor="login-password" className="label-mono block mb-2">{t('password')}</label>
           <input
+            id="login-password"
+            name="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

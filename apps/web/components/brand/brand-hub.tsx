@@ -84,6 +84,7 @@ function BrandKitForm({
       </h3>
 
       <input
+        id="brand-hub-name" name="brand_name"
         type="text" value={name} onChange={(e) => setName(e.target.value)}
         placeholder="Brand name (e.g.: CLYRO Official)"
         className="w-full glass rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none transition-all"
@@ -91,17 +92,17 @@ function BrandKitForm({
 
       <div className="flex gap-4">
         <div className="flex-1">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5">Primary color</p>
+          <label htmlFor="brand-hub-primary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5 block">Primary color</label>
           <div className="flex items-center gap-2">
-            <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)}
+            <input id="brand-hub-primary" name="primary_color" type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)}
               className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
             <span className="font-mono text-xs text-gray-500 dark:text-white/50">{primaryColor.toUpperCase()}</span>
           </div>
         </div>
         <div className="flex-1">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5">Secondary</p>
+          <label htmlFor="brand-hub-secondary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5 block">Secondary</label>
           <div className="flex items-center gap-2">
-            <input type="color" value={secondaryColor || '#ffffff'} onChange={(e) => setSecondaryColor(e.target.value)}
+            <input id="brand-hub-secondary" name="secondary_color" type="color" value={secondaryColor || '#ffffff'} onChange={(e) => setSecondaryColor(e.target.value)}
               className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
             {secondaryColor
               ? <button type="button" onClick={() => setSecondaryColor('')} className="text-xs text-gray-400 dark:text-white/30 hover:text-red-400"><X size={11} /></button>
@@ -112,6 +113,7 @@ function BrandKitForm({
       </div>
 
       <input
+        id="brand-hub-font" name="font_family"
         type="text" value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}
         placeholder="Font family (e.g.: Montserrat)"
         className="w-full glass rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none transition-all"

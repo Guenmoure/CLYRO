@@ -45,8 +45,10 @@ export function ProfileForm() {
   return (
     <form onSubmit={handleSave} className="space-y-5">
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Nom complet</label>
+        <label htmlFor="profile-name" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Nom complet</label>
         <input
+          id="profile-name"
+          name="full_name"
           type="text"
           value={displayName}
           onChange={(e) => setFullName(e.target.value)}
@@ -56,8 +58,10 @@ export function ProfileForm() {
       </div>
 
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Email</label>
+        <label htmlFor="profile-email" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Email</label>
         <input
+          id="profile-email"
+          name="email"
           type="email"
           value={email ?? ''}
           disabled

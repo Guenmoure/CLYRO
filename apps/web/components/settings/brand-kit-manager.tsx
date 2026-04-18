@@ -106,8 +106,10 @@ function BrandKitForm({
 
       {/* Name */}
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Name</label>
+        <label htmlFor="bkm-name" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Name</label>
         <input
+          id="bkm-name"
+          name="brand_name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -120,11 +122,13 @@ function BrandKitForm({
       {/* Colors */}
       <div className="flex gap-4 flex-wrap">
         <div className="flex-1 min-w-36">
-          <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
+          <label htmlFor="bkm-primary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
             Primary color
           </label>
           <div className="flex items-center gap-3">
             <input
+              id="bkm-primary"
+              name="primary_color"
               type="color"
               value={primaryColor}
               onChange={(e) => setPrimaryColor(e.target.value)}
@@ -134,11 +138,13 @@ function BrandKitForm({
           </div>
         </div>
         <div className="flex-1 min-w-36">
-          <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
+          <label htmlFor="bkm-secondary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
             Secondary color <span className="normal-case">(optional)</span>
           </label>
           <div className="flex items-center gap-3">
             <input
+              id="bkm-secondary"
+              name="secondary_color"
               type="color"
               value={secondaryColor || '#ffffff'}
               onChange={(e) => setSecondaryColor(e.target.value)}

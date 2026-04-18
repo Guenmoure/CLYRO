@@ -114,8 +114,10 @@ export function AccountSection() {
 
       {/* Name */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="First name">
+        <Field label="First name" htmlFor="account-first-name">
           <input
+            id="account-first-name"
+            name="first_name"
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
@@ -123,8 +125,10 @@ export function AccountSection() {
             placeholder="Your first name"
           />
         </Field>
-        <Field label="Last name">
+        <Field label="Last name" htmlFor="account-last-name">
           <input
+            id="account-last-name"
+            name="last_name"
             type="text"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
@@ -202,10 +206,10 @@ export function AccountSection() {
 
 // ── Field ─────────────────────────────────────────────────────────────────
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <p className="font-body text-sm font-semibold text-foreground">{label}</p>
+      <label htmlFor={htmlFor} className="font-body text-sm font-semibold text-foreground">{label}</label>
       {children}
     </div>
   )

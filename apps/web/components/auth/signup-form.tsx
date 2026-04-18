@@ -113,8 +113,10 @@ export function SignupForm() {
       {/* Signup form */}
       <form onSubmit={handleSignup} className="space-y-4">
         <div>
-          <label className="label-mono block mb-2">{t('fullName')}</label>
+          <label htmlFor="signup-name" className="label-mono block mb-2">{t('fullName')}</label>
           <input
+            id="signup-name"
+            name="full_name"
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -124,8 +126,10 @@ export function SignupForm() {
           />
         </div>
         <div>
-          <label className="label-mono block mb-2">{t('email')}</label>
+          <label htmlFor="signup-email" className="label-mono block mb-2">{t('email')}</label>
           <input
+            id="signup-email"
+            name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -135,8 +139,10 @@ export function SignupForm() {
           />
         </div>
         <div>
-          <label className="label-mono block mb-2">{t('password')}</label>
+          <label htmlFor="signup-password" className="label-mono block mb-2">{t('password')}</label>
           <input
+            id="signup-password"
+            name="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
