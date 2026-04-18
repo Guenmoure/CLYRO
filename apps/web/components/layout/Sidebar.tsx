@@ -23,6 +23,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/ui/Logo'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 import {
   Film, Video, Sparkles, Palette,
   FolderOpen, Package,
@@ -71,6 +72,7 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname()
   const router   = useRouter()
+  const { t }    = useLanguage()
 
   // User menu state
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -203,7 +205,7 @@ export function Sidebar({
       <div className="px-3 shrink-0">
         {(!collapsed || mobileOpen) && (
           <p className="px-2 mb-1.5 text-[10px] font-mono font-medium uppercase tracking-widest text-[--text-muted]">
-            Workspace
+            {t('sidebarWorkspace')}
           </p>
         )}
         <nav className="space-y-0.5">
@@ -301,7 +303,7 @@ export function Sidebar({
             {/* Menu items */}
             <div className="py-1.5">
               <UserMenuItem icon={Settings}     label="Settings"       href="/settings" onClose={() => setUserMenuOpen(false)} />
-              <UserMenuItem icon={CreditCard}   label="Billing"        href="/settings" onClose={() => setUserMenuOpen(false)} />
+              <UserMenuItem icon={CreditCard}   label="Billing"        href="/settings/billing" onClose={() => setUserMenuOpen(false)} />
               <UserMenuItem icon={Bell}         label="Updates"        href="/dashboard" onClose={() => setUserMenuOpen(false)} badge="2" />
               <UserMenuItem icon={HelpCircle}   label="Help & Support" href="/dashboard" onClose={() => setUserMenuOpen(false)} />
               <UserMenuItem icon={ExternalLink} label="Documentation"  href="https://docs.clyro.ai" onClose={() => setUserMenuOpen(false)} external />

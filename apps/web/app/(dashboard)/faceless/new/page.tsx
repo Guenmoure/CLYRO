@@ -486,7 +486,11 @@ function FacelessNewPageInner() {
       .eq('id', draftParam)
       .eq('status', 'draft')
       .single()
-      .then(({ data }: { data: any }) => {
+      .then(({ data, error }: { data: any; error: any }) => {
+        if (error) {
+          console.error('[faceless/new] Failed to restore draft:', error.message)
+          return
+        }
         if (!data) return
         if (data.title) setProjectName(data.title)
         if (typeof data.wizard_step === 'number') setCurrentStep(data.wizard_step - 1)
@@ -501,6 +505,8 @@ function FacelessNewPageInner() {
         if (typeof data.wizard_step === 'number' && data.wizard_step >= 4) {
           toast.success('Projet restauré — tes scènes sont intactes, aucun crédit supplémentaire consommé')
         }
+      }, (err: unknown) => {
+        console.error('[faceless/new] Unexpected error restoring draft:', err)
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftParam])
@@ -545,12 +551,20 @@ function FacelessNewPageInner() {
         .select('plan, credits_balance')
         .eq('id', session.user.id)
         .single()
-        .then(({ data }: { data: any }) => {
+        .then(({ data, error }: { data: any; error: any }) => {
+          if (error) {
+            console.error('[faceless/new] Failed to load profile:', error.message)
+            return
+          }
           if (data) {
             setUserPlan((data.plan as typeof userPlan) ?? 'free')
             setCreditsBalance(data.credits_balance ?? 0)
           }
+        }, (err: unknown) => {
+          console.error('[faceless/new] Unexpected error loading profile:', err)
         })
+    }, (err: unknown) => {
+      console.error('[faceless/new] Unexpected error getting session:', err)
     })
   }, [])
 

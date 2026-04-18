@@ -1,12 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 
+function safeRedirect(raw: string | null | undefined): string {
+  if (!raw) return '/dashboard'
+  // Only allow same-origin relative paths starting with a single "/"
+  if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard'
+  return raw
+}
+
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = safeRedirect(searchParams?.get('redirectTo'))
   const supabase = createBrowserClient()
   const { t } = useLanguage()
   const [email, setEmail] = useState('')
@@ -30,7 +39,7 @@ export function LoginForm() {
         return
       }
 
-      router.push('/dashboard')
+      router.push(redirectTo)
       router.refresh()
     } catch {
       setError('An error occurred. Please try again.')
@@ -43,10 +52,15 @@ export function LoginForm() {
     setLoading(true)
     setError(null)
 
+    const callback = new URL('/api/auth/callback', window.location.origin)
+    if (redirectTo && redirectTo !== '/dashboard') {
+      callback.searchParams.set('redirectTo', redirectTo)
+    }
+
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo: callback.toString(),
       },
     })
 

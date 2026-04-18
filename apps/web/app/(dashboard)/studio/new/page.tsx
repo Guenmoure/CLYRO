@@ -112,23 +112,31 @@ function StudioNewPageInner() {
   useEffect(() => {
     if (!initialDraftId || restored) return
     async function loadDraft() {
-      const supabase = createBrowserClient()
-      const { data } = await (supabase
-        .from('videos')
-        .select('wizard_state, title')
-        .eq('id', initialDraftId)
-        .single() as Promise<any>)
-      if (!data) return
-      setRestored(true)
-      const s = data.wizard_state as Record<string, any>
-      if (data.title)    setTitle(data.title)
-      if (s.mode)        setMode(s.mode)
-      if (s.script)      setScript(s.script)
-      if (s.youtubeUrl)  setYoutubeUrl(s.youtubeUrl)
-      if (s.language)    setLanguage(s.language)
-      toast.success(t('draftRestored'))
+      try {
+        const supabase = createBrowserClient()
+        const { data, error } = await (supabase
+          .from('videos')
+          .select('wizard_state, title')
+          .eq('id', initialDraftId)
+          .single() as Promise<any>)
+        if (error) {
+          console.error('[studio/new] Failed to load draft:', error.message)
+          return
+        }
+        if (!data) return
+        setRestored(true)
+        const s = data.wizard_state as Record<string, any>
+        if (data.title)    setTitle(data.title)
+        if (s.mode)        setMode(s.mode)
+        if (s.script)      setScript(s.script)
+        if (s.youtubeUrl)  setYoutubeUrl(s.youtubeUrl)
+        if (s.language)    setLanguage(s.language)
+        toast.success(t('draftRestored'))
+      } catch (err) {
+        console.error('[studio/new] Unexpected error loading draft:', err)
+      }
     }
-    loadDraft()
+    void loadDraft()
   }, [initialDraftId, restored])
 
   // ── Draft auto-save ─────────────────────────────────────────────────────────

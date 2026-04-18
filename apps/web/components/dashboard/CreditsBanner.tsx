@@ -34,7 +34,9 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
 
   const isEmpty = creditsLeft <= 0
   const isLow   = !isEmpty && creditsLeft < 50
-  const percentUsed = Math.min(100, Math.round((creditsUsed / creditsTotal) * 100))
+  const percentUsed = creditsTotal > 0
+    ? Math.min(100, Math.round((creditsUsed / creditsTotal) * 100))
+    : 0
 
   const isStarter = ['free', 'starter'].includes(plan.toLowerCase())
 
@@ -98,7 +100,7 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
         </Link>
       ) : (
         <Link
-          href="/settings"
+          href="/settings/billing"
           className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-[--text-secondary] hover:bg-muted/80 transition-colors"
         >
           <ShoppingCart size={11} /> Top-up

@@ -292,6 +292,16 @@ export const translations = {
     pageVoices: 'Voices',
     pageAvatars: 'Avatars',
 
+    // Dashboard
+    dashboardHi: 'Hi',
+    readyToCreate: 'Ready to create?',
+    myProjects: 'My projects',
+    welcomeToClyro: 'Welcome to CLYRO',
+    // Sidebar sections
+    sidebarWorkspace: 'Workspace',
+    sidebarLibrary: 'Library',
+    sidebarAccount: 'Account',
+
     // Notifications
   },
 
@@ -567,6 +577,16 @@ export const translations = {
     pageStudio: 'Studio',
     pageVoices: 'Voix',
     pageAvatars: 'Avatars',
+
+    // Dashboard
+    dashboardHi: 'Bonjour',
+    readyToCreate: 'Prêt·e à créer ?',
+    myProjects: 'Mes projets',
+    welcomeToClyro: 'Bienvenue sur CLYRO',
+    // Sidebar sections
+    sidebarWorkspace: 'Espace de travail',
+    sidebarLibrary: 'Bibliothèque',
+    sidebarAccount: 'Compte',
 
     // Notifications
   },

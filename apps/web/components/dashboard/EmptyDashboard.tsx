@@ -13,6 +13,7 @@
 import { Video, Zap } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 interface EmptyDashboardProps {
   firstName?: string
@@ -20,6 +21,7 @@ interface EmptyDashboardProps {
 
 export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
   const router = useRouter()
+  const { t } = useLanguage()
 
   function handleGenerate() {
     const textarea = document.querySelector<HTMLTextAreaElement>('[data-empty-script]')
@@ -44,7 +46,7 @@ export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
 
       {/* ── Heading ── */}
       <h3 className="font-display text-xl font-bold text-foreground">
-        {firstName ? `Welcome, ${firstName}!` : 'Create your first video'}
+        {firstName ? `${t('welcomeToClyro')}, ${firstName} 👋` : t('welcomeToClyro')}
       </h3>
       <p className="font-body text-sm text-[--text-secondary] max-w-sm mt-2 leading-relaxed">
         Paste a script, choose a style, and CLYRO generates your complete video in under 5 minutes.

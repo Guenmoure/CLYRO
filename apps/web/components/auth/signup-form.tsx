@@ -5,9 +5,16 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 
+function safeRedirect(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  if (!raw.startsWith('/') || raw.startsWith('//')) return null
+  return raw
+}
+
 export function SignupForm() {
   const router       = useRouter()
   const searchParams = useSearchParams()
+  const redirectTo   = safeRedirect(searchParams?.get('redirectTo'))
   const supabase     = createBrowserClient()
   const { t }        = useLanguage()
   const [fullName, setFullName] = useState('')
@@ -31,6 +38,12 @@ export function SignupForm() {
     }
   }, [searchParams])
 
+  function buildCallbackUrl(): string {
+    const callback = new URL('/api/auth/callback', window.location.origin)
+    if (redirectTo) callback.searchParams.set('redirectTo', redirectTo)
+    return callback.toString()
+  }
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -42,7 +55,7 @@ export function SignupForm() {
         password,
         options: {
           data: { full_name: fullName },
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          emailRedirectTo: buildCallbackUrl(),
         },
       })
 
@@ -66,7 +79,7 @@ export function SignupForm() {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo: buildCallbackUrl(),
       },
     })
 

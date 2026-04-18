@@ -13,6 +13,7 @@ import { QuickActions }       from '@/components/dashboard/QuickActions'
 import { CreditsBanner }      from '@/components/dashboard/CreditsBanner'
 import { EmptyDashboard }     from '@/components/dashboard/EmptyDashboard'
 import { ProjectsSection }    from '@/components/dashboard/ProjectsSection'
+import { DashboardGreeting }  from '@/components/dashboard/DashboardGreeting'
 import type { VideoProject }  from '@/components/dashboard/ProjectCard'
 
 export const dynamic = 'force-dynamic'
@@ -104,14 +105,7 @@ export default async function DashboardPage() {
 
       {/* ── 2. Greeting + New project button ────────────────── */}
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-xl font-semibold text-foreground">
-            Hi, {firstName} 👋
-          </h1>
-          <p className="font-body text-sm text-[--text-secondary] mt-0.5">
-            Ready to create?
-          </p>
-        </div>
+        <DashboardGreeting firstName={firstName} />
         <NewProjectDropdown />
       </div>
 

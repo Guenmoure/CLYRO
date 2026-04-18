@@ -60,19 +60,34 @@ export default function DraftsPage() {
     void load()
   }, [])
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     const supabase = createBrowserClient()
-    supabase.from('videos').delete().eq('id', id).then(() => {
+    try {
+      const { error } = await supabase.from('videos').delete().eq('id', id)
+      if (error) {
+        console.error('[drafts] Failed to delete draft:', error.message)
+        return
+      }
       setDrafts(prev => prev.filter(d => d.id !== id))
-    })
+    } catch (err) {
+      console.error('[drafts] Unexpected error deleting draft:', err)
+    }
   }
 
   async function handleDeleteAll() {
     const ids = filtered.map(d => d.id)
     if (ids.length === 0) return
     const supabase = createBrowserClient()
-    await supabase.from('videos').delete().in('id', ids)
-    setDrafts(prev => prev.filter(d => !ids.includes(d.id)))
+    try {
+      const { error } = await supabase.from('videos').delete().in('id', ids)
+      if (error) {
+        console.error('[drafts] Failed to bulk-delete drafts:', error.message)
+        return
+      }
+      setDrafts(prev => prev.filter(d => !ids.includes(d.id)))
+    } catch (err) {
+      console.error('[drafts] Unexpected error bulk-deleting drafts:', err)
+    }
   }
 
   const filtered = filter === 'all' ? drafts : drafts.filter(d => d.module === filter)

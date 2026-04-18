@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { ProjectCard } from './ProjectCard'
 import type { VideoProject } from './ProjectCard'
 
@@ -30,6 +31,7 @@ interface ProjectsSectionProps {
 
 export function ProjectsSection({ videos, draftCount }: ProjectsSectionProps) {
   const router = useRouter()
+  const { t } = useLanguage()
   const [filter, setFilter] = useState<'all' | 'draft'>('all')
 
   const filtered = filter === 'draft'
@@ -44,7 +46,7 @@ export function ProjectsSection({ videos, draftCount }: ProjectsSectionProps) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h2 className="font-display text-base font-semibold text-foreground">
-            My Projects
+            {t('myProjects')}
           </h2>
 
           {/* Filter tabs */}
