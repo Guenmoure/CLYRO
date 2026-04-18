@@ -108,7 +108,11 @@ services:
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    dockerCommand: node dist/workers/renderWorker.js
+    # IMPORTANT : le WORKDIR du conteneur est /app et le Dockerfile copie
+    # les fichiers à /app/apps/api/dist (voir apps/api/Dockerfile:97 et
+    # le CMD par défaut ligne 113 : "node apps/api/dist/index.js").
+    # Sans le préfixe "apps/api/", le worker crashe avec MODULE_NOT_FOUND.
+    dockerCommand: node apps/api/dist/workers/renderWorker.js
     plan: standard         # 2 GB RAM / 1 CPU — pour FFmpeg + Remotion
     region: frankfurt
     autoDeploy: true
