@@ -304,25 +304,34 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       const workDir = pathJoin(tmpdir(), kenBurnsTmpDir)
       await mkdirFn(workDir, { recursive: true })
 
-      const kbResults = await Promise.allSettled(
-        sceneImages.map(async ({ sceneId, imageUrl }, idx) => {
-          const durationSec = Number(sceneAudioDurations.get(sceneId) ?? 5)
-          const mp4Buffer = await renderKenBurnsClip({
-            imageUrl,
-            durationSeconds: durationSec,
-            sceneIndex: idx,
-            format: videoFormat as '16:9' | '9:16' | '1:1',
+      // Throttle to 3 concurrent Chrome instances — running all at once causes
+      // OOM / SIGSEGV (exit 139) in containerised environments (Render.com).
+      const KB_CONCURRENCY = 3
+      const kbResults: PromiseSettledResult<{ sceneId: string; videoUrl: string }>[] = []
+      for (let i = 0; i < sceneImages.length; i += KB_CONCURRENCY) {
+        const batch = sceneImages.slice(i, i + KB_CONCURRENCY)
+        const batchResults = await Promise.allSettled(
+          batch.map(async ({ sceneId, imageUrl }, batchIdx) => {
+            const idx = i + batchIdx
+            const durationSec = Number(sceneAudioDurations.get(sceneId) ?? 5)
+            const mp4Buffer = await renderKenBurnsClip({
+              imageUrl,
+              durationSeconds: durationSec,
+              sceneIndex: idx,
+              format: videoFormat as '16:9' | '9:16' | '1:1',
+            })
+            // Write to temp file and expose as file:// URL for assembleVideoFromVideoClips
+            const tmpPath = pathJoin(workDir, `kb_${sceneId}.mp4`)
+            await writeFileFn(tmpPath, mp4Buffer)
+            completedClips++
+            const clipProgress = 60 + Math.round((completedClips / totalClips) * 18)
+            await updateStatus('visuals', clipProgress)
+            logger.info({ sceneId, durationSec, idx }, 'KenBurns: clip rendered')
+            return { sceneId, videoUrl: `file://${tmpPath}` }
           })
-          // Write to temp file and expose as file:// URL for assembleVideoFromVideoClips
-          const tmpPath = pathJoin(workDir, `kb_${sceneId}.mp4`)
-          await writeFileFn(tmpPath, mp4Buffer)
-          completedClips++
-          const clipProgress = 60 + Math.round((completedClips / totalClips) * 18)
-          await updateStatus('visuals', clipProgress)
-          logger.info({ sceneId, durationSec, idx }, 'KenBurns: clip rendered')
-          return { sceneId, videoUrl: `file://${tmpPath}` }
-        })
-      )
+        )
+        kbResults.push(...batchResults)
+      }
 
       sceneVideoUrls = kbResults
         .filter((r): r is PromiseFulfilledResult<{ sceneId: string; videoUrl: string }> => r.status === 'fulfilled')

@@ -3,8 +3,14 @@ import { supabaseAdmin } from '../lib/supabase'
 
 const BASE_URL = 'https://api.elevenlabs.io/v1'
 
-const EL_MAX_RETRIES = 3
+const EL_MAX_RETRIES = 5
 
+/** Rate-limit-aware retry. Detects 429 + `Retry-After` and respects ElevenLabs'
+ *  cooldown instead of hammering the API with short backoffs.
+ *
+ *  Backoff schedule on generic errors : 2s, 5s, 10s, 20s.
+ *  Sur 429/503 avec Retry-After : on utilise la valeur renvoyée (capped 60s).
+ */
 async function withRetry<T>(fn: () => Promise<T>, label: string): Promise<T> {
   let lastError: unknown
   for (let attempt = 1; attempt <= EL_MAX_RETRIES; attempt++) {
@@ -12,11 +18,23 @@ async function withRetry<T>(fn: () => Promise<T>, label: string): Promise<T> {
       return await fn()
     } catch (err) {
       lastError = err
-      if (attempt < EL_MAX_RETRIES) {
-        const delay = 500 * Math.pow(2, attempt - 1) // 500ms, 1s, 2s
-        logger.warn({ attempt, label, delay, error: err instanceof Error ? err.message : String(err) }, 'ElevenLabs: retrying')
-        await new Promise((r) => setTimeout(r, delay))
-      }
+      if (attempt >= EL_MAX_RETRIES) break
+
+      // Extract Retry-After seconds from the thrown RateLimitError (see below)
+      const retryAfterSec = (err as { retryAfterSec?: number })?.retryAfterSec
+      const baseDelay = [2_000, 5_000, 10_000, 20_000][attempt - 1] ?? 20_000
+      const delay = retryAfterSec
+        ? Math.min(retryAfterSec * 1_000, 60_000)
+        : baseDelay
+
+      logger.warn({
+        attempt,
+        label,
+        delayMs: delay,
+        retryAfterSec,
+        error: err instanceof Error ? err.message : String(err),
+      }, 'ElevenLabs: retrying')
+      await new Promise((r) => setTimeout(r, delay))
     }
   }
   throw lastError
@@ -27,13 +45,39 @@ const DEFAULT_MODEL = 'eleven_turbo_v2_5'
 
 // Hard timeout per TTS request. Without this, a stalled ElevenLabs response
 // blocks the pipeline at progress=30% indefinitely (Node fetch has no default timeout).
-// 90s gives enough headroom for ElevenLabs under load without hanging forever.
-const EL_TTS_TIMEOUT_MS = 90_000
+// 120s laisse de la marge pendant que ElevenLabs ralentit sous charge.
+const EL_TTS_TIMEOUT_MS = 120_000
 
 // Max concurrent TTS requests. ElevenLabs rate-limits heavy concurrency:
 // firing 60 scenes at once on a 15-min video causes most to fail silently,
-// producing only ~30s of audio. Batching keeps us under the rate limit.
-const EL_TTS_CONCURRENCY = 5
+// producing only ~30s of audio. Batching conservateur (2) pour garantir que
+// TOUTES les scènes aboutissent, même sur des vidéos de 20+ min.
+const EL_TTS_CONCURRENCY = 2
+
+// Si plus de 5% des scènes ratent leur TTS après tous les retries, on fait
+// échouer le pipeline au lieu de livrer une vidéo muette sur 90% de sa durée.
+const EL_TTS_MAX_FAILURE_RATIO = 0.05
+
+/** Erreur typée transportant Retry-After pour que `withRetry` respecte le
+ *  cooldown serveur plutôt que de retry aveuglément. */
+class RateLimitError extends Error {
+  retryAfterSec?: number
+  status: number
+  constructor(status: number, message: string, retryAfterSec?: number) {
+    super(message)
+    this.name = 'RateLimitError'
+    this.status = status
+    this.retryAfterSec = retryAfterSec
+  }
+}
+
+function parseRetryAfter(res: Response): number | undefined {
+  const h = res.headers.get('retry-after')
+  if (!h) return undefined
+  // Retry-After can be "120" (seconds) or an HTTP-date — we only handle seconds
+  const n = Number(h)
+  return Number.isFinite(n) && n > 0 ? n : undefined
+}
 
 function getApiKey(): string {
   const key = process.env.ELEVENLABS_API_KEY
@@ -355,6 +399,15 @@ export async function generateVoiceover(
     })
 
     if (!res.ok) {
+      // 429/503 → RateLimitError so withRetry honours the server's Retry-After
+      // and waits the actual cooldown instead of hammering with 2s/5s/10s/20s.
+      if (res.status === 429 || res.status === 503) {
+        throw new RateLimitError(
+          res.status,
+          `TTS rate-limited (${res.status})`,
+          parseRetryAfter(res),
+        )
+      }
       const err = await res.json().catch(() => ({})) as { detail?: { message?: string } }
       throw new Error(`TTS failed ${res.status}: ${err.detail?.message ?? res.statusText}`)
     }
@@ -386,8 +439,33 @@ export async function generateVoiceoverScenes(
   }
 
   const failCount = allResults.filter((r) => r.status === 'rejected').length
+  const failureRatio = allResults.length > 0 ? failCount / allResults.length : 0
+
   if (failCount > 0) {
-    logger.warn({ sceneCount: scenes.length, failCount, voiceId }, 'ElevenLabs: some scenes failed after retries')
+    const failedScenes: Array<{ sceneId: string; reason: string }> = []
+    allResults.forEach((r, i) => {
+      if (r.status === 'rejected') {
+        failedScenes.push({
+          sceneId: filtered[i]?.id ?? `index-${i}`,
+          reason: r.reason instanceof Error ? r.reason.message : String(r.reason),
+        })
+      }
+    })
+
+    logger.warn(
+      { sceneCount: scenes.length, failCount, failureRatio, voiceId, failedScenes },
+      'ElevenLabs: some scenes failed after retries',
+    )
+
+    // Fail loud if too many scenes dropped — otherwise we'd stitch ~30s of audio
+    // on a 20-min video by silently filtering out all the rate-limited scenes.
+    if (failureRatio > EL_TTS_MAX_FAILURE_RATIO) {
+      const ids = failedScenes.map((s) => s.sceneId).join(', ')
+      throw new Error(
+        `ElevenLabs TTS failed on ${failCount}/${allResults.length} scenes ` +
+          `(${(failureRatio * 100).toFixed(0)}%). Failed scene IDs: ${ids}`,
+      )
+    }
   }
 
   return allResults
@@ -435,6 +513,13 @@ export async function generateVoiceoverWithTimestamps(
     })
 
     if (!res.ok) {
+      if (res.status === 429 || res.status === 503) {
+        throw new RateLimitError(
+          res.status,
+          `TTS with timestamps rate-limited (${res.status})`,
+          parseRetryAfter(res),
+        )
+      }
       const err = await res.json().catch(() => ({})) as { detail?: { message?: string } }
       throw new Error(`TTS with timestamps failed ${res.status}: ${err.detail?.message ?? res.statusText}`)
     }
@@ -535,8 +620,31 @@ export async function generateVoiceoverScenesWithTimestamps(
   }
 
   const failCount = allResults.filter((r) => r.status === 'rejected').length
+  const failureRatio = allResults.length > 0 ? failCount / allResults.length : 0
+
   if (failCount > 0) {
-    logger.warn({ sceneCount: scenes.length, failCount, voiceId }, 'ElevenLabs: some scenes with timestamps failed after retries')
+    const failedScenes: Array<{ sceneId: string; reason: string }> = []
+    allResults.forEach((r, i) => {
+      if (r.status === 'rejected') {
+        failedScenes.push({
+          sceneId: filtered[i]?.id ?? `index-${i}`,
+          reason: r.reason instanceof Error ? r.reason.message : String(r.reason),
+        })
+      }
+    })
+
+    logger.warn(
+      { sceneCount: scenes.length, failCount, failureRatio, voiceId, failedScenes },
+      'ElevenLabs: some scenes with timestamps failed after retries',
+    )
+
+    if (failureRatio > EL_TTS_MAX_FAILURE_RATIO) {
+      const ids = failedScenes.map((s) => s.sceneId).join(', ')
+      throw new Error(
+        `ElevenLabs TTS (timestamps) failed on ${failCount}/${allResults.length} scenes ` +
+          `(${(failureRatio * 100).toFixed(0)}%). Failed scene IDs: ${ids}`,
+      )
+    }
   }
 
   return allResults

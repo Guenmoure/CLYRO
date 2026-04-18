@@ -45,33 +45,39 @@ const FORMAT_MAP: Record<string, { compositionId: string; width: number; height:
   '1:1':  { compositionId: 'DynamicMotion-1-1',  width: 1080, height: 1080 },
 }
 
-// Cache the webpack bundle path across requests (built once per process)
-let cachedBundlePath: string | null = null
+// Singleton promise — only one webpack build runs regardless of concurrent callers
+let bundlePromise: Promise<string> | null = null
 
 async function getBundle(): Promise<string> {
-  if (cachedBundlePath) return cachedBundlePath
+  if (!bundlePromise) {
+    bundlePromise = (async () => {
+      // Dynamic import to avoid loading webpack at startup
+      const { bundle } = await import('@remotion/bundler')
 
-  // Dynamic import to avoid loading webpack at startup
-  const { bundle } = await import('@remotion/bundler')
+      // The Root.tsx entry point — detect dev (ts-node) vs prod (compiled JS) from __dirname
+      // During dev:  __dirname = src/services/  → use .tsx
+      // After build: __dirname = dist/services/ → use .js
+      const isDev = __dirname.includes(`${path.sep}src${path.sep}`)
+      const entryPoint = path.resolve(__dirname, `../remotion/Root${isDev ? '.tsx' : '.js'}`)
 
-  // The Root.tsx entry point — detect dev (ts-node) vs prod (compiled JS) from __dirname
-  // During dev:  __dirname = src/services/  → use .tsx
-  // After build: __dirname = dist/services/ → use .js
-  const isDev = __dirname.includes(`${path.sep}src${path.sep}`)
-  const entryPoint = path.resolve(__dirname, `../remotion/Root${isDev ? '.tsx' : '.js'}`)
+      logger.info({ entryPoint }, 'Remotion: building bundle (first render)...')
 
-  logger.info({ entryPoint }, 'Remotion: building bundle (first render)...')
+      const bundlePath = await bundle({
+        entryPoint,
+        onProgress: (progress) => {
+          if (progress % 25 === 0) logger.info({ progress }, 'Remotion bundle progress')
+        },
+      })
 
-  const bundlePath = await bundle({
-    entryPoint,
-    onProgress: (progress) => {
-      if (progress % 25 === 0) logger.info({ progress }, 'Remotion bundle progress')
-    },
-  })
-
-  cachedBundlePath = bundlePath
-  logger.info({ bundlePath }, 'Remotion: bundle ready')
-  return bundlePath
+      logger.info({ bundlePath }, 'Remotion: bundle ready')
+      return bundlePath
+    })().catch((err) => {
+      // Reset on failure so the next call retries
+      bundlePromise = null
+      throw err
+    })
+  }
+  return bundlePromise
 }
 
 // ── Ken Burns movement presets — varied per scene index ────────────────────────
@@ -131,10 +137,16 @@ export async function renderKenBurnsClip(options: RenderKenBurnsOptions): Promis
   const bundlePath = await getBundle()
   const inputProps: KenBurnsClipProps = { ...preset, imageUrl: imageDataUrl }
 
+  // gl: 'swiftshader' — required in containers (Render.com / Docker):
+  // avoids GPU dependencies and the /dev/shm shared-memory exhaustion that
+  // causes SIGSEGV (exit 139) when many Chrome instances run concurrently.
+  const chromiumOptions = { gl: 'swiftshader' as const }
+
   const composition = await selectComposition({
     serveUrl: bundlePath,
     id: 'KenBurnsClip',
     inputProps: inputProps as unknown as Record<string, unknown>,
+    chromiumOptions,
   })
 
   const outputPath = path.join(tmpdir(), `clyro-kb-${randomUUID()}.mp4`)
@@ -146,7 +158,8 @@ export async function renderKenBurnsClip(options: RenderKenBurnsOptions): Promis
       codec: 'h264',
       outputLocation: outputPath,
       inputProps: inputProps as unknown as Record<string, unknown>,
-      concurrency: 2,
+      concurrency: 1,
+      chromiumOptions,
     })
 
     const mp4 = await readFile(outputPath)
@@ -222,6 +235,7 @@ export async function renderMotionVideo(options: RenderMotionVideoOptions): Prom
     logger.info({ sceneCount: scenesWithLocalImages.length }, 'Remotion: scene images converted to data URLs')
 
     const bundlePath = await getBundle()
+    const chromiumOptions = { gl: 'swiftshader' as const }
 
     const inputProps: BrandOverlayProps = {
       scenes: scenesWithLocalImages,
@@ -235,6 +249,7 @@ export async function renderMotionVideo(options: RenderMotionVideoOptions): Prom
       serveUrl: bundlePath,
       id: compositionId,
       inputProps: inputProps as unknown as Record<string, unknown>,
+      chromiumOptions,
     })
 
     const outputPath = path.join(tmpdir(), `remotion-output-${randomUUID()}.mp4`)
@@ -248,6 +263,7 @@ export async function renderMotionVideo(options: RenderMotionVideoOptions): Prom
       codec: 'h264',
       outputLocation: outputPath,
       inputProps: inputProps as unknown as Record<string, unknown>,
+      chromiumOptions,
       onProgress: ({ progress }) => {
         if (Math.round(progress * 100) % 20 === 0) {
           logger.info({ progress: Math.round(progress * 100) }, 'Remotion render progress')
@@ -274,6 +290,7 @@ export async function renderMotionVideo(options: RenderMotionVideoOptions): Prom
         output: thumbPath,
         frame: thumbFrame,
         inputProps: inputProps as unknown as Record<string, unknown>,
+        chromiumOptions,
       })
       thumbnail = await readFile(thumbPath)
       logger.info({ thumbSize: thumbnail.length, frame: thumbFrame }, 'Remotion: thumbnail captured')
