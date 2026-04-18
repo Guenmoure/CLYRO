@@ -50,7 +50,7 @@ const createFacelessSchema = z.object({
   input_type:   z.enum(['script', 'audio']),
   format:       z.enum(VIDEO_FORMATS).default('16:9'),
   duration:     z.enum(VIDEO_DURATIONS).default('30s'),
-  script:       z.string().min(1).max(100000).optional(),
+  script:       z.string().max(100000).optional(),
   audio_url:    z.string().url().optional(),
   voice_id:       z.string().optional(),
   brand_kit_id:   z.string().uuid().optional(),

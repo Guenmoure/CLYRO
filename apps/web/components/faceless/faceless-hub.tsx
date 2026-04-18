@@ -2948,7 +2948,7 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
         input_type: project.inputType,
         format: project.format,
         duration: project.duration,
-        script: project.script || project.description || project.scenes.map((s) => s.scriptText).join(' '),
+        script: (project.script || project.description || project.scenes.map((s) => s.scriptText).join(' ')).trim() || undefined,
         voice_id: project.voiceId || undefined,
         pre_generated_scenes: sanitizedPreGenerated,
         dialogue_mode: dialogue.hasDialogue,
