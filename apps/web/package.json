@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
     "@clyro/shared": "*",
     "@clyro/video": "*",
     "@fal-ai/client": "^1.2.3",
@@ -29,18 +30,18 @@
     "@sparticuz/chromium": "^147.0.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.45.4",
+    "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",
     "next": "^14.2.35",
     "next-themes": "^0.4.6",
+    "postcss": "^8.4.49",
     "puppeteer-core": "^24.40.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "remotion": "4.0.448",
     "tailwind-merge": "^2.5.4",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "tailwindcss-animate": "^1.0.7",
     "zod": "4.3.6"
