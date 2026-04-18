@@ -61,8 +61,10 @@ export interface StoryboardPromptParams {
 
 export function buildStoryboardPrompts(p: StoryboardPromptParams): { system: string; user: string } {
   const isAuto = p.duration === 'auto'
-  const auto = isAuto ? computeAutoSceneCount(p.script) : null
-  const sceneCount = isAuto ? (auto?.sceneCount ?? 6) : (SCENE_COUNT[p.duration] || 6)
+  // Scene count always derives from the script's word count — duration only
+  // controls timing/condensation rules, not how many scenes are created.
+  const auto = computeAutoSceneCount(p.script)
+  const sceneCount = auto.sceneCount
   const styleGuide = STYLE_VISUAL_GUIDE[p.style] ?? 'professional visual composition'
   const scriptLines = p.script.split('\n')
   const hasDialogue = scriptLines.some((l) => /^—|^–/.test(l.trim()) || /^[A-ZÀ-Ü][a-zà-ü]+\s*:/.test(l.trim()) || /["«].*["»]/.test(l.trim()))
@@ -74,11 +76,11 @@ export function buildStoryboardPrompts(p: StoryboardPromptParams): { system: str
   // knows roughly how many scenes to produce for a script of this length.
   const durationInstruction = isAuto
     ? `4. La durée totale doit refléter FIDÈLEMENT la longueur réelle du script (~150 mots/minute à voix haute). Ne condense PAS, ne raccourcis PAS — chaque phrase du script est narrée en entier.
-5. La somme des duree_estimee doit être cohérente avec la longueur du script (~${auto?.estimatedSeconds ?? 30}s estimé). Ajuste naturellement scène par scène.`
-    : `4. La somme des duree_estimee doit correspondre à la durée cible ${p.duration}
-5. Si le script est plus long que la durée cible, condense et synthétise les idées clés — ne dépasse jamais ${p.duration}`
+5. La somme des duree_estimee doit être cohérente avec la longueur du script (~${auto.estimatedSeconds}s estimé). Ajuste naturellement scène par scène.`
+    : `4. La durée totale doit refléter FIDÈLEMENT la longueur réelle du script (~150 mots/minute à voix haute). Ne condense PAS — chaque phrase est narrée en entier.
+5. La somme des duree_estimee doit être cohérente avec la longueur du script (~${auto.estimatedSeconds}s estimé). Ajuste naturellement scène par scène.`
 
-  const user = `Découpe ce script en ${isAuto ? `environ ${sceneCount}` : `exactement ${sceneCount}`} scènes visuelles pour une vidéo de style "${p.style}".${p.title ? `\nTitre : "${p.title}"` : ''}
+  const user = `Découpe ce script en environ ${sceneCount} scènes visuelles pour une vidéo de style "${p.style}".${p.title ? `\nTitre : "${p.title}"` : ''}
 ${p.description ? `\nCONTEXTE VISUEL (personnages, décor, ambiance) :\n${p.description}\n→ Intègre ces éléments dans description_visuelle lorsque pertinent (couleur de peau, style vestimentaire, décor).` : ''}
 
 STYLE VISUEL OBLIGATOIRE pour description_visuelle : ${styleGuide}
