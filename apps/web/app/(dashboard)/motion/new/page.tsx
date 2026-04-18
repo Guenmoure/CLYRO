@@ -454,6 +454,12 @@ function MotionNewPageInner() {
   }
 
   async function handleGenerate() {
+    if (brief.trim().length < 20) {
+      toast.error('Le brief doit contenir au moins 20 caractères')
+      setCurrentStep(0)
+      return
+    }
+
     setGenerating(true)
     setGenStage(0)
     setGenProgress(0)

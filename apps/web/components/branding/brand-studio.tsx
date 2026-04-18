@@ -38,6 +38,26 @@ import type {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Safely converts an AI-generated value to a displayable string.
+ * Claude sometimes returns nested objects instead of flat strings (e.g.
+ * layout.spacing = { base_unit, scale, principle } instead of "8px").
+ * Rendering objects directly causes React error #31.
+ */
+function str(value: unknown): string {
+  if (value === null || value === undefined) return '—'
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (typeof value === 'object') {
+    const v = value as Record<string, unknown>
+    // Common Claude over-structuring patterns → flatten to readable string
+    if (v.base_unit) return `base: ${v.base_unit}${v.scale ? `, scale: ${v.scale}` : ''}${v.principle ? ` (${v.principle})` : ''}`
+    if (v.font) return [v.font, v.weight, v.sizes].filter(Boolean).join(' · ')
+    return Object.values(v).filter(x => typeof x === 'string').join(' · ') || JSON.stringify(v)
+  }
+  return String(value)
+}
+
 class ApiError extends Error {
   constructor(
     message: string,
@@ -2065,7 +2085,9 @@ export function BrandStudio() {
 
             <CharteSection title="Typography">
               <div className="space-y-3">
-                {Object.entries(charte.typography).map(([level, t]) => (
+                {Object.entries(charte.typography).map(([level, t]) => {
+                  const tv = t as Record<string, unknown>
+                  return (
                   <div
                     key={level}
                     className="flex items-start gap-4 py-2 border-b border-border last:border-0"
@@ -2075,17 +2097,17 @@ export function BrandStudio() {
                     </span>
                     <div className="flex-1">
                       <p className="font-display font-semibold text-sm text-foreground">
-                        {t.font}
+                        {str(tv.font)}
                       </p>
                       <p className="font-mono text-xs text-[--text-muted]">
-                        {t.weight} · {t.sizes}
+                        {str(tv.weight)} · {str(tv.sizes)}
                       </p>
                       <p className="text-xs text-[--text-muted] mt-0.5">
-                        {t.usage}
+                        {str(tv.usage)}
                       </p>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             </CharteSection>
 
@@ -2139,26 +2161,26 @@ export function BrandStudio() {
                     <span className="font-semibold text-foreground">
                       Grille :
                     </span>{" "}
-                    {charte.layout.grid}
+                    {str(charte.layout.grid)}
                   </p>
                   <p>
                     <span className="font-semibold text-foreground">
                       Espacement :
                     </span>{" "}
-                    {charte.layout.spacing}
+                    {str(charte.layout.spacing)}
                   </p>
                   <p>
                     <span className="font-semibold text-foreground">
                       Marges :
                     </span>{" "}
-                    {charte.layout.margins}
+                    {str(charte.layout.margins)}
                   </p>
                 </div>
               </CharteSection>
               <CharteSection title="Photography direction">
                 <div className="space-y-2 text-sm text-[--text-muted]">
-                  <p>{charte.photography.style}</p>
-                  <p className="italic">{charte.photography.mood}</p>
+                  <p>{str(charte.photography.style)}</p>
+                  <p className="italic">{str(charte.photography.mood)}</p>
                   <div className="flex gap-2 flex-wrap mt-1">
                     {charte.photography.forbidden.map((f, i) => (
                       <span
