@@ -1198,7 +1198,9 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       const seed = masterSeed ? masterSeed + scene.index : undefined
 
       // Inject style reference + extracted tokens into prompt for scenes 1..N
-      let finalPrompt = scene.imagePrompt
+      // Fallback: derive a prompt from scriptText if imagePrompt is missing
+      let finalPrompt = scene.imagePrompt?.trim()
+        || `Cinematic scene: ${scene.scriptText.slice(0, 120)}, dramatic lighting, high quality photorealistic`
       if (scene.index > 0) {
         if (styleTokens?.style_prompt_suffix) {
           // Use extracted style tokens from Claude Vision analysis of scene 0

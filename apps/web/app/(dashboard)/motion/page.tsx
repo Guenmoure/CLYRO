@@ -145,7 +145,9 @@ function MotionVideoCard({ video }: { video: MotionVideo }) {
 
   return (
     <Link
-      href={`/motion/${video.id}`}
+      href={video.output_url ?? `/motion/hub?draft=${video.id}`}
+      target={video.output_url ? '_blank' : undefined}
+      rel={video.output_url ? 'noopener noreferrer' : undefined}
       className="card-interactive rounded-2xl border border-border bg-card overflow-hidden block"
     >
       <div className="aspect-video relative bg-gradient-to-br from-purple-500/20 via-violet-500/10 to-fuchsia-500/20 flex items-center justify-center">

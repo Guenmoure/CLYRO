@@ -152,7 +152,9 @@ function FacelessVideoCard({ video }: { video: FacelessVideo }) {
 
   return (
     <Link
-      href={`/faceless/${video.id}`}
+      href={video.output_url ?? `/faceless/hub?draft=${video.id}`}
+      target={video.output_url ? '_blank' : undefined}
+      rel={video.output_url ? 'noopener noreferrer' : undefined}
       className="card-interactive rounded-2xl border border-border bg-card overflow-hidden block"
     >
       <div className="aspect-video relative bg-gradient-to-br from-blue-500/20 via-indigo-500/10 to-cyan-500/20 flex items-center justify-center">
