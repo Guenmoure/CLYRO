@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json() as {
     prompt: string; style: string; seed?: number; styleReferenceUrl?: string
   }
-  const { prompt, style, seed, styleReferenceUrl } = body
+  const { prompt, style, seed } = body
 
   if (!prompt || !style) {
     return NextResponse.json({ error: 'prompt and style are required' }, { status: 400 })
@@ -54,13 +54,9 @@ export async function POST(request: NextRequest) {
 
     if (seed !== undefined) input.seed = seed
 
-    let endpoint = 'fal-ai/flux/schnell'
-
-    if (styleReferenceUrl) {
-      input.image_url = styleReferenceUrl
-      input.strength = 0.72
-      endpoint = 'fal-ai/flux/schnell/image-to-image'
-    }
+    // flux/schnell has no image-to-image variant — always use text-to-image for
+    // the draft preview. Style reference is only applied in the HD pass (stream-image).
+    const endpoint = 'fal-ai/flux/schnell'
 
     console.log(`[preview-image] Calling https://fal.run/${endpoint}, key=${falKey.slice(0, 6)}...${falKey.slice(-4)}`)
 
