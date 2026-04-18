@@ -224,7 +224,7 @@ function SceneCard({
           🎙 Voix off
         </label>
         <textarea
-          value={scene.texte_voix}
+          value={scene.texte_voix ?? ''}
           onChange={(e) => onChange({ texte_voix: e.target.value })}
           rows={2}
           className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors resize-none"
@@ -254,7 +254,7 @@ function SceneCard({
               <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Texte principal</label>
               <input
                 type="text"
-                value={scene.text}
+                value={scene.text ?? ''}
                 onChange={(e) => onChange({ text: e.target.value })}
                 className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
@@ -264,7 +264,7 @@ function SceneCard({
               <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Sous-titre</label>
               <input
                 type="text"
-                value={scene.subtext}
+                value={scene.subtext ?? ''}
                 onChange={(e) => onChange({ subtext: e.target.value })}
                 className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
@@ -292,7 +292,7 @@ function SceneCard({
               </label>
               <input
                 type="text"
-                value={scene.highlight}
+                value={scene.highlight ?? ''}
                 onChange={(e) => onChange({ highlight: e.target.value })}
                 className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
@@ -302,7 +302,7 @@ function SceneCard({
               <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Icône</label>
               <input
                 type="text"
-                value={scene.icon}
+                value={scene.icon ?? ''}
                 onChange={(e) => onChange({ icon: e.target.value })}
                 className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
@@ -311,7 +311,7 @@ function SceneCard({
             <div>
               <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Style</label>
               <select
-                value={scene.style}
+                value={scene.style ?? 'feature'}
                 onChange={(e) => onChange({ style: e.target.value as MotionScene['style'] })}
                 className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               >
@@ -358,7 +358,7 @@ function SceneCard({
                 type="number"
                 min={2}
                 max={12}
-                value={scene.duree_estimee}
+                value={scene.duree_estimee ?? 5}
                 onChange={(e) => onChange({ duree_estimee: parseInt(e.target.value) || 5 })}
                 className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
               />
