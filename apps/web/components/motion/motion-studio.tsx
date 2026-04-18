@@ -91,7 +91,14 @@ interface VideoSession {
 
 function ScenePreview({ scene }: { scene: MotionScene }) {
   const accent = scene.accent_color || '#00CFFF'
-  const parts = scene.text.split(new RegExp(`(${scene.highlight})`, 'i'))
+  // Defensive: legacy clones / pipeline-shape scenes may have text/highlight
+  // undefined. Falling back to '' keeps split() from throwing — the card
+  // simply renders empty until the user fills the fields in.
+  const text = scene.text ?? ''
+  const highlight = scene.highlight ?? ''
+  const parts = highlight
+    ? text.split(new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'i'))
+    : [text]
 
   return (
     <div
@@ -591,7 +598,26 @@ interface InitialDraft {
 
 function hydrateFromDraft(w: InitialDraft['wizard_state']): Partial<MotionStudioDraftState> {
   if (!w || typeof w !== 'object') return {}
-  const scenes = Array.isArray(w.scenes) ? (w.scenes as MotionScene[]) : []
+  const rawScenes = Array.isArray(w.scenes) ? (w.scenes as unknown as Array<Record<string, unknown>>) : []
+  // Auto-heal scenes that were persisted in the backend pipeline shape
+  // (display_text / description_visuelle / image_url, without the legacy
+  // UI fields). ScenePreview + SceneCard crash on undefined `text`, so we
+  // backfill defaults here — harmless when the fields already exist.
+  const scenes: MotionScene[] = rawScenes.map((s, i) => ({
+    ...s,
+    index:         (s.index         as number | undefined) ?? i,
+    texte_voix:    (s.texte_voix    as string | undefined) ?? '',
+    duree_estimee: (s.duree_estimee as number | undefined) ?? 5,
+    text:          (s.text          as string | undefined)
+                   ?? (s.display_text as string | undefined)
+                   ?? (s.texte_voix   as string | undefined)
+                   ?? '',
+    subtext:       (s.subtext       as string | undefined) ?? '',
+    highlight:     (s.highlight     as string | undefined) ?? '',
+    icon:          (s.icon          as string | undefined) ?? '',
+    style:         (s.style         as MotionScene['style'] | undefined) ?? 'feature',
+    accent_color:  (s.accent_color  as string | undefined) ?? '#00CFFF',
+  })) as unknown as MotionScene[]
   // Clamp phase: never resume in 'generating' (requires a live videoId that we
   // don't persist). Fall back to 'board' when scenes exist, else 'input'.
   const rawPhase = w.phase as Phase | undefined

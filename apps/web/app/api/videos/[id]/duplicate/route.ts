@@ -108,8 +108,30 @@ export async function POST(
         wizardState = { ...studioState }
       } else {
         // Rehydrate from backend metadata (finished video) into studio shape.
+        // Finished pipeline scenes use the NEW shape (display_text / description_visuelle /
+        // image_url / scene_type) and usually lack the LEGACY UI fields that
+        // ScenePreview + SceneCard depend on (text / highlight / subtext / icon /
+        // style / accent_color). Backfill sensible defaults so the motion-studio
+        // board can render without crashing on `scene.text.split(...)`.
         const metaScenes = Array.isArray(meta.scenes) ? (meta.scenes as Array<Record<string, unknown>>) : []
         const brandCfg   = (meta.brand_config ?? {}) as Record<string, unknown>
+        const accent = (brandCfg.primary_color as string | undefined) ?? '#00CFFF'
+        const hydratedScenes = metaScenes.map((s, i) => ({
+          ...s,
+          index:         (s.index         as number | undefined) ?? i,
+          texte_voix:    (s.texte_voix    as string | undefined) ?? '',
+          duree_estimee: (s.duree_estimee as number | undefined) ?? 5,
+          // Legacy UI fields (required by motion-studio.tsx)
+          text:          (s.text          as string | undefined)
+                         ?? (s.display_text as string | undefined)
+                         ?? (s.texte_voix   as string | undefined)
+                         ?? '',
+          subtext:       (s.subtext       as string | undefined) ?? '',
+          highlight:     (s.highlight     as string | undefined) ?? '',
+          icon:          (s.icon          as string | undefined) ?? '',
+          style:         (s.style         as string | undefined) ?? 'feature',
+          accent_color:  (s.accent_color  as string | undefined) ?? accent,
+        }))
         wizardState = {
           v:        1,
           brief:    (meta.brief    as string | undefined) ?? '',
@@ -121,7 +143,7 @@ export async function POST(
           // Land on the storyboard editor (phase='board') so the user sees
           // their scenes immediately and can edit / re-launch.
           phase:    metaScenes.length > 0 ? 'board' : 'input',
-          scenes:   metaScenes,
+          scenes:   hydratedScenes,
           // Carry brand colors forward in case future studio versions read them.
           accentColor: (brandCfg.primary_color as string | undefined) ?? undefined,
         }
