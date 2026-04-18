@@ -78,13 +78,18 @@ services:
       - key: PIPELINE_TIMEOUT_MS
         sync: false        # watchdog du pipeline — défaut 1800000 (30 min)
 
-      # — Fallback inline (DEV uniquement) —
+      # — Fallback inline —
       # Si 'true' et aucun worker disponible, les pipelines s'exécutent dans
-      # le process API (ancien comportement — bloque l'event loop).
-      # EN PROD : laisser 'false' pour fail-fast 503 si le worker est down,
-      # plutôt que de crasher le /health.
+      # le process API (ancien comportement — peut faire timeout /health sur
+      # les gros assemblages, mais l'app reste fonctionnelle).
+      #
+      # ⚠️  TEMPORAIRE : laissé à 'true' tant que Redis + clyro-worker ne
+      # sont pas configurés en prod (voir RENDER_WORKER_SETUP.md).
+      # Une fois le worker opérationnel : flipper à 'false' pour fail-fast
+      # 503 si le worker tombe (au lieu de retomber sur l'inline et risquer
+      # un timeout /health).
       - key: ALLOW_INLINE_FALLBACK
-        value: 'false'
+        value: 'true'
 
       # — URLs (remplir après déploiement Vercel) —
       - key: FRONTEND_URL
