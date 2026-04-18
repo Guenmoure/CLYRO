@@ -25,6 +25,7 @@ import { monerooWebhookRouter } from './routes/webhooks/moneroo'
 import { heygenWebhookRouter } from './routes/webhooks/heygen'
 import { hmacMiddleware } from './middleware/hmac'
 import { internalRouter } from './routes/internal'
+import { supabaseAdmin } from './lib/supabase'
 
 // ── Sentry — Error monitoring (init before anything else) ─────────────────
 if (process.env.SENTRY_DSN) {
@@ -193,9 +194,48 @@ app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found', code: 'NOT_FOUND' })
 })
 
+// ── Stale pipeline cleanup ─────────────────────────────────────────────────
+// The per-pipeline watchdog (setTimeout in faceless.ts) is in-memory only.
+// If the server restarts mid-pipeline (deploy, crash) the timeout is lost and
+// videos stay stuck in non-terminal states forever.
+// This cleanup runs at startup AND every 5 minutes to catch orphaned jobs.
+const STALE_AFTER_MS = 45 * 60 * 1000   // 45 min — generous margin above the 30 min watchdog
+const STUCK_STATUSES = ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly']
+
+async function cleanupStalePipelines() {
+  const cutoff = new Date(Date.now() - STALE_AFTER_MS).toISOString()
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('videos')
+      .update({
+        status: 'error',
+        metadata: {
+          error_message: 'Pipeline timed out — server was restarted or the job hung. Please retry.',
+          error_at: new Date().toISOString(),
+          stale_cleanup: true,
+        },
+      })
+      .in('status', STUCK_STATUSES)
+      .lt('updated_at', cutoff)
+      .select('id, status, updated_at')
+
+    if (error) {
+      logger.warn({ error }, '[cleanup] Failed to clean up stale pipelines')
+    } else if (data && data.length > 0) {
+      logger.info({ count: data.length, ids: data.map((v) => v.id) }, '[cleanup] Marked stale videos as error')
+    }
+  } catch (err) {
+    logger.warn({ err }, '[cleanup] Exception during stale pipeline cleanup')
+  }
+}
+
 // ── Start server ───────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   logger.info({ port: PORT, env: process.env.NODE_ENV }, 'CLYRO API server started')
+  // Immediately clean up any jobs that were in-flight when the server last stopped
+  await cleanupStalePipelines()
+  // Keep cleaning up every 5 minutes to catch pipelines whose watchdog was lost
+  setInterval(cleanupStalePipelines, 5 * 60 * 1000)
 })
 
 export default app
