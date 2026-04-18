@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import { startMotionGeneration, getPublicVoices } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
+import { useDraftSave } from '@/hooks/use-draft-save'
 import { toast } from '@/components/ui/toast'
 import { VideoPlayer } from '@/components/ui/video-player'
 import type { VideoFormat, VideoDuration, MotionScene } from '@clyro/shared'
@@ -259,6 +260,22 @@ function SceneCard({
                 value={scene.subtext}
                 onChange={(e) => onChange({ subtext: e.target.value })}
                 className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+              />
+            </div>
+            {/* Visual description (image prompt used by /motion/scene image-regen endpoint) */}
+            <div className="col-span-2">
+              <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">
+                🖼 Description visuelle
+                <span className="ml-1.5 text-[10px] font-mono text-[--text-muted] opacity-60">
+                  (prompt pour la génération d&apos;image)
+                </span>
+              </label>
+              <textarea
+                value={scene.description_visuelle ?? ''}
+                onChange={(e) => onChange({ description_visuelle: e.target.value })}
+                rows={2}
+                placeholder="Décris le visuel souhaité pour cette scène…"
+                className="w-full text-sm font-body text-foreground bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors resize-none"
               />
             </div>
             {/* Highlight */}
@@ -552,36 +569,84 @@ function GeneratingView({
 
 type Phase = 'input' | 'board' | 'generating'
 
+/** Draft payload persisted in videos.wizard_state (JSONB). Kept flat and
+ *  small so round-trips are cheap. Logo files are NOT persisted (File
+ *  objects can't be serialized) — the user re-uploads after a reload. */
+export interface MotionStudioDraftState {
+  brief?:    string
+  script?:   string
+  voiceId?:  string
+  format?:   VideoFormat
+  duration?: VideoDuration
+  scenes?:   MotionScene[]
+  phase?:    Phase
+  /** Version marker so future shape changes can be detected. */
+  v?: 1
+}
+
+interface InitialDraft {
+  id: string
+  wizard_state: Partial<MotionStudioDraftState> | null
+}
+
+function hydrateFromDraft(w: InitialDraft['wizard_state']): Partial<MotionStudioDraftState> {
+  if (!w || typeof w !== 'object') return {}
+  const scenes = Array.isArray(w.scenes) ? (w.scenes as MotionScene[]) : []
+  // Clamp phase: never resume in 'generating' (requires a live videoId that we
+  // don't persist). Fall back to 'board' when scenes exist, else 'input'.
+  const rawPhase = w.phase as Phase | undefined
+  const phase: Phase =
+    rawPhase === 'board' || rawPhase === 'input'
+      ? rawPhase
+      : scenes.length > 0
+        ? 'board'
+        : 'input'
+  return {
+    brief:    typeof w.brief    === 'string' ? w.brief    : '',
+    script:   typeof w.script   === 'string' ? w.script   : '',
+    voiceId:  typeof w.voiceId  === 'string' ? w.voiceId  : '',
+    format:   (w.format   as VideoFormat)   ?? '9:16',
+    duration: (w.duration as VideoDuration) ?? '30s',
+    scenes,
+    phase,
+  }
+}
+
 export function MotionStudio({
   initialVideos,
+  initialDraft,
   onVideoCreated,
 }: {
   initialVideos: VideoSession[]
+  initialDraft?: InitialDraft | null
   onVideoCreated?: (id: string, title: string) => void
 }) {
   const router = useRouter()
+
+  // Hydrate draft state once so the initial render already shows restored values
+  const hydrated = initialDraft ? hydrateFromDraft(initialDraft.wizard_state) : {}
 
   // ── Sidebar state
   const [sessions, setSessions] = useState<VideoSession[]>(initialVideos)
   const [activeSession, setActiveSession] = useState<VideoSession | null>(null)
 
   // ── Phase
-  const [phase, setPhase] = useState<Phase>('input')
+  const [phase, setPhase] = useState<Phase>(hydrated.phase ?? 'input')
 
   // ── Input fields
-  const [brief, setBrief]   = useState('')
-  const [script, setScript] = useState('')
-  const [voiceId, setVoiceId] = useState('')
-  const [format, setFormat] = useState<VideoFormat>('9:16')
-  const [duration, setDuration] = useState<VideoDuration>('30s')
+  const [brief, setBrief]   = useState(hydrated.brief ?? '')
+  const [script, setScript] = useState(hydrated.script ?? '')
+  const [voiceId, setVoiceId] = useState(hydrated.voiceId ?? '')
+  const [format, setFormat] = useState<VideoFormat>(hydrated.format ?? '9:16')
+  const [duration, setDuration] = useState<VideoDuration>(hydrated.duration ?? '30s')
 
-  // ── Logo
+  // ── Logo (not persisted — user re-uploads after reload)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
   // ── Storyboard
-  const [scenes, setScenes] = useState<MotionScene[]>([])
+  const [scenes, setScenes] = useState<MotionScene[]>(hydrated.scenes ?? [])
   const [genLoading, setGenLoading] = useState(false)
   const [genError, setGenError] = useState<string | null>(null)
 
@@ -589,6 +654,38 @@ export function MotionStudio({
   const [videoId, setVideoId] = useState<string | null>(null)
   const [videoTitle, setVideoTitle] = useState('')
   const [launching, setLaunching] = useState(false)
+
+  // ── Draft persistence (creates a draft row on first edit, debounced save, sendBeacon on unload)
+  // We expose an explicit step per phase so /projects can show a sensible resume CTA.
+  const draftStep = phase === 'input' ? 0 : phase === 'board' ? 1 : 2
+  const { draftId, wasRestored, clearDraft } = useDraftSave({
+    module:         'motion',
+    title:          scenes[0]?.text || brief.slice(0, 60) || 'Motion Design',
+    style:          'dynamique',
+    currentStep:    draftStep,
+    totalSteps:     3,
+    stepLabel:      phase === 'input' ? 'Brief' : phase === 'board' ? 'Storyboard' : 'Generation',
+    initialDraftId: initialDraft?.id ?? null,
+    state:          {
+      v:        1,
+      brief,
+      script,
+      voiceId,
+      format,
+      duration,
+      scenes,
+      phase,
+    } satisfies MotionStudioDraftState,
+  })
+
+  // Notify user once on mount if we restored a draft
+  const didNotifyRestore = useRef(false)
+  useEffect(() => {
+    if (wasRestored && !didNotifyRestore.current) {
+      didNotifyRestore.current = true
+      toast.info('Brouillon restauré')
+    }
+  }, [wasRestored])
 
   // ── Logo upload ────────────────────────────────────────────────────────────
 
@@ -707,6 +804,10 @@ export function MotionStudio({
         { id: res.video_id, title, status: 'processing', created_at: new Date().toISOString() },
         ...prev,
       ])
+      // Launch succeeded: the draft row has served its purpose — delete it so
+      // we don't leave orphan 'draft' rows alongside the new 'processing' row.
+      // Failure keeps the draft so the user can retry without losing work.
+      void clearDraft()
       onVideoCreated?.(res.video_id, title)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Launch error')

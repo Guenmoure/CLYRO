@@ -32,10 +32,12 @@ const LAST_STEP_BY_MODULE: Record<string, number> = {
 
 type Target = 'hub' | 'new'
 
-// Faceless: route the copy into the hub's scene editor. Motion/Brand don't
-// have a scene editor yet, so they land on the review step of /new.
+// Faceless and Motion both have hub-based scene editors now (MotionStudio has
+// draft persistence via useDraftSave — see apps/web/components/motion/motion-studio.tsx).
+// Brand still lands on the review step of /new until its own hub editor exists.
 function targetForModule(module: string): Target {
-  return module === 'faceless' ? 'hub' : 'new'
+  if (module === 'faceless' || module === 'motion') return 'hub'
+  return 'new'
 }
 
 export async function POST(
@@ -90,52 +92,88 @@ export async function POST(
   let wizardStep: number
 
   if (target === 'hub') {
-    // Hub-shape state. Faceless Hub's FacelessPipeline hydrates from this.
-    if (isHubState) {
-      // Source already uses hub-shape — clone verbatim, but reset transient
-      // statuses so the Regenerate buttons aren't stuck in 'generating'.
-      const src = existingState as Record<string, unknown>
-      const srcScenes = Array.isArray(src.scenes) ? (src.scenes as Array<Record<string, unknown>>) : []
-      wizardState = {
-        ...src,
-        scenes: srcScenes.map((s) => ({
-          ...s,
-          imageStatus: s.imageUrl ? 'done' : 'idle',
-          clipStatus:  s.clipUrl  ? 'done' : 'idle',
-        })),
+    if (module === 'motion') {
+      // ─── Motion Studio (motion-studio.tsx) — wizard_state shape v:1 ────
+      // Studio scenes are MotionScene as-is (same as backend metadata.scenes),
+      // so hydration is mostly a verbatim copy with sensible fallbacks.
+      // Motion studio marker is `v: 1` (not the faceless `hub: true` sentinel).
+      const studioState =
+        hasUsableState && (existingState as { v?: number }).v === 1
+          ? (existingState as Record<string, unknown>)
+          : null
+
+      if (studioState) {
+        // Source already uses studio shape — clone verbatim. No transient
+        // image/clip statuses to reset (motion-studio doesn't track them yet).
+        wizardState = { ...studioState }
+      } else {
+        // Rehydrate from backend metadata (finished video) into studio shape.
+        const metaScenes = Array.isArray(meta.scenes) ? (meta.scenes as Array<Record<string, unknown>>) : []
+        const brandCfg   = (meta.brand_config ?? {}) as Record<string, unknown>
+        wizardState = {
+          v:        1,
+          brief:    (meta.brief    as string | undefined) ?? '',
+          script:   (meta.script   as string | undefined)
+                    ?? metaScenes.map((s) => (s.texte_voix as string | undefined) ?? '').filter(Boolean).join('\n\n'),
+          voiceId:  (meta.voice_id as string | undefined) ?? '',
+          format:   (meta.format   as string | undefined) ?? '9:16',
+          duration: (meta.duration as string | undefined) ?? '30s',
+          // Land on the storyboard editor (phase='board') so the user sees
+          // their scenes immediately and can edit / re-launch.
+          phase:    metaScenes.length > 0 ? 'board' : 'input',
+          scenes:   metaScenes,
+          // Carry brand colors forward in case future studio versions read them.
+          accentColor: (brandCfg.primary_color as string | undefined) ?? undefined,
+        }
       }
     } else {
-      // Rehydrate hub-shape state from backend metadata (finished video).
-      const metaScenes = (meta.scenes as Array<Record<string, unknown>> | undefined) ?? []
-      const scenes = metaScenes.map((s, i) => ({
-        id:              (s.scene_id as string | undefined) ?? `scene-${i}-${Date.now()}`,
-        index:           (s.index as number | undefined) ?? i,
-        scriptText:      (s.texte_voix         as string | undefined) ?? '',
-        imagePrompt:     (s.description_visuelle as string | undefined) ?? '',
-        animationPrompt: (s.animation_prompt   as string | undefined) ?? '',
-        imageUrl:        (s.image_url          as string | undefined) ?? undefined,
-        imageStatus:     s.image_url ? 'done' : 'idle',
-        clipUrl:         (s.clip_url           as string | undefined) ?? undefined,
-        clipStatus:      s.clip_url  ? 'done' : 'idle',
-        duree_estimee:   (s.duree_estimee      as number | undefined) ?? undefined,
-      }))
-      wizardState = {
-        hub:         true,
-        title:       source.title ?? '',
-        style:       source.style ?? 'cinematique',
-        voiceId:     (meta.voice_id as string | undefined) ?? '',
-        format:      (meta.format    as string | undefined) ?? '9:16',
-        duration:    (meta.duration  as string | undefined) ?? '60s',
-        description: (meta.description as string | undefined) ?? '',
-        script:      (meta.script_draft as string | undefined)
-                     ?? scenes.map((s) => s.scriptText).filter(Boolean).join('\n\n'),
-        inputType:   'script',
-        scenes,
-        // Land on the scenes/images editor by default — that's where the user
-        // picks an element to regenerate. If the source has clips already,
-        // open the clips editor instead so they see the animation previews.
-        step:        scenes.some((s) => s.clipUrl) ? 'clips' : 'images',
-        animationMode: (meta.animation_mode as string | undefined) ?? 'fast',
+      // ─── Faceless Hub (faceless-hub.tsx) — original hub-shape state ────
+      if (isHubState) {
+        // Source already uses hub-shape — clone verbatim, but reset transient
+        // statuses so the Regenerate buttons aren't stuck in 'generating'.
+        const src = existingState as Record<string, unknown>
+        const srcScenes = Array.isArray(src.scenes) ? (src.scenes as Array<Record<string, unknown>>) : []
+        wizardState = {
+          ...src,
+          scenes: srcScenes.map((s) => ({
+            ...s,
+            imageStatus: s.imageUrl ? 'done' : 'idle',
+            clipStatus:  s.clipUrl  ? 'done' : 'idle',
+          })),
+        }
+      } else {
+        // Rehydrate hub-shape state from backend metadata (finished video).
+        const metaScenes = (meta.scenes as Array<Record<string, unknown>> | undefined) ?? []
+        const scenes = metaScenes.map((s, i) => ({
+          id:              (s.scene_id as string | undefined) ?? `scene-${i}-${Date.now()}`,
+          index:           (s.index as number | undefined) ?? i,
+          scriptText:      (s.texte_voix         as string | undefined) ?? '',
+          imagePrompt:     (s.description_visuelle as string | undefined) ?? '',
+          animationPrompt: (s.animation_prompt   as string | undefined) ?? '',
+          imageUrl:        (s.image_url          as string | undefined) ?? undefined,
+          imageStatus:     s.image_url ? 'done' : 'idle',
+          clipUrl:         (s.clip_url           as string | undefined) ?? undefined,
+          clipStatus:      s.clip_url  ? 'done' : 'idle',
+          duree_estimee:   (s.duree_estimee      as number | undefined) ?? undefined,
+        }))
+        wizardState = {
+          hub:         true,
+          title:       source.title ?? '',
+          style:       source.style ?? 'cinematique',
+          voiceId:     (meta.voice_id as string | undefined) ?? '',
+          format:      (meta.format    as string | undefined) ?? '9:16',
+          duration:    (meta.duration  as string | undefined) ?? '60s',
+          description: (meta.description as string | undefined) ?? '',
+          script:      (meta.script_draft as string | undefined)
+                       ?? scenes.map((s) => s.scriptText).filter(Boolean).join('\n\n'),
+          inputType:   'script',
+          scenes,
+          // Land on the scenes/images editor by default — that's where the user
+          // picks an element to regenerate. If the source has clips already,
+          // open the clips editor instead so they see the animation previews.
+          step:        scenes.some((s) => s.clipUrl) ? 'clips' : 'images',
+          animationMode: (meta.animation_mode as string | undefined) ?? 'fast',
+        }
       }
     }
     // Hub ignores wizard_step; we still set a sensible value for /new users.
