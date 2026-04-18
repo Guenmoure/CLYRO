@@ -583,7 +583,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
   const selectedVoice = voices.find((v) => v.id === project.voiceId)
 
   const canNext = !!project.style && (
-    project.inputType === 'script' ? project.script.trim().length >= 20 : !!project.audioFile
+    project.inputType === 'script' ? (project.script ?? '').trim().length >= 20 : !!project.audioFile
   )
 
   return (
@@ -668,16 +668,17 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               <>
                 <div className="px-4 pb-3 flex items-center justify-between gap-2">
                   {(() => {
-                    const words = project.script.trim() ? project.script.trim().split(/\s+/).length : 0
+                    const s = project.script ?? ''
+                    const words = s.trim() ? s.trim().split(/\s+/).length : 0
                     const estSec = Math.round(words / 2.5) // ~150 wpm voiceover
                     return (
-                      <span className={cn('font-mono text-[11px]', project.script.length < 20 ? 'text-amber-500' : 'text-[--text-muted]')}>
+                      <span className={cn('font-mono text-[11px]', s.length < 20 ? 'text-amber-500' : 'text-[--text-muted]')}>
                         {words} mots · ~{estSec}s estimé
-                        {project.script.length < 20 && ` · encore ${20 - project.script.length} car.`}
+                        {s.length < 20 && ` · encore ${20 - s.length} car.`}
                       </span>
                     )
                   })()}
-                  {project.script.trim().length === 0 && (
+                  {!(project.script ?? '').trim() && (
                     <div className="flex items-center gap-1">
                       {EXAMPLE_SCRIPTS.map((ex) => (
                         <button
