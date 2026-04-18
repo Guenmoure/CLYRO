@@ -52,10 +52,14 @@ const FORMAT_OPTIONS: { value: VideoFormat; label: string; desc: string }[] = [
 ]
 
 const DURATION_OPTIONS: { value: VideoDuration; label: string }[] = [
-  { value: '6s',  label: '6 sec' },
-  { value: '15s', label: '15 sec' },
-  { value: '30s', label: '30 sec' },
-  { value: '60s', label: '1 min' },
+  { value: 'auto', label: 'Auto (script)' },
+  { value: '6s',   label: '6 sec'  },
+  { value: '15s',  label: '15 sec' },
+  { value: '30s',  label: '30 sec' },
+  { value: '60s',  label: '1 min'  },
+  { value: '120s', label: '2 min'  },
+  { value: '180s', label: '3 min'  },
+  { value: '300s', label: '5 min'  },
 ]
 
 const CONTEXTUAL_HELP = [
@@ -366,7 +370,7 @@ function MotionNewPageInner() {
   const [brief,          setBrief]          = useState('')
   const [style,          setStyle]          = useState<MotionStyle>('corporate')
   const [format,         setFormat]         = useState<VideoFormat>('16:9')
-  const [duration,       setDuration]       = useState<VideoDuration>('30s')
+  const [duration,       setDuration]       = useState<VideoDuration>('auto')
   const [primaryColor,   setPrimaryColor]   = useState('#3B8EF0')
   const [secondaryColor, setSecondaryColor] = useState('#9B5CF6')
   const [fontFamily,     setFontFamily]     = useState('Inter')

@@ -25,6 +25,9 @@ export interface MotionPipelineParams {
   userEmail: string
   title: string
   brief: string
+  /** Optional voiceover script. When provided + duration='auto', the scene
+   *  count is derived from the word count to preserve the full script. */
+  script?: string
   style: string
   format: string
   duration: string
@@ -34,7 +37,7 @@ export interface MotionPipelineParams {
 }
 
 export async function runMotionPipeline(params: MotionPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, brief, style, voiceId, musicTrackUrl } = params
+  const { videoId, userId, userEmail, title, brief, script, style, voiceId, musicTrackUrl } = params
 
   const updateStatus = async (status: string, progress: number, extra?: object) => {
     await supabaseAdmin
@@ -47,7 +50,10 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
   try {
     // ÉTAPE 1 : Storyboard (Claude AI) — génère animation_type, display_text, needs_background, cta_text
     await updateStatus('storyboard', 10)
-    const storyboard = await generateMotionStoryboard(brief, style, params.format, params.duration)
+    // Pass both brief and script so 'auto' duration mode can size the
+    // storyboard from the script's true word count instead of a fixed target.
+    const scriptForClaude = script && script.trim().length > 0 ? script : brief
+    const storyboard = await generateMotionStoryboard(brief, style, params.format, params.duration, scriptForClaude)
     await updateStatus('storyboard', 20, { scenes: storyboard.scenes })
     logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Motion storyboard generated')
 

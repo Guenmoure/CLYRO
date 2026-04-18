@@ -208,6 +208,10 @@ export interface MotionScene {
 export interface CreateMotionVideoPayload {
   title: string
   brief: string
+  /** Voiceover script. When provided + duration='auto', the scene count is
+   *  derived from the word count so the full script is narrated, never
+   *  condensed. Falls back to brief if omitted. */
+  script?: string
   format: VideoFormat
   duration: VideoDuration
   style: MotionStyle

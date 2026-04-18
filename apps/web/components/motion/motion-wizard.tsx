@@ -51,10 +51,14 @@ const FORMATS: Array<{ id: VideoFormat; label: string; desc: string }> = [
 ]
 
 const DURATIONS: Array<{ id: VideoDuration; label: string }> = [
-  { id: '6s',  label: '6s'  },
-  { id: '15s', label: '15s' },
-  { id: '30s', label: '30s' },
-  { id: '60s', label: '60s' },
+  { id: 'auto', label: 'Auto (script)' },
+  { id: '6s',   label: '6s'   },
+  { id: '15s',  label: '15s'  },
+  { id: '30s',  label: '30s'  },
+  { id: '60s',  label: '60s'  },
+  { id: '120s', label: '2 min' },
+  { id: '180s', label: '3 min' },
+  { id: '300s', label: '5 min' },
 ]
 
 const PIPELINE_STEPS = [
@@ -607,7 +611,7 @@ export function MotionWizard() {
     brief:     '',
     brand:     { primary_color: '#3B8EF0' },
     format:    '16:9',
-    duration:  '30s',
+    duration:  'auto',
     style:     null,
     voiceId:   '',
     voiceName: 'Pas de voix off',
@@ -642,7 +646,7 @@ export function MotionWizard() {
   function reset() {
     setStep(1)
     setVideoId(null)
-    setState({ title: '', brief: '', brand: { primary_color: '#3B8EF0' }, format: '16:9', duration: '30s', style: null, voiceId: '', voiceName: 'Pas de voix off' })
+    setState({ title: '', brief: '', brand: { primary_color: '#3B8EF0' }, format: '16:9', duration: 'auto', style: null, voiceId: '', voiceName: 'Pas de voix off' })
   }
 
   return (

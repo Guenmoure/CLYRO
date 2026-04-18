@@ -114,7 +114,7 @@ function extractJson(raw: string): string {
 
 generateRouter.post('/generate/storyboard', authMiddleware, async (req, res) => {
   try {
-    const { script, style, duration = '30s', title, description } = req.body as {
+    const { script, style, duration = 'auto', title, description } = req.body as {
       script: string; style: string; duration?: string; title?: string; description?: string
     }
 

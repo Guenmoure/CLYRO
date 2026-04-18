@@ -62,9 +62,13 @@ const FORMAT_OPTIONS: { value: VideoFormat; label: string; desc: string }[] = [
 ]
 
 const DURATION_OPTIONS: { value: VideoDuration; label: string }[] = [
-  { value: '15s', label: '15 sec' },
-  { value: '30s', label: '30 sec' },
-  { value: '60s', label: '1 min' },
+  { value: 'auto', label: 'Auto (script)' },
+  { value: '15s',  label: '15 sec' },
+  { value: '30s',  label: '30 sec' },
+  { value: '60s',  label: '1 min'  },
+  { value: '120s', label: '2 min'  },
+  { value: '180s', label: '3 min'  },
+  { value: '300s', label: '5 min'  },
 ]
 
 const CONTEXTUAL_HELP: string[] = [
@@ -469,7 +473,7 @@ function FacelessNewPageInner() {
   const [selectedVoice,  setSelectedVoice]  = useState<ClyroVoice | undefined>()
   const [animationMode,  setAnimationMode]  = useState<AnimationMode>('storyboard')
   const [format,         setFormat]         = useState<VideoFormat>('9:16')
-  const [duration,       setDuration]       = useState<VideoDuration>('30s')
+  const [duration,       setDuration]       = useState<VideoDuration>('auto')
   const [dialogueMode,   setDialogueMode]   = useState(false)
 
   // Restore draft from DB on mount when ?draft=<id> is present

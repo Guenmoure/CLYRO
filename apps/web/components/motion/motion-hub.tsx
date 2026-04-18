@@ -90,10 +90,14 @@ const FORMATS: Array<{ id: VideoFormat; label: string; desc: string; aspect: str
 ]
 
 const DURATIONS: Array<{ id: VideoDuration; label: string }> = [
-  { id: '6s',  label: '6s'  },
-  { id: '15s', label: '15s' },
-  { id: '30s', label: '30s' },
-  { id: '60s', label: '60s' },
+  { id: 'auto', label: 'Auto (script)' },
+  { id: '6s',   label: '6s'   },
+  { id: '15s',  label: '15s'  },
+  { id: '30s',  label: '30s'  },
+  { id: '60s',  label: '60s'  },
+  { id: '120s', label: '2 min' },
+  { id: '180s', label: '3 min' },
+  { id: '300s', label: '5 min' },
 ]
 
 const MUSIC_TRACKS: Array<{ id: string; label: string; mood: string }> = [
@@ -371,7 +375,7 @@ function DoneView({ session, onNew }: { session: VideoSession; onNew: () => void
 function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string) => void }) {
   const [style,    setStyle]    = useState<MotionStyle | null>(null)
   const [format,   setFormat]   = useState<VideoFormat>('16:9')
-  const [duration, setDuration] = useState<VideoDuration>('30s')
+  const [duration, setDuration] = useState<VideoDuration>('auto')
   const [voiceId,  setVoiceId]  = useState('')
   const [title,    setTitle]    = useState('')
   const [brief,    setBrief]    = useState('')

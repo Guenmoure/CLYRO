@@ -14,11 +14,14 @@ export const pipelineMotionRouter = Router()
 
 const MOTION_STYLES  = ['corporate', 'dynamique', 'luxe', 'fun'] as const
 const VIDEO_FORMATS  = ['9:16', '1:1', '16:9'] as const
-const VIDEO_DURATIONS = ['6s', '15s', '30s', '60s'] as const
+const VIDEO_DURATIONS = ['6s', '15s', '30s', '60s', '90s', '120s', '180s', '300s', 'auto'] as const
 
 const createMotionSchema = z.object({
   title:    z.string().min(1).max(200),
   brief:    z.string().min(20).max(2000),
+  // Optional voiceover script — when provided + duration='auto', the backend
+  // scales the scene count to preserve the full script.
+  script:   z.string().max(20_000).optional(),
   format:   z.enum(VIDEO_FORMATS),
   duration: z.enum(VIDEO_DURATIONS),
   style:    z.enum(MOTION_STYLES),
@@ -44,7 +47,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
     return
   }
 
-  const { title, brief, format, duration, style, brand_config, voice_id, music_track_id } = parsed.data
+  const { title, brief, script, format, duration, style, brand_config, voice_id, music_track_id } = parsed.data
 
   try {
     const profile = req.userProfile!
@@ -57,7 +60,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
         style,
         title,
         status:   'pending',
-        metadata: { brief, format, duration, brand_config, voice_id, progress: 0 },
+        metadata: { brief, script, format, duration, brand_config, voice_id, progress: 0 },
       })
       .select()
       .single()
@@ -75,6 +78,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
       userEmail:     req.userEmail,
       title,
       brief,
+      script,
       style,
       format,
       duration,

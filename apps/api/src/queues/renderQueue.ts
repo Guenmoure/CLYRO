@@ -48,6 +48,9 @@ export interface MotionJobData {
   userEmail: string
   title: string
   brief: string
+  /** Optional voiceover script. When provided + duration='auto', the motion
+   *  pipeline scales scene count to the word count so the script is preserved. */
+  script?: string
   style: string
   format: string
   duration: string
@@ -58,6 +61,7 @@ export interface MotionJobData {
     logo_url?: string
   }
   voiceId: string
+  musicTrackUrl?: string
 }
 
 export interface FacelessJobData {

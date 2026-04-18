@@ -282,9 +282,13 @@ const FORMATS: Array<{ id: VideoFormat; label: string; desc: string }> = [
 ]
 
 const DURATIONS: Array<{ id: VideoDuration; label: string }> = [
-  { id: '15s', label: '15s' },
-  { id: '30s', label: '30s' },
-  { id: '60s', label: '60s' },
+  { id: 'auto', label: 'Auto (script)' },
+  { id: '15s',  label: '15s'  },
+  { id: '30s',  label: '30s'  },
+  { id: '60s',  label: '60s'  },
+  { id: '120s', label: '2 min' },
+  { id: '180s', label: '3 min' },
+  { id: '300s', label: '5 min' },
 ]
 
 interface VoiceItem { id: string; name: string; gender?: string; accent?: string; previewUrl?: string }
@@ -2648,7 +2652,7 @@ const DEFAULT_PROJECT: ProjectState = {
   style: null,
   voiceId: '',
   format: '9:16',
-  duration: '30s',
+  duration: 'auto',
   description: '',
   script: '',
   audioFile: null,
