@@ -36,6 +36,12 @@ COPY --from=builder /app/node_modules                  ./node_modules
 COPY --from=builder /app/package.json                  ./package.json
 COPY --from=builder /app/packages/shared/dist          ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json  ./packages/shared/package.json
+# @clyro/video is a workspace package consumed at runtime by Remotion's Webpack
+# bundler (see apps/api/src/remotion/*). Its package.json points "main" directly
+# at src/index.ts, so there's no dist to copy — we ship the TS sources and let
+# Remotion's bundler compile them on demand.
+COPY --from=builder /app/packages/video/src            ./packages/video/src
+COPY --from=builder /app/packages/video/package.json   ./packages/video/package.json
 COPY --from=builder /app/apps/api/dist                 ./apps/api/dist
 COPY --from=builder /app/apps/api/package.json         ./apps/api/package.json
 
