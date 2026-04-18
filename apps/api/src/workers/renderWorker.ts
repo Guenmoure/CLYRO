@@ -24,9 +24,22 @@ if (process.env.SENTRY_DSN) {
 }
 
 if (!redisConnection) {
-  logger.error('Redis unavailable — render worker cannot start')
+  logger.error('Redis unavailable — render worker cannot start (REDIS_URL not set?)')
   process.exit(1)
 }
+
+// Catch-all for unhandled rejections / exceptions so we get a proper log entry
+// before the process exits. Render will restart us automatically.
+process.on('unhandledRejection', (reason) => {
+  Sentry.captureException(reason)
+  logger.error({ reason }, 'Unhandled rejection in render worker — exiting')
+  process.exit(1)
+})
+process.on('uncaughtException', (err) => {
+  Sentry.captureException(err)
+  logger.error({ err }, 'Uncaught exception in render worker — exiting')
+  process.exit(1)
+})
 
 const worker = new Worker<RenderJobData>(
   RENDER_QUEUE_NAME,
@@ -45,8 +58,11 @@ const worker = new Worker<RenderJobData>(
   },
   {
     connection: redisConnection,
-    concurrency: 2, // max 2 rendus simultanés par worker
-    lockDuration: 10 * 60 * 1000, // 10 min — un render peut prendre du temps
+    concurrency: 2,
+    // Faceless + Remotion pipelines can take up to 30 min.
+    // lockDuration must exceed that or BullMQ will re-queue the job mid-flight.
+    lockDuration:    35 * 60 * 1000, // 35 min
+    lockRenewTime:    5 * 60 * 1000, // renew lock every 5 min
   }
 )
 

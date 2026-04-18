@@ -18,17 +18,19 @@ function createRedisConnection(): IORedis | null {
       maxRetriesPerRequest: null, // requis par BullMQ
       enableReadyCheck: false,
       lazyConnect: true,
-      retryStrategy: (times) => {
-        if (times >= 3) return null  // Stop retrying after 3 attempts
-        return Math.min(times * 500, 2000)
-      },
+      // Retry indefinitely with capped exponential backoff (1s → 30s).
+      // Stopping too early (old: 3 attempts) caused the worker to run in a
+      // broken state after a Redis hiccup and crash with unhandled errors.
+      retryStrategy: (times) => Math.min(times * 1000, 30_000),
+      connectTimeout: 10_000,
     })
-    let warnedOnce = false
-    conn.on('error', () => {
-      if (!warnedOnce) {
-        warnedOnce = true
-        logger.warn('Redis unavailable — queue disabled, falling back to inline execution')
-      }
+    conn.on('error', (err: Error) => {
+      logger.warn({ msg: err.message }, 'Redis connection error — will retry')
+    })
+    // When IORedis gives up entirely (e.g. URL is wrong), exit so Render restarts us
+    conn.on('end', () => {
+      logger.error('Redis connection permanently closed — exiting worker for restart')
+      process.exit(1)
     })
     conn.connect().catch(() => { /* handled by error event */ })
     return conn
