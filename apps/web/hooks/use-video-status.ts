@@ -75,9 +75,9 @@ export function useVideoStatus(videoId: string | null): UseVideoStatusReturn {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session || cancelled) return
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-      const token  = encodeURIComponent(session.access_token)
-      const url    = `${apiUrl}/api/v1/videos/${videoId}/status?token=${token}`
+      const token = encodeURIComponent(session.access_token)
+      // Use the Next.js proxy to avoid CORS issues when calling Render from Vercel
+      const url   = `/api/videos/${videoId}/status?token=${token}`
 
       const es = new EventSource(url)
       esRef.current = es
