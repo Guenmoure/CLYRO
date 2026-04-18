@@ -1,8 +1,32 @@
 # ── Build stage ───────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+# Using Debian-based image because Remotion's headless Chrome binary is linked
+# against glibc and does not run on Alpine/musl.
+FROM node:20-bookworm-slim AS builder
 
-# FFmpeg + build tools (needed for some native npm packages)
-RUN apk add --no-cache ffmpeg python3 make g++
+# FFmpeg + build tools + Chromium runtime shared libs required by Remotion's
+# chrome-headless-shell at both download time (postinstall) and render time.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ffmpeg \
+      python3 \
+      make \
+      g++ \
+      ca-certificates \
+      wget \
+      libnss3 \
+      libatk1.0-0 \
+      libatk-bridge2.0-0 \
+      libcups2 \
+      libxkbcommon0 \
+      libxcomposite1 \
+      libxdamage1 \
+      libxrandr2 \
+      libgbm1 \
+      libpango-1.0-0 \
+      libcairo2 \
+      libasound2 \
+      fonts-liberation \
+      fonts-noto-color-emoji \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -24,10 +48,38 @@ COPY apps/api/        ./apps/api/
 RUN npm run build --workspace=packages/shared
 RUN npm run build --workspace=apps/api
 
-# ── Production stage ───────────────────────────────────────────────────────────
-FROM node:20-alpine AS production
+# Pre-download Remotion's headless Chrome into node_modules/.remotion so it's
+# baked into the image (no first-render stall on Render, no runtime download
+# failures when the container has no outbound access to storage.googleapis.com).
+# Non-fatal: if the CLI command is unavailable or the download hiccups, Remotion
+# will retry on first use.
+RUN cd apps/api && npx --yes remotion@4.0.448 browser ensure \
+      || echo "remotion browser ensure failed; will download on first render"
 
-RUN apk add --no-cache ffmpeg
+# ── Production stage ───────────────────────────────────────────────────────────
+# Same Debian-slim base as builder to keep the Chrome binary runnable.
+FROM node:20-bookworm-slim AS production
+
+# ffmpeg + Chromium runtime shared libs + wget (used by HEALTHCHECK below).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ffmpeg \
+      ca-certificates \
+      wget \
+      libnss3 \
+      libatk1.0-0 \
+      libatk-bridge2.0-0 \
+      libcups2 \
+      libxkbcommon0 \
+      libxcomposite1 \
+      libxdamage1 \
+      libxrandr2 \
+      libgbm1 \
+      libpango-1.0-0 \
+      libcairo2 \
+      libasound2 \
+      fonts-liberation \
+      fonts-noto-color-emoji \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
