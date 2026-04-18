@@ -39,13 +39,12 @@ const WPM_FR = 150
 /** Target words per scene when in auto mode — gives scenes of ~6-10s at 150 wpm. */
 const WORDS_PER_SCENE_AUTO = 22
 
-/** Estimates the scene count + target duration from a script's word count,
- *  used when the caller passes duration='auto'. Produces at least 3 scenes
- *  and at most 40 (safety bound). */
+/** Estimates the scene count + target duration from a script's word count.
+ *  Produces at least 3 scenes and at most 60 (token-safe ceiling for haiku). */
 export function computeAutoSceneCount(script: string): { sceneCount: number; estimatedSeconds: number } {
   const words = script.trim().split(/\s+/).filter(Boolean).length
   const estimatedSeconds = Math.max(6, Math.round((words / WPM_FR) * 60))
-  const sceneCount = Math.max(3, Math.min(40, Math.ceil(words / WORDS_PER_SCENE_AUTO)))
+  const sceneCount = Math.max(3, Math.min(60, Math.ceil(words / WORDS_PER_SCENE_AUTO)))
   return { sceneCount, estimatedSeconds }
 }
 

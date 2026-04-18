@@ -25,11 +25,11 @@ const STYLE_VISUAL_GUIDE: Record<string, string> = {
 }
 
 const WPM_FR = 150
-// 35 words/scene ≈ 14s at 150 wpm — keeps output well under 8192 tokens even for long scripts.
-// With 8192 tokens and ~200 chars/scene (50 tokens), the hard cap is ~160 scenes.
-// We limit to 20 to keep quality high and generation fast.
-const WORDS_PER_SCENE = 35
-const MAX_SCENES = 20
+// 22 words/scene ≈ 8-9s narration at 150 wpm.
+// Token budget: haiku outputs 8192 tokens max. Each scene ≈ 80 tokens (concise descriptions).
+// Safe ceiling: 8192 / 80 ≈ 100 scenes. We cap at 60 to leave headroom for structure overhead.
+const WORDS_PER_SCENE = 22
+const MAX_SCENES = 60
 
 function computeAutoSceneCount(script: string): { sceneCount: number; estimatedSeconds: number } {
   const words = script.trim().split(/\s+/).filter(Boolean).length
