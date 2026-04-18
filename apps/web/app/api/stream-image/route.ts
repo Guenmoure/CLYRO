@@ -7,7 +7,7 @@ const STYLE_CONFIGS: Record<string, { model: string; prefix: string }> = {
   'cinematique':     { model: 'fal-ai/flux/dev', prefix: 'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain,' },
   'stock-vo':        { model: 'fal-ai/flux/dev', prefix: 'realistic cinematic photograph, professional lighting, Canon 5D, 4K ultra-detailed,' },
   'whiteboard':      { model: 'fal-ai/flux/dev', prefix: 'whiteboard animation style, black ink hand-drawn illustration on white background, sketch style, educational,' },
-  'stickman':        { model: 'fal-ai/flux/dev', prefix: 'extreme close-up pictogram of a single giant stick figure, the stick figure fills 85% of the frame from top to bottom, oversized iconic silhouette, chunky thick black marker strokes, heavy bold brushwork, whiteboard animation still frame, dominant central figure edge to edge, minimalist poster art, plain white canvas, no small elements, no tiny details, no thin lines,' },
+  'stickman':        { model: 'fal-ai/flux/dev', prefix: 'RSA Animate hand-drawn whiteboard illustration, black marker stick figures and simple geometric shapes on plain white background, expressive line drawing, no fills, no gradients, no color, ultra clean linework,' },
   'flat-design':     { model: 'fal-ai/flux/dev', prefix: 'flat design illustration, vibrant colors, geometric shapes, material design style, clean vector art,' },
   '3d-pixar':        { model: 'fal-ai/flux/dev', prefix: '3D Pixar animation style, subsurface scattering, warm lighting, expressive characters, cinematic render,' },
   'minimaliste':     { model: 'fal-ai/flux/dev', prefix: 'minimalist design, clean white background, bold typography, geometric shapes, Bauhaus style,' },

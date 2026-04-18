@@ -11,7 +11,7 @@ const STYLE_VISUAL_GUIDE: Record<string, string> = {
   'cinematique':     'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain',
   'stock-vo':        'realistic photograph, natural light, documentary style, Canon 5D',
   'whiteboard':      'hand-drawn whiteboard sketch, black marker on white background, educational illustration',
-  'stickman':        'giant stick figure pictogram, oversized iconic silhouette, chunky black marker strokes, whiteboard animation still frame, plain white canvas',
+  'stickman':        'RSA Animate whiteboard illustration, black marker stick figures and simple geometric shapes on plain white background, expressive line drawing, no fills, no color',
   'flat-design':     'flat vector illustration, bold solid colors, geometric shapes, material design style',
   'infographie':     'flat infographic illustration, data visualization icons, bold colors',
   '3d-pixar':        '3D Pixar animation style, subsurface scattering, warm lighting, expressive characters',
@@ -25,12 +25,16 @@ const STYLE_VISUAL_GUIDE: Record<string, string> = {
 }
 
 const WPM_FR = 150
-const WORDS_PER_SCENE = 22
+// 35 words/scene ≈ 14s at 150 wpm — keeps output well under 8192 tokens even for long scripts.
+// With 8192 tokens and ~200 chars/scene (50 tokens), the hard cap is ~160 scenes.
+// We limit to 20 to keep quality high and generation fast.
+const WORDS_PER_SCENE = 35
+const MAX_SCENES = 20
 
 function computeAutoSceneCount(script: string): { sceneCount: number; estimatedSeconds: number } {
   const words = script.trim().split(/\s+/).filter(Boolean).length
   const estimatedSeconds = Math.max(6, Math.round((words / WPM_FR) * 60))
-  const sceneCount = Math.max(3, Math.min(40, Math.ceil(words / WORDS_PER_SCENE)))
+  const sceneCount = Math.max(3, Math.min(MAX_SCENES, Math.ceil(words / WORDS_PER_SCENE)))
   return { sceneCount, estimatedSeconds }
 }
 

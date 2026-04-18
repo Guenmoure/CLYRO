@@ -57,8 +57,8 @@ const STYLE_CONFIGS: Record<string, StyleConfig> = {
   },
   // PDF canonical style — Bonshommes & Formes
   stickman: {
-    prompt_prefix: 'simple black line art on white background, minimalist stickman figures, bold geometric shapes, expressive stick characters, ultra clean linework, RSA animate style,',
-    prompt_suffix: 'educational bonhommes illustration, no color fills, no gradients, pure line drawing, maximum legibility, symbolic storytelling',
+    prompt_prefix: 'RSA Animate whiteboard illustration, black marker stick figures and simple geometric shapes on plain white background, expressive line drawing,',
+    prompt_suffix: 'educational bonhommes illustration, ultra clean linework, no color fills, no gradients, no photorealism, maximum legibility, symbolic storytelling',
     image_size: 'landscape_16_9',
     num_inference_steps: 20,
   },
@@ -158,7 +158,12 @@ export async function generateSceneImage(
   const brandSuffix = brand
     ? `, color palette ${brand.primary_color}${brand.secondary_color ? ` and ${brand.secondary_color}` : ''}`
     : ''
-  const fullPrompt = `${styleConfig.prompt_prefix} ${prompt}, ${styleConfig.prompt_suffix}${brandSuffix}`
+  // Scene description LEADS — Flux weights the beginning of the prompt most heavily.
+  // Style prefix + suffix are appended AFTER so the aesthetic decorates the scene
+  // instead of overriding its composition.
+  const stylePrefix = styleConfig.prompt_prefix.replace(/,\s*$/, '')
+  const styleSuffix = styleConfig.prompt_suffix.replace(/^\s*,/, '').trim()
+  const fullPrompt = `${prompt}, ${stylePrefix}, ${styleSuffix}${brandSuffix}`
 
   let lastError: Error | null = null
 
@@ -247,8 +252,24 @@ export async function generateSceneImage(
 }
 
 /**
+ * Derive a per-scene seed from a master seed + scene index.
+ * Adjacent seeds on Flux produce near-identical images; we spread them across
+ * the full 32-bit seed space so each scene lives in a distinct region.
+ * Same masterSeed still yields the same per-scene seeds → reproducible.
+ */
+function deriveSceneSeed(masterSeed: number, idx: number): number {
+  // Large coprime multiplier + index XOR ensures big jumps in seed space.
+  // Stay within the unsigned 31-bit range (most SDKs expect ≤ 2^31-1).
+  const MULT = 2_654_435_761 // Knuth's multiplicative hash constant
+  return ((masterSeed ^ (idx * MULT)) >>> 0) % 2_147_483_647
+}
+
+/**
  * Génère les images pour toutes les scènes en parallèle via text-to-image.
- * Cohérence visuelle assurée par le masterSeed déterministe (même seed = même atmosphère).
+ * Cohérence visuelle assurée par le masterSeed déterministe (même masterSeed =
+ * mêmes images). Les seeds par scène sont déterministes mais bien espacés pour
+ * que chaque scène ait sa propre composition (seeds adjacents sur Flux donnent
+ * des images quasi-identiques).
  */
 export async function generateSceneImages(
   scenes: Array<{ id: string; description_visuelle: string }>,
@@ -271,7 +292,7 @@ export async function generateSceneImages(
     const batchSettled = await Promise.allSettled(
       batch.map(async (scene, batchIdx) => {
         const idx = i + batchIdx
-        const seed = masterSeed !== undefined ? masterSeed + idx : undefined
+        const seed = masterSeed !== undefined ? deriveSceneSeed(masterSeed, idx) : undefined
         const { imageUrl: falUrl, promptUsed } = await generateSceneImage(
           scene.description_visuelle,
           style,

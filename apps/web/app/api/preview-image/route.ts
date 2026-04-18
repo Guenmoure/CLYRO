@@ -7,7 +7,7 @@ const STYLE_PREFIXES: Record<string, string> = {
   'cinematique':      'cinematic lighting, dramatic composition, film grain,',
   'stock-vo':         'realistic photograph, natural light, documentary style,',
   'whiteboard':       'hand-drawn whiteboard sketch, black marker on white,',
-  'stickman':         'extreme close-up giant stick figure pictogram, the stick figure fills 85% of the frame, chunky thick black marker strokes, oversized silhouette, bold heavy brushwork, whiteboard animation style, edge to edge, no small elements, no thin lines,',
+  'stickman':         'RSA Animate whiteboard illustration, black marker stick figures and simple geometric shapes on plain white background, expressive line drawing, no fills, no color,',
   'flat-design':      'flat vector illustration, bold solid colors,',
   'infographie':      'flat infographic illustration, bold colors, icons,',
   '3d-pixar':         'Pixar 3D CGI render, warm lighting, expressive character,',
