@@ -58,7 +58,21 @@ export async function POST(
     .eq('user_id', user.id)
     .single()
 
-  if (fetchErr || !source) {
+  if (fetchErr) {
+    // Distinguish "row missing / RLS denied" (PGRST116 = no rows) from a
+    // genuine query error (e.g. unknown column when prod schema is behind).
+    // Surfacing the real message makes schema-drift bugs immediately obvious
+    // instead of looking like the source row vanished.
+    console.error('[duplicate] select failed', fetchErr)
+    if (fetchErr.code === 'PGRST116') {
+      return NextResponse.json({ error: 'Video not found' }, { status: 404 })
+    }
+    return NextResponse.json(
+      { error: 'Database error', detail: fetchErr.message, code: fetchErr.code },
+      { status: 500 },
+    )
+  }
+  if (!source) {
     return NextResponse.json({ error: 'Video not found' }, { status: 404 })
   }
 
@@ -191,8 +205,13 @@ export async function POST(
     .single()
 
   if (insertErr || !inserted) {
+    console.error('[duplicate] insert failed', insertErr)
     return NextResponse.json(
-      { error: 'Failed to duplicate video' },
+      {
+        error: 'Failed to duplicate video',
+        detail: insertErr?.message,
+        code:   insertErr?.code,
+      },
       { status: 500 },
     )
   }
