@@ -25,6 +25,10 @@ async function withRetry<T>(fn: () => Promise<T>, label: string): Promise<T> {
 // Garde la qualité voix off pour de courtes durées (30-60s max)
 const DEFAULT_MODEL = 'eleven_turbo_v2_5'
 
+// Hard timeout per TTS request. Without this, a stalled ElevenLabs response
+// blocks the pipeline at progress=30% indefinitely (Node fetch has no default timeout).
+const EL_TTS_TIMEOUT_MS = 45_000
+
 function getApiKey(): string {
   const key = process.env.ELEVENLABS_API_KEY
   if (!key) throw new Error('Missing ELEVENLABS_API_KEY environment variable')
@@ -341,6 +345,7 @@ export async function generateVoiceover(
           similarity_boost: options?.similarity_boost ?? 0.75,
         },
       }),
+      signal: AbortSignal.timeout(EL_TTS_TIMEOUT_MS),
     })
 
     if (!res.ok) {
@@ -416,6 +421,7 @@ export async function generateVoiceoverWithTimestamps(
           similarity_boost: options?.similarity_boost ?? 0.75,
         },
       }),
+      signal: AbortSignal.timeout(EL_TTS_TIMEOUT_MS),
     })
 
     if (!res.ok) {
