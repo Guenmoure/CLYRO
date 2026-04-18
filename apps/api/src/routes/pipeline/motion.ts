@@ -87,7 +87,11 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
       musicTrackUrl: music_track_id ? getMusicTrackUrl(music_track_id) : undefined,
     }
 
-    // Enqueue si Redis est dispo ET qu'un worker consomme la queue, sinon inline
+    // Enqueue si Redis est dispo ET qu'un worker consomme la queue.
+    // Sans worker dispo :
+    //   - ALLOW_INLINE_FALLBACK=true  → exécution inline (legacy, bloque l'event loop)
+    //   - ALLOW_INLINE_FALLBACK=false → fail-fast 503 pour protéger /health (prod)
+    const allowInlineFallback = process.env.ALLOW_INLINE_FALLBACK === 'true'
     let enqueued = false
     if (renderQueue && isRedisReady()) {
       try {
@@ -97,13 +101,48 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
           enqueued = true
           logger.info({ videoId: video.id, workerCount: workers.length }, 'Job enqueued to BullMQ')
         } else {
-          logger.info({ videoId: video.id }, 'No active workers — running pipeline inline')
+          logger.warn({ videoId: video.id }, 'No active BullMQ worker consuming the queue')
         }
       } catch (err) {
-        logger.warn({ err, videoId: video.id }, 'Queue check/add failed, falling back to inline')
+        logger.warn({ err, videoId: video.id }, 'Queue check/add failed')
       }
+    } else {
+      logger.warn({ videoId: video.id }, 'Redis/BullMQ not available for motion pipeline')
     }
+
     if (!enqueued) {
+      if (!allowInlineFallback) {
+        logger.error(
+          { videoId: video.id },
+          'No BullMQ worker available and ALLOW_INLINE_FALLBACK=false — refusing job to protect event loop',
+        )
+        try {
+          await supabaseAdmin
+            .from('videos')
+            .update({
+              status: 'error',
+              metadata: {
+                error_message: 'Video processing worker is currently unavailable',
+                error_code: 'WORKER_UNAVAILABLE',
+                error_at: new Date().toISOString(),
+              },
+            })
+            .eq('id', video.id)
+        } catch (dbErr) {
+          logger.error({ dbErr, videoId: video.id }, 'Failed to mark motion video as error after worker-unavailable')
+        }
+        res.status(503).json({
+          error: 'Video processing worker is currently unavailable. Please try again shortly.',
+          code: 'WORKER_UNAVAILABLE',
+          video_id: video.id,
+        })
+        return
+      }
+
+      logger.warn(
+        { videoId: video.id },
+        'Falling back to inline motion pipeline (ALLOW_INLINE_FALLBACK=true) — this will block the event loop',
+      )
       runMotionPipeline(jobData).catch(async (err) => {
         logger.error({ err, videoId: video.id }, 'Motion pipeline failed')
         try {

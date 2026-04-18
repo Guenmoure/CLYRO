@@ -1,10 +1,18 @@
 services:
+  # ───────────────────────────────────────────────────────────────────────
+  # clyro-api — serveur Express (HTTP uniquement)
+  #
+  # Les pipelines lourdes (storyboard Claude, images fal.ai, voix ElevenLabs,
+  # assemblage FFmpeg, render Remotion) ne doivent PAS tourner ici : elles
+  # bloqueraient l'event loop et feraient timeout /health. Elles sont
+  # enfilées dans BullMQ et consommées par le service `clyro-worker`.
+  # ───────────────────────────────────────────────────────────────────────
   - type: web
     name: clyro-api
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    plan: standard         # 2 GB RAM / 1 CPU — requis pour FFmpeg + video processing
+    plan: standard         # 2 GB RAM / 1 CPU — marge pour Express + burst
     region: frankfurt      # EU pour la latence Afrique/Europe
     healthCheckPath: /health
     autoDeploy: true
@@ -14,6 +22,13 @@ services:
         value: production
       - key: PORT
         value: 4000          # aligné avec Dockerfile EXPOSE + HEALTHCHECK
+
+      # — Redis (BullMQ) —
+      # URL du service Redis (Render Key-Value, Upstash, etc.). Dès qu'elle
+      # est définie, les routes pipeline poussent les jobs dans la queue
+      # au lieu de les exécuter inline.
+      - key: REDIS_URL
+        sync: false
 
       # — Supabase —
       - key: SUPABASE_URL
@@ -63,8 +78,69 @@ services:
       - key: PIPELINE_TIMEOUT_MS
         sync: false        # watchdog du pipeline — défaut 1800000 (30 min)
 
+      # — Fallback inline (DEV uniquement) —
+      # Si 'true' et aucun worker disponible, les pipelines s'exécutent dans
+      # le process API (ancien comportement — bloque l'event loop).
+      # EN PROD : laisser 'false' pour fail-fast 503 si le worker est down,
+      # plutôt que de crasher le /health.
+      - key: ALLOW_INLINE_FALLBACK
+        value: 'false'
+
       # — URLs (remplir après déploiement Vercel) —
       - key: FRONTEND_URL
         sync: false        # ex: https://app.clyro.app
       - key: BACKEND_URL
         sync: false        # ex: https://api.clyro.app (URL Render)
+
+  # ───────────────────────────────────────────────────────────────────────
+  # clyro-worker — consommateur BullMQ dédié
+  #
+  # Reçoit les jobs (faceless, motion, render) via Redis et les exécute
+  # hors du process HTTP. Aucun port exposé : c'est un "background worker".
+  # Même image Docker que clyro-api, juste une commande différente.
+  #
+  # Les variables d'environnement doivent être synchronisées manuellement
+  # avec clyro-api pour les clés AI/Supabase/Stripe (Render ne copie pas
+  # automatiquement). REDIS_URL doit pointer sur la même instance que l'API.
+  # ───────────────────────────────────────────────────────────────────────
+  - type: worker
+    name: clyro-worker
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    dockerCommand: node dist/workers/renderWorker.js
+    plan: standard         # 2 GB RAM / 1 CPU — pour FFmpeg + Remotion
+    region: frankfurt
+    autoDeploy: true
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # — Redis (obligatoire — sans ça, le worker ne démarre pas) —
+      - key: REDIS_URL
+        sync: false
+
+      # — Supabase —
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      # — AI services —
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_DEFAULT_VOICE_ID
+        sync: false
+      - key: FAL_KEY
+        sync: false
+
+      # — HeyGen —
+      - key: HEYGEN_API_KEY
+        sync: false
+
+      # — Pipeline watchdog —
+      - key: PIPELINE_TIMEOUT_MS
+        sync: false

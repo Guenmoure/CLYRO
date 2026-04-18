@@ -113,8 +113,14 @@ export async function regenerateFacelessClip(payload: {
   })
 }
 
+/**
+ * Lance un réassemblage de la vidéo finale. L'API répond immédiatement
+ * en 202 Accepted avec status='assembly'. La fin du traitement est
+ * propagée au front via `useVideoStatus` (Supabase realtime + SSE) qui
+ * détecte le passage à `done` (avec `output_url`) ou `error`.
+ */
 export async function reassembleFacelessVideo(videoId: string) {
-  return apiFetch<{ status: string; output_url: string }>('/api/v1/pipeline/faceless/reassemble', {
+  return apiFetch<{ status: 'assembly'; video_id: string }>('/api/v1/pipeline/faceless/reassemble', {
     method: 'POST',
     body: JSON.stringify({ video_id: videoId }),
   })

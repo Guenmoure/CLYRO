@@ -187,9 +187,14 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
       animationMode:  animation_mode,
     }
 
-    // Enqueue si Redis est dispo ET qu'un worker consomme la queue, sinon inline
+    // Enqueue si Redis est dispo ET qu'un worker consomme la queue.
     // IMPORTANT : isRedisReady() seul ne suffit pas — si aucun worker ne tourne,
     // les jobs s'accumulent en queue sans jamais être exécutés.
+    //
+    // Sans worker dispo :
+    //   - ALLOW_INLINE_FALLBACK=true  → exécution inline (legacy, bloque l'event loop)
+    //   - ALLOW_INLINE_FALLBACK=false → fail-fast 503 pour protéger /health (prod)
+    const allowInlineFallback = process.env.ALLOW_INLINE_FALLBACK === 'true'
     let enqueued = false
     if (renderQueue && isRedisReady()) {
       try {
@@ -199,13 +204,49 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
           enqueued = true
           logger.info({ videoId: video.id, workerCount: workers.length }, 'Job enqueued to BullMQ')
         } else {
-          logger.info({ videoId: video.id }, 'No active workers — running pipeline inline')
+          logger.warn({ videoId: video.id }, 'No active BullMQ worker consuming the queue')
         }
       } catch (err) {
-        logger.warn({ err, videoId: video.id }, 'Queue check/add failed, falling back to inline')
+        logger.warn({ err, videoId: video.id }, 'Queue check/add failed')
       }
+    } else {
+      logger.warn({ videoId: video.id }, 'Redis/BullMQ not available for faceless pipeline')
     }
+
     if (!enqueued) {
+      if (!allowInlineFallback) {
+        logger.error(
+          { videoId: video.id },
+          'No BullMQ worker available and ALLOW_INLINE_FALLBACK=false — refusing job to protect event loop',
+        )
+        // Marquer la vidéo en erreur pour que le frontend sache que le job est mort à la naissance
+        try {
+          await supabaseAdmin
+            .from('videos')
+            .update({
+              status: 'error',
+              metadata: {
+                error_message: 'Video processing worker is currently unavailable',
+                error_code: 'WORKER_UNAVAILABLE',
+                error_at: new Date().toISOString(),
+              },
+            })
+            .eq('id', video.id)
+        } catch (dbErr) {
+          logger.error({ dbErr, videoId: video.id }, 'Failed to mark video as error after worker-unavailable')
+        }
+        res.status(503).json({
+          error: 'Video processing worker is currently unavailable. Please try again shortly.',
+          code: 'WORKER_UNAVAILABLE',
+          video_id: video.id,
+        })
+        return
+      }
+
+      logger.warn(
+        { videoId: video.id },
+        'Falling back to inline pipeline (ALLOW_INLINE_FALLBACK=true) — this will block the event loop',
+      )
       runFacelessPipeline(jobData).catch(async (err) => {
         logger.error({ err, videoId: video.id }, 'Faceless pipeline failed')
         // Persister le statut erreur dans Supabase pour que le frontend puisse l'afficher
@@ -370,9 +411,20 @@ pipelineFacelessRouter.post('/faceless/clip', authMiddleware, async (req, res) =
 
 /**
  * POST /api/v1/pipeline/faceless/reassemble
- * Réassemble la vidéo finale en utilisant les clips existants de Supabase Storage
+ *
+ * Lance le réassemblage de la vidéo finale en arrière-plan et répond
+ * IMMÉDIATEMENT en 202. Le travail lourd (FFmpeg concat, upload Supabase
+ * d'un Buffer 10–50 MB, signed URL retry) ne tient plus la requête HTTP
+ * ouverte → l'event loop reste libre → /health ne timeout plus pendant
+ * un assemblage.
+ *
+ * Le frontend s'appuie sur `useVideoStatus` (Supabase realtime + SSE)
+ * pour détecter le passage `assembly` → `done` (avec output_url) ou
+ * `error` (avec metadata.error_message).
+ *
  * Body: { video_id }
- * Retourne: { status: 'done', output_url }
+ * Retourne: { status: 'assembly', video_id }      // 202 Accepted
+ *           { error: ..., code: ... }              // 4xx si validation
  */
 pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, res) => {
   const parsed = reassembleVideoSchema.safeParse(req.body)
@@ -383,48 +435,83 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
 
   const { video_id } = parsed.data
 
-  let reassembleMetadata: Record<string, unknown> | null = null
+  // ─── Validations rapides (synchrones côté event loop) ──────────────────
+  // Tout ce qui peut justifier un 4xx doit être fait AVANT de répondre 202.
+  const { data: video } = await supabaseAdmin
+    .from('videos')
+    .select('metadata, user_id')
+    .eq('id', video_id)
+    .eq('user_id', req.userId)
+    .single()
+
+  if (!video) {
+    res.status(404).json({ error: 'Video not found', code: 'NOT_FOUND' })
+    return
+  }
+
+  const metadata = video.metadata as {
+    scenes?: Array<{ id: string; clip_url?: string }>
+    storage_path?: string
+  }
+
+  const sceneVideoUrls = (metadata.scenes ?? [])
+    .filter((s) => s.clip_url)
+    .map((s) => ({ sceneId: s.id, videoUrl: s.clip_url! }))
+
+  if (sceneVideoUrls.length === 0) {
+    res.status(400).json({ error: 'No clips found to reassemble', code: 'VALIDATION_ERROR' })
+    return
+  }
+
+  // ─── Marque la vidéo en cours d'assemblage avant de répondre ──────────
+  // Le frontend voit immédiatement le bon état via Supabase realtime.
+  await supabaseAdmin
+    .from('videos')
+    .update({ status: 'assembly' })
+    .eq('id', video_id)
+
+  // ─── Réponse immédiate (202 Accepted) ─────────────────────────────────
+  res.status(202).json({ status: 'assembly', video_id })
+
+  // ─── Travail lourd en arrière-plan (fire-and-forget) ──────────────────
+  // Pas d'await ici : la requête HTTP est déjà fermée. Toute erreur est
+  // capturée et persistée en DB pour que le frontend l'affiche.
+  void runReassembleInBackground({
+    videoId: video_id,
+    userId: req.userId!,
+    metadata,
+    sceneVideoUrls,
+  })
+})
+
+interface ReassembleBackgroundArgs {
+  videoId: string
+  userId: string
+  metadata: { scenes?: Array<{ id: string; clip_url?: string }>; storage_path?: string }
+  sceneVideoUrls: Array<{ sceneId: string; videoUrl: string }>
+}
+
+/**
+ * Exécute l'assemblage de la vidéo finale en dehors du cycle requête/réponse.
+ * Met à jour `videos.status` (`done` ou `error`) + `videos.output_url` à la fin.
+ * Toute exception est rattrapée — pas d'unhandledRejection qui crasherait le
+ * process Node.
+ */
+async function runReassembleInBackground(args: ReassembleBackgroundArgs): Promise<void> {
+  const { videoId, userId, metadata, sceneVideoUrls } = args
+
   try {
-    // Vérifier que la vidéo appartient à l'utilisateur
-    const { data: video } = await supabaseAdmin
-      .from('videos')
-      .select('metadata, user_id')
-      .eq('id', video_id)
-      .eq('user_id', req.userId)
-      .single()
-
-    if (!video) {
-      res.status(404).json({ error: 'Video not found', code: 'NOT_FOUND' })
-      return
-    }
-
-    const metadata = video.metadata as {
-      scenes?: Array<{ id: string; clip_url?: string }>
-      storage_path?: string
-    }
-    reassembleMetadata = metadata as Record<string, unknown>
-
-    // Récupérer les URLs des clips depuis le metadata
-    const sceneVideoUrls = (metadata.scenes ?? [])
-      .filter((s) => s.clip_url)
-      .map((s) => ({ sceneId: s.id, videoUrl: s.clip_url! }))
-
-    if (sceneVideoUrls.length === 0) {
-      res.status(400).json({ error: 'No clips found to reassemble', code: 'VALIDATION_ERROR' })
-      return
-    }
-
     // Récupérer l'audio voiceover si disponible
     let voiceoverBuffer: Buffer | null = null
     try {
       const { data: audioData } = await supabaseAdmin.storage
         .from('videos')
-        .download(`${req.userId}/${video_id}/voiceover.mp3`)
+        .download(`${userId}/${videoId}/voiceover.mp3`)
       if (audioData) {
         voiceoverBuffer = Buffer.from(await audioData.arrayBuffer())
       }
     } catch {
-      logger.warn({ videoId: video_id }, 'No voiceover audio found, reassembling without audio')
+      logger.warn({ videoId }, 'No voiceover audio found, reassembling without audio')
     }
 
     // Récupérer le SRT karaoke si disponible
@@ -432,17 +519,16 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
     try {
       const { data: subData } = await supabaseAdmin.storage
         .from('videos')
-        .download(`${req.userId}/${video_id}/timestamps.json`)
+        .download(`${userId}/${videoId}/timestamps.json`)
       if (subData) {
         const words = JSON.parse(new TextDecoder().decode(await subData.arrayBuffer()))
-        // Générer SRT depuis les timestamps (simplifié)
         karaokeSubsContent = generateKaraokeFromWords([{ words, audioOffset: 0 }])
       }
     } catch {
-      logger.warn({ videoId: video_id }, 'No timestamps found, reassembling without karaoke')
+      logger.warn({ videoId }, 'No timestamps found, reassembling without karaoke')
     }
 
-    // Réassembler la vidéo
+    // Réassembler la vidéo (FFmpeg concat — child process)
     const mp4Buffer = await assembleVideoFromVideoClips({
       sceneVideoUrls,
       voiceoverBuffer,
@@ -451,7 +537,7 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
     })
 
     // Uploader la vidéo finale
-    const storagePath = metadata.storage_path ?? `${req.userId}/${video_id}/output.mp4`
+    const storagePath = metadata.storage_path ?? `${userId}/${videoId}/output.mp4`
     const { error: uploadError } = await supabaseAdmin.storage
       .from('videos')
       .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
@@ -468,7 +554,7 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
         outputUrl = signedUrl.signedUrl
         break
       }
-      logger.warn({ attempt, signError, videoId: video_id }, 'reassemble: createSignedUrl failed, retrying…')
+      logger.warn({ attempt, signError, videoId }, 'reassemble: createSignedUrl failed, retrying…')
       if (attempt < 2) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
     }
 
@@ -476,28 +562,31 @@ pipelineFacelessRouter.post('/faceless/reassemble', authMiddleware, async (req, 
       throw new Error('Failed to create signed URL after 3 attempts')
     }
 
-    // Mettre à jour le statut de la vidéo
+    // Mettre à jour le statut de la vidéo → propage automatiquement au front
+    // via Supabase realtime channel (`useVideoStatus`).
     await supabaseAdmin
       .from('videos')
       .update({ status: 'done', output_url: outputUrl })
-      .eq('id', video_id)
+      .eq('id', videoId)
 
-    logger.info({ videoId: video_id, clipCount: sceneVideoUrls.length }, 'Video reassembled successfully')
-    res.json({ status: 'done', output_url: outputUrl })
+    logger.info({ videoId, clipCount: sceneVideoUrls.length }, 'Video reassembled successfully')
   } catch (err) {
-    logger.error({ err, videoId: video_id }, 'pipeline.faceless.reassemble error')
+    logger.error({ err, videoId }, 'pipeline.faceless.reassemble background error')
     // Persister l'erreur dans Supabase pour que le frontend l'affiche
     await supabaseAdmin
       .from('videos')
       .update({
         status: 'error',
-        metadata: { ...(reassembleMetadata ?? {}), error_message: err instanceof Error ? err.message : String(err), error_at: new Date().toISOString() },
+        metadata: {
+          ...(metadata as Record<string, unknown>),
+          error_message: err instanceof Error ? err.message : String(err),
+          error_at: new Date().toISOString(),
+        },
       })
-      .eq('id', video_id)
+      .eq('id', videoId)
       .then(() => null, () => null)
-    res.status(500).json({ error: 'Failed to reassemble video', code: 'SERVICE_ERROR' })
   }
-})
+}
 
 const animateSchema = z.object({
   projectId: z.string().uuid(),

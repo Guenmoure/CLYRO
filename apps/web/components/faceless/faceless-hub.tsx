@@ -1989,7 +1989,10 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
   onBack: () => void
   onNext: () => void
   videoId?: string
-  onReassembled?: (outputUrl: string) => void
+  // Signature sans argument : l'URL finale est résolue par `FinalStep` via
+  // `useVideoStatus` (Supabase realtime) dès que le backend passe la vidéo
+  // en `status='done'`. Plus besoin de la réponse synchrone de l'API.
+  onReassembled?: () => void
   style?: string
   animationMode: AnimationMode
   onAnimationModeChange: (mode: AnimationMode) => void
@@ -2106,10 +2109,14 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
     if (!videoId) return
     setReassembling(true)
     try {
-      const data = await reassembleFacelessVideo(videoId)
+      // L'API répond immédiatement en 202 Accepted avec status='assembly'.
+      // Le travail lourd (FFmpeg + upload Supabase) continue en fond.
+      // On transitionne vers FinalStep tout de suite : useVideoStatus y
+      // détectera le passage à 'done' et affichera la vidéo.
+      await reassembleFacelessVideo(videoId)
       setHasRegenerated(false)
-      onReassembled?.(data.output_url)
-      toast.success('Video successfully reassembled!')
+      onReassembled?.()
+      toast.success('Assemblage en cours… la vidéo apparaîtra dès qu\'elle sera prête.')
     } catch {
       toast.error('Reassembly error')
     } finally {
@@ -3067,8 +3074,11 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
             onAnimationModeChange={(mode) => patch({ animationMode: mode })}
             onBack={() => patch({ step: 'images' })}
             onNext={goToFinal}
-            onReassembled={(outputUrl) => {
-              patch({ finalVideoUrl: outputUrl, step: 'final' })
+            onReassembled={() => {
+              // Pas d'URL en réponse de l'API (assemblage en arrière-plan) :
+              // FinalStep résout la vidéo via useVideoStatus quand le backend
+              // passe la ligne `videos` en status='done' avec output_url.
+              patch({ step: 'final' })
             }}
           />
         )}
