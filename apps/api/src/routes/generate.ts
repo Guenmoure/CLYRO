@@ -190,7 +190,8 @@ generateRouter.post('/generate/motion-storyboard', authMiddleware, async (req, r
       combinedBrief,
       'dynamique',
       format ?? '9:16',
-      duration ?? '30s'
+      duration ?? 'auto',
+      script,
     )
 
     // Map new BrandScene format → MotionScene (UI backward compat + forward fields)

@@ -20,7 +20,34 @@ export const STYLE_VISUAL_GUIDE: Record<string, string> = {
   'fun':             'playful cartoon, candy-colored palette, bubbly rounded shapes, confetti — kawaii cheerful style',
 }
 
-export const SCENE_COUNT: Record<string, number> = { '6s': 2, '15s': 4, '30s': 6, '60s': 10 }
+export const SCENE_COUNT: Record<string, number> = {
+  '6s':   2,
+  '15s':  4,
+  '30s':  6,
+  '60s':  10,
+  '90s':  14,
+  '120s': 16,
+  '180s': 22,
+  '300s': 36,
+  // 'auto' is computed dynamically from script word count at call time.
+  'auto': 0,
+}
+
+/** Natural French voiceover speed (words per minute) — used to estimate
+ *  duration from a script when duration is 'auto'. */
+const WPM_FR = 150
+/** Target words per scene when in auto mode — gives scenes of ~6-10s at 150 wpm. */
+const WORDS_PER_SCENE_AUTO = 22
+
+/** Estimates the scene count + target duration from a script's word count,
+ *  used when the caller passes duration='auto'. Produces at least 3 scenes
+ *  and at most 40 (safety bound). */
+export function computeAutoSceneCount(script: string): { sceneCount: number; estimatedSeconds: number } {
+  const words = script.trim().split(/\s+/).filter(Boolean).length
+  const estimatedSeconds = Math.max(6, Math.round((words / WPM_FR) * 60))
+  const sceneCount = Math.max(3, Math.min(40, Math.ceil(words / WORDS_PER_SCENE_AUTO)))
+  return { sceneCount, estimatedSeconds }
+}
 
 // ── Storyboard ─────────────────────────────────────────────────────────────────
 
@@ -33,14 +60,25 @@ export interface StoryboardPromptParams {
 }
 
 export function buildStoryboardPrompts(p: StoryboardPromptParams): { system: string; user: string } {
-  const sceneCount = SCENE_COUNT[p.duration] ?? 6
+  const isAuto = p.duration === 'auto'
+  const auto = isAuto ? computeAutoSceneCount(p.script) : null
+  const sceneCount = isAuto ? (auto?.sceneCount ?? 6) : (SCENE_COUNT[p.duration] || 6)
   const styleGuide = STYLE_VISUAL_GUIDE[p.style] ?? 'professional visual composition'
   const scriptLines = p.script.split('\n')
   const hasDialogue = scriptLines.some((l) => /^—|^–/.test(l.trim()) || /^[A-ZÀ-Ü][a-zà-ü]+\s*:/.test(l.trim()) || /["«].*["»]/.test(l.trim()))
 
   const system = `Tu es un expert en production vidéo et en storytelling visuel.\nTu génères des storyboards précis et professionnels pour des vidéos sans présentateur.\nTu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
 
-  const user = `Découpe ce script en exactement ${sceneCount} scènes visuelles pour une vidéo de style "${p.style}".${p.title ? `\nTitre : "${p.title}"` : ''}
+  // Rule 4/5 change shape in auto-mode: the script drives the duration,
+  // not a fixed target. We still give Claude a soft scene-count hint so it
+  // knows roughly how many scenes to produce for a script of this length.
+  const durationInstruction = isAuto
+    ? `4. La durée totale doit refléter FIDÈLEMENT la longueur réelle du script (~150 mots/minute à voix haute). Ne condense PAS, ne raccourcis PAS — chaque phrase du script est narrée en entier.
+5. La somme des duree_estimee doit être cohérente avec la longueur du script (~${auto?.estimatedSeconds ?? 30}s estimé). Ajuste naturellement scène par scène.`
+    : `4. La somme des duree_estimee doit correspondre à la durée cible ${p.duration}
+5. Si le script est plus long que la durée cible, condense et synthétise les idées clés — ne dépasse jamais ${p.duration}`
+
+  const user = `Découpe ce script en ${isAuto ? `environ ${sceneCount}` : `exactement ${sceneCount}`} scènes visuelles pour une vidéo de style "${p.style}".${p.title ? `\nTitre : "${p.title}"` : ''}
 ${p.description ? `\nCONTEXTE VISUEL (personnages, décor, ambiance) :\n${p.description}\n→ Intègre ces éléments dans description_visuelle lorsque pertinent (couleur de peau, style vestimentaire, décor).` : ''}
 
 STYLE VISUEL OBLIGATOIRE pour description_visuelle : ${styleGuide}
@@ -57,15 +95,14 @@ Pour chaque scène, génère :
 - "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). DOIT respecter le style ci-dessus.
 - "animation_prompt": prompt de mouvement en ANGLAIS pour image-to-video (max 80 chars). Décrit le mouvement de caméra et l'action concrète.
 - "texte_voix": OBLIGATOIRE — texte narré en français pendant cette scène. Jamais vide.
-- "duree_estimee": durée en secondes (entier, entre 3 et 10)
+- "duree_estimee": durée en secondes (entier, entre 3 et 12)
 ${hasDialogue ? `- "speaker": NOM du personnage parlant (ex: "Alice", "Bob"). Optionnel pour narration, OBLIGATOIRE pour dialogues.` : ''}
 
 RÈGLES :
 1. description_visuelle DOIT coller au style "${p.style}" — applique strictement : ${styleGuide}
 2. animation_prompt DOIT décrire un mouvement CONCRET (jamais "smooth animation" seul)
-3. texte_voix est OBLIGATOIRE — distribue le script complet sur toutes les scènes
-4. La somme des duree_estimee doit correspondre à la durée cible ${p.duration}
-5. Si le script est plus long que la durée cible, condense et synthétise les idées clés — ne dépasse jamais ${p.duration}
+3. texte_voix est OBLIGATOIRE — distribue le script complet sur toutes les scènes${isAuto ? ' sans rien omettre' : ''}
+${durationInstruction}
 ${hasDialogue ? `6. DIALOGUES : si deux personnages parlent successivement, favorise des scènes séparées pour chaque réplique (permet voix différentes)` : ''}
 
 Script :

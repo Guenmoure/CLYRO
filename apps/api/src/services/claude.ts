@@ -248,26 +248,40 @@ export async function generateMotionStoryboard(
   brief: string,
   style: string,
   format: string,
-  duration: string
+  duration: string,
+  /** Optional voiceover script. When provided + duration='auto' the scene count
+   *  is derived from its word count so the full script is preserved. */
+  script?: string,
 ): Promise<StoryboardResult> {
-  const sceneCount = SCENE_COUNT_MAP[duration] ?? 4
+  const isAuto = duration === 'auto'
+  let sceneCount = SCENE_COUNT_MAP[duration] ?? 4
+  let estimatedSeconds: number | null = null
+  if (isAuto && script && script.trim()) {
+    const words = script.trim().split(/\s+/).filter(Boolean).length
+    estimatedSeconds = Math.max(6, Math.round((words / 150) * 60))
+    sceneCount = Math.max(3, Math.min(40, Math.ceil(words / 22)))
+  }
   const styleGuide = STYLE_VISUAL_GUIDE[style] ?? 'professional motion design, clean vector art'
 
   const systemPrompt = `Tu es un expert en motion design et publicité vidéo animée.
 Tu génères des storyboards de haute qualité pour des spots publicitaires.
 Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
 
-  const userPrompt = `Crée un storyboard publicitaire en exactement ${sceneCount} scènes visuelles.
+  const durationLine = isAuto
+    ? `- Durée totale : AUTO — s'adapte à la longueur réelle du script/brief (${estimatedSeconds ? `~${estimatedSeconds}s estimé` : 'calculée naturellement'}). Ne condense PAS, ne tronque PAS.`
+    : `- Durée totale : ${duration} — la somme des duree_estimee doit correspondre à cette cible, jamais la dépasser.`
+
+  const userPrompt = `Crée un storyboard publicitaire en ${isAuto ? `environ ${sceneCount}` : `exactement ${sceneCount}`} scènes visuelles.
 
 Brief client :
 """
 ${brief}
 """
-
+${script && script.trim() ? `\nSCRIPT VOIX OFF À PRÉSERVER INTÉGRALEMENT :\n"""\n${script.trim()}\n"""\n→ Distribue ce script sur toutes les scènes via texte_voix, sans rien omettre.` : ''}
 Paramètres :
 - Style visuel : ${style} — ${styleGuide}
 - Format : ${format}
-- Durée totale : ${duration}
+${durationLine}
 
 Pour chaque scène, génère :
 - "id": "scene_001", "scene_002", etc.
