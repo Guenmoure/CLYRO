@@ -33,30 +33,20 @@ export const metadata: Metadata = {
   description:
     'De ton script à ta vidéo en moins de 10 minutes. Sans caméra, sans monteur, sans agence.',
   keywords: ['AI video', 'faceless videos', 'motion graphics', 'video generation'],
-  // Drop the following files into /public/logo/ to activate:
-  //   favicon.ico, apple-touch-icon.png, og-image.png
-  icons: {
-    icon: [
-      { url: '/logo/favicon.ico' },
-    ],
-    apple: [
-      { url: '/logo/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
-  },
+  // Next.js auto-detects /app/icon.svg as the favicon. No manual `icons:`
+  // entry needed — adding one with a non-existent path would 404 the browser.
+  // When transparent PNG assets are ready, drop them in /public/logo/ and
+  // re-add the `icons:` / `openGraph.images` / `twitter.images` blocks below.
   openGraph: {
     title: 'CLYRO',
     description: 'De ton script à ta vidéo en moins de 10 minutes.',
     type: 'website',
     siteName: 'CLYRO',
-    images: [
-      { url: '/logo/og-image.png', width: 1200, height: 630, alt: 'CLYRO — AI Video Generation' },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'CLYRO',
     description: 'De ton script à ta vidéo en moins de 10 minutes.',
-    images: ['/logo/og-image.png'],
   },
 }
 
