@@ -137,8 +137,18 @@ export default function BillingPage() {
           <div className="glass glass-heavy rounded-2xl p-6 w-full max-w-md shadow-glow-primary">
             <h3 className="font-display text-lg font-semibold text-gray-900 dark:text-white mb-1">Payer avec Mobile Money</h3>
             <p className="text-gray-500 dark:text-white/50 text-sm font-body mb-4">Orange Money, Wave, MTN, Moov — format international.</p>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+225 07 00 00 00 00"
-              className="w-full glass rounded-xl px-4 py-3 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all mb-4" />
+            <label htmlFor="moneroo-phone" className="sr-only">Numéro Mobile Money</label>
+            <input
+              id="moneroo-phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+225 07 00 00 00 00"
+              className="w-full glass rounded-xl px-4 py-3 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all mb-4"
+            />
             <div className="flex gap-3">
               <button onClick={() => setShowMobileMoneyModal(null)}
                 className="flex-1 glass glass-hover text-gray-500 dark:text-white/60 font-display font-semibold py-2.5 rounded-xl text-sm transition-all">

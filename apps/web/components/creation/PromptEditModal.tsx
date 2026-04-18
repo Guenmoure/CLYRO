@@ -74,10 +74,16 @@ export function PromptEditModal({
 
         {/* Editable prompt */}
         <div className="space-y-1.5">
-          <label className="font-mono text-xs text-[--text-muted] uppercase tracking-wider">
+          <label
+            htmlFor="prompt-edit-textarea"
+            className="font-mono text-xs text-[--text-muted] uppercase tracking-wider"
+          >
             Prompt
           </label>
           <textarea
+            id="prompt-edit-textarea"
+            name="prompt"
+            autoComplete="off"
             value={editedPrompt}
             onChange={e => setEditedPrompt(e.target.value)}
             rows={6}
@@ -92,7 +98,10 @@ export function PromptEditModal({
         {/* AI improvement feedback */}
         {onImprove && (
           <div className="space-y-2">
-            <label className="font-mono text-xs text-[--text-muted] uppercase tracking-wider">
+            <label
+              htmlFor="prompt-edit-feedback"
+              className="font-mono text-xs text-[--text-muted] uppercase tracking-wider"
+            >
               Improve with AI
             </label>
             <p className="font-body text-xs text-[--text-muted]">
@@ -100,7 +109,10 @@ export function PromptEditModal({
             </p>
             <div className="flex gap-2">
               <input
+                id="prompt-edit-feedback"
+                name="prompt-feedback"
                 type="text"
+                autoComplete="off"
                 value={feedback}
                 onChange={e => setFeedback(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && feedback.trim() && handleImprove()}
