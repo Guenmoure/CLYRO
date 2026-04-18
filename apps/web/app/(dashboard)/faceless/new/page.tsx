@@ -638,7 +638,10 @@ function FacelessNewPageInner() {
       setGenerating(false)
       clearDraft()
       setResultOpen(true)
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erreur inconnue'
+      console.error('[faceless/new] generation failed:', err)
+      toast.error(`Génération échouée — ${msg}`)
       setGenerating(false)
     }
   }

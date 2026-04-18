@@ -509,7 +509,14 @@ function MotionNewPageInner() {
       setGenerating(false)
       clearDraft()
       setResultOpen(true)
-    } catch {
+    } catch (err) {
+      // Surface the backend error (400/500 from clyro-api) to the user
+      // instead of failing silently. `apiFetch` puts the backend's `error`
+      // field in Error.message, so we get e.g. "Invalid duration value"
+      // directly from the pipeline service.
+      const msg = err instanceof Error ? err.message : 'Erreur inconnue'
+      console.error('[motion/new] generation failed:', err)
+      toast.error(`Génération échouée — ${msg}`)
       setGenerating(false)
     }
   }
