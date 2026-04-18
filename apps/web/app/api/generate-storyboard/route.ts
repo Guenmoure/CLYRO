@@ -93,11 +93,34 @@ Réponds UNIQUEMENT avec ce JSON :
   return { system, user }
 }
 
-function extractJson(raw: string): string {
+type SceneObject = { index: number; description_visuelle: string; animation_prompt: string; texte_voix: string; duree_estimee: number; speaker?: string }
+
+function extractJson(raw: string): { scenes: SceneObject[]; total_duration: number } {
   const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-  const match = cleaned.match(/\{[\s\S]*\}/)
+  const match = cleaned.match(/\{[\s\S]*/)
   if (!match) throw new Error('No JSON found in Claude response')
-  return match[0]
+  const partial = match[0]
+
+  // 1. Try clean parse first
+  try {
+    const full = partial.match(/\{[\s\S]*\}/)
+    if (full) return JSON.parse(full[0])
+  } catch { /* fall through to recovery */ }
+
+  // 2. JSON was truncated — extract every complete scene object individually
+  const scenes: SceneObject[] = []
+  // Match each complete {...} object within the scenes array
+  const re = /\{[^{}]*"index"\s*:\s*(\d+)[^{}]*\}/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(partial)) !== null) {
+    try {
+      const obj = JSON.parse(m[0]) as SceneObject
+      if (obj.texte_voix && obj.description_visuelle) scenes.push(obj)
+    } catch { /* skip malformed object */ }
+  }
+  if (scenes.length === 0) throw new Error('Could not recover any scenes from truncated response')
+  const total_duration = scenes.reduce((s, sc) => s + (sc.duree_estimee || 5), 0)
+  return { scenes, total_duration }
 }
 
 export async function POST(request: NextRequest) {
@@ -133,10 +156,7 @@ export async function POST(request: NextRequest) {
     })
 
     const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-    const parsed = JSON.parse(extractJson(raw)) as {
-      scenes: Array<{ index: number; description_visuelle: string; animation_prompt: string; texte_voix: string; duree_estimee: number }>
-      total_duration: number
-    }
+    const parsed = extractJson(raw)
 
     if (!Array.isArray(parsed.scenes)) throw new Error('Invalid storyboard: missing scenes array')
 
