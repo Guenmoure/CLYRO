@@ -1,12 +1,14 @@
 import React from 'react'
 import { Composition, registerRoot } from 'remotion'
-import { BrandOverlay, BrandOverlayProps, KenBurnsClip } from '@clyro/video'
+import { BrandOverlay, BrandOverlayProps, KenBurnsClip, DynamicComposition } from '@clyro/video'
 import type { ComponentType } from 'react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const BrandOverlayAny  = BrandOverlay  as ComponentType<any>
+const BrandOverlayAny      = BrandOverlay      as ComponentType<any>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const KenBurnsClipAny  = KenBurnsClip  as ComponentType<any>
+const KenBurnsClipAny      = KenBurnsClip      as ComponentType<any>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const DynamicCompositionAny = DynamicComposition as ComponentType<any>
 
 const DEFAULT_FPS = 30
 
@@ -73,6 +75,35 @@ const RemotionRoot: React.FC = () => (
       width={1920}
       height={1080}
       defaultProps={{ imageUrl: 'https://via.placeholder.com/1920x1080' }}
+    />
+
+    {/* DynamicMotion — scene_type-aware composition for Motion Design */}
+    <Composition
+      id="DynamicMotion-16-9"
+      component={DynamicCompositionAny}
+      durationInFrames={DEFAULT_FPS * 30}
+      fps={DEFAULT_FPS}
+      width={1920}
+      height={1080}
+      defaultProps={{ ...defaultProps, format: '16:9' }}
+    />
+    <Composition
+      id="DynamicMotion-9-16"
+      component={DynamicCompositionAny}
+      durationInFrames={DEFAULT_FPS * 30}
+      fps={DEFAULT_FPS}
+      width={1080}
+      height={1920}
+      defaultProps={{ ...defaultProps, format: '9:16' }}
+    />
+    <Composition
+      id="DynamicMotion-1-1"
+      component={DynamicCompositionAny}
+      durationInFrames={DEFAULT_FPS * 30}
+      fps={DEFAULT_FPS}
+      width={1080}
+      height={1080}
+      defaultProps={{ ...defaultProps, format: '1:1' }}
     />
   </>
 )

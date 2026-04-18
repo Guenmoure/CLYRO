@@ -9,3 +9,5 @@ export type { BrandScene, BrandConfig, BrandOverlayProps, AnimationType } from '
 
 export { KenBurnsClip } from './compositions/KenBurnsClip'
 export type { KenBurnsClipProps } from './compositions/KenBurnsClip'
+
+export { DynamicComposition } from './compositions/DynamicComposition'
