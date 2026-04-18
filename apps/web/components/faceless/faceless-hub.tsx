@@ -229,7 +229,9 @@ function splitScriptToScenes(script: string): SceneData[] {
     .split(/(?<=[.!?])\s+/)
     .map((s) => s.trim())
     .filter((s) => s.length > 15)
-  const count = Math.max(Math.min(sentences.length, 6), 3)
+  // Scene count mirrors the server-side logic: ~22 words per scene, min 3, max 40
+  const wordCount = script.trim().split(/\s+/).filter(Boolean).length
+  const count = Math.max(3, Math.min(40, Math.ceil(wordCount / 22)))
   const perScene = Math.ceil(sentences.length / count)
   return Array.from({ length: count }, (_, i) => {
     const chunk = sentences.slice(i * perScene, (i + 1) * perScene).join(' ')
@@ -2834,7 +2836,11 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
           title: project.title || undefined,
         }),
       })
-      if (!res.ok) throw new Error('Storyboard generation failed')
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => '')
+        console.error(`[storyboard] API ${res.status}:`, errBody.slice(0, 300))
+        throw new Error(`Storyboard generation failed (${res.status})`)
+      }
       const data = await res.json() as {
         scenes: Array<{
           index: number
