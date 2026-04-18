@@ -52,11 +52,17 @@ const EL_TTS_TIMEOUT_MS = 120_000
 // firing 60 scenes at once on a 15-min video causes most to fail silently,
 // producing only ~30s of audio. Batching conservateur (2) pour garantir que
 // TOUTES les scènes aboutissent, même sur des vidéos de 20+ min.
-const EL_TTS_CONCURRENCY = 2
+// Tunable via EL_TTS_CONCURRENCY env var (set to 1 if ElevenLabs keeps 429'ing).
+const EL_TTS_CONCURRENCY = Math.max(1, Number(process.env.EL_TTS_CONCURRENCY ?? 2))
 
-// Si plus de 5% des scènes ratent leur TTS après tous les retries, on fait
+// Si plus de N% des scènes ratent leur TTS après tous les retries, on fait
 // échouer le pipeline au lieu de livrer une vidéo muette sur 90% de sa durée.
-const EL_TTS_MAX_FAILURE_RATIO = 0.05
+// Tunable via EL_TTS_MAX_FAILURE_RATIO env var (0..1). Default 0.05 (5%).
+const EL_TTS_MAX_FAILURE_RATIO = (() => {
+  const raw = Number(process.env.EL_TTS_MAX_FAILURE_RATIO)
+  if (Number.isFinite(raw) && raw >= 0 && raw <= 1) return raw
+  return 0.05
+})()
 
 /** Erreur typée transportant Retry-After pour que `withRetry` respecte le
  *  cooldown serveur plutôt que de retry aveuglément. */

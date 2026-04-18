@@ -121,9 +121,12 @@ async function main(): Promise<void> {
       // faisait dépasser la limite mémoire Render et déclenchait un restart.
       // À 1, on serialise — la queue progresse plus lentement mais sans OOM.
       concurrency: 1,
-      // Faceless + Remotion pipelines can take up to 30 min.
-      // lockDuration must exceed that or BullMQ will re-queue the job mid-flight.
-      lockDuration:    35 * 60 * 1000, // 35 min
+      // Faceless + Remotion pipelines peuvent dépasser 30 min sur les longues
+      // vidéos (60+ scènes, rate-limit ElevenLabs + FFmpeg single-thread).
+      // lockDuration doit rester au-dessus du PIPELINE_TIMEOUT_MS (45 min par
+      // défaut) sinon BullMQ pense le worker mort et re-queue le job — double
+      // consommation crédits + collision d'upload Supabase.
+      lockDuration:    60 * 60 * 1000, // 60 min
       lockRenewTime:    5 * 60 * 1000, // renew lock every 5 min
     },
   )

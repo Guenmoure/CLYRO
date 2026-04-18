@@ -201,11 +201,25 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
       await updateStatus('assembly', 88)
       const storagePath = `${userId}/${videoId}/output.mp4`
 
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from('videos')
-        .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
+      // Retry sur upload : un 503 transient ne doit pas jeter la pipeline
+      const UPLOAD_MAX_RETRIES = 3
+      let uploadError: { message: string } | null = null
+      for (let attempt = 1; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
+        const result = await supabaseAdmin.storage
+          .from('videos')
+          .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
+        uploadError = result.error
+        if (!uploadError) break
 
-      if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
+        logger.warn(
+          { attempt, videoId, error: uploadError.message, sizeMB: Math.round(mp4Buffer.length / 1024 / 1024) },
+          'Supabase upload failed, retrying…',
+        )
+        if (attempt < UPLOAD_MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, [5_000, 15_000, 30_000][attempt - 1] ?? 30_000))
+        }
+      }
+      if (uploadError) throw new Error(`Storage upload failed after ${UPLOAD_MAX_RETRIES} attempts: ${uploadError.message}`)
 
       const { data: signedUrl } = await supabaseAdmin.storage
         .from('videos')

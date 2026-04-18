@@ -199,7 +199,7 @@ app.use((_req, res) => {
 // If the server restarts mid-pipeline (deploy, crash) the timeout is lost and
 // videos stay stuck in non-terminal states forever.
 // This cleanup runs at startup AND every 5 minutes to catch orphaned jobs.
-const STALE_AFTER_MS = 45 * 60 * 1000   // 45 min — generous margin above the 30 min watchdog
+const STALE_AFTER_MS = 75 * 60 * 1000   // 75 min — generous margin above the 45 min watchdog + 60 min BullMQ lock
 const STUCK_STATUSES = ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly']
 
 async function cleanupStalePipelines() {

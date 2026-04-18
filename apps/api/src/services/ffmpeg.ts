@@ -102,10 +102,11 @@ async function runFFmpeg(args: string[]): Promise<void> {
 
 // ── Ken Burns via FFmpeg zoompan ───────────────────────────────────────────
 
+// Output at assembly re-encode target → no downstream re-encode needed (stream copy)
 const FORMAT_DIMS_KB = {
-  '16:9': { width: 1920, height: 1080 },
-  '9:16': { width: 1080, height: 1920 },
-  '1:1':  { width: 1080, height: 1080 },
+  '16:9': { width: 1280, height: 720  },
+  '9:16': { width: 720,  height: 1280 },
+  '1:1':  { width: 720,  height: 720  },
 }
 
 // Presets : zoom+pan variés par index de scène (6 variantes)
@@ -358,6 +359,20 @@ export async function concatenateClipsWithTransitions(
     return concatenateClips(clipPaths, outputPath)
   }
 
+  // Au-delà de ~30 clips, la commande filter_complex xfade devient une string
+  // de plusieurs KB avec 30+ filter nodes empilés → ARG_MAX atteint sur Linux,
+  // parsing FFmpeg >30s, et risque de stack overflow dans avfilter. Au-delà
+  // de ce seuil on retombe sur le concat demuxer (pas de transitions, mais
+  // assemblage fiable). Tunable via FFMPEG_XFADE_MAX_CLIPS env var.
+  const XFADE_MAX_CLIPS = Number(process.env.FFMPEG_XFADE_MAX_CLIPS ?? 30)
+  if (clipPaths.length > XFADE_MAX_CLIPS) {
+    logger.warn(
+      { clipCount: clipPaths.length, threshold: XFADE_MAX_CLIPS },
+      'Too many clips for xfade filter_complex — falling back to concat demuxer (no transitions)',
+    )
+    return concatenateClips(clipPaths, outputPath)
+  }
+
   // Obtenir la durée de chaque clip via ffprobe
   async function getClipDuration(clipPath: string): Promise<number> {
     return new Promise((resolve, reject) => {
@@ -476,6 +491,9 @@ interface AssembleFromClipsOptions {
   voiceoverBuffer: Buffer | null
   backgroundMusicPath?: string
   karaokeSubsContent?: string
+  /** Skip xfade transitions and re-encode — use stream-copy concat instead.
+   *  Set to true for Ken Burns clips which are already uniform h264/yuv420p. */
+  skipTransitions?: boolean
 }
 
 /**
@@ -487,7 +505,7 @@ interface AssembleFromClipsOptions {
  * 5. (optionnel) Ajoute les sous-titres karaoke mot par mot
  */
 export async function assembleVideoFromVideoClips(options: AssembleFromClipsOptions): Promise<Buffer> {
-  const { sceneVideoUrls, voiceoverBuffer, backgroundMusicPath, karaokeSubsContent } = options
+  const { sceneVideoUrls, voiceoverBuffer, backgroundMusicPath, karaokeSubsContent, skipTransitions = false } = options
 
   const workDir = join(tmpdir(), `clyro-kling-${randomUUID()}`)
   await mkdir(workDir, { recursive: true })
@@ -506,43 +524,50 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
 
     if (downloadedPaths.length === 0) throw new Error('No Kling clips to assemble')
 
-    // Re-encoder chaque clip pour uniformiser résolution / fps / codec
-    // Concurrency 6 (ultrafast preset has low CPU overhead per job)
-    const CLIP_CONCURRENCY = 6
-    const reEncodedPaths: string[] = []
-
-    for (let i = 0; i < downloadedPaths.length; i += CLIP_CONCURRENCY) {
-      const batch = downloadedPaths.slice(i, i + CLIP_CONCURRENCY)
-      const batchPaths = await Promise.all(
-        batch.map(async ({ sceneId, clipPath }) => {
-          const reEncodedPath = join(workDir, `enc_${sceneId}.mp4`)
-          await runFFmpeg([
-            '-i', clipPath,
-            '-c:v', 'libx264',
-            '-preset', 'ultrafast',
-            '-crf', '26',
-            '-pix_fmt', 'yuv420p',
-            '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
-            '-r', '24',
-            '-threads', '0',  // auto-select thread count
-            '-an',
-            reEncodedPath,
-          ])
-          tempFiles.push(reEncodedPath)
-          return reEncodedPath
-        })
-      )
-      reEncodedPaths.push(...batchPaths)
-    }
-
-    // Concatène avec transitions cross-dissolve (0.4s) entre clips
+    // Re-encode or stream-copy depending on clip source.
+    // Ken Burns clips (skipTransitions=true) are already uniform 1280×720 24fps h264 yuv420p
+    // produced by renderKenBurnsFFmpeg — re-encoding would be pure waste.
+    // Kling/fal clips need normalisation (varying resolutions, fps, codecs).
     const concatPath = join(workDir, 'concat.mp4')
     tempFiles.push(concatPath)
-    if (reEncodedPaths.length === 1) {
-      // Un seul clip — pas de transition
-      await concatenateClips(reEncodedPaths, concatPath)
+
+    if (skipTransitions) {
+      // Ken Burns path: clips are already uniform — stream-copy concat, no xfade.
+      // This turns a 10-30 min xfade encode into a ~1s file-copy concat.
+      await concatenateClips(downloadedPaths.map((d) => d.clipPath), concatPath)
     } else {
-      await concatenateClipsWithTransitions(reEncodedPaths, concatPath, 0.4)
+      const CLIP_CONCURRENCY = 6
+      const reEncodedPaths: string[] = []
+
+      for (let i = 0; i < downloadedPaths.length; i += CLIP_CONCURRENCY) {
+        const batch = downloadedPaths.slice(i, i + CLIP_CONCURRENCY)
+        const batchPaths = await Promise.all(
+          batch.map(async ({ sceneId, clipPath }) => {
+            const reEncodedPath = join(workDir, `enc_${sceneId}.mp4`)
+            await runFFmpeg([
+              '-i', clipPath,
+              '-c:v', 'libx264',
+              '-preset', 'ultrafast',
+              '-crf', '26',
+              '-pix_fmt', 'yuv420p',
+              '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
+              '-r', '24',
+              '-threads', '0',
+              '-an',
+              reEncodedPath,
+            ])
+            tempFiles.push(reEncodedPath)
+            return reEncodedPath
+          })
+        )
+        reEncodedPaths.push(...batchPaths)
+      }
+
+      if (reEncodedPaths.length === 1) {
+        await concatenateClips(reEncodedPaths, concatPath)
+      } else {
+        await concatenateClipsWithTransitions(reEncodedPaths, concatPath, 0.4)
+      }
     }
 
     // ── Single final pass: loudnorm + audio mix + subtitle burn in ONE FFmpeg call ──

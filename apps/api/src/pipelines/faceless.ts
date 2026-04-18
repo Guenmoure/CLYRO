@@ -65,8 +65,10 @@ export interface FacelessPipelineParams {
   animationMode?: AnimationMode // global animation strategy; 'storyboard' bypasses Kling entirely
 }
 
-// Timeout global du pipeline : 30 min — au-delà, on considère qu'il est bloqué
-const PIPELINE_TIMEOUT_MS = Number(process.env.PIPELINE_TIMEOUT_MS ?? 30 * 60 * 1000)
+// Timeout global du pipeline : 45 min — au-delà, on considère qu'il est bloqué.
+// 45 min reste sous le lockDuration BullMQ (60 min) : le watchdog déclenche
+// AVANT que BullMQ ne re-queue le job, évitant les double-rendus.
+const PIPELINE_TIMEOUT_MS = Number(process.env.PIPELINE_TIMEOUT_MS ?? 45 * 60 * 1000)
 
 export async function runFacelessPipeline(params: FacelessPipelineParams): Promise<void> {
   const { videoId, userId, userEmail, title, style, duration, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices, animationMode } = params
@@ -407,6 +409,8 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
           voiceoverBuffer: combinedAudioBuffer,
           backgroundMusicPath: musicTmpPath,
           karaokeSubsContent,
+          // Ken Burns clips are already uniform h264/yuv420p — skip re-encode + xfade
+          skipTransitions: skipAnimation,
         })
       : await assembleVideo({
           scenes: scenesWithImages,
@@ -418,15 +422,30 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
     // Cleanup musique tmp
     if (musicTmpPath) await unlink(musicTmpPath).catch(() => null)
 
-    // ÉTAPE 5 : Upload Supabase Storage
+    // ÉTAPE 5 : Upload Supabase Storage (avec retry — un 503 transient sur
+    // un upload de 300 MB ne doit pas jeter toute la pipeline à la poubelle)
     await updateStatus('assembly', 90)
     const storagePath = `${userId}/${videoId}/output.mp4`
 
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from('videos')
-      .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
+    const UPLOAD_MAX_RETRIES = 3
+    let uploadError: { message: string } | null = null
+    for (let attempt = 1; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
+      const result = await supabaseAdmin.storage
+        .from('videos')
+        .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
+      uploadError = result.error
+      if (!uploadError) break
 
-    if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
+      logger.warn(
+        { attempt, videoId, error: uploadError.message, sizeMB: Math.round(mp4Buffer.length / 1024 / 1024) },
+        'Supabase upload failed, retrying…',
+      )
+      if (attempt < UPLOAD_MAX_RETRIES) {
+        // Exponential backoff: 5s, 15s, 30s
+        await new Promise((r) => setTimeout(r, [5_000, 15_000, 30_000][attempt - 1] ?? 30_000))
+      }
+    }
+    if (uploadError) throw new Error(`Storage upload failed after ${UPLOAD_MAX_RETRIES} attempts: ${uploadError.message}`)
 
     // Signed URL 1 an — avec retry (Supabase Storage peut être lent)
     let outputUrl = ''
