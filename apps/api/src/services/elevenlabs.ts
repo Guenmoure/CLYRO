@@ -27,7 +27,13 @@ const DEFAULT_MODEL = 'eleven_turbo_v2_5'
 
 // Hard timeout per TTS request. Without this, a stalled ElevenLabs response
 // blocks the pipeline at progress=30% indefinitely (Node fetch has no default timeout).
-const EL_TTS_TIMEOUT_MS = 45_000
+// 90s gives enough headroom for ElevenLabs under load without hanging forever.
+const EL_TTS_TIMEOUT_MS = 90_000
+
+// Max concurrent TTS requests. ElevenLabs rate-limits heavy concurrency:
+// firing 60 scenes at once on a 15-min video causes most to fail silently,
+// producing only ~30s of audio. Batching keeps us under the rate limit.
+const EL_TTS_CONCURRENCY = 5
 
 function getApiKey(): string {
   const key = process.env.ELEVENLABS_API_KEY
@@ -365,22 +371,26 @@ export async function generateVoiceoverScenes(
   scenes: Array<{ id: string; texte_voix: string }>,
   voiceId: string
 ): Promise<Array<{ sceneId: string; audioBuffer: Buffer }>> {
-  const results = await Promise.allSettled(
-    scenes
-      .filter((s) => s.texte_voix?.trim())
-      .map(async (scene) => {
-        // generateVoiceover already has retry logic via withRetry
+  const filtered = scenes.filter((s) => s.texte_voix?.trim())
+  const allResults: PromiseSettledResult<{ sceneId: string; audioBuffer: Buffer }>[] = []
+
+  for (let i = 0; i < filtered.length; i += EL_TTS_CONCURRENCY) {
+    const batch = filtered.slice(i, i + EL_TTS_CONCURRENCY)
+    const batchResults = await Promise.allSettled(
+      batch.map(async (scene) => {
         const audioBuffer = await generateVoiceover(scene.texte_voix, voiceId)
         return { sceneId: scene.id, audioBuffer }
       })
-  )
+    )
+    allResults.push(...batchResults)
+  }
 
-  const failCount = results.filter((r) => r.status === 'rejected').length
+  const failCount = allResults.filter((r) => r.status === 'rejected').length
   if (failCount > 0) {
     logger.warn({ sceneCount: scenes.length, failCount, voiceId }, 'ElevenLabs: some scenes failed after retries')
   }
 
-  return results
+  return allResults
     .filter(
       (r): r is PromiseFulfilledResult<{ sceneId: string; audioBuffer: Buffer }> =>
         r.status === 'fulfilled'
@@ -483,10 +493,17 @@ export async function generateVoiceoverScenesWithTimestamps(
   voiceId: string,
   persist?: { userId: string; videoId: string }
 ): Promise<Array<{ sceneId: string; audioBuffer: Buffer; words: WordTimestamp[] }>> {
-  const results = await Promise.allSettled(
-    scenes
-      .filter((s) => s.texte_voix?.trim())
-      .map(async (scene) => {
+  const filtered = scenes.filter((s) => s.texte_voix?.trim())
+
+  // Process in batches to stay within ElevenLabs rate limits.
+  // Firing all scenes at once (e.g. 60 for a 15-min video) causes most
+  // requests to be rate-limited, yielding only ~30s of audio.
+  const allResults: PromiseSettledResult<{ sceneId: string; audioBuffer: Buffer; words: WordTimestamp[] }>[] = []
+
+  for (let i = 0; i < filtered.length; i += EL_TTS_CONCURRENCY) {
+    const batch = filtered.slice(i, i + EL_TTS_CONCURRENCY)
+    const batchResults = await Promise.allSettled(
+      batch.map(async (scene) => {
         // Use scene-specific voice_id if available (dialogue mode), fallback to voiceId
         const effectiveVoiceId = scene.voice_id ?? voiceId
         // generateVoiceoverWithTimestamps already has retry logic via withRetry
@@ -513,14 +530,16 @@ export async function generateVoiceoverScenesWithTimestamps(
 
         return { sceneId: scene.id, ...result }
       })
-  )
+    )
+    allResults.push(...batchResults)
+  }
 
-  const failCount = results.filter((r) => r.status === 'rejected').length
+  const failCount = allResults.filter((r) => r.status === 'rejected').length
   if (failCount > 0) {
     logger.warn({ sceneCount: scenes.length, failCount, voiceId }, 'ElevenLabs: some scenes with timestamps failed after retries')
   }
 
-  return results
+  return allResults
     .filter(
       (r): r is PromiseFulfilledResult<{ sceneId: string; audioBuffer: Buffer; words: WordTimestamp[] }> =>
         r.status === 'fulfilled'

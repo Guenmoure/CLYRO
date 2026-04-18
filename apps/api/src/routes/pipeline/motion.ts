@@ -95,16 +95,11 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
     let enqueued = false
     if (renderQueue && isRedisReady()) {
       try {
-        const workers = await renderQueue.getWorkers()
-        if (workers.length > 0) {
-          await renderQueue.add('motion', jobData)
-          enqueued = true
-          logger.info({ videoId: video.id, workerCount: workers.length }, 'Job enqueued to BullMQ')
-        } else {
-          logger.warn({ videoId: video.id }, 'No active BullMQ worker consuming the queue')
-        }
+        await renderQueue.add('motion', jobData)
+        enqueued = true
+        logger.info({ videoId: video.id }, 'Job enqueued to BullMQ')
       } catch (err) {
-        logger.warn({ err, videoId: video.id }, 'Queue check/add failed')
+        logger.warn({ err, videoId: video.id }, 'Queue add failed')
       }
     } else {
       logger.warn({ videoId: video.id }, 'Redis/BullMQ not available for motion pipeline')
