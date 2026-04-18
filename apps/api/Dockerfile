@@ -101,8 +101,13 @@ ENV NODE_ENV=production
 
 EXPOSE 4000
 
-# Health check uses $PORT env var if set (Render passes it), falls back to 4000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+# Health check uses $PORT env var if set (Render passes it), falls back to 4000.
+# --start-period=60s gives Node time to cold-start (imports, Sentry init,
+#   Remotion module load) before the first check can fail.
+# --timeout=10s tolerates brief event-loop stalls (GC pauses, short CPU spikes)
+#   without killing the container. The deeper fix is moving heavy work off the
+#   API process (BullMQ worker service + streaming /mix-audio) — see next steps.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s \
   CMD wget -qO- "http://localhost:${PORT:-4000}/health" || exit 1
 
 CMD ["node", "apps/api/dist/index.js"]
