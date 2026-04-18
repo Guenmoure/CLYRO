@@ -83,7 +83,6 @@ export function buildStoryboardPrompts(p: StoryboardPromptParams): { system: str
   const user = `Découpe ce script en environ ${sceneCount} scènes visuelles pour une vidéo de style "${p.style}".${p.title ? `\nTitre : "${p.title}"` : ''}
 ${p.description ? `\nCONTEXTE VISUEL (personnages, décor, ambiance) :\n${p.description}\n→ Intègre ces éléments dans description_visuelle lorsque pertinent (couleur de peau, style vestimentaire, décor).` : ''}
 
-STYLE VISUEL OBLIGATOIRE pour description_visuelle : ${styleGuide}
 ${hasDialogue ? `\nMODE DIALOGUE DÉTECTÉ : Le script contient des dialogues entre plusieurs personnages.
 INSTRUCTIONS SPÉCIALES :
 - Détecte chaque personnage / locuteur dans le script (format: "Nom:" ou "— Nom" ou guillemets)
@@ -94,14 +93,14 @@ INSTRUCTIONS SPÉCIALES :
 
 Pour chaque scène, génère :
 - "index": numéro de scène (commence à 0)
-- "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). DOIT respecter le style ci-dessus.
+- "description_visuelle": prompt visuel en ANGLAIS pour Flux (max 120 chars). RÈGLE CRITIQUE : décris UNIQUEMENT le contenu visuel UNIQUE de cette scène — QUI est visible, QUOI se passe, OÙ. NE PAS inclure de mots de style (lighting, film grain, cinematic, etc.) — le style est appliqué automatiquement. Chaque scène doit être visuellement distincte des autres.
 - "animation_prompt": prompt de mouvement en ANGLAIS pour image-to-video (max 80 chars). Décrit le mouvement de caméra et l'action concrète.
 - "texte_voix": OBLIGATOIRE — texte narré en français pendant cette scène. Jamais vide.
 - "duree_estimee": durée en secondes (entier, entre 3 et 12)
 ${hasDialogue ? `- "speaker": NOM du personnage parlant (ex: "Alice", "Bob"). Optionnel pour narration, OBLIGATOIRE pour dialogues.` : ''}
 
 RÈGLES :
-1. description_visuelle DOIT coller au style "${p.style}" — applique strictement : ${styleGuide}
+1. description_visuelle : contenu visuel unique par scène (sujet + action + lieu). Pas de mots de style répétitifs. Exemples bons : "scientist examining glowing DNA strand in dark lab", "crowd celebrating in sunlit city square", "child reading book under tree at sunset". Mauvais : "cinematic shot of person, dramatic lighting, film grain".
 2. animation_prompt DOIT décrire un mouvement CONCRET (jamais "smooth animation" seul)
 3. texte_voix est OBLIGATOIRE — distribue le script complet sur toutes les scènes${isAuto ? ' sans rien omettre' : ''}
 ${durationInstruction}

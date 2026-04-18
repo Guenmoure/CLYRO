@@ -40,7 +40,10 @@ export async function POST(request: NextRequest) {
   }
 
   const config = STYLE_CONFIGS[style] ?? STYLE_CONFIGS['cinematique']
-  const fullPrompt = `${config.prefix} ${prompt}`
+  // Scene content leads — flux weights the beginning of the prompt most heavily.
+  // Style suffix sets the aesthetic without overriding the scene-specific content.
+  const styleSuffix = config.prefix.replace(/,$/, '')
+  const fullPrompt = `${prompt}, ${styleSuffix}`
 
   try {
     const input: Record<string, unknown> = {

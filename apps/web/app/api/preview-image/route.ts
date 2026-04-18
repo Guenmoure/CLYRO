@@ -42,8 +42,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const prefix = STYLE_PREFIXES[style] ?? ''
-    const fullPrompt = `${prefix} ${prompt}`
+    // Scene content leads — flux weights the beginning of the prompt most heavily.
+    // Style is appended as a suffix so it sets the aesthetic without overriding scene content.
+    const suffix = STYLE_PREFIXES[style] ? STYLE_PREFIXES[style].replace(/,$/, '') : ''
+    const fullPrompt = suffix ? `${prompt}, ${suffix}` : prompt
 
     const input: Record<string, unknown> = {
       prompt: fullPrompt,
