@@ -548,7 +548,7 @@ function FacelessNewPageInner() {
       if (!session) return
       supabase
         .from('profiles')
-        .select('plan, credits_balance')
+        .select('plan, credits')
         .eq('id', session.user.id)
         .single()
         .then(({ data, error }: { data: any; error: any }) => {
@@ -558,7 +558,7 @@ function FacelessNewPageInner() {
           }
           if (data) {
             setUserPlan((data.plan as typeof userPlan) ?? 'free')
-            setCreditsBalance(data.credits_balance ?? 0)
+            setCreditsBalance(data.credits ?? 0)
           }
         }, (err: unknown) => {
           console.error('[faceless/new] Unexpected error loading profile:', err)
