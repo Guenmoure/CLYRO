@@ -432,7 +432,8 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
     if (downloadedPaths.length === 0) throw new Error('No Kling clips to assemble')
 
     // Re-encoder chaque clip pour uniformiser résolution / fps / codec
-    const CLIP_CONCURRENCY = 4
+    // Concurrency 6 (ultrafast preset has low CPU overhead per job)
+    const CLIP_CONCURRENCY = 6
     const reEncodedPaths: string[] = []
 
     for (let i = 0; i < downloadedPaths.length; i += CLIP_CONCURRENCY) {
@@ -448,6 +449,7 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
             '-pix_fmt', 'yuv420p',
             '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
             '-r', '24',
+            '-threads', '0',  // auto-select thread count
             '-an',
             reEncodedPath,
           ])
@@ -468,56 +470,100 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
       await concatenateClipsWithTransitions(reEncodedPaths, concatPath, 0.4)
     }
 
-    let currentPath = concatPath
+    // ── Single final pass: loudnorm + audio mix + subtitle burn in ONE FFmpeg call ──
+    // Previously this was 3-4 separate encode passes (loudnorm ×2, mix, subtitle).
+    // Now everything is done in a single filter_complex → saves 2-3 minutes per video.
+    const finalPath = join(workDir, 'final.mp4')
+    tempFiles.push(finalPath)
 
-    // Mixe l'audio avec normalisation loudnorm EBU R128
     if (voiceoverBuffer) {
-      // Normalise le voiceover à -16 LUFS avant le mix
-      const rawVoicePath = join(workDir, 'voice_raw.mp3')
-      const normVoicePath = join(workDir, 'voice_norm.mp3')
-      await writeFile(rawVoicePath, voiceoverBuffer)
-      tempFiles.push(rawVoicePath, normVoicePath)
+      const voicePath = join(workDir, 'voice.mp3')
+      await writeFile(voicePath, voiceoverBuffer)
+      tempFiles.push(voicePath)
 
-      try {
-        await normalizeAudioLoudness(rawVoicePath, normVoicePath, -16)
-        const normalizedBuffer = await readFile(normVoicePath)
-        const mixedPath = join(workDir, 'mixed.mp4')
-        tempFiles.push(mixedPath)
-        await mixAudio(currentPath, normalizedBuffer, backgroundMusicPath ?? null, mixedPath)
-        currentPath = mixedPath
-        logger.info('FFmpeg: voiceover normalized to -16 LUFS before mix')
-      } catch (normErr) {
-        // Fallback : mix sans normalisation si loudnorm échoue
-        logger.warn({ normErr }, 'FFmpeg: loudnorm failed, falling back to raw voiceover')
-        const mixedPath = join(workDir, 'mixed.mp4')
-        tempFiles.push(mixedPath)
-        await mixAudio(currentPath, voiceoverBuffer, backgroundMusicPath ?? null, mixedPath)
-        currentPath = mixedPath
+      const srtPath = karaokeSubsContent ? join(workDir, 'karaoke.srt') : null
+      if (srtPath && karaokeSubsContent) {
+        await writeFile(srtPath, karaokeSubsContent, 'utf-8')
+        tempFiles.push(srtPath)
       }
-    }
 
-    // Sous-titres karaoke
-    if (karaokeSubsContent) {
-      const srtPath = join(workDir, 'karaoke.srt')
-      const subtitledPath = join(workDir, 'subtitled.mp4')
-      await writeFile(srtPath, karaokeSubsContent, 'utf-8')
-      tempFiles.push(srtPath, subtitledPath)
+      // Build filter_complex: loudnorm (single-pass inline) + ducking + optional subtitles
+      // Single-pass loudnorm is slightly less accurate than 2-pass but 2× faster.
+      const loudnormFilter = 'loudnorm=I=-16:TP=-1.5:LRA=11'
+      const forceStyle = 'FontName=Arial\\,FontSize=28\\,PrimaryColour=&H00FFFFFF\\,OutlineColour=&H00000000\\,Outline=2\\,Bold=1\\,Alignment=2'
+
+      const inputs: string[] = ['-i', concatPath, '-i', voicePath]
+      if (backgroundMusicPath) inputs.push('-i', backgroundMusicPath)
+
+      const musicIdx = backgroundMusicPath ? 2 : -1
+      let filterComplex: string
+      let videoMap: string
+      let audioMap: string
+
+      if (backgroundMusicPath) {
+        filterComplex = [
+          `[1:a]${loudnormFilter}[normv]`,
+          `[${musicIdx}:a]volume=0.35,aloop=loop=-1:size=2147483647[mloop]`,
+          '[mloop][normv]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[mduck]',
+          '[normv][mduck]amix=inputs=2:duration=first:dropout_transition=0[aout]',
+          ...(srtPath ? [`[0:v]subtitles=${srtPath}:force_style=${forceStyle}[vout]`] : []),
+        ].join(';')
+        videoMap = srtPath ? '[vout]' : '0:v'
+        audioMap = '[aout]'
+      } else {
+        filterComplex = [
+          `[1:a]${loudnormFilter}[aout]`,
+          ...(srtPath ? [`[0:v]subtitles=${srtPath}:force_style=${forceStyle}[vout]`] : []),
+        ].join(';')
+        videoMap = srtPath ? '[vout]' : '0:v'
+        audioMap = '[aout]'
+      }
+
       try {
-        // Use comma-escaped force_style (no shell quotes needed with spawn)
-        const forceStyle = 'FontName=Arial\\,FontSize=28\\,PrimaryColour=&H00FFFFFF\\,OutlineColour=&H00000000\\,Outline=2\\,Bold=1\\,Alignment=2'
         await runFFmpeg([
-          '-i', currentPath,
-          '-vf', `subtitles=${srtPath}:force_style=${forceStyle}`,
-          '-c:a', 'copy',
-          subtitledPath,
+          ...inputs,
+          '-filter_complex', filterComplex,
+          '-map', videoMap,
+          '-map', audioMap,
+          '-c:v', 'libx264',
+          '-preset', 'ultrafast',
+          '-crf', '26',
+          '-pix_fmt', 'yuv420p',
+          '-c:a', 'aac',
+          '-b:a', '192k',
+          '-shortest',
+          finalPath,
         ])
-        currentPath = subtitledPath
-      } catch (subErr) {
-        logger.warn({ subErr }, 'FFmpeg: karaoke subtitles failed, skipping (non-blocking)')
+        logger.info({ subs: !!srtPath, music: !!backgroundMusicPath }, 'FFmpeg: final pass done (single encode)')
+      } catch (finalErr) {
+        // Fallback: skip subtitles if the subtitle filter failed (font not found etc.)
+        logger.warn({ finalErr }, 'FFmpeg: final pass with subtitles failed — retrying without subtitles')
+        const filterSimple = backgroundMusicPath
+          ? [
+              `[1:a]${loudnormFilter}[normv]`,
+              `[${musicIdx}:a]volume=0.35,aloop=loop=-1:size=2147483647[mloop]`,
+              '[mloop][normv]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[mduck]',
+              '[normv][mduck]amix=inputs=2:duration=first:dropout_transition=0[aout]',
+            ].join(';')
+          : `[1:a]${loudnormFilter}[aout]`
+        await runFFmpeg([
+          ...inputs,
+          '-filter_complex', filterSimple,
+          '-map', '0:v',
+          '-map', '[aout]',
+          '-c:v', 'copy',
+          '-c:a', 'aac',
+          '-b:a', '192k',
+          '-shortest',
+          finalPath,
+        ])
       }
+    } else {
+      // No voiceover — just copy the concat
+      await runFFmpeg(['-i', concatPath, '-c', 'copy', finalPath])
     }
 
-    const finalBuffer = await readFile(currentPath)
+    const finalBuffer = await readFile(finalPath)
     logger.info({ clipCount: sceneVideoUrls.length, outputSize: finalBuffer.length }, 'FFmpeg: Kling clips assembled')
     return finalBuffer
   } finally {
