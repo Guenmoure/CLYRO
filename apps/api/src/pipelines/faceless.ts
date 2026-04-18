@@ -7,8 +7,7 @@ import { supabaseAdmin } from '../lib/supabase'
 import { generateStoryboard } from '../services/claude'
 import { generateSceneImages, generateSceneVideoAuto, uploadFalUrlToStorage } from '../services/fal'
 import { generateVoiceoverScenesWithTimestamps } from '../services/elevenlabs'
-import { assembleVideo, assembleVideoFromVideoClips, generateKaraokeFromWords } from '../services/ffmpeg'
-import { renderKenBurnsClip } from '../services/remotion'
+import { assembleVideo, assembleVideoFromVideoClips, generateKaraokeFromWords, renderKenBurnsFFmpeg } from '../services/ffmpeg'
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
 
@@ -304,9 +303,10 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       const workDir = pathJoin(tmpdir(), kenBurnsTmpDir)
       await mkdirFn(workDir, { recursive: true })
 
-      // Throttle to 3 concurrent Chrome instances — running all at once causes
-      // OOM / SIGSEGV (exit 139) in containerised environments (Render.com).
-      const KB_CONCURRENCY = 3
+      // Ken Burns via FFmpeg zoompan — 50× plus rapide que Remotion/Chromium,
+      // aucune dépendance Chrome → plus de SIGSEGV ni de bundle webpack à bâtir.
+      // Concurrence 4 : FFmpeg est léger (pas de browser), 4 clips simultanés.
+      const KB_CONCURRENCY = 4
       const kbResults: PromiseSettledResult<{ sceneId: string; videoUrl: string }>[] = []
       for (let i = 0; i < sceneImages.length; i += KB_CONCURRENCY) {
         const batch = sceneImages.slice(i, i + KB_CONCURRENCY)
@@ -314,7 +314,7 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
           batch.map(async ({ sceneId, imageUrl }, batchIdx) => {
             const idx = i + batchIdx
             const durationSec = Number(sceneAudioDurations.get(sceneId) ?? 5)
-            const mp4Buffer = await renderKenBurnsClip({
+            const mp4Buffer = await renderKenBurnsFFmpeg({
               imageUrl,
               durationSeconds: durationSec,
               sceneIndex: idx,
@@ -452,6 +452,20 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       .eq('id', videoId)
 
     logger.info({ videoId, outputUrl }, 'Faceless pipeline completed')
+
+    // Libère explicitement la heap V8 avant que BullMQ ne pick le job suivant.
+    // Le mp4Buffer final (~50-200 MB) + combinedAudioBuffer (~30 MB) restent
+    // sinon en mémoire jusqu'au prochain cycle GC naturel, ce qui déclenche
+    // un OOM sur le worker Render si un nouveau job démarre tout de suite.
+    // Nécessite --expose-gc dans NODE_OPTIONS (voir render.yaml).
+    if (typeof global.gc === 'function') {
+      try {
+        global.gc()
+        logger.info({ videoId, heapMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) }, 'Post-pipeline GC triggered')
+      } catch {
+        // gc() may throw if --expose-gc isn't set — ignore, it's a best effort
+      }
+    }
 
     await sendVideoReadyEmail(userEmail, title, outputUrl).catch((err) =>
       logger.warn({ err }, 'Failed to send video ready email (non-blocking)')

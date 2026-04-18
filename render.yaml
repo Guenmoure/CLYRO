@@ -126,6 +126,14 @@ services:
       - key: NODE_ENV
         value: production
 
+      # Force Node à utiliser la heap maximale du plan (2 GB = 2048 MB).
+      # Sans ça, V8 plafonne par défaut vers 1.5 GB et déclenche un OOM
+      # quand la pipeline faceless accumule buffers MP3/MP4 + FFmpeg.
+      # `--expose-gc` permet aux pipelines d'appeler global.gc() après
+      # l'assemblage pour libérer la mémoire avant le job suivant.
+      - key: NODE_OPTIONS
+        value: '--max-old-space-size=1800 --expose-gc'
+
       # — Redis (obligatoire — sans ça, le worker ne démarre pas) —
       - key: REDIS_URL
         sync: false

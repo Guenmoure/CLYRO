@@ -116,7 +116,11 @@ async function main(): Promise<void> {
     },
     {
       connection: redisConnection!,
-      concurrency: 2,
+      // Concurrence 1 : chaque job faceless consomme ~1.5 GB (Chrome x3 + bundle
+      // Remotion + buffers MP3/MP4 + FFmpeg). Lancer 2 jobs en parallèle
+      // faisait dépasser la limite mémoire Render et déclenchait un restart.
+      // À 1, on serialise — la queue progresse plus lentement mais sans OOM.
+      concurrency: 1,
       // Faceless + Remotion pipelines can take up to 30 min.
       // lockDuration must exceed that or BullMQ will re-queue the job mid-flight.
       lockDuration:    35 * 60 * 1000, // 35 min
@@ -138,7 +142,7 @@ async function main(): Promise<void> {
     logger.info('BullMQ worker ready — connected to Redis and listening for jobs')
   })
 
-  logger.info({ concurrency: 2 }, 'CLYRO Render Worker started, waiting for jobs...')
+  logger.info({ concurrency: 1 }, 'CLYRO Render Worker started, waiting for jobs...')
 
   // ── 5. Graceful shutdown ────────────────────────────────────────────────
   const shutdown = async (signal: string) => {

@@ -80,6 +80,14 @@ async function getBundle(): Promise<string> {
   return bundlePromise
 }
 
+/**
+ * Pre-warms the Remotion webpack bundle so the first clip render doesn't block.
+ * Call this before starting a batch of Ken Burns clips.
+ */
+export async function warmRemotionBundle(): Promise<void> {
+  await getBundle()
+}
+
 // ── Ken Burns movement presets — varied per scene index ────────────────────────
 
 type KBPreset = Omit<KenBurnsClipProps, 'imageUrl'>
@@ -160,6 +168,8 @@ export async function renderKenBurnsClip(options: RenderKenBurnsOptions): Promis
       inputProps: inputProps as unknown as Record<string, unknown>,
       concurrency: 1,
       chromiumOptions,
+      // Kill a hung frame after 60 s (default is 30 s — too short for slow containers)
+      timeoutInMilliseconds: 60_000,
     })
 
     const mp4 = await readFile(outputPath)

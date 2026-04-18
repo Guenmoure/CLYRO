@@ -250,6 +250,16 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
     await sendVideoReadyEmail(userEmail, title, outputUrl).catch((err) =>
       logger.warn({ err }, 'Failed to send video ready email')
     )
+
+    // Cf. faceless.ts : libère la heap avant que le worker ne pick le job suivant.
+    if (typeof global.gc === 'function') {
+      try {
+        global.gc()
+        logger.info({ videoId, heapMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) }, 'Post-pipeline GC triggered')
+      } catch {
+        // gc() may throw if --expose-gc isn't set — best effort
+      }
+    }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err)
     Sentry.captureException(err, { extra: { videoId, userId } })

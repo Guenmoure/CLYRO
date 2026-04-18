@@ -100,6 +100,81 @@ async function runFFmpeg(args: string[]): Promise<void> {
   })
 }
 
+// ── Ken Burns via FFmpeg zoompan ───────────────────────────────────────────
+
+const FORMAT_DIMS_KB = {
+  '16:9': { width: 1920, height: 1080 },
+  '9:16': { width: 1080, height: 1920 },
+  '1:1':  { width: 1080, height: 1080 },
+}
+
+// Presets : zoom+pan variés par index de scène (6 variantes)
+const KB_FFMPEG_PRESETS = [
+  { z: "min(zoom+0.0015,1.20)", x: "iw/2-(iw/zoom/2)", y: "ih/2-(ih/zoom/2)" }, // center zoom-in
+  { z: "min(zoom+0.0015,1.20)", x: "0",                y: "0"                }, // top-left
+  { z: "min(zoom+0.0015,1.20)", x: "iw-iw/zoom",       y: "ih/2-(ih/zoom/2)" }, // right pan
+  { z: "min(zoom+0.0015,1.20)", x: "iw/2-(iw/zoom/2)", y: "0"                }, // top pan
+  { z: "if(eq(on,1),1.20,max(pzoom-0.0015,1.0))", x: "iw/2-(iw/zoom/2)", y: "ih/2-(ih/zoom/2)" }, // zoom-out
+  { z: "min(zoom+0.0015,1.20)", x: "iw-iw/zoom",       y: "ih-ih/zoom"       }, // diagonal
+]
+
+/**
+ * Génère un clip Ken Burns (zoom+pan) sur une image statique via FFmpeg zoompan.
+ * 50× plus rapide que Remotion/Chromium — aucune dépendance Chrome.
+ */
+export async function renderKenBurnsFFmpeg(options: {
+  imageUrl: string
+  durationSeconds: number
+  sceneIndex?: number
+  format?: '16:9' | '9:16' | '1:1'
+}): Promise<Buffer> {
+  const { imageUrl, durationSeconds, sceneIndex = 0, format = '16:9' } = options
+  const { width, height } = FORMAT_DIMS_KB[format] ?? FORMAT_DIMS_KB['16:9']
+  const durationFrames = Math.max(30, Math.round(durationSeconds * 30))
+  const preset = KB_FFMPEG_PRESETS[sceneIndex % KB_FFMPEG_PRESETS.length]
+
+  // Scale to 2× output resolution before zoompan → no pixelation during zoom
+  const scaleW = width * 2
+  const scaleH = height * 2
+  const zoompanFilter = [
+    `scale=${scaleW}:${scaleH}:force_original_aspect_ratio=increase`,
+    `crop=${scaleW}:${scaleH}`,
+    `zoompan=z='${preset.z}':x='${preset.x}':y='${preset.y}':d=${durationFrames}:s=${width}x${height}:fps=30`,
+  ].join(',')
+
+  const tmpImgPath = join(tmpdir(), `clyro-kb-img-${randomUUID()}.jpg`)
+  const tmpOutPath = join(tmpdir(), `clyro-kb-out-${randomUUID()}.mp4`)
+
+  try {
+    // Téléchargement de l'image source
+    const res = await fetch(imageUrl, { signal: AbortSignal.timeout(30_000) })
+    if (!res.ok) throw new Error(`KenBurns: failed to download image (${res.status})`)
+    await writeFile(tmpImgPath, Buffer.from(await res.arrayBuffer()))
+
+    await runFFmpeg([
+      '-loop', '1',
+      '-framerate', '30',
+      '-i', tmpImgPath,
+      '-vf', zoompanFilter,
+      '-c:v', 'libx264',
+      '-preset', 'ultrafast',
+      '-crf', '23',
+      '-pix_fmt', 'yuv420p',
+      '-t', String(durationSeconds),
+      '-threads', '2',
+      '-an',
+      tmpOutPath,
+    ])
+
+    const buf = await readFile(tmpOutPath)
+    logger.info({ sceneIndex, durationSeconds, format, outputSize: buf.length }, 'KenBurns FFmpeg: clip rendered')
+    return buf
+  } finally {
+    await unlink(tmpImgPath).catch(() => null)
+    await unlink(tmpOutPath).catch(() => null)
+  }
+}
+
 /**
  * Crée un clip vidéo à partir d'une image en la loopant sur la durée donnée
  */

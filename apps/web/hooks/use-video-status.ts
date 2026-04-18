@@ -20,14 +20,15 @@ interface UseVideoStatusReturn extends VideoStatusState {
 const TERMINAL = new Set<VideoStatus>(['done', 'error'])
 
 /**
- * Hook de suivi temps-réel d'une génération vidéo.
+ * Suivi temps-réel d'une vidéo via Supabase Realtime + polling.
  *
- * Stratégie double-couche :
- *  1. SSE (primaire)     — polling server-side toutes les 2 s via /api/v1/videos/:id/status
- *  2. Supabase Realtime  — fallback si SSE échoue (réseau instable, page en arrière-plan)
+ * Stratégie :
+ *  1. Fetch initial  — charge l'état courant dès le montage
+ *  2. Supabase Realtime — reçoit chaque UPDATE en temps réel (websocket)
+ *  3. Polling 5 s    — filet de sécurité si le websocket est instable
  *
- * La reconnexion SSE est automatique avec backoff exponentiel (max 30 s).
- * Quand le statut terminal (done/error) est atteint, toutes les connexions se ferment.
+ * L'ancien proxy SSE via Vercel a été retiré : les fonctions serverless
+ * Vercel sont coupées après ~60 s, provoquant des 504 sur les vidéos longues.
  */
 export function useVideoStatus(videoId: string | null): UseVideoStatusReturn {
   const supabase = createBrowserClient()
@@ -39,87 +40,47 @@ export function useVideoStatus(videoId: string | null): UseVideoStatusReturn {
     errorMessage: null,
   })
 
-  const esRef        = useRef<EventSource | null>(null)
-  const retryTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const retryCount   = useRef(0)
-  const isDoneRef    = useRef(false)
+  const isDoneRef = useRef(false)
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const applyData = useCallback((data: {
+  const applyRow = useCallback((row: {
     status: VideoStatus
-    progress?: number
     output_url?: string | null
-    error_message?: string | null
+    metadata?: { progress?: number; error_message?: string } | null
   }) => {
     setState({
-      status:       data.status,
-      progress:     data.progress ?? 0,
-      outputUrl:    data.output_url ?? null,
-      errorMessage: data.error_message ?? null,
+      status:       row.status,
+      progress:     row.metadata?.progress ?? 0,
+      outputUrl:    row.output_url ?? null,
+      errorMessage: row.metadata?.error_message ?? null,
     })
-    if (TERMINAL.has(data.status)) {
+    if (TERMINAL.has(row.status)) {
       isDoneRef.current = true
+      if (pollTimer.current) {
+        clearInterval(pollTimer.current)
+        pollTimer.current = null
+      }
     }
   }, [])
 
-  // ── SSE ─────────────────────────────────────────────────────────────────────
+  const fetchStatus = useCallback(async () => {
+    if (!videoId || isDoneRef.current) return
+    const { data } = await supabase
+      .from('videos')
+      .select('status, output_url, metadata')
+      .eq('id', videoId)
+      .single()
+    if (data) applyRow(data as Parameters<typeof applyRow>[0])
+  }, [videoId, supabase, applyRow])
+
+  // ── Initial fetch ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!videoId) return
     isDoneRef.current = false
-    retryCount.current = 0
+    fetchStatus()
+  }, [videoId, fetchStatus])
 
-    let cancelled = false
-
-    async function connect() {
-      if (cancelled || isDoneRef.current) return
-
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session || cancelled) return
-
-      const token = encodeURIComponent(session.access_token)
-      // Use the Next.js proxy to avoid CORS issues when calling Render from Vercel
-      const url   = `/api/videos/${videoId}/status?token=${token}`
-
-      const es = new EventSource(url)
-      esRef.current = es
-
-      es.onmessage = (e: MessageEvent) => {
-        try {
-          const data = JSON.parse(e.data as string) as {
-            status: VideoStatus
-            progress?: number
-            output_url?: string | null
-            error_message?: string | null
-          }
-          applyData(data)
-          if (TERMINAL.has(data.status)) {
-            es.close()
-          }
-        } catch { /* ignore parse errors */ }
-      }
-
-      es.onerror = () => {
-        es.close()
-        esRef.current = null
-        if (cancelled || isDoneRef.current) return
-        // Backoff exponentiel : 2s, 4s, 8s … max 30s
-        const delay = Math.min(2000 * Math.pow(2, retryCount.current), 30_000)
-        retryCount.current++
-        retryTimer.current = setTimeout(connect, delay)
-      }
-    }
-
-    connect()
-
-    return () => {
-      cancelled = true
-      esRef.current?.close()
-      esRef.current = null
-      if (retryTimer.current) clearTimeout(retryTimer.current)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoId])
-
-  // ── Supabase Realtime (fallback) ─────────────────────────────────────────────
+  // ── Supabase Realtime ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!videoId) return
 
@@ -134,18 +95,8 @@ export function useVideoStatus(videoId: string | null): UseVideoStatusReturn {
           filter: `id=eq.${videoId}`,
         },
         (payload: { new: Record<string, unknown> }) => {
-          const row = payload.new as {
-            status: VideoStatus
-            output_url?: string | null
-            metadata?: { progress?: number; error_message?: string } | null
-          }
-          applyData({
-            status:       row.status,
-            progress:     row.metadata?.progress ?? 0,
-            output_url:   row.output_url ?? null,
-            error_message: row.metadata?.error_message ?? null,
-          })
-        }
+          applyRow(payload.new as Parameters<typeof applyRow>[0])
+        },
       )
       .subscribe()
 
@@ -154,6 +105,15 @@ export function useVideoStatus(videoId: string | null): UseVideoStatusReturn {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId])
+
+  // ── Polling fallback (5 s) ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!videoId) return
+    pollTimer.current = setInterval(fetchStatus, 5_000)
+    return () => {
+      if (pollTimer.current) clearInterval(pollTimer.current)
+    }
+  }, [videoId, fetchStatus])
 
   return {
     ...state,
