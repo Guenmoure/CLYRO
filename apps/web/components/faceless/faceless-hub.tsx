@@ -1216,15 +1216,13 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       }
 
       // ── Phase 1 : flux/schnell draft preview (~3-4s) ──────────────────────
+      // Note: styleReferenceUrl intentionally NOT passed here. img2img with high
+      // strength clones scene 0 content — consistency comes from styleTokens in
+      // the text prompt, not image-to-image transfer.
       const previewRes = await fetch('/api/preview-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: finalPrompt,
-          style,
-          seed,
-          styleReferenceUrl: scene.index > 0 ? localStyleRef : undefined,
-        }),
+        body: JSON.stringify({ prompt: finalPrompt, style, seed }),
       })
       if (previewRes.ok) {
         const previewData = await previewRes.json() as { imageUrl: string }
@@ -1243,16 +1241,14 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       }
 
       // ── Phase 2 : flux/dev HD (blocking fal.run — reliable on Vercel) ────
+      // styleReferenceUrl removed: img2img strength 0.72 was cloning scene 0
+      // content into every scene. Style consistency is handled via styleTokens
+      // injected into the text prompt by validateScene0().
       updateScene(id, { streamLog: 'HD generation in progress…' })
       const hdRes = await fetch('/api/stream-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: finalPrompt,
-          style,
-          seed,
-          styleReferenceUrl: scene.index > 0 ? localStyleRef : undefined,
-        }),
+        body: JSON.stringify({ prompt: finalPrompt, style, seed }),
       })
 
       if (!hdRes.ok) {
