@@ -46,8 +46,11 @@ export function Logo({
           'shadow-[0_0_20px_rgba(102,126,234,0.5)]',
         )}
       >
-        {/* subtle noise overlay for depth */}
-        <div className="absolute inset-0 rounded-[inherit] opacity-[0.06] bg-[url('/noise.png')] bg-repeat" />
+        {/* subtle noise overlay for depth (SVG inline — no external file) */}
+        <svg className="absolute inset-0 w-full h-full rounded-[inherit] opacity-[0.08] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+          <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+          <rect width="100%" height="100%" filter="url(#noise)" opacity="0.4"/>
+        </svg>
         <span
           className={cn(
             s.text,
