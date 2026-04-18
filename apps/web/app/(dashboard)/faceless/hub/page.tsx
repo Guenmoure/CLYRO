@@ -9,7 +9,7 @@ export const metadata = { title: 'Faceless Hub — CLYRO' }
 export default async function FacelessHubPage({
   searchParams,
 }: {
-  searchParams?: { draft?: string }
+  searchParams?: { draft?: string; resume?: string }
 }) {
   const supabase = createServerComponentClient<Database>({ cookies })
   const {
@@ -17,16 +17,17 @@ export default async function FacelessHubPage({
   } = await supabase.auth.getUser()
   const userId = user?.id ?? ''
 
-  // Run the sessions query + optional draft fetch in parallel
-  const draftId = searchParams?.draft
+  const draftId  = searchParams?.draft
+  const resumeId = searchParams?.resume
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [videosRes, draftRes]: [any, any] = await Promise.all([
+  const [videosRes, draftRes, resumeRes]: [any, any, any] = await Promise.all([
     supabase
       .from('videos')
       .select('id, title, status, output_url, created_at')
       .eq('user_id', userId)
       .eq('module', 'faceless')
-      .neq('status', 'draft')          // drafts are surfaced via /projects + /drafts, not the sidebar
+      .neq('status', 'draft')
       .order('created_at', { ascending: false })
       .limit(20),
     draftId
@@ -38,11 +39,29 @@ export default async function FacelessHubPage({
           .eq('status', 'draft')
           .single()
       : Promise.resolve({ data: null }),
+    resumeId
+      ? supabase
+          .from('videos')
+          .select('id, title, status')
+          .eq('id', resumeId)
+          .eq('user_id', userId)
+          .neq('status', 'draft')
+          .single()
+      : Promise.resolve({ data: null }),
   ])
 
   const initialDraft = draftRes?.data
     ? { id: draftRes.data.id as string, wizard_state: draftRes.data.wizard_state ?? null }
     : null
 
-  return <FacelessHub initialVideos={videosRes?.data ?? []} initialDraft={initialDraft} />
+  // resumeVideoId: non-null only when a real in-flight (or recently done) video exists
+  const resumeVideoId: string | null = resumeRes?.data?.id ?? null
+
+  return (
+    <FacelessHub
+      initialVideos={videosRes?.data ?? []}
+      initialDraft={initialDraft}
+      resumeVideoId={resumeVideoId}
+    />
+  )
 }

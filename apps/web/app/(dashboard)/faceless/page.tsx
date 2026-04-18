@@ -152,7 +152,7 @@ function FacelessVideoCard({ video }: { video: FacelessVideo }) {
 
   return (
     <Link
-      href={video.output_url ?? `/faceless/hub?draft=${video.id}`}
+      href={video.output_url ?? `/faceless/hub?resume=${video.id}`}
       target={video.output_url ? '_blank' : undefined}
       rel={video.output_url ? 'noopener noreferrer' : undefined}
       className="card-interactive rounded-2xl border border-border bg-card overflow-hidden block"

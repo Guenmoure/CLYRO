@@ -2662,7 +2662,8 @@ const DEFAULT_PROJECT: ProjectState = {
   animationMode: 'fast',  // default: Kling Standard (good quality/speed tradeoff)
 }
 
-const DRAFT_KEY = 'clyro-faceless-draft'
+const DRAFT_KEY       = 'clyro-faceless-draft'
+const ACTIVE_GEN_KEY  = 'clyro-faceless-active-gen'
 
 /** Draft payload persisted in videos.wizard_state (JSONB). Keeps only
  *  serializable fields — audioFile/videoId/finalVideoUrl are excluded. */
@@ -2710,14 +2711,31 @@ function hydrateProjectFromDraft(w: InitialHubDraft['wizard_state']): ProjectSta
   }
 }
 
-function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
+function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideoId }: {
   onGenerated: (title: string, videoId: string) => void
   onVideoReady?: (videoId: string, outputUrl: string) => void
   initialDraft?: InitialHubDraft | null
+  resumeVideoId?: string | null
 }) {
-  const [project,    setProject]   = useState<ProjectState>(() =>
-    initialDraft?.wizard_state ? hydrateProjectFromDraft(initialDraft.wizard_state) : DEFAULT_PROJECT
-  )
+  const [project,    setProject]   = useState<ProjectState>(() => {
+    if (resumeVideoId) return { ...DEFAULT_PROJECT, videoId: resumeVideoId, step: 'final' }
+    if (initialDraft?.wizard_state) return hydrateProjectFromDraft(initialDraft.wizard_state)
+    return DEFAULT_PROJECT
+  })
+
+  // Background generation banner: shown when localStorage has an active generation
+  // but no resumeVideoId was passed (e.g. user navigated to /faceless/hub directly)
+  const [bgGen, setBgGen] = useState<{ videoId: string; title: string } | null>(null)
+  useEffect(() => {
+    if (resumeVideoId || project.videoId) return
+    try {
+      const raw = localStorage.getItem(ACTIVE_GEN_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as { videoId?: string; title?: string }
+      if (parsed.videoId) setBgGen({ videoId: parsed.videoId, title: parsed.title || 'Sans titre' })
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [loading,    setLoading]   = useState(false)
   const [savedState, setSavedState] = useState<'saving' | 'saved' | null>(null)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -2941,6 +2959,18 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
 
       patch({ videoId: video_id, step: 'final' })
       onGenerated(project.title || project.script.slice(0, 60) || 'New video', video_id)
+      // Persist active generation to localStorage so a page refresh can reconnect
+      try {
+        localStorage.setItem(ACTIVE_GEN_KEY, JSON.stringify({
+          videoId: video_id,
+          title: project.title || project.script.slice(0, 60) || 'New video',
+          startedAt: Date.now(),
+        }))
+      } catch { /* storage quota — non-blocking */ }
+      // Stamp the URL so a refresh lands back on the final step
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', `/faceless/hub?resume=${video_id}`)
+      }
       // Pipeline row now owns this project — remove the draft row so
       // it no longer appears in /drafts or the DraftsSection of /projects.
       await clearDraft().catch(() => null)
@@ -2970,6 +3000,32 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Banner: background generation detected via localStorage (no ?resume param in URL) */}
+      {bgGen && project.step !== 'final' && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border-b border-blue-500/20 shrink-0">
+          <Loader2 size={14} className="text-blue-500 animate-spin shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-body text-sm font-medium text-foreground">Votre vidéo tourne en arrière-plan</p>
+            <p className="font-mono text-xs text-[--text-muted] truncate">{bgGen.title}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { patch({ videoId: bgGen.videoId, step: 'final' }); setBgGen(null) }}
+            className="font-body text-xs text-blue-500 font-semibold hover:underline whitespace-nowrap"
+          >
+            Voir le progrès →
+          </button>
+          <button
+            type="button"
+            onClick={() => { setBgGen(null); try { localStorage.removeItem(ACTIVE_GEN_KEY) } catch { /* ignore */ } }}
+            className="text-[--text-muted] hover:text-foreground transition-colors ml-1"
+            aria-label="Fermer"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <StepIndicator current={project.step} savedState={savedState} />
 
       <div className="flex-1 overflow-y-auto">
@@ -3019,7 +3075,12 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft }: {
         {project.step === 'final' && (
           <FinalStep
             project={project}
-            onNew={() => setProject(DEFAULT_PROJECT)}
+            onNew={() => {
+              setProject(DEFAULT_PROJECT)
+              setBgGen(null)
+              try { localStorage.removeItem(ACTIVE_GEN_KEY) } catch { /* ignore */ }
+              if (typeof window !== 'undefined') window.history.replaceState(null, '', '/faceless/hub')
+            }}
             onRetry={goToFinal}
             onVideoReady={onVideoReady}
             onEditScenes={project.videoId ? () => patch({ step: 'clips' }) : undefined}
@@ -3042,9 +3103,10 @@ interface VideoSession {
 
 // ── Main Hub ───────────────────────────────────────────────────────────────────
 
-export function FacelessHub({ initialVideos, initialDraft }: {
+export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
   initialVideos: VideoSession[]
   initialDraft?: InitialHubDraft | null
+  resumeVideoId?: string | null
 }) {
   const [sessions, setSessions] = useState<VideoSession[]>(initialVideos)
   const [viewId,   setViewId]   = useState<string | null>(null)
@@ -3089,6 +3151,9 @@ export function FacelessHub({ initialVideos, initialDraft }: {
   }
 
   function handleVideoReady(videoId: string, outputUrl: string) {
+    // Clear localStorage active generation + clean up URL
+    try { localStorage.removeItem(ACTIVE_GEN_KEY) } catch { /* ignore */ }
+    if (typeof window !== 'undefined') window.history.replaceState(null, '', '/faceless/hub')
     // Met à jour la session avec l'URL de la vidéo une fois terminée
     setSessions((prev) =>
       prev.map((s) => s.id === videoId ? { ...s, status: 'done', output_url: outputUrl } : s)
@@ -3170,7 +3235,7 @@ export function FacelessHub({ initialVideos, initialDraft }: {
             </div>
           </div>
         ) : (
-          <FacelessPipeline onGenerated={handleGenerated} onVideoReady={handleVideoReady} initialDraft={initialDraft ?? null} />
+          <FacelessPipeline onGenerated={handleGenerated} onVideoReady={handleVideoReady} initialDraft={initialDraft ?? null} resumeVideoId={resumeVideoId ?? null} />
         )}
       </div>
     </div>
