@@ -24,15 +24,24 @@ function createRedisConnection(): IORedis | null {
       retryStrategy: (times) => Math.min(times * 1000, 30_000),
       connectTimeout: 10_000,
     })
+    let warnedOnce = false
     conn.on('error', (err: Error) => {
-      logger.warn({ msg: err.message }, 'Redis connection error — will retry')
+      if (!warnedOnce) {
+        warnedOnce = true
+        logger.warn({ msg: err.message }, 'Redis connection error — will retry in background')
+      }
     })
-    // When IORedis gives up entirely (e.g. URL is wrong), exit so Render restarts us
+    conn.on('ready', () => {
+      warnedOnce = false
+      logger.info('Redis connection ready')
+    })
+    // 'end' is not terminal: IORedis retryStrategy will reconnect.
+    // Surfacing it as a warning (not exiting) lets the worker survive
+    // transient Redis outages without spamming Render "Exited status 1" alerts.
     conn.on('end', () => {
-      logger.error('Redis connection permanently closed — exiting worker for restart')
-      process.exit(1)
+      logger.warn('Redis connection ended — ioredis will attempt reconnection')
     })
-    conn.connect().catch(() => { /* handled by error event */ })
+    conn.connect().catch(() => { /* handled by error event + retryStrategy */ })
     return conn
   } catch {
     return null
