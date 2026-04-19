@@ -41,6 +41,13 @@ export const studioRouter = Router()
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// ── Constants ───────────────────────────────────────────────────────────
+
+// Rachel — ElevenLabs premade voice available on every account plan.
+// Used as a last-resort fallback when project.voice_id and
+// ELEVENLABS_DEFAULT_VOICE_ID are missing or invalid.
+const ELEVENLABS_FALLBACK_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'
+
 // ── Helpers ─────────────────────────────────────────────────────────────
 
 function extractJson(raw: string): string {
@@ -85,6 +92,32 @@ async function callClaude<T>(system: string, user: string, label: string): Promi
   } catch (err) {
     logger.error({ err, raw: raw.slice(0, 800), label, stopReason }, 'Claude JSON parse failed')
     throw new Error(`Claude ${label} returned invalid JSON`)
+  }
+}
+
+// ── ElevenLabs audio helper with voice-fallback ─────────────────────────
+// Tries the configured voice first; if it fails with a voice-validation error
+// (invalid/inaccessible voice ID), retries once with the premade fallback so
+// the pipeline never stalls on a misconfigured voice setting.
+
+async function generateAudioWithFallback(
+  text: string,
+  voiceId: string,
+  label: string,
+): Promise<Buffer> {
+  try {
+    const { audioBuffer } = await generateVoiceoverWithTimestamps(text, voiceId)
+    return audioBuffer
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    // ElevenLabs returns "Voice validation failed" when the voice_id is
+    // unknown / not on the account. Fall back to Rachel automatically.
+    if (msg.toLowerCase().includes('voice validation') || msg.includes('404') || msg.includes('voice_not_found')) {
+      logger.warn({ voiceId, label, msg }, 'generateAudioWithFallback: voice invalid, retrying with Rachel fallback')
+      const { audioBuffer } = await generateVoiceoverWithTimestamps(text, ELEVENLABS_FALLBACK_VOICE_ID)
+      return audioBuffer
+    }
+    throw err
   }
 }
 
@@ -271,7 +304,7 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
     // Resolve the effective voice ID: prefer the one stored on the project,
     // fall back to the server default (ELEVENLABS_DEFAULT_VOICE_ID).
     // The Studio wizard has no voice picker yet — voice_id is often null.
-    const effectiveVoiceId = project.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ''
+    const effectiveVoiceId = project.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ELEVENLABS_FALLBACK_VOICE_ID
 
     ;(async () => {
       for (const scene of scenes ?? []) {
@@ -297,7 +330,7 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
             let audioUrl: string | undefined
             if (effectiveVoiceId) {
               try {
-                const { audioBuffer } = await generateVoiceoverWithTimestamps(scene.script, effectiveVoiceId)
+                const audioBuffer = await generateAudioWithFallback(scene.script, effectiveVoiceId, `scene-${scene.id}`)
                 const audioPath = `studio/${projectId}/audio/scene-${scene.id}.mp3`
                 const { error: uploadErr } = await supabaseAdmin.storage
                   .from('studio-videos')
@@ -401,14 +434,14 @@ studioRouter.post('/regenerate-scene', authMiddleware, async (req, res) => {
       .eq('id', projectId).single()
 
     if (project?.avatar_id) {
-      const regenVoiceId = project.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ''
+      const regenVoiceId = project.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ELEVENLABS_FALLBACK_VOICE_ID
       ;(async () => {
         try {
           // Pre-generate ElevenLabs audio (same fix as generate-all)
           let audioUrl: string | undefined
           if (regenVoiceId) {
             try {
-              const { audioBuffer } = await generateVoiceoverWithTimestamps(scriptToUse, regenVoiceId)
+              const audioBuffer = await generateAudioWithFallback(scriptToUse, regenVoiceId, `regen-${sceneId}`)
               const audioPath = `studio/${projectId}/audio/regen-${sceneId}.mp3`
               const { error: uploadErr } = await supabaseAdmin.storage
                 .from('studio-videos')
