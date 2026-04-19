@@ -97,17 +97,40 @@ async function saveSessionState(
   const context = await browser.newContext()
   const page = await context.newPage()
 
-  await page.goto(`${BASE_URL}/login`)
+  // Wait for full React hydration before interacting — clicking too early causes GET fallback
+  await page.goto(`${BASE_URL}/login`, { timeout: 60_000 })
+  await page.waitForLoadState('networkidle', { timeout: 60_000 })
+  // Wait for the submit button to confirm hydration has completed
+  const submitBtn = page.locator('button[type="submit"]')
+  await submitBtn.waitFor({ state: 'visible', timeout: 30_000 })
   await page.locator('#login-email').fill(email)
   await page.locator('#login-password').fill(password)
-  await page.getByRole('button', { name: /sign in|connexion/i }).click()
-  await page.waitForURL('**/dashboard', { timeout: 30_000 })
+  // Click via JS dispatch to ensure React onSubmit fires even if button is not yet pointer-interactive
+  await submitBtn.click()
+  await page.waitForURL('**/dashboard', { timeout: 60_000 })
 
   const authDir = path.join(__dirname, '.auth')
   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true })
 
   await context.storageState({ path: path.join(authDir, stateFile) })
   await context.close()
+}
+
+async function warmupServer(baseUrl: string) {
+  // Use a real browser to warm up routes — fetch() only triggers SSR compilation,
+  // not client-side JS chunk compilation. A browser visit forces all chunks to compile.
+  const browser = await chromium.launch()
+  const ctx = await browser.newContext()
+  const page = await ctx.newPage()
+  try {
+    await page.goto(`${baseUrl}/login`, { timeout: 90_000 })
+    await page.waitForLoadState('networkidle', { timeout: 90_000 })
+    console.log('[global-setup] Server warmed up (client JS compiled).')
+  } catch {
+    console.warn('[global-setup] Warmup timed out — continuing anyway.')
+  } finally {
+    await browser.close()
+  }
 }
 
 export default async function globalSetup(config: FullConfig) {
@@ -138,6 +161,15 @@ export default async function globalSetup(config: FullConfig) {
     }
   } else {
     console.log('[global-setup] Session files already exist — skipping user creation')
+  }
+
+  // Warm up the Next.js dev server before running tests
+  await warmupServer(BASE_URL)
+
+  // Fast path: skip session saving if all files already exist (re-runs)
+  if (allSessionsExist) {
+    console.log('[global-setup] Session files already exist — skipping login. Delete e2e/.auth/ to force refresh.')
+    return
   }
 
   const browser = await chromium.launch()

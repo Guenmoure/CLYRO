@@ -2,9 +2,10 @@ import { defineConfig, devices } from '@playwright/test'
 import path from 'path'
 import { config as loadEnv } from 'dotenv'
 
-// Load .env.test (local dev) → .env.local as fallback
-loadEnv({ path: path.join(__dirname, '.env.test'), override: false })
+// Load .env.local first (real credentials), then .env.test as fallback for any missing vars.
+// IMPORTANT: .env.local must come first so its values are not overridden by .env.test templates.
 loadEnv({ path: path.join(__dirname, '.env.local'), override: false })
+loadEnv({ path: path.join(__dirname, '.env.test'), override: false })
 
 /**
  * CLYRO — Playwright E2E configuration
@@ -40,7 +41,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     actionTimeout: 15_000,
-    navigationTimeout: 30_000,
+    // Dev server first-compile can be slow — CI prod build is faster
+    navigationTimeout: process.env.CI ? 30_000 : 60_000,
   },
 
   // Global setup creates Supabase test users and saves session cookies
