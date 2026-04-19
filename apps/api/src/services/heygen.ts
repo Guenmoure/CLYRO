@@ -62,7 +62,11 @@ export interface HeyGenVideoStatus {
 
 interface GenerateAvatarSceneParams {
   avatarId: string
-  voiceId: string        // ElevenLabs voice_id
+  /** HeyGen native TTS voice ID. Ignored when audioUrl is provided. */
+  voiceId?: string
+  /** Pre-generated audio URL (ElevenLabs or any CDN). When set, HeyGen uses
+   *  type:'audio' which accepts any valid audio URL — no HeyGen voice needed. */
+  audioUrl?: string
   script: string
   background: { type: 'color'; value: string } | { type: 'image'; url: string }
   callbackId: string     // `${projectId}_scene_${index}`
@@ -78,6 +82,13 @@ export async function generateAvatarScene(params: GenerateAvatarSceneParams): Pr
     ? { width: 1920, height: 1080 }
     : { width: 1080, height: 1920 }
 
+  // Prefer pre-generated audio (ElevenLabs) over HeyGen native TTS.
+  // HeyGen type:'text' expects a HeyGen-native voice_id — passing an
+  // ElevenLabs ID there causes HeyGen to fail silently after queuing.
+  const voice = params.audioUrl
+    ? { type: 'audio', audio_url: params.audioUrl }
+    : { type: 'text', input_text: params.script, voice_id: params.voiceId ?? '' }
+
   const body = {
     video_inputs: [{
       character: {
@@ -85,11 +96,7 @@ export async function generateAvatarScene(params: GenerateAvatarSceneParams): Pr
         avatar_id: params.avatarId,
         avatar_style: 'normal',
       },
-      voice: {
-        type: 'text',
-        input_text: params.script,
-        voice_id: params.voiceId,
-      },
+      voice,
       background: params.background,
     }],
     dimension,
