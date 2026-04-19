@@ -65,6 +65,7 @@ function StudioNewPageInner() {
   function openVoicePicker() {
     if (libraryVoices.length === 0) {
       setLoadingVoices(true)
+      // Fetch all voices (no filter) so the modal filter pills work on the full set
       getPublicVoices()
         .then((data) => setLibraryVoices(data.voices))
         .catch(() => {})

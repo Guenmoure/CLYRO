@@ -29,15 +29,17 @@ const GENDER_OPTIONS  = ['All', 'Male', 'Female', 'Neutral']
 const ACCENT_OPTIONS  = ['All', 'FR', 'EN-US', 'EN-GB', 'ES', 'DE', 'PT', 'IT']
 const USECASE_OPTIONS = ['All', 'Narration', 'Commercial', 'News', 'Social', 'Conversational']
 
-// Maps short accent pill codes to ElevenLabs accent label values
-const ACCENT_TO_EL: Record<string, string[]> = {
-  'FR':    ['french'],
-  'EN-US': ['american'],
-  'EN-GB': ['british', 'english'],
-  'ES':    ['spanish'],
-  'DE':    ['german'],
-  'PT':    ['portuguese', 'brazilian'],
-  'IT':    ['italian'],
+// Maps short accent pill codes to ElevenLabs accent/language values.
+// ElevenLabs voices may have accent='French', 'french', 'fr', or no accent
+// but language='Français' — we match both fields.
+const ACCENT_TO_EL: Record<string, { accents: string[]; language: string }> = {
+  'FR':    { accents: ['french', 'fr'],                   language: 'français' },
+  'EN-US': { accents: ['american', 'en-us'],              language: 'english' },
+  'EN-GB': { accents: ['british', 'english', 'en-gb'],    language: 'english' },
+  'ES':    { accents: ['spanish', 'es'],                  language: 'español' },
+  'DE':    { accents: ['german', 'de'],                   language: 'deutsch' },
+  'PT':    { accents: ['portuguese', 'brazilian', 'pt'],  language: 'português' },
+  'IT':    { accents: ['italian', 'it'],                  language: 'italiano' },
 }
 
 function FilterPills({
@@ -192,9 +194,14 @@ export function VoicePickerModal({
     if (search && !v.name.toLowerCase().includes(search.toLowerCase())) return false
     if (gender !== 'All' && v.gender?.toLowerCase() !== gender.toLowerCase()) return false
     if (accent !== 'All') {
-      const elAccents = ACCENT_TO_EL[accent] ?? [accent.toLowerCase()]
-      const vAccent = v.accent?.toLowerCase() ?? ''
-      if (!elAccents.some(a => vAccent.includes(a))) return false
+      const mapping = ACCENT_TO_EL[accent]
+      if (mapping) {
+        const vAccent = v.accent?.toLowerCase() ?? ''
+        const vLang = v.language?.toLowerCase() ?? ''
+        const matchAccent = mapping.accents.some(a => vAccent.includes(a) || a.includes(vAccent) && vAccent.length >= 2)
+        const matchLang = vLang.includes(mapping.language) || mapping.language.includes(vLang) && vLang.length >= 2
+        if (!matchAccent && !matchLang) return false
+      }
     }
     if (useCase !== 'All' && v.useCase?.toLowerCase() !== useCase.toLowerCase()) return false
     return true
