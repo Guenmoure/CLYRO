@@ -77,16 +77,16 @@ jobs:
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('apps/web/package.json') }}
+          key: playwright-v2-webkit-${{ runner.os }}-${{ hashFiles(apps/web/package.json) }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium firefox
+        run: npx playwright install --with-deps chromium firefox webkit
         working-directory: apps/web
 
       - name: Install Playwright system deps (cached run)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium firefox
+        run: npx playwright install-deps chromium firefox webkit
         working-directory: apps/web
 
       # ── Build web app ─────────────────────────────────────────────────────────
