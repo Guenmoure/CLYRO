@@ -307,86 +307,179 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
     const effectiveVoiceId = project.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ELEVENLABS_FALLBACK_VOICE_ID
 
     ;(async () => {
-      for (const scene of scenes ?? []) {
-        await supabaseAdmin.from('studio_scenes').update({ status: 'generating' }).eq('id', scene.id)
+      const sceneList = scenes ?? []
+      if (sceneList.length === 0) return
 
-        try {
-          if (project.avatar_id) {
-            // Non-avatar types (infographic, demo, typography, broll) are not yet
-            // fully implemented as separate Remotion/Pexels pipelines. We fall back
-            // to a standard avatar render so every scene produces a real video.
-            const isNativeAvatarType = scene.type === 'avatar' || scene.type === 'split'
-            if (!isNativeAvatarType) {
-              logger.info(
-                { sceneId: scene.id, type: scene.type },
-                `generate-all: type "${scene.type}" not implemented — falling back to avatar render`,
-              )
-            }
+      // Flip every scene to 'generating' up-front so the UI shows progress
+      // immediately instead of waiting for audio pre-gen to reach each row.
+      await supabaseAdmin
+        .from('studio_scenes')
+        .update({ status: 'generating' })
+        .in('id', sceneList.map((s) => s.id))
 
-            // Pre-generate audio with ElevenLabs so HeyGen receives a real audio URL.
-            // This avoids the HeyGen TTS voice_id mismatch (ElevenLabs IDs ≠ HeyGen IDs).
-            // We also add an 800ms inter-scene delay to stay under ElevenLabs rate limits
-            // (34 scenes back-to-back would otherwise trigger a 429).
-            let audioUrl: string | undefined
-            if (effectiveVoiceId) {
-              try {
-                const audioBuffer = await generateAudioWithFallback(scene.script, effectiveVoiceId, `scene-${scene.id}`)
-                // Upload to voice-samples bucket — already allows audio/mpeg, no migration needed.
-                // Path starts with projectId so service-role RLS bypass applies cleanly.
-                const audioPath = `studio-${projectId}/scene-${scene.id}.mp3`
-                const { error: uploadErr } = await supabaseAdmin.storage
-                  .from('voice-samples')
-                  .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
-                if (uploadErr) {
-                  logger.warn({ uploadErr: uploadErr.message, audioPath, sceneId: scene.id }, 'generate-all: audio upload failed')
-                } else {
-                  const { data: signed } = await supabaseAdmin.storage
-                    .from('voice-samples')
-                    .createSignedUrl(audioPath, 60 * 60 * 24 * 7) // 7-day signed URL for HeyGen CDN fetch
-                  audioUrl = signed?.signedUrl ?? undefined
-                  logger.info({ sceneId: scene.id, hasAudioUrl: !!audioUrl }, 'generate-all: audio pre-gen OK')
-                }
-                // Rate-limit guard: 800ms between ElevenLabs calls
-                await new Promise((r) => setTimeout(r, 800))
-              } catch (audioErr) {
-                logger.warn({ audioErr, sceneId: scene.id }, 'generate-all: ElevenLabs pre-gen failed — proceeding without audio')
-              }
-            }
+      // Short-circuit: if the project has no avatar, mark all scenes 'error'
+      // and stop — no point doing audio or HeyGen work.
+      if (!project.avatar_id) {
+        await supabaseAdmin
+          .from('studio_scenes')
+          .update({
+            status: 'error',
+            error_message: 'No avatar configured on project — select an avatar before generating',
+          })
+          .in('id', sceneList.map((s) => s.id))
+        return
+      }
 
-            // If audio pre-gen failed entirely, bail out now rather than
-            // sending HeyGen an ElevenLabs voice ID in type:'text' mode.
-            if (!audioUrl) {
-              throw new Error('Audio pre-generation failed — could not obtain a valid audio URL for HeyGen')
-            }
-
-            const { heygenVideoId } = await generateAvatarScene({
-              avatarId: project.avatar_id,
-              audioUrl,
-              script:   scene.script,
-              background: { type: 'color', value: project.background_color ?? '#0D1117' },
-              callbackId: `${projectId}_scene_${scene.index}`,
-              format: project.format === 'both' ? '16_9' : project.format as '16_9' | '9_16',
-            })
-            await supabaseAdmin.from('studio_scenes')
-              .update({ heygen_video_id: heygenVideoId })
-              .eq('id', scene.id)
-            // Poll HeyGen status until completed/failed (webhook fallback).
-            await pollUntilDone(scene.id, heygenVideoId)
-          } else {
-            await supabaseAdmin.from('studio_scenes')
-              .update({
-                status: 'error',
-                error_message: 'No avatar configured on project — select an avatar before generating',
-              })
-              .eq('id', scene.id)
-          }
-        } catch (err) {
-          logger.error({ err, sceneId: scene.id }, 'scene generation failed')
-          await supabaseAdmin.from('studio_scenes')
-            .update({ status: 'error', error_message: err instanceof Error ? err.message : 'Unknown error' })
-            .eq('id', scene.id)
+      // Non-avatar types (infographic, demo, typography, broll) are not yet
+      // fully implemented as separate Remotion/Pexels pipelines. We fall back
+      // to a standard avatar render so every scene produces a real video.
+      for (const scene of sceneList) {
+        if (scene.type !== 'avatar' && scene.type !== 'split') {
+          logger.info(
+            { sceneId: scene.id, type: scene.type },
+            `generate-all: type "${scene.type}" not implemented — falling back to avatar render`,
+          )
         }
       }
+
+      // Per-scene error tracker — any scene that fails in an earlier phase
+      // is skipped in later phases and its row is updated with the error
+      // message. This preserves the "one bad scene doesn't kill the batch"
+      // guarantee we had in the sequential loop.
+      const sceneErrors = new Map<string, string>()
+      const markSceneError = async (sceneId: string, err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        sceneErrors.set(sceneId, msg)
+        logger.error({ err, sceneId }, 'scene generation failed')
+        await supabaseAdmin
+          .from('studio_scenes')
+          .update({ status: 'error', error_message: msg })
+          .eq('id', sceneId)
+      }
+
+      // ── Phase 1 — ElevenLabs audio pre-gen ────────────────────────────
+      // We keep this sequential (with the existing 800ms inter-call guard)
+      // to stay comfortably under ElevenLabs' per-minute rate limit. Audio
+      // is tiny compared to HeyGen render time, so this is not the
+      // bottleneck — the big win is in phases 2/3 below.
+      const audioUrls = new Map<string, string>()
+
+      for (const scene of sceneList) {
+        if (!effectiveVoiceId) {
+          await markSceneError(
+            scene.id,
+            new Error('Audio pre-generation failed — no voice configured'),
+          )
+          continue
+        }
+
+        try {
+          const audioBuffer = await generateAudioWithFallback(
+            scene.script,
+            effectiveVoiceId,
+            `scene-${scene.id}`,
+          )
+          // Upload to voice-samples bucket — already allows audio/mpeg,
+          // no migration needed. Path starts with projectId so
+          // service-role RLS bypass applies cleanly.
+          const audioPath = `studio-${projectId}/scene-${scene.id}.mp3`
+          const { error: uploadErr } = await supabaseAdmin.storage
+            .from('voice-samples')
+            .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
+
+          if (uploadErr) {
+            await markSceneError(
+              scene.id,
+              new Error(`Audio upload failed: ${uploadErr.message}`),
+            )
+          } else {
+            const { data: signed } = await supabaseAdmin.storage
+              .from('voice-samples')
+              .createSignedUrl(audioPath, 60 * 60 * 24 * 7) // 7-day URL for HeyGen CDN fetch
+            if (signed?.signedUrl) {
+              audioUrls.set(scene.id, signed.signedUrl)
+              logger.info({ sceneId: scene.id }, 'generate-all: audio pre-gen OK')
+            } else {
+              await markSceneError(
+                scene.id,
+                new Error('Audio pre-generation failed — could not sign URL'),
+              )
+            }
+          }
+        } catch (audioErr) {
+          await markSceneError(
+            scene.id,
+            audioErr instanceof Error
+              ? audioErr
+              : new Error(`ElevenLabs pre-gen failed: ${String(audioErr)}`),
+          )
+        }
+
+        // Rate-limit guard: 800ms between ElevenLabs calls
+        await new Promise((r) => setTimeout(r, 800))
+      }
+
+      // ── Phase 2 — fire all HeyGen jobs in parallel ────────────────────
+      // This is the main speed-up: instead of waiting for scene N to
+      // finish rendering before even *submitting* scene N+1, we submit
+      // every scene up front and let HeyGen render them concurrently.
+      // HeyGen's per-plan concurrency limit handles back-pressure server
+      // side — failures propagate to per-scene errors via allSettled.
+      const scenesWithAudio = sceneList.filter((s) => audioUrls.has(s.id))
+      const heygenVideoIds = new Map<string, string>()
+
+      const submitResults = await Promise.allSettled(
+        scenesWithAudio.map(async (scene) => {
+          const audioUrl = audioUrls.get(scene.id)!
+          const { heygenVideoId } = await generateAvatarScene({
+            avatarId: project.avatar_id!,
+            audioUrl,
+            script: scene.script,
+            background: { type: 'color', value: project.background_color ?? '#0D1117' },
+            callbackId: `${projectId}_scene_${scene.index}`,
+            format: project.format === 'both' ? '16_9' : project.format as '16_9' | '9_16',
+          })
+          await supabaseAdmin
+            .from('studio_scenes')
+            .update({ heygen_video_id: heygenVideoId })
+            .eq('id', scene.id)
+          return { sceneId: scene.id, heygenVideoId }
+        }),
+      )
+
+      for (let i = 0; i < submitResults.length; i++) {
+        const res = submitResults[i]
+        const scene = scenesWithAudio[i]
+        if (res.status === 'fulfilled') {
+          heygenVideoIds.set(scene.id, res.value.heygenVideoId)
+        } else {
+          await markSceneError(scene.id, res.reason)
+        }
+      }
+
+      logger.info(
+        { projectId, submitted: heygenVideoIds.size, total: sceneList.length },
+        'generate-all: HeyGen jobs submitted in parallel',
+      )
+
+      // ── Phase 3 — poll all scenes in parallel ─────────────────────────
+      // pollUntilDone is self-contained: it updates the scene row on
+      // completion/failure/timeout. Running them all at once means the
+      // whole batch finishes in ~max(scene render time) instead of
+      // sum(scene render time). If HEYGEN_WEBHOOK_SECRET is configured,
+      // scenes flip to 'done' via webhook before this poll wakes up —
+      // pollUntilDone will then observe status=completed on its first
+      // tick and exit immediately.
+      await Promise.allSettled(
+        Array.from(heygenVideoIds.entries()).map(([sceneId, heygenVideoId]) =>
+          pollUntilDone(sceneId, heygenVideoId),
+        ),
+      )
+
+      logger.info(
+        { projectId, failed: sceneErrors.size, total: sceneList.length },
+        'generate-all: all scene pipelines complete',
+      )
     })().catch((err) => logger.error({ err, projectId }, 'generate-all background task failed'))
 
     res.status(202).json({ projectId, status: 'generating' })
