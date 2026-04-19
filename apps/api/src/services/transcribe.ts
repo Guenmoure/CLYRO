@@ -87,6 +87,15 @@ function buildYtDlpArgs(
     '--max-filesize', '150M',
     '--match-filter', `duration < ${MAX_DURATION_SEC}`,
     '--user-agent', YT_DLP_UA,
+    // Explicit format selector with graceful fallbacks:
+    //   bestaudio              — pure audio-only stream (ideal, smallest)
+    //   bestaudio*             — any stream that has audio (audio-only or muxed)
+    //   best                   — last-resort muxed video, -x will strip audio out
+    // Without this, `-x` alone fails on videos where the current player client
+    // only exposes adaptive formats the server has rejected ("Requested format
+    // is not available"). This covers YouTube's rotating format restrictions
+    // per player client (especially the `web` client on cookie-auth sessions).
+    '-f', 'bestaudio/bestaudio*/best',
     '-x',
     '--audio-format', 'mp3',
     '--audio-quality', '128K',
@@ -95,9 +104,11 @@ function buildYtDlpArgs(
   if (strategy === 'tv_embedded') {
     base.push('--extractor-args', 'youtube:player_client=tv_embedded,web_safari')
   } else {
-    // web_cookies: default clients + cookies.txt
+    // web_cookies: try multiple clients in order so yt-dlp has several sources
+    // to find a playable format. `ios` historically has the widest format
+    // availability when a cookie session is present.
     base.push('--cookies', YT_DLP_COOKIES_PATH)
-    base.push('--extractor-args', 'youtube:player_client=web,default')
+    base.push('--extractor-args', 'youtube:player_client=ios,mweb,web')
   }
   base.push(youtubeUrl)
   return base
