@@ -60,9 +60,11 @@ RUN cd apps/api && npx --yes remotion@4.0.448 browser ensure \
 # Same Debian-slim base as builder to keep the Chrome binary runnable.
 FROM node:20-bookworm-slim AS production
 
-# ffmpeg + Chromium runtime shared libs + wget (used by HEALTHCHECK below).
+# ffmpeg + Chromium runtime shared libs + wget (used by HEALTHCHECK below) +
+# python3 (runtime for yt-dlp, used by F5 Studio YouTube transcription).
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ffmpeg \
+      python3 \
       ca-certificates \
       wget \
       libnss3 \
@@ -80,6 +82,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       fonts-liberation \
       fonts-noto-color-emoji \
   && rm -rf /var/lib/apt/lists/*
+
+# yt-dlp — single self-contained binary from GitHub releases. Requires python3
+# at runtime (see apt block above) + ffmpeg (already present) to merge best
+# audio stream. Pinned to a specific release for reproducibility; bump
+# manually when YouTube breaks the current version.
+ARG YT_DLP_VERSION=2025.09.26
+RUN wget -qO /usr/local/bin/yt-dlp \
+      "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
+  && chmod +x /usr/local/bin/yt-dlp \
+  && /usr/local/bin/yt-dlp --version
 
 WORKDIR /app
 
