@@ -44,24 +44,46 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 // ── Helpers ─────────────────────────────────────────────────────────────
 
 function extractJson(raw: string): string {
-  const cleaned = raw.replace(/^```json\s*/m, '').replace(/^```\s*/m, '').replace(/\s*```$/m, '').trim()
-  const match = cleaned.match(/\{[\s\S]*\}/)
-  if (!match) throw new Error('No JSON in Claude response')
-  return match[0]
+  // 1. Try direct parse first (Claude sometimes returns clean JSON)
+  const trimmed = raw.trim()
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    return trimmed
+  }
+
+  // 2. Extract from fenced code block: ```json ... ``` or ``` ... ```
+  const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fenceMatch?.[1]) {
+    return fenceMatch[1].trim()
+  }
+
+  // 3. Fallback: find the outermost { ... } in the response
+  const objMatch = trimmed.match(/\{[\s\S]*\}/)
+  if (objMatch) return objMatch[0]
+
+  throw new Error('No JSON object found in Claude response')
 }
 
 async function callClaude<T>(system: string, user: string, label: string): Promise<T> {
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    max_tokens: 8192,  // 4096 was too low — long scripts with 8+ scenes hit the limit
     system,
     messages: [{ role: 'user', content: user }],
   })
+
+  // Detect truncation: if finish_reason is 'max_tokens' the response is cut off
+  const stopReason = message.stop_reason
   const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
+
+  if (stopReason === 'max_tokens') {
+    logger.error({ label, rawLength: raw.length }, 'Claude response truncated at max_tokens — JSON will be incomplete')
+    throw new Error(`Claude ${label} response was truncated (too long) — try a shorter script`)
+  }
+
   try {
     return JSON.parse(extractJson(raw)) as T
   } catch (err) {
-    logger.error({ err, raw: raw.slice(0, 400), label }, 'Claude JSON parse failed')
+    logger.error({ err, raw: raw.slice(0, 800), label, stopReason }, 'Claude JSON parse failed')
     throw new Error(`Claude ${label} returned invalid JSON`)
   }
 }
