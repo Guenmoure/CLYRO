@@ -299,16 +299,17 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
               try {
                 const { audioBuffer } = await generateVoiceoverWithTimestamps(scene.script, effectiveVoiceId)
                 const audioPath = `studio/${projectId}/audio/scene-${scene.id}.mp3`
-                // Use application/octet-stream — studio-videos bucket only allows video/* mime types
-                // but the service role key bypasses mime restrictions (same pattern as faceless voiceover).
                 const { error: uploadErr } = await supabaseAdmin.storage
                   .from('studio-videos')
-                  .upload(audioPath, audioBuffer, { contentType: 'application/octet-stream', upsert: true })
-                if (!uploadErr) {
+                  .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
+                if (uploadErr) {
+                  logger.warn({ uploadErr: uploadErr.message, audioPath, sceneId: scene.id }, 'generate-all: audio upload failed')
+                } else {
                   const { data: signed } = await supabaseAdmin.storage
                     .from('studio-videos')
                     .createSignedUrl(audioPath, 60 * 60 * 24 * 7) // 7-day URL — enough for HeyGen CDN fetch
                   audioUrl = signed?.signedUrl ?? undefined
+                  logger.info({ sceneId: scene.id, audioUrl }, 'generate-all: audio pre-gen OK')
                 }
                 // Rate-limit guard: 800ms between ElevenLabs calls
                 await new Promise((r) => setTimeout(r, 800))
@@ -411,12 +412,15 @@ studioRouter.post('/regenerate-scene', authMiddleware, async (req, res) => {
               const audioPath = `studio/${projectId}/audio/regen-${sceneId}.mp3`
               const { error: uploadErr } = await supabaseAdmin.storage
                 .from('studio-videos')
-                .upload(audioPath, audioBuffer, { contentType: 'application/octet-stream', upsert: true })
-              if (!uploadErr) {
+                .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
+              if (uploadErr) {
+                logger.warn({ uploadErr: uploadErr.message, audioPath, sceneId }, 'regenerate-scene: audio upload failed')
+              } else {
                 const { data: signed } = await supabaseAdmin.storage
                   .from('studio-videos')
                   .createSignedUrl(audioPath, 60 * 60 * 24 * 7)
                 audioUrl = signed?.signedUrl ?? undefined
+                logger.info({ sceneId, audioUrl }, 'regenerate-scene: audio pre-gen OK')
               }
             } catch (audioErr) {
               logger.warn({ audioErr, sceneId }, 'regenerate-scene: ElevenLabs pre-gen failed — HeyGen TTS fallback')
