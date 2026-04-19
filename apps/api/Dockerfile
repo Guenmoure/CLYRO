@@ -85,11 +85,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # yt-dlp — single self-contained binary from GitHub releases. Requires python3
 # at runtime (see apt block above) + ffmpeg (already present) to merge best
-# audio stream. Pinned to a specific release for reproducibility; bump
-# manually when YouTube breaks the current version.
-ARG YT_DLP_VERSION=2025.09.26
+# audio stream. We fetch /releases/latest (not a pinned version) on purpose:
+# YouTube ships anti-bot detection updates constantly, and yt-dlp pushes
+# bypasses within days. Pinning guarantees breakage within weeks. Every
+# Render rebuild pulls the freshest release; hit "Clear build cache &
+# deploy" if YouTube blocks playback after a quiet period.
 RUN wget -qO /usr/local/bin/yt-dlp \
-      "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
+      "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp" \
   && chmod +x /usr/local/bin/yt-dlp \
   && /usr/local/bin/yt-dlp --version
 

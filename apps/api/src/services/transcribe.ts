@@ -30,6 +30,18 @@ const MAX_DURATION_SEC = 60 * 30  // 30 minutes
 // Hard cap on the binary path; if a host ships yt-dlp elsewhere set
 // `YT_DLP_PATH` env var (handy in dev where it's installed via brew).
 const YT_DLP_PATH = process.env.YT_DLP_PATH || 'yt-dlp'
+// Optional: path to a Netscape-format cookies.txt file (YouTube session).
+// Set this when Render / AWS IPs are flagged by YouTube's anti-bot and the
+// default TV-client bypass below isn't enough. Generate the file with the
+// "Get cookies.txt LOCALLY" browser extension while logged into YouTube.
+// On Render, upload it as a "Secret File" at /etc/secrets/yt-cookies.txt
+// and set YT_DLP_COOKIES_PATH=/etc/secrets/yt-cookies.txt in Environment.
+const YT_DLP_COOKIES_PATH = process.env.YT_DLP_COOKIES_PATH || ''
+// Modern desktop UA — yt-dlp passes it to the player endpoint when the TV
+// client falls back to the web client.
+const YT_DLP_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 
 export interface TranscriptSegment {
   start: number  // seconds
@@ -51,46 +63,129 @@ interface ExtractedAudio {
   storagePath: string    // relative path in the bucket, used for cleanup
 }
 
+/**
+ * Build yt-dlp CLI arguments for a given attempt strategy.
+ *
+ * Strategies, in order of preference:
+ *   - 'tv_embedded' : uses the TV-embedded player client, which rarely
+ *                     requires a PO token or login. First choice on cloud
+ *                     IPs (Render/AWS) where YouTube flags datacenter
+ *                     ranges.
+ *   - 'web_cookies' : uses the default web client with a cookies.txt file.
+ *                     Only attempted when YT_DLP_COOKIES_PATH is set and
+ *                     the file exists on disk.
+ */
+function buildYtDlpArgs(
+  youtubeUrl: string,
+  outputTemplate: string,
+  strategy: 'tv_embedded' | 'web_cookies',
+): string[] {
+  const base = [
+    '--no-playlist',
+    '--no-warnings',
+    '--quiet',
+    '--max-filesize', '150M',
+    '--match-filter', `duration < ${MAX_DURATION_SEC}`,
+    '--user-agent', YT_DLP_UA,
+    '-x',
+    '--audio-format', 'mp3',
+    '--audio-quality', '128K',
+    '-o', outputTemplate,
+  ]
+  if (strategy === 'tv_embedded') {
+    base.push('--extractor-args', 'youtube:player_client=tv_embedded,web_safari')
+  } else {
+    // web_cookies: default clients + cookies.txt
+    base.push('--cookies', YT_DLP_COOKIES_PATH)
+    base.push('--extractor-args', 'youtube:player_client=web,default')
+  }
+  base.push(youtubeUrl)
+  return base
+}
+
+function isBotCheckError(stderr: string): boolean {
+  const s = stderr.toLowerCase()
+  return (
+    s.includes("sign in to confirm you're not a bot") ||
+    s.includes('sign in to confirm you’re not a bot') ||
+    s.includes('cookies') && s.includes('authentication') ||
+    s.includes('requires authentication')
+  )
+}
+
+async function runYtDlp(
+  youtubeUrl: string,
+  outputTemplate: string,
+  strategy: 'tv_embedded' | 'web_cookies',
+): Promise<void> {
+  const args = buildYtDlpArgs(youtubeUrl, outputTemplate, strategy)
+  logger.info({ youtubeUrl, strategy }, 'extractYouTubeAudio: yt-dlp attempt')
+  try {
+    await execFileAsync(YT_DLP_PATH, args, {
+      timeout: 5 * 60 * 1000,    // 5 min wall clock
+      maxBuffer: 10 * 1024 * 1024, // 10 MB stdout cap (mostly silent)
+    })
+  } catch (err: unknown) {
+    const e = err as { code?: string; stderr?: string; message?: string }
+    if (e.code === 'ENOENT') {
+      throw new Error(
+        'yt-dlp binary not found on the server. Install it (see Dockerfile) ' +
+        'or set YT_DLP_PATH to the full path of the binary.'
+      )
+    }
+    // Re-raise with a normalized error so the caller can branch on strategy.
+    const stderr = e.stderr?.slice(0, 800) ?? e.message ?? 'unknown error'
+    const enriched = new Error(stderr) as Error & { isBotCheck?: boolean }
+    enriched.isBotCheck = isBotCheckError(stderr)
+    throw enriched
+  }
+}
+
 async function extractYouTubeAudio(youtubeUrl: string): Promise<ExtractedAudio> {
   // Single shared scratch dir per call; yt-dlp writes the final mp3 inside.
   const workDir = await mkdtemp(join(tmpdir(), 'yt-audio-'))
   const outputTemplate = join(workDir, 'audio.%(ext)s')
 
   try {
-    // Download best audio + transcode to mp3 @128kbps (small + universally
-    // supported by fal.ai Whisper). --no-playlist guards against URLs that
-    // also reference a playlist id. --max-filesize is an extra safety net
-    // on top of the duration check.
-    const args = [
-      '--no-playlist',
-      '--no-warnings',
-      '--quiet',
-      '--max-filesize', '150M',
-      '--match-filter', `duration < ${MAX_DURATION_SEC}`,
-      '-x',
-      '--audio-format', 'mp3',
-      '--audio-quality', '128K',
-      '-o', outputTemplate,
-      youtubeUrl,
-    ]
-
-    logger.info({ youtubeUrl, workDir }, 'extractYouTubeAudio: invoking yt-dlp')
-
+    // ── Attempt 1: tv_embedded client (no auth needed for ~95% of videos) ─
     try {
-      await execFileAsync(YT_DLP_PATH, args, {
-        timeout: 5 * 60 * 1000,    // 5 min wall clock
-        maxBuffer: 10 * 1024 * 1024, // 10 MB stdout cap (mostly silent)
-      })
-    } catch (err: unknown) {
-      const e = err as { code?: string; stderr?: string; message?: string }
-      if (e.code === 'ENOENT') {
+      await runYtDlp(youtubeUrl, outputTemplate, 'tv_embedded')
+    } catch (err) {
+      const e = err as Error & { isBotCheck?: boolean }
+      // Only retry with cookies if the failure is an anti-bot wall *and*
+      // we actually have cookies configured. Any other failure (private
+      // video, removed, region lock, too long) should surface immediately.
+      if (!e.isBotCheck) throw e
+
+      if (!YT_DLP_COOKIES_PATH) {
         throw new Error(
-          'yt-dlp binary not found on the server. Install it (see Dockerfile) ' +
-          'or set YT_DLP_PATH to the full path of the binary.'
+          "YouTube's anti-bot blocked the server. Configure cookies:\n" +
+          "  1. Install the 'Get cookies.txt LOCALLY' browser extension\n" +
+          "  2. Log into youtube.com, export cookies as Netscape format\n" +
+          "  3. Upload to Render as a Secret File at /etc/secrets/yt-cookies.txt\n" +
+          "  4. Set YT_DLP_COOKIES_PATH=/etc/secrets/yt-cookies.txt in the Render env\n" +
+          "Original error: " + e.message.slice(0, 200)
         )
       }
-      const stderr = e.stderr?.slice(0, 500) ?? e.message ?? 'unknown error'
-      throw new Error(`yt-dlp failed: ${stderr}`)
+
+      // ── Attempt 2: web client + cookies ──────────────────────────────────
+      logger.warn(
+        { youtubeUrl },
+        'extractYouTubeAudio: tv_embedded blocked by bot-check, retrying with cookies'
+      )
+      try {
+        await runYtDlp(youtubeUrl, outputTemplate, 'web_cookies')
+      } catch (err2) {
+        const e2 = err2 as Error & { isBotCheck?: boolean }
+        if (e2.isBotCheck) {
+          throw new Error(
+            "YouTube rejected both the TV-client bypass and the cookies file. " +
+            "The cookies may be expired — regenerate them from a fresh browser " +
+            "session and redeploy. Error: " + e2.message.slice(0, 200)
+          )
+        }
+        throw new Error('yt-dlp failed: ' + e2.message.slice(0, 500))
+      }
     }
 
     // yt-dlp picked the extension itself (always mp3 here, but be defensive).
