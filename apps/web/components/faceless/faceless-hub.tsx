@@ -18,6 +18,51 @@ import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@
 import { ContentTemplateGallery } from './ContentTemplateGallery'
 import { buildTemplateDescription, type ContentTemplate } from '@/lib/faceless-content-templates'
 
+// ── fal.ai concurrency control ─────────────────────────────────────────────
+// fal.ai caps accounts at 10 concurrent requests. Each scene fires 2 calls
+// (preview + HD) sequentially inside generateImage(), so one running scene
+// holds at most 1 fal.ai slot at any moment. With 5 scenes in parallel that's
+// a max of 5 concurrent fal.ai calls — safe headroom under the 10-limit for
+// incidental traffic (scene-0 retries, user-triggered previews, etc).
+const FAL_CONCURRENCY = 5
+
+/**
+ * Run an async task over every item of a list with a hard concurrency cap.
+ *
+ * Unlike `Promise.all(items.map(fn))` (unbounded) or
+ * `items.reduce((p, i) => p.then(() => fn(i)))` (strictly sequential), this
+ * spins up `concurrency` worker loops that pull items off a shared queue
+ * until it's empty, giving exactly N-at-a-time parallelism.
+ *
+ * Rejected tasks are logged and skipped rather than aborting the batch —
+ * the same "one bad scene doesn't kill the rest" guarantee we had before.
+ */
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  task: (item: T) => Promise<void>,
+): Promise<void> {
+  if (items.length === 0) return
+  const queue = items.slice()
+  const worker = async (): Promise<void> => {
+    while (queue.length > 0) {
+      const item = queue.shift()
+      if (item === undefined) return
+      try {
+        await task(item)
+      } catch (err) {
+        // Already logged inside the task (generateImage / regenScene handle
+        // their own toast + scene.status = 'error'). Swallow so one failing
+        // scene doesn't stop the rest of the pool.
+        console.warn('[runWithConcurrency] task failed (continuing):', err)
+      }
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, worker),
+  )
+}
+
 // ── Template catalogue ─────────────────────────────────────────────────────────
 
 type TemplateCategory = 'all' | 'cinematic' | 'animation' | 'typography' | 'handmade' | '3d' | 'retro'
@@ -886,7 +931,11 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
 
   async function regenAll() {
     setGenerating(true)
-    await Promise.all(scenes.map((s) => regenScene(s.id)))
+    // Same concurrency cap as generateRemaining — regenScene calls Claude
+    // for prompt regen (not fal.ai), so the 10-concurrency limit doesn't
+    // apply here directly, but Anthropic also rate-limits and 40 parallel
+    // Claude calls would hit that ceiling too.
+    await runWithConcurrency(scenes, FAL_CONCURRENCY, (s) => regenScene(s.id))
     setGenerating(false)
     toast.success('Scènes régénérées')
   }
@@ -1344,10 +1393,16 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
   async function generateRemaining() {
     setGeneratingAll(true)
     const remaining = scenes.filter((s) => s.index > 0 && s.imageStatus !== 'done')
-    // Stagger requests by 300ms to avoid fal.ai rate limits
-    await Promise.all(remaining.map((s, i) =>
-      new Promise<void>((resolve) => setTimeout(() => generateImage(s.id).then(resolve).catch(resolve), i * 300))
-    ))
+    // Real concurrency pool — not just a stagger. The old `Promise.all` with
+    // a 300ms setTimeout delay only spaced the starts but then left every
+    // scene running in parallel; for 40+ scene projects this routinely
+    // saturated fal.ai's 10-concurrent-requests cap and returned HTTP 429.
+    //
+    // With `FAL_CONCURRENCY = 5` we run at most 5 scenes at a time. Each
+    // scene fires preview+HD sequentially internally, so that's max 5
+    // concurrent fal.ai calls — well under the 10-limit with room for
+    // unrelated page traffic (preview regenerations, scene-0 retries, etc.)
+    await runWithConcurrency(remaining, FAL_CONCURRENCY, (s) => generateImage(s.id))
     setGeneratingAll(false)
     toast.success('All images generated!')
   }
