@@ -11,7 +11,7 @@ import { toast } from '@/components/ui/toast'
 import { createBrowserClient } from '@/lib/supabase'
 import {
   getStudioProject, generateAllStudioScenes, regenerateStudioScene,
-  addStudioScene, deleteStudioScene,
+  addStudioScene, deleteStudioScene, renderStudioFinal,
 } from '@/lib/api'
 import type {
   StudioProject, StudioScene, StudioSceneType,
@@ -159,7 +159,26 @@ export default function StudioEditorPage() {
         status={project.status}
         scenesDone={scenesDone}
         scenesTotal={scenes.length}
-        onExport={() => toast.info('Final render coming soon — scene-level MP4s are ready')}
+        onExport={async () => {
+          // F5-011: all scenes must be 'done' before we can assemble.
+          const notReady = scenes.filter((s) => s.status !== 'done' || !s.video_url)
+          if (notReady.length > 0) {
+            toast.error(
+              `${notReady.length} scène(s) ne sont pas prêtes. Génère ou régénère-les avant d'exporter.`,
+            )
+            return
+          }
+          try {
+            const result = await renderStudioFinal(project.id, project.format as '16_9' | '9_16')
+            toast.success(
+              `Rendu lancé sur ${result.sceneCount} scènes. Tu seras notifié dès que la vidéo finale est prête.`,
+            )
+            setProject((p) => (p ? { ...p, status: 'rendering' } : p))
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Échec du rendu'
+            toast.error(msg)
+          }
+        }}
         onPreview={() => router.push(`/studio/${project.id}/preview`)}
       />
 

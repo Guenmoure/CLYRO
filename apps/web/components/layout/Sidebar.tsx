@@ -80,12 +80,19 @@ export function Sidebar({
 
   useEffect(() => {
     if (!userMenuOpen) return
-    function handler(e: MouseEvent) {
+    function onMouse(e: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
         setUserMenuOpen(false)
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setUserMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onMouse)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onMouse)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [userMenuOpen])
 
   // Close mobile drawer when route changes

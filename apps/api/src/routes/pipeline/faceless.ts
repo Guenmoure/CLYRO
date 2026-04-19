@@ -60,6 +60,10 @@ const createFacelessSchema = z.object({
   speaker_voices: z.record(z.string()).optional(),
   animation_mode: z.enum(['storyboard', 'fast', 'pro']).optional(),
   animation_overrides: z.record(z.string(), z.enum(['storyboard', 'fast', 'pro'])).optional(),
+  // F1-012: optional background music preset selected in the wizard
+  music_preset: z.enum(['none', 'soft', 'upbeat', 'cinematic', 'corporate']).optional(),
+  // F1-013: whether to burn word-level subtitles into the final render
+  subtitles_enabled: z.boolean().optional(),
 })
 
 const regenerateSceneSchema = z.object({
@@ -92,7 +96,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
     return
   }
 
-  const { title, style, input_type, format, duration, script, audio_url, voice_id, brand_kit_id, music_track_id, pre_generated_scenes, dialogue_mode, speaker_voices, animation_mode, animation_overrides } = parsed.data
+  const { title, style, input_type, format, duration, script, audio_url, voice_id, brand_kit_id, music_track_id, pre_generated_scenes, dialogue_mode, speaker_voices, animation_mode, animation_overrides, music_preset, subtitles_enabled } = parsed.data
 
   const hasPreGeneratedScenes = pre_generated_scenes && pre_generated_scenes.length > 0
   if (input_type === 'script' && !script && !hasPreGeneratedScenes) {
@@ -153,6 +157,8 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
           brand_kit_id: brand_kit_id ?? null,
           animation_mode: resolvedAnimationMode,
           animation_overrides: resolvedAnimationOverrides,
+          music_preset: music_preset ?? 'none',
+          subtitles_enabled: !!subtitles_enabled,
           // Store script for draft recovery on pipeline failure (max 50KB)
           script_draft: input_type === 'script' && script
             ? script.substring(0, 50_000)
@@ -185,6 +191,8 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
       dialogueMode:   dialogue_mode,
       speakerVoices:  speaker_voices,
       animationMode:  animation_mode,
+      musicPreset:    music_preset ?? 'none',
+      subtitlesEnabled: !!subtitles_enabled,
     }
 
     // Enqueue si Redis est dispo ET qu'un worker consomme la queue.

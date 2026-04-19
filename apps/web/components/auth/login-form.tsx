@@ -35,7 +35,16 @@ export function LoginForm() {
       })
 
       if (signInError) {
-        setError(signInError.message)
+        // Privacy: never disclose whether the email exists or whether it's
+        // the password that's wrong. Map every Supabase auth error to a
+        // single generic message. "Email not confirmed" is surfaced
+        // separately because acting on it (resending) is the right remedy.
+        const raw = (signInError.message ?? '').toLowerCase()
+        if (raw.includes('email not confirmed') || raw.includes('not confirmed')) {
+          setError('Please confirm your email address before signing in.')
+        } else {
+          setError('Invalid email or password.')
+        }
         return
       }
 

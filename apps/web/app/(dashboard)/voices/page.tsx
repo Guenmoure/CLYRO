@@ -160,6 +160,11 @@ function VoiceCard({ voice, onToggleFavorite, compact }: {
 
 // ── Clone voice modal ────────────────────────────────────────────────────────
 
+// EDGE-002: enforce 25 MB cap (matches apps/api/src/routes/voices.ts).
+// ElevenLabs voice cloning rejects samples beyond this; failing fast on the
+// client avoids a wasted Supabase upload and a confusing 413 round-trip.
+const VOICE_SAMPLE_MAX_BYTES = 25 * 1024 * 1024
+
 function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned: () => void }) {
   const { t } = useLanguage()
   const [name, setName]           = useState('')
@@ -174,8 +179,27 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
     return () => window.removeEventListener('keydown', handleEscape)
   }, [onClose])
 
+  function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = e.target.files?.[0] ?? null
+    if (picked && picked.size > VOICE_SAMPLE_MAX_BYTES) {
+      toast.error(
+        `Fichier trop volumineux (${(picked.size / 1024 / 1024).toFixed(1)} MB). La taille maximale est ${VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB.`,
+      )
+      e.target.value = ''
+      setFile(null)
+      return
+    }
+    setFile(picked)
+  }
+
   async function handleSubmit() {
     if (!name.trim() || !file) return
+    if (file.size > VOICE_SAMPLE_MAX_BYTES) {
+      toast.error(
+        `Fichier trop volumineux (${(file.size / 1024 / 1024).toFixed(1)} MB). La taille maximale est ${VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB.`,
+      )
+      return
+    }
     setUploading(true)
     try {
       const supabase = createBrowserClient()
@@ -210,9 +234,12 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
           <div>
             <label htmlFor="voice-file" className="font-body text-xs font-medium text-[--text-secondary] mb-2 block">{t('audioFile')}</label>
             <input id="voice-file" type="file" accept="audio/mp3,audio/mpeg,audio/wav,audio/m4a,audio/*"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={handleFilePick}
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm file:mr-3 file:text-xs file:text-blue-500 file:bg-transparent file:border-0 file:cursor-pointer focus:outline-none"
             />
+            <p className="mt-1.5 font-body text-[11px] text-[--text-muted]">
+              Max {VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB — formats mp3, wav, m4a.
+            </p>
           </div>
         </div>
         <div className="flex gap-3">

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { createBrowserClient } from '@/lib/supabase'
-import { Mic, MicOff, Volume2, AlertTriangle, ShoppingCart } from 'lucide-react'
+import { Mic, MicOff, Volume2, AlertTriangle, ShoppingCart, Captions, Music } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { WizardLayout } from '@/components/creation/WizardLayout'
 import { GenerationOverlay, type GenerationStage } from '@/components/creation/GenerationOverlay'
@@ -22,6 +22,9 @@ import {
 } from '@/lib/api'
 import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
 import { ANIMATION_MODES } from '@clyro/shared'
+
+// F1-012: music preset type mirrors the one in packages/shared/src/types/video.ts
+type MusicPreset = 'none' | 'soft' | 'upbeat' | 'cinematic' | 'corporate'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -339,18 +342,36 @@ function StepFormat({
 
 // ── Step 4 — Options ───────────────────────────────────────────────────────────
 
+// F1-012: available music presets for background scoring
+const MUSIC_PRESETS: { id: MusicPreset; label: string; desc: string }[] = [
+  { id: 'none',       label: 'No music',   desc: 'Voiceover only' },
+  { id: 'soft',       label: 'Soft',       desc: 'Ambient, calm background' },
+  { id: 'upbeat',     label: 'Upbeat',     desc: 'Energetic & modern' },
+  { id: 'cinematic',  label: 'Cinematic',  desc: 'Dramatic orchestral' },
+  { id: 'corporate',  label: 'Corporate',  desc: 'Clean, professional' },
+]
+
 function StepOptions({
   dialogueMode,
   onDialogueModeChange,
+  musicPreset,
+  onMusicPresetChange,
+  subtitlesEnabled,
+  onSubtitlesChange,
 }: {
   dialogueMode: boolean
   onDialogueModeChange: (v: boolean) => void
+  musicPreset: MusicPreset
+  onMusicPresetChange: (m: MusicPreset) => void
+  subtitlesEnabled: boolean
+  onSubtitlesChange: (v: boolean) => void
 }) {
   return (
     <div className="space-y-6">
       <SectionTitle>Advanced options</SectionTitle>
       <SectionSub>Customize the generation behavior.</SectionSub>
 
+      {/* Dialogue mode toggle (existing) */}
       <div className="flex items-center justify-between rounded-xl bg-muted border border-border px-4 py-4">
         <div className="flex items-center gap-3">
           {dialogueMode ? (
@@ -382,6 +403,74 @@ function StepOptions({
           )} />
         </button>
       </div>
+
+      {/* F1-013: subtitle burn-in toggle */}
+      <div className="flex items-center justify-between rounded-xl bg-muted border border-border px-4 py-4">
+        <div className="flex items-center gap-3">
+          <Captions
+            size={18}
+            className={subtitlesEnabled ? 'text-blue-400' : 'text-[--text-muted]'}
+          />
+          <div>
+            <p className="font-display text-sm text-foreground">Burn-in subtitles</p>
+            <p className="font-body text-xs text-[--text-muted]">
+              Word-level captions synced to the voiceover, burned into the video
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onSubtitlesChange(!subtitlesEnabled)}
+          className={cn(
+            'relative w-11 h-6 rounded-full transition-colors duration-200',
+            subtitlesEnabled ? 'bg-blue-500' : 'bg-border',
+          )}
+          role="switch"
+          title={subtitlesEnabled ? 'Disable subtitles' : 'Enable subtitles'}
+          aria-checked={subtitlesEnabled}
+        >
+          <span className={cn(
+            'absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200',
+            subtitlesEnabled ? 'translate-x-6' : 'translate-x-1',
+          )} />
+        </button>
+      </div>
+
+      {/* F1-012: background music picker */}
+      <div className="rounded-xl bg-muted border border-border px-4 py-4">
+        <div className="flex items-center gap-3 mb-3">
+          <Music size={18} className="text-blue-400" />
+          <div>
+            <p className="font-display text-sm text-foreground">Background music</p>
+            <p className="font-body text-xs text-[--text-muted]">
+              Mixed under the voiceover at a low gain
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2" role="radiogroup" aria-label="Background music preset">
+          {MUSIC_PRESETS.map(p => {
+            const active = musicPreset === p.id
+            return (
+              <button
+                key={p.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => onMusicPresetChange(p.id)}
+                className={cn(
+                  'flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2 text-left transition-all',
+                  active
+                    ? 'border-blue-500 bg-blue-500/10 text-foreground'
+                    : 'border-border text-[--text-muted] hover:border-border/70 hover:text-foreground',
+                )}
+              >
+                <span className="font-display text-xs font-semibold">{p.label}</span>
+                <span className="font-body text-[10px]">{p.desc}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
@@ -397,6 +486,8 @@ function StepReview({
   format,
   duration,
   dialogueMode,
+  musicPreset,
+  subtitlesEnabled,
 }: {
   title: string
   script: string
@@ -406,10 +497,13 @@ function StepReview({
   format: VideoFormat
   duration: VideoDuration
   dialogueMode: boolean
+  musicPreset: MusicPreset
+  subtitlesEnabled: boolean
 }) {
   const wordCount  = script.trim().split(/\s+/).filter(Boolean).length
   const styleConfig = FACELESS_STYLES.find(s => s.id === style)
   const animConfig  = ANIMATION_MODES[animationMode]
+  const musicLabel = MUSIC_PRESETS.find(p => p.id === musicPreset)?.label ?? 'No music'
 
   const rows: [string, string][] = [
     ['Title',        title || '—'],
@@ -420,6 +514,8 @@ function StepReview({
     ['Format',       format],
     ['Duration',        duration],
     ['Dialogue mode',dialogueMode ? 'Enabled' : 'Disabled'],
+    ['Music',        musicLabel],
+    ['Subtitles',    subtitlesEnabled ? 'Burned-in' : 'Off'],
   ]
 
   return (
@@ -475,6 +571,8 @@ function FacelessNewPageInner() {
   const [format,         setFormat]         = useState<VideoFormat>('9:16')
   const [duration,       setDuration]       = useState<VideoDuration>('auto')
   const [dialogueMode,   setDialogueMode]   = useState(false)
+  const [musicPreset,    setMusicPreset]    = useState<MusicPreset>('none')
+  const [subtitlesEnabled, setSubtitlesEnabled] = useState(false)
 
   // Restore draft from DB on mount when ?draft=<id> is present
   useEffect(() => {
@@ -502,6 +600,8 @@ function FacelessNewPageInner() {
         if (s.format)        setFormat(s.format as VideoFormat)
         if (s.duration)      setDuration(s.duration as VideoDuration)
         if (typeof s.dialogueMode === 'boolean') setDialogueMode(s.dialogueMode)
+        if (typeof s.musicPreset === 'string')    setMusicPreset(s.musicPreset as MusicPreset)
+        if (typeof s.subtitlesEnabled === 'boolean') setSubtitlesEnabled(s.subtitlesEnabled)
         if (typeof data.wizard_step === 'number' && data.wizard_step >= 4) {
           toast.success('Projet restauré — tes scènes sont intactes, aucun crédit supplémentaire consommé')
         }
@@ -519,7 +619,7 @@ function FacelessNewPageInner() {
     currentStep,
     totalSteps:  STEPS.length,
     stepLabel:   STEPS[currentStep]?.label ?? '',
-    state:       { script, style, selectedVoice, animationMode, format, duration, dialogueMode },
+    state:       { script, style, selectedVoice, animationMode, format, duration, dialogueMode, musicPreset, subtitlesEnabled },
     initialDraftId: draftParam,
   })
 
@@ -596,6 +696,15 @@ function FacelessNewPageInner() {
   }, [currentStep, script, selectedVoice, creditInsufficient])
 
   function handleNext() {
+    // CRED-007: explicitly surface the "insufficient credits" state as a toast
+    // so the user understands why Next is blocked (previously the button was
+    // silently disabled by canNext()).
+    if (creditInsufficient) {
+      toast.error(
+        `Crédits insuffisants (solde ${creditsBalance}, requis ~${estimatedCredits}). Ajoute des crédits ou choisis un mode moins coûteux.`,
+      )
+      return
+    }
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(s => s + 1)
     } else {
@@ -620,6 +729,8 @@ function FacelessNewPageInner() {
         duration,
         dialogue_mode: dialogueMode,
         animation_mode: animationMode,
+        music_preset: musicPreset,
+        subtitles_enabled: subtitlesEnabled,
       })
 
       const supabase = createBrowserClient()
@@ -729,6 +840,10 @@ function FacelessNewPageInner() {
             <StepOptions
               dialogueMode={dialogueMode}
               onDialogueModeChange={setDialogueMode}
+              musicPreset={musicPreset}
+              onMusicPresetChange={setMusicPreset}
+              subtitlesEnabled={subtitlesEnabled}
+              onSubtitlesChange={setSubtitlesEnabled}
             />
           )}
           {currentStep === 5 && (
@@ -741,6 +856,8 @@ function FacelessNewPageInner() {
               format={format}
               duration={duration}
               dialogueMode={dialogueMode}
+              musicPreset={musicPreset}
+              subtitlesEnabled={subtitlesEnabled}
             />
           )}
         </div>

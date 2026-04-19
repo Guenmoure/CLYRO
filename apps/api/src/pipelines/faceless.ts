@@ -223,7 +223,7 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
         // Upload combined voiceover audio
         supabaseAdmin.storage
           .from('videos')
-          .upload(`${userId}/${videoId}/voiceover.mp3`, combinedAudioBuffer, { contentType: 'audio/mpeg', upsert: true })
+          .upload(`${userId}/${videoId}/voiceover.mp3`, combinedAudioBuffer, { contentType: 'application/octet-stream', upsert: true })
           .then(({ error }) => {
             if (error) {
               logger.warn({ error, videoId }, 'Failed to persist combined voiceover to storage (non-blocking)')
@@ -247,7 +247,7 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
 
           await supabaseAdmin.storage
             .from('videos')
-            .upload(`${userId}/${videoId}/timestamps.json`, Buffer.from(JSON.stringify(allWords)), { contentType: 'application/json', upsert: true })
+            .upload(`${userId}/${videoId}/timestamps.json`, Buffer.from(JSON.stringify(allWords)), { contentType: 'application/octet-stream', upsert: true })
             .then(({ error }) => {
               if (error) {
                 logger.warn({ error, videoId }, 'Failed to persist word timestamps to storage (non-blocking)')

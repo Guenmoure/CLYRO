@@ -605,14 +605,14 @@ export async function generateVoiceoverScenesWithTimestamps(
           await Promise.all([
             supabaseAdmin.storage
               .from('videos')
-              .upload(`${base}.mp3`, result.audioBuffer, { contentType: 'audio/mpeg', upsert: true })
+              .upload(`${base}.mp3`, result.audioBuffer, { contentType: 'application/octet-stream', upsert: true })
               .then(({ error }) => {
                 if (error) logger.warn({ error, sceneId: scene.id }, 'ElevenLabs: audio upload failed')
                 else logger.info({ sceneId: scene.id }, 'ElevenLabs: audio persisted to storage')
               }),
             supabaseAdmin.storage
               .from('videos')
-              .upload(`${base}.json`, Buffer.from(JSON.stringify(result.words)), { contentType: 'application/json', upsert: true })
+              .upload(`${base}.json`, Buffer.from(JSON.stringify(result.words)), { contentType: 'application/octet-stream', upsert: true })
               .then(({ error }) => {
                 if (error) logger.warn({ error, sceneId: scene.id }, 'ElevenLabs: timestamps upload failed')
               }),

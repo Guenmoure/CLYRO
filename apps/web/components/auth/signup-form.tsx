@@ -60,7 +60,24 @@ export function SignupForm() {
       })
 
       if (signUpError) {
-        setError(signUpError.message)
+        // Privacy: never disclose whether an email is already registered.
+        // For "user already registered" errors we show the same success
+        // state as a fresh signup (the real account owner still gets their
+        // confirmation email; the attacker cannot enumerate).
+        const raw = (signUpError.message ?? '').toLowerCase()
+        if (
+          raw.includes('already registered') ||
+          raw.includes('already exists') ||
+          raw.includes('user already')
+        ) {
+          setSuccess(true)
+          return
+        }
+        if (raw.includes('password') && raw.includes('short')) {
+          setError('Password must be at least 8 characters.')
+          return
+        }
+        setError(t('errorOccurred'))
         return
       }
 

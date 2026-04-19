@@ -780,3 +780,98 @@ export async function assembleVideo(options: AssembleVideoOptions): Promise<Buff
     await rm(workDir, { recursive: true, force: true }).catch(() => null)
   }
 }
+
+// ============================================================================
+// F5-011 — Studio final render
+// ============================================================================
+// Downloads every scene's already-rendered MP4 (HeyGen/Remotion/Pexels),
+// normalises each one to a uniform codec/container, and concatenates them
+// into a single MP4 suitable for upload + playback. Each scene already has
+// its own baked-in audio (HeyGen voiceover + music layer), so this helper
+// only touches the video/audio streams enough to make the concat demuxer
+// happy.
+// ============================================================================
+
+export interface StudioSceneClip {
+  sceneId:  string
+  videoUrl: string
+}
+
+export async function assembleStudioVideo(
+  sceneClips: StudioSceneClip[],
+  format: '16_9' | '9_16' = '16_9',
+): Promise<Buffer> {
+  if (sceneClips.length === 0) {
+    throw new Error('assembleStudioVideo: no scene clips provided')
+  }
+
+  const workDir = join(tmpdir(), `clyro-studio-${randomUUID()}`)
+  await mkdir(workDir, { recursive: true })
+
+  // Canvas size + scale/pad filter tuned to each format.
+  const [targetW, targetH] = format === '9_16' ? [1080, 1920] : [1920, 1080]
+  const scalePad =
+    `scale=${targetW}:${targetH}:force_original_aspect_ratio=decrease,` +
+    `pad=${targetW}:${targetH}:(ow-iw)/2:(oh-ih)/2:black,setsar=1`
+
+  try {
+    // 1) Parallel download of all scene videos.
+    const downloaded = await Promise.all(
+      sceneClips.map(async ({ sceneId, videoUrl }) => {
+        const raw = join(workDir, `raw_${sceneId}.mp4`)
+        await downloadVideoUrl(videoUrl, raw)
+        return { sceneId, raw }
+      }),
+    )
+
+    // 2) Re-encode each clip to a uniform h264/aac profile. Using ultrafast
+    //    + crf 23 gives decent quality without blocking the node process too
+    //    long. Audio is kept (128k aac) since HeyGen bakes the voiceover in.
+    const CONCURRENCY = 4
+    const normalised: string[] = []
+    for (let i = 0; i < downloaded.length; i += CONCURRENCY) {
+      const batch = downloaded.slice(i, i + CONCURRENCY)
+      const batchOut = await Promise.all(
+        batch.map(async ({ sceneId, raw }) => {
+          const out = join(workDir, `norm_${sceneId}.mp4`)
+          await runFFmpeg([
+            '-i', raw,
+            '-vf', scalePad,
+            '-r', '30',
+            '-c:v', 'libx264',
+            '-preset', 'veryfast',
+            '-crf', '23',
+            '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac',
+            '-b:a', '128k',
+            '-ar', '48000',
+            '-ac', '2',
+            '-shortest',
+            '-movflags', '+faststart',
+            out,
+          ])
+          return out
+        }),
+      )
+      normalised.push(...batchOut)
+    }
+
+    // 3) Concat demuxer (stream-copy since all clips share the same params).
+    const finalPath = join(workDir, 'final.mp4')
+    if (normalised.length === 1) {
+      // Single-scene edge case: just rename.
+      await copyFile(normalised[0]!, finalPath)
+    } else {
+      await concatenateClips(normalised, finalPath)
+    }
+
+    const buf = await readFile(finalPath)
+    logger.info(
+      { sceneCount: sceneClips.length, outputBytes: buf.length, format },
+      'FFmpeg: studio video assembled',
+    )
+    return buf
+  } finally {
+    await rm(workDir, { recursive: true, force: true }).catch(() => null)
+  }
+}

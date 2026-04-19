@@ -460,3 +460,17 @@ export async function getStudioProject(projectId: string) {
   )
 }
 
+// F5-011: kicks off the final render. Returns 202 + status='rendering'
+// almost immediately; the actual MP4 lands on studio_projects via Realtime.
+export async function renderStudioFinal(projectId: string, format?: '16_9' | '9_16') {
+  return apiFetch<{
+    status: 'rendering'
+    projectId: string
+    sceneCount: number
+    format: '16_9' | '9_16'
+  }>('/api/v1/pipeline/studio/render-final', {
+    method: 'POST',
+    body: JSON.stringify({ projectId, format }),
+  })
+}
+

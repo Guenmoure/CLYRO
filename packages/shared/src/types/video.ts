@@ -180,6 +180,10 @@ export interface CreateFacelessVideoPayload {
   speaker_voices?: Record<string, string> // map speaker name → voice_id (optional override)
   animation_mode?: AnimationMode         // global animation mode (default: storyboard)
   animation_overrides?: Record<number, AnimationMode> // per-scene overrides
+  // F1-012: optional background music preset (mixed at low gain on the timeline)
+  music_preset?: 'none' | 'soft' | 'upbeat' | 'cinematic' | 'corporate'
+  // F1-013: burn-in subtitles (word-level via TTS timestamps)
+  subtitles_enabled?: boolean
 }
 
 export interface MotionScene {

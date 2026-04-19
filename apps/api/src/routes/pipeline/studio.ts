@@ -34,6 +34,7 @@ import {
   listAvatars,
 } from '../../services/heygen'
 import { transcribeYouTube, isValidYouTubeUrl } from '../../services/transcribe'
+import { assembleStudioVideo, type StudioSceneClip } from '../../services/ffmpeg'
 
 export const studioRouter = Router()
 
@@ -469,10 +470,12 @@ studioRouter.delete('/scene/:sceneId', authMiddleware, async (req, res) => {
 })
 
 // ── POST /render-final ──────────────────────────────────────────────────
-// TODO(F5): FFmpeg concat of all scenes + music + transitions + upload
+// F5-011: assembles the individual scene MP4s into a single final video.
+// Runs asynchronously — we flip status to 'rendering' then do the work in
+// the background. The client polls studio_projects via Supabase Realtime.
 studioRouter.post('/render-final', authMiddleware, async (req, res) => {
   try {
-    const { projectId } = req.body as { projectId: string; format?: string }
+    const { projectId } = req.body as { projectId: string; format?: '16_9' | '9_16' }
     if (!projectId) { res.status(400).json({ error: 'projectId required' }); return }
 
     const { data: project } = await supabaseAdmin
@@ -480,17 +483,111 @@ studioRouter.post('/render-final', authMiddleware, async (req, res) => {
       .eq('id', projectId).eq('user_id', req.userId).single()
     if (!project) { res.status(404).json({ error: 'Not found' }); return }
 
-    logger.info({ projectId }, 'render-final called — FFmpeg pipeline not yet implemented')
-    res.status(501).json({
-      error: 'Final render pipeline not yet implemented',
-      code: 'NOT_IMPLEMENTED',
-      hint: 'Scene-level MP4s are available individually via the timeline.',
+    // Only render when all scenes are done.
+    const { data: scenes } = await supabaseAdmin
+      .from('studio_scenes')
+      .select('id, index, status, video_url')
+      .eq('project_id', projectId)
+      .order('index', { ascending: true })
+
+    const sceneList = scenes ?? []
+    if (sceneList.length === 0) {
+      res.status(400).json({ error: 'Project has no scenes to assemble', code: 'EMPTY_PROJECT' })
+      return
+    }
+    const missing = sceneList.filter((s: { status?: string; video_url?: string | null }) => s.status !== 'done' || !s.video_url)
+    if (missing.length > 0) {
+      res.status(409).json({
+        error: `${missing.length} scene(s) not ready — wait for generation or regenerate before exporting`,
+        code: 'SCENES_NOT_READY',
+      })
+      return
+    }
+
+    const targetFormat: '16_9' | '9_16' =
+      req.body?.format === '9_16' || project.format === '9_16' ? '9_16' : '16_9'
+
+    // Flip project status so the UI can reflect "rendering…".
+    await supabaseAdmin
+      .from('studio_projects')
+      .update({ status: 'rendering' })
+      .eq('id', projectId)
+
+    // Kick off the async FFmpeg pipeline and return 202 immediately.
+    void runStudioFinalRender(projectId, sceneList, targetFormat).catch((err) => {
+      logger.error({ err, projectId }, 'studio.render-final background job crashed')
+    })
+
+    res.status(202).json({
+      status: 'rendering',
+      projectId,
+      sceneCount: sceneList.length,
+      format: targetFormat,
     })
   } catch (err) {
     logger.error({ err }, 'studio.render-final failed')
     res.status(500).json({ error: 'Failed', code: 'INTERNAL_ERROR' })
   }
 })
+
+// Background worker for the studio final render.
+async function runStudioFinalRender(
+  projectId: string,
+  scenes: Array<{ id: string; video_url: string }>,
+  format: '16_9' | '9_16',
+): Promise<void> {
+  const startedAt = Date.now()
+  try {
+    const sceneClips: StudioSceneClip[] = scenes.map((s) => ({
+      sceneId: s.id,
+      videoUrl: s.video_url,
+    }))
+
+    const buf = await assembleStudioVideo(sceneClips, format)
+
+    // Upload to Supabase Storage (bucket: studio-videos).
+    const storagePath = `${projectId}/final-${format}-${Date.now()}.mp4`
+    const UPLOAD_MAX_RETRIES = 3
+    let uploadErr: { message: string } | null = null
+    for (let attempt = 1; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
+      const result = await supabaseAdmin.storage
+        .from('studio-videos')
+        .upload(storagePath, buf, {
+          contentType: 'video/mp4',
+          upsert: true,
+        })
+      uploadErr = result.error
+      if (!uploadErr) break
+      if (attempt < UPLOAD_MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, [5_000, 15_000, 30_000][attempt - 1] ?? 30_000))
+      }
+    }
+    if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`)
+
+    const { data: pub } = supabaseAdmin.storage
+      .from('studio-videos')
+      .getPublicUrl(storagePath)
+    const publicUrl = pub.publicUrl
+
+    const urlColumn = format === '9_16' ? 'final_video_9_16_url' : 'final_video_url'
+    await supabaseAdmin
+      .from('studio_projects')
+      .update({ status: 'done', [urlColumn]: publicUrl })
+      .eq('id', projectId)
+
+    logger.info(
+      { projectId, durationMs: Date.now() - startedAt, publicUrl },
+      'studio.render-final: done',
+    )
+  } catch (err) {
+    logger.error({ err, projectId }, 'studio.render-final: background job failed')
+    await supabaseAdmin
+      .from('studio_projects')
+      .update({ status: 'error' })
+      .eq('id', projectId)
+      .then(() => null, () => null)
+  }
+}
 
 // ── GET /avatars ────────────────────────────────────────────────────────
 

@@ -94,6 +94,22 @@ voicesRouter.post('/voices/clone', authMiddleware, async (req, res) => {
       return
     }
 
+    // EDGE-002: reject oversized samples before touching ElevenLabs.
+    // ElevenLabs caps voice-cloning samples at ~25 MB, and Supabase bucket
+    // is capped at 50 MB — we enforce 25 MB here with a friendly message.
+    const VOICE_SAMPLE_MAX_BYTES = 25 * 1024 * 1024
+    const headRes = await fetch(sample_url, { method: 'HEAD' })
+    if (headRes.ok) {
+      const contentLength = Number(headRes.headers.get('content-length') ?? 0)
+      if (contentLength > VOICE_SAMPLE_MAX_BYTES) {
+        res.status(413).json({
+          error: `Voice sample is too large (${(contentLength / 1024 / 1024).toFixed(1)} MB). Maximum is ${VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB.`,
+          code: 'PAYLOAD_TOO_LARGE',
+        })
+        return
+      }
+    }
+
     // Télécharger l'échantillon audio depuis Supabase Storage
     const sampleResponse = await fetch(sample_url)
     if (!sampleResponse.ok) {
@@ -101,6 +117,15 @@ voicesRouter.post('/voices/clone', authMiddleware, async (req, res) => {
       return
     }
     const audioBuffer = Buffer.from(await sampleResponse.arrayBuffer())
+
+    // Double-check after download in case HEAD wasn't honoured by the CDN.
+    if (audioBuffer.length > VOICE_SAMPLE_MAX_BYTES) {
+      res.status(413).json({
+        error: `Voice sample is too large (${(audioBuffer.length / 1024 / 1024).toFixed(1)} MB). Maximum is ${VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB.`,
+        code: 'PAYLOAD_TOO_LARGE',
+      })
+      return
+    }
 
     // Cloner la voix via ElevenLabs
     const { voiceId: elevenlabsVoiceId } = await cloneVoice(audioBuffer, name)

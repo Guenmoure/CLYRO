@@ -61,3 +61,15 @@ temp/
 
 # Vercel
 .vercel
+
+# Playwright test env (contains real Supabase credentials)
+.env.test
+
+# Playwright artifacts (auto-generated)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Playwright auth sessions (contain real Supabase JWT cookies)
+apps/web/e2e/.auth/

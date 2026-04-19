@@ -1,10 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { PenLine, Video, Sparkles, Clock, Trash2, Palette, Clapperboard } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { PenLine, Video, Sparkles, Clock, Trash2, Palette, Clapperboard, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createBrowserClient } from '@/lib/supabase'
 import { DraftCard, type DbDraftMeta } from '@/components/dashboard/DraftCard'
+
+// PERF-003: paginated fetch — the drafts list can grow large for heavy users,
+// so we page by 50 and expose a "Load more" affordance.
+const DRAFTS_PAGE_SIZE = 50
 
 // ── Filter types ───────────────────────────────────────────────────────────────
 
@@ -37,28 +41,61 @@ function EmptyState() {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function DraftsPage() {
-  const [drafts,  setDrafts]  = useState<DbDraftMeta[]>([])
-  const [loading, setLoading] = useState(true)
-  const [filter,  setFilter]  = useState<Filter>('all')
+  const [drafts,     setDrafts]     = useState<DbDraftMeta[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore,    setHasMore]    = useState(false)
+  const [page,       setPage]       = useState(0)
+  const [filter,     setFilter]     = useState<Filter>('all')
+
+  // Single-page fetch. Returns what was appended + whether another page likely exists.
+  const fetchPage = useCallback(async (pageIndex: number): Promise<{ rows: DbDraftMeta[]; more: boolean } | null> => {
+    const supabase = createBrowserClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: authData } = await (supabase.auth.getSession() as Promise<any>)
+    const session = authData?.session
+    if (!session) return null
+    const from = pageIndex * DRAFTS_PAGE_SIZE
+    const to   = from + DRAFTS_PAGE_SIZE - 1
+    const { data } = await supabase
+      .from('videos')
+      .select('id, module, title, wizard_step, wizard_state, updated_at')
+      .eq('user_id', session.user.id)
+      .eq('status', 'draft')
+      .order('updated_at', { ascending: false })
+      .range(from, to)
+    const rows = (data ?? []) as DbDraftMeta[]
+    return { rows, more: rows.length === DRAFTS_PAGE_SIZE }
+  }, [])
 
   useEffect(() => {
-    async function load() {
-      const supabase = createBrowserClient()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: authData } = await (supabase.auth.getSession() as Promise<any>)
-      const session = authData?.session
-      if (!session) { setLoading(false); return }
-      const { data } = await supabase
-        .from('videos')
-        .select('id, module, title, wizard_step, wizard_state, updated_at')
-        .eq('user_id', session.user.id)
-        .eq('status', 'draft')
-        .order('updated_at', { ascending: false })
-      setDrafts((data ?? []) as DbDraftMeta[])
+    let cancelled = false
+    void (async () => {
+      const res = await fetchPage(0)
+      if (cancelled) return
+      if (!res) { setLoading(false); return }
+      setDrafts(res.rows)
+      setHasMore(res.more)
+      setPage(0)
       setLoading(false)
+    })()
+    return () => { cancelled = true }
+  }, [fetchPage])
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const res = await fetchPage(nextPage)
+      if (!res) return
+      setDrafts(prev => [...prev, ...res.rows])
+      setHasMore(res.more)
+      setPage(nextPage)
+    } finally {
+      setLoadingMore(false)
     }
-    void load()
-  }, [])
+  }, [fetchPage, hasMore, loadingMore, page])
 
   async function handleDelete(id: string) {
     const supabase = createBrowserClient()
@@ -170,15 +207,38 @@ export default function DraftsPage() {
       ) : filtered.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(draft => (
-            <DraftCard
-              key={draft.id}
-              draft={draft}
-              onDelete={() => handleDelete(draft.id)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map(draft => (
+              <DraftCard
+                key={draft.id}
+                draft={draft}
+                onDelete={() => handleDelete(draft.id)}
+              />
+            ))}
+          </div>
+
+          {/* PERF-003: "Load more" is only relevant for the full list (filter=all);
+              per-module filters operate on the already-loaded buffer. */}
+          {hasMore && filter === 'all' && (
+            <div className="flex justify-center mt-6">
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-xl',
+                  'font-mono text-xs text-foreground border border-border bg-card',
+                  'hover:border-blue-500/40 hover:bg-muted transition-colors',
+                  'disabled:opacity-60 disabled:cursor-not-allowed',
+                )}
+              >
+                {loadingMore ? <Loader2 size={12} className="animate-spin" /> : null}
+                {loadingMore ? 'Chargement…' : 'Charger plus'}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

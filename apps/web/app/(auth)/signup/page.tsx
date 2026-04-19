@@ -34,7 +34,7 @@ export default function SignupPage() {
       </div>
 
       <p className="text-center text-xs text-[--text-disabled] font-body">
-        3 free videos on signup. No credit card required.
+        250 free credits on signup. No credit card required.
       </p>
     </div>
   )

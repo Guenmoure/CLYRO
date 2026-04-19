@@ -301,10 +301,10 @@ pipelineMotionRouter.post('/motion/audio-scene', authMiddleware, async (req, res
     const [audioUpload, tsUpload] = await Promise.all([
       supabaseAdmin.storage
         .from('videos')
-        .upload(`${base}.mp3`, result.audioBuffer, { contentType: 'audio/mpeg', upsert: true }),
+        .upload(`${base}.mp3`, result.audioBuffer, { contentType: 'application/octet-stream', upsert: true }),
       supabaseAdmin.storage
         .from('videos')
-        .upload(`${base}.json`, Buffer.from(JSON.stringify(result.words)), { contentType: 'application/json', upsert: true }),
+        .upload(`${base}.json`, Buffer.from(JSON.stringify(result.words)), { contentType: 'application/octet-stream', upsert: true }),
     ])
 
     if (audioUpload.error) {

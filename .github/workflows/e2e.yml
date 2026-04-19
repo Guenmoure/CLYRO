@@ -1,0 +1,128 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Target URL (default: preview deployment)'
+        required: false
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ── Apply Supabase migrations ────────────────────────────────────────────────
+  # Runs before e2e so the test database always reflects the latest schema
+  # (fix_initial_credits_250, studio_videos_bucket, etc.).
+  # Skipped on workflow_dispatch when targeting a custom base_url that may
+  # already be migrated by another pipeline.
+  migrate:
+    name: Push Supabase migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.base_url == ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase link --project-ref ${{ secrets.E2E_SUPABASE_PROJECT_REF }}
+
+      - name: Push migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.E2E_SUPABASE_DB_PASSWORD }}
+        run: supabase db push --include-all
+
+  # ── E2E tests ────────────────────────────────────────────────────────────────
+  e2e:
+    name: Playwright E2E
+    needs: migrate
+    # Run even if `migrate` was skipped (custom base_url on workflow_dispatch),
+    # but block on a real migrate failure.
+    if: always() && !cancelled() && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ── Checkout ──────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Node ──────────────────────────────────────────────────────────────────
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # ── Dependencies ──────────────────────────────────────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Playwright browsers ───────────────────────────────────────────────────
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('apps/web/package.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium firefox
+        working-directory: apps/web
+
+      - name: Install Playwright system deps (cached run)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium firefox
+        working-directory: apps/web
+
+      # ── Build web app ─────────────────────────────────────────────────────────
+      - name: Build web app
+        run: npm run build --workspace=apps/web
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.E2E_API_URL }}
+
+      # ── Run tests ─────────────────────────────────────────────────────────────
+      - name: Run Playwright tests
+        run: npx playwright test --reporter=github,html
+        working-directory: apps/web
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url || 'http://localhost:3000' }}
+          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          E2E_SUPABASE_SERVICE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.E2E_API_URL }}
+          CI: true
+
+      # ── Upload reports ────────────────────────────────────────────────────────
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: apps/web/playwright-report/
+          retention-days: 30
+
+      - name: Upload test videos (failures)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-videos-${{ github.run_id }}
+          path: apps/web/test-results/
+          retention-days: 7
