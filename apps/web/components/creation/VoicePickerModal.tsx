@@ -6,22 +6,9 @@ import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import type { ClyroVoice } from '@/lib/api'
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-export interface ClyroVoice {
-  id: string
-  name: string
-  previewUrl?: string
-  category?: string
-  gender?: 'male' | 'female' | 'neutral'
-  accent?: string
-  language?: string
-  age?: string
-  useCase?: string
-  description?: string
-  isFavorite?: boolean
-}
+export type { ClyroVoice }
 
 interface VoicePickerModalProps {
   isOpen: boolean
@@ -41,6 +28,17 @@ interface VoicePickerModalProps {
 const GENDER_OPTIONS  = ['All', 'Male', 'Female', 'Neutral']
 const ACCENT_OPTIONS  = ['All', 'FR', 'EN-US', 'EN-GB', 'ES', 'DE', 'PT', 'IT']
 const USECASE_OPTIONS = ['All', 'Narration', 'Commercial', 'News', 'Social', 'Conversational']
+
+// Maps short accent pill codes to ElevenLabs accent label values
+const ACCENT_TO_EL: Record<string, string[]> = {
+  'FR':    ['french'],
+  'EN-US': ['american'],
+  'EN-GB': ['british', 'english'],
+  'ES':    ['spanish'],
+  'DE':    ['german'],
+  'PT':    ['portuguese', 'brazilian'],
+  'IT':    ['italian'],
+}
 
 function FilterPills({
   options,
@@ -181,9 +179,9 @@ export function VoicePickerModal({
 }: VoicePickerModalProps) {
   const [tab,        setTab]        = useState<'library' | 'cloned'>('library')
   const [search,     setSearch]     = useState('')
-  const [gender,     setGender]     = useState('Tous')
-  const [accent,     setAccent]     = useState('Tous')
-  const [useCase,    setUseCase]    = useState('Tous')
+  const [gender,     setGender]     = useState('All')
+  const [accent,     setAccent]     = useState('All')
+  const [useCase,    setUseCase]    = useState('All')
   const [localSel,   setLocalSel]   = useState(selectedVoiceId)
 
   useEffect(() => { setLocalSel(selectedVoiceId) }, [selectedVoiceId])
@@ -192,9 +190,13 @@ export function VoicePickerModal({
 
   const filtered = voices.filter(v => {
     if (search && !v.name.toLowerCase().includes(search.toLowerCase())) return false
-    if (gender  !== 'All' && v.gender?.toLowerCase() !== gender.toLowerCase())  return false
-    if (accent  !== 'All' && v.accent?.toUpperCase()  !== accent)               return false
-    if (useCase !== 'All' && v.useCase !== useCase)                              return false
+    if (gender !== 'All' && v.gender?.toLowerCase() !== gender.toLowerCase()) return false
+    if (accent !== 'All') {
+      const elAccents = ACCENT_TO_EL[accent] ?? [accent.toLowerCase()]
+      const vAccent = v.accent?.toLowerCase() ?? ''
+      if (!elAccents.some(a => vAccent.includes(a))) return false
+    }
+    if (useCase !== 'All' && v.useCase?.toLowerCase() !== useCase.toLowerCase()) return false
     return true
   })
 

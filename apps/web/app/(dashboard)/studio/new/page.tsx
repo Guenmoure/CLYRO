@@ -4,14 +4,15 @@ import { useState, useEffect, useMemo, Suspense, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   FileText, Youtube, ArrowRight, Loader2, Sparkles,
-  Globe, Wand2, Info, Check, Search, ChevronDown, ChevronUp,
+  Globe, Wand2, Info, Check, Search, ChevronDown, ChevronUp, Mic,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
-import { analyzeStudio, getStudioAvatars, type StudioAvatar } from '@/lib/api'
+import { analyzeStudio, getStudioAvatars, getPublicVoices, type StudioAvatar, type ClyroVoice } from '@/lib/api'
+import { VoicePickerModal } from '@/components/creation/VoicePickerModal'
 import { groupAvatarsByName, type AvatarGroup } from '@/lib/avatar-grouping'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { useLanguage } from '@/lib/i18n'
@@ -54,6 +55,23 @@ function StudioNewPageInner() {
   const [analyzing, setAnalyzing] = useState(false)
   const [step, setStep] = useState<string>('')
   const [restored, setRestored] = useState(false)
+
+  // Voice picker
+  const [voicePickerOpen, setVoicePickerOpen] = useState(false)
+  const [selectedVoice, setSelectedVoice] = useState<ClyroVoice | null>(null)
+  const [libraryVoices, setLibraryVoices] = useState<ClyroVoice[]>([])
+  const [loadingVoices, setLoadingVoices] = useState(false)
+
+  function openVoicePicker() {
+    if (libraryVoices.length === 0) {
+      setLoadingVoices(true)
+      getPublicVoices()
+        .then((data) => setLibraryVoices(data.voices))
+        .catch(() => {})
+        .finally(() => setLoadingVoices(false))
+    }
+    setVoicePickerOpen(true)
+  }
 
   // Avatar list
   const [avatars, setAvatars] = useState<StudioAvatar[]>([])
@@ -175,6 +193,7 @@ function StudioNewPageInner() {
         // HeyGen accepts look_ids as valid avatar identifiers, so no backend
         // schema or DB change is needed.
         avatarId: selectedLookId || avatarId || undefined,
+        voiceId: selectedVoice?.id ?? undefined,
         format: '16_9',
       })
 
@@ -427,6 +446,55 @@ function StudioNewPageInner() {
             </>
           )}
         </div>
+
+        {/* Voice picker */}
+        <div className="space-y-2">
+          <label className="font-body text-sm font-semibold text-foreground">
+            Voix off <span className="text-[--text-muted] font-normal">(optionnel)</span>
+          </label>
+          <button
+            type="button"
+            onClick={openVoicePicker}
+            className={cn(
+              'w-full flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors text-left',
+              selectedVoice
+                ? 'border-blue-500/50 bg-blue-500/5'
+                : 'border-border bg-card hover:border-blue-300',
+            )}
+          >
+            <Mic size={16} className={selectedVoice ? 'text-blue-400' : 'text-[--text-muted]'} />
+            <div className="flex-1 min-w-0">
+              {selectedVoice ? (
+                <span className="font-body text-sm text-foreground">{selectedVoice.name}</span>
+              ) : (
+                <span className="font-body text-sm text-[--text-muted]">Choisir une voix…</span>
+              )}
+            </div>
+            {selectedVoice && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setSelectedVoice(null) }}
+                className="text-[--text-muted] hover:text-foreground font-mono text-xs px-1"
+              >
+                ✕
+              </button>
+            )}
+          </button>
+          {!selectedVoice && (
+            <p className="font-mono text-[11px] text-[--text-muted]">
+              Sans sélection, une voix française par défaut sera utilisée.
+            </p>
+          )}
+        </div>
+
+        <VoicePickerModal
+          isOpen={voicePickerOpen}
+          onClose={() => setVoicePickerOpen(false)}
+          selectedVoiceId={selectedVoice?.id}
+          onSelect={(v) => setSelectedVoice(v)}
+          libraryVoices={libraryVoices}
+          loading={loadingVoices}
+        />
 
         {/* CTA */}
         <Button
