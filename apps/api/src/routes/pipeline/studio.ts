@@ -268,12 +268,17 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
     // Fire-and-forget scene generation. Each type has its own pipeline.
     // NOTE(F5): Remotion + Pexels paths are stubbed for now — marked as
     // 'error' so the timeline UI shows them visibly and the user can retry.
+    // Resolve the effective voice ID: prefer the one stored on the project,
+    // fall back to the server default (ELEVENLABS_DEFAULT_VOICE_ID).
+    // The Studio wizard has no voice picker yet — voice_id is often null.
+    const effectiveVoiceId = project.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ''
+
     ;(async () => {
       for (const scene of scenes ?? []) {
         await supabaseAdmin.from('studio_scenes').update({ status: 'generating' }).eq('id', scene.id)
 
         try {
-          if (project.avatar_id && project.voice_id) {
+          if (project.avatar_id) {
             // Non-avatar types (infographic, demo, typography, broll) are not yet
             // fully implemented as separate Remotion/Pexels pipelines. We fall back
             // to a standard avatar render so every scene produces a real video.
@@ -287,28 +292,34 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
 
             // Pre-generate audio with ElevenLabs so HeyGen receives a real audio URL.
             // This avoids the HeyGen TTS voice_id mismatch (ElevenLabs IDs ≠ HeyGen IDs).
+            // We also add an 800ms inter-scene delay to stay under ElevenLabs rate limits
+            // (34 scenes back-to-back would otherwise trigger a 429).
             let audioUrl: string | undefined
-            try {
-              const { audioBuffer } = await generateVoiceoverWithTimestamps(scene.script, project.voice_id)
-              const audioPath = `studio/${projectId}/audio/scene-${scene.id}.mp3`
-              // Use application/octet-stream — studio-videos bucket only allows video/* mime types
-              // but the service role key bypasses mime restrictions (same pattern as faceless voiceover).
-              const { error: uploadErr } = await supabaseAdmin.storage
-                .from('studio-videos')
-                .upload(audioPath, audioBuffer, { contentType: 'application/octet-stream', upsert: true })
-              if (!uploadErr) {
-                const { data: signed } = await supabaseAdmin.storage
+            if (effectiveVoiceId) {
+              try {
+                const { audioBuffer } = await generateVoiceoverWithTimestamps(scene.script, effectiveVoiceId)
+                const audioPath = `studio/${projectId}/audio/scene-${scene.id}.mp3`
+                // Use application/octet-stream — studio-videos bucket only allows video/* mime types
+                // but the service role key bypasses mime restrictions (same pattern as faceless voiceover).
+                const { error: uploadErr } = await supabaseAdmin.storage
                   .from('studio-videos')
-                  .createSignedUrl(audioPath, 60 * 60 * 24 * 7) // 7-day URL — enough for HeyGen CDN fetch
-                audioUrl = signed?.signedUrl ?? undefined
+                  .upload(audioPath, audioBuffer, { contentType: 'application/octet-stream', upsert: true })
+                if (!uploadErr) {
+                  const { data: signed } = await supabaseAdmin.storage
+                    .from('studio-videos')
+                    .createSignedUrl(audioPath, 60 * 60 * 24 * 7) // 7-day URL — enough for HeyGen CDN fetch
+                  audioUrl = signed?.signedUrl ?? undefined
+                }
+                // Rate-limit guard: 800ms between ElevenLabs calls
+                await new Promise((r) => setTimeout(r, 800))
+              } catch (audioErr) {
+                logger.warn({ audioErr, sceneId: scene.id }, 'generate-all: ElevenLabs pre-gen failed — proceeding without audio')
               }
-            } catch (audioErr) {
-              logger.warn({ audioErr, sceneId: scene.id }, 'generate-all: ElevenLabs pre-gen failed — HeyGen will use its own TTS')
             }
 
             const { heygenVideoId } = await generateAvatarScene({
               avatarId: project.avatar_id,
-              voiceId:  audioUrl ? undefined : project.voice_id,
+              voiceId:  audioUrl ? undefined : (effectiveVoiceId || undefined),
               audioUrl,
               script:   scene.script,
               background: { type: 'color', value: project.background_color ?? '#0D1117' },
@@ -324,7 +335,7 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
             await supabaseAdmin.from('studio_scenes')
               .update({
                 status: 'error',
-                error_message: 'No avatar or voice configured on project — select an avatar and voice before generating',
+                error_message: 'No avatar configured on project — select an avatar before generating',
               })
               .eq('id', scene.id)
           }
@@ -388,30 +399,33 @@ studioRouter.post('/regenerate-scene', authMiddleware, async (req, res) => {
       .from('studio_projects').select('avatar_id, voice_id, background_color, format')
       .eq('id', projectId).single()
 
-    if (project?.avatar_id && project?.voice_id) {
+    if (project?.avatar_id) {
+      const regenVoiceId = project.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ''
       ;(async () => {
         try {
           // Pre-generate ElevenLabs audio (same fix as generate-all)
           let audioUrl: string | undefined
-          try {
-            const { audioBuffer } = await generateVoiceoverWithTimestamps(scriptToUse, project.voice_id)
-            const audioPath = `studio/${projectId}/audio/regen-${sceneId}.mp3`
-            const { error: uploadErr } = await supabaseAdmin.storage
-              .from('studio-videos')
-              .upload(audioPath, audioBuffer, { contentType: 'application/octet-stream', upsert: true })
-            if (!uploadErr) {
-              const { data: signed } = await supabaseAdmin.storage
+          if (regenVoiceId) {
+            try {
+              const { audioBuffer } = await generateVoiceoverWithTimestamps(scriptToUse, regenVoiceId)
+              const audioPath = `studio/${projectId}/audio/regen-${sceneId}.mp3`
+              const { error: uploadErr } = await supabaseAdmin.storage
                 .from('studio-videos')
-                .createSignedUrl(audioPath, 60 * 60 * 24 * 7)
-              audioUrl = signed?.signedUrl ?? undefined
+                .upload(audioPath, audioBuffer, { contentType: 'application/octet-stream', upsert: true })
+              if (!uploadErr) {
+                const { data: signed } = await supabaseAdmin.storage
+                  .from('studio-videos')
+                  .createSignedUrl(audioPath, 60 * 60 * 24 * 7)
+                audioUrl = signed?.signedUrl ?? undefined
+              }
+            } catch (audioErr) {
+              logger.warn({ audioErr, sceneId }, 'regenerate-scene: ElevenLabs pre-gen failed — HeyGen TTS fallback')
             }
-          } catch (audioErr) {
-            logger.warn({ audioErr, sceneId }, 'regenerate-scene: ElevenLabs pre-gen failed — HeyGen TTS fallback')
           }
 
           const { heygenVideoId } = await generateAvatarScene({
             avatarId: project.avatar_id,
-            voiceId:  audioUrl ? undefined : project.voice_id,
+            voiceId:  audioUrl ? undefined : (regenVoiceId || undefined),
             audioUrl,
             script:   scriptToUse,
             background: { type: 'color', value: project.background_color ?? '#0D1117' },
