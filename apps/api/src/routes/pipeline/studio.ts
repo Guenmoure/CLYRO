@@ -331,18 +331,20 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
             if (effectiveVoiceId) {
               try {
                 const audioBuffer = await generateAudioWithFallback(scene.script, effectiveVoiceId, `scene-${scene.id}`)
-                const audioPath = `studio/${projectId}/audio/scene-${scene.id}.mp3`
+                // Upload to voice-samples bucket — already allows audio/mpeg, no migration needed.
+                // Path starts with projectId so service-role RLS bypass applies cleanly.
+                const audioPath = `studio-${projectId}/scene-${scene.id}.mp3`
                 const { error: uploadErr } = await supabaseAdmin.storage
-                  .from('studio-videos')
+                  .from('voice-samples')
                   .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
                 if (uploadErr) {
                   logger.warn({ uploadErr: uploadErr.message, audioPath, sceneId: scene.id }, 'generate-all: audio upload failed')
                 } else {
                   const { data: signed } = await supabaseAdmin.storage
-                    .from('studio-videos')
-                    .createSignedUrl(audioPath, 60 * 60 * 24 * 7) // 7-day URL — enough for HeyGen CDN fetch
+                    .from('voice-samples')
+                    .createSignedUrl(audioPath, 60 * 60 * 24 * 7) // 7-day signed URL for HeyGen CDN fetch
                   audioUrl = signed?.signedUrl ?? undefined
-                  logger.info({ sceneId: scene.id, audioUrl }, 'generate-all: audio pre-gen OK')
+                  logger.info({ sceneId: scene.id, hasAudioUrl: !!audioUrl }, 'generate-all: audio pre-gen OK')
                 }
                 // Rate-limit guard: 800ms between ElevenLabs calls
                 await new Promise((r) => setTimeout(r, 800))
@@ -351,9 +353,14 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
               }
             }
 
+            // If audio pre-gen failed entirely, bail out now rather than
+            // sending HeyGen an ElevenLabs voice ID in type:'text' mode.
+            if (!audioUrl) {
+              throw new Error('Audio pre-generation failed — could not obtain a valid audio URL for HeyGen')
+            }
+
             const { heygenVideoId } = await generateAvatarScene({
               avatarId: project.avatar_id,
-              voiceId:  audioUrl ? undefined : (effectiveVoiceId || undefined),
               audioUrl,
               script:   scene.script,
               background: { type: 'color', value: project.background_color ?? '#0D1117' },
@@ -442,27 +449,30 @@ studioRouter.post('/regenerate-scene', authMiddleware, async (req, res) => {
           if (regenVoiceId) {
             try {
               const audioBuffer = await generateAudioWithFallback(scriptToUse, regenVoiceId, `regen-${sceneId}`)
-              const audioPath = `studio/${projectId}/audio/regen-${sceneId}.mp3`
+              const audioPath = `studio-${projectId}/regen-${sceneId}.mp3`
               const { error: uploadErr } = await supabaseAdmin.storage
-                .from('studio-videos')
+                .from('voice-samples')
                 .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
               if (uploadErr) {
                 logger.warn({ uploadErr: uploadErr.message, audioPath, sceneId }, 'regenerate-scene: audio upload failed')
               } else {
                 const { data: signed } = await supabaseAdmin.storage
-                  .from('studio-videos')
+                  .from('voice-samples')
                   .createSignedUrl(audioPath, 60 * 60 * 24 * 7)
                 audioUrl = signed?.signedUrl ?? undefined
-                logger.info({ sceneId, audioUrl }, 'regenerate-scene: audio pre-gen OK')
+                logger.info({ sceneId, hasAudioUrl: !!audioUrl }, 'regenerate-scene: audio pre-gen OK')
               }
             } catch (audioErr) {
               logger.warn({ audioErr, sceneId }, 'regenerate-scene: ElevenLabs pre-gen failed — HeyGen TTS fallback')
             }
           }
 
+          if (!audioUrl) {
+            throw new Error('Audio pre-generation failed — could not obtain a valid audio URL for HeyGen')
+          }
+
           const { heygenVideoId } = await generateAvatarScene({
             avatarId: project.avatar_id,
-            voiceId:  audioUrl ? undefined : (regenVoiceId || undefined),
             audioUrl,
             script:   scriptToUse,
             background: { type: 'color', value: project.background_color ?? '#0D1117' },
