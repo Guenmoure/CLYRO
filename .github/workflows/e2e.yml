@@ -77,7 +77,7 @@ jobs:
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-v2-webkit-${{ runner.os }}-${{ hashFiles(apps/web/package.json) }}
+          key: playwright-v2-webkit-${{ runner.os }}-${{ hashFiles('apps/web/package.json') }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
