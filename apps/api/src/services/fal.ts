@@ -22,6 +22,20 @@ const IMAGE_SIZE_TO_ASPECT_RATIO: Record<string, string> = {
   'square_hd': '1:1',
   'portrait_16_9': '9:16',
 }
+
+// Explicit pixel dimensions for each preset. Using these instead of the
+// fal.ai preset strings gives us two benefits:
+//   1. All scenes come back at EXACTLY the same resolution, so ffmpeg
+//      assembly never letterboxes one scene and crops another.
+//   2. Dimensions are closer to the final 1920x1080 output — the default
+//      landscape_16_9 preset was only 1024x576, forcing ~1.875x upscale
+//      that made line-art (stickman) visibly soft.
+// All values must be multiples of 16 (flux requirement).
+const IMAGE_SIZE_TO_DIMS: Record<string, { width: number; height: number }> = {
+  'landscape_16_9': { width: 1536, height: 864 },  // exact 16:9, ~1.5M pixels (flux sweet spot)
+  'square_hd':      { width: 1024, height: 1024 },
+  'portrait_16_9':  { width: 864,  height: 1536 },
+}
 const TIMEOUT_IMAGE_MS = 180_000  // flux/dev: 20-90s + queue wait; 3 min for parallel jobs
 const TIMEOUT_VIDEO_MS = 150_000  // kling: up to 120s for Pro quality
 
@@ -56,11 +70,15 @@ const STYLE_CONFIGS: Record<string, StyleConfig> = {
     num_inference_steps: 20,
   },
   // PDF canonical style — Bonshommes & Formes
+  // Prompt kept short and positive-framed. Earlier version stacked four
+  // negative constraints ("no color fills, no gradients, no photorealism")
+  // which caused flux/dev to converge toward near-blank whitespace at 28
+  // inference steps — the model was taking "no color" too literally.
   stickman: {
-    prompt_prefix: 'RSA Animate whiteboard illustration, black marker stick figures and simple geometric shapes on plain white background, expressive line drawing,',
-    prompt_suffix: 'educational bonhommes illustration, ultra clean linework, no color fills, no gradients, no photorealism, maximum legibility, symbolic storytelling',
+    prompt_prefix: 'hand-drawn black ink stick figure illustration on white paper, simple line drawing, minimalist cartoon style,',
+    prompt_suffix: 'bold expressive strokes, clean linework, educational diagram style',
     image_size: 'landscape_16_9',
-    num_inference_steps: 20,
+    num_inference_steps: 24,
   },
   minimaliste: {
     prompt_prefix: 'simple black line art, white background, minimalist stickman figures, stick figure illustration, ultra clean linework, no fills, no gradients,',
@@ -181,7 +199,10 @@ export async function generateSceneImage(
       if (ASPECT_RATIO_MODELS.has(model)) {
         input.aspect_ratio = IMAGE_SIZE_TO_ASPECT_RATIO[styleConfig.image_size] ?? '16:9'
       } else {
-        input.image_size = styleConfig.image_size
+        // Prefer explicit {width, height} over the string preset — keeps every
+        // scene at the exact same resolution and avoids the 1024x576 default.
+        input.image_size =
+          IMAGE_SIZE_TO_DIMS[styleConfig.image_size] ?? { width: 1536, height: 864 }
       }
 
       // Seed fixe = character consistency entre scènes (PDF: cref pattern)
@@ -226,7 +247,12 @@ export async function generateSceneImage(
   try {
     const input: Record<string, unknown> = {
       prompt: fullPrompt,
-      image_size: styleConfig.image_size,
+      // Same explicit dimensions as the primary path so the schnell
+      // fallback produces images at the exact same resolution — a scene
+      // falling back to schnell then shouldn't visibly change aspect
+      // ratio or upscale factor at assembly time.
+      image_size:
+        IMAGE_SIZE_TO_DIMS[styleConfig.image_size] ?? { width: 1536, height: 864 },
       num_inference_steps: 4,
       num_images: 1,
     }

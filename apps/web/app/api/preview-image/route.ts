@@ -7,7 +7,7 @@ const STYLE_PREFIXES: Record<string, string> = {
   'cinematique':      'cinematic lighting, dramatic composition, film grain,',
   'stock-vo':         'realistic photograph, natural light, documentary style,',
   'whiteboard':       'hand-drawn whiteboard sketch, black marker on white,',
-  'stickman':         'RSA Animate whiteboard illustration, black marker stick figures and simple geometric shapes on plain white background, expressive line drawing, no fills, no color,',
+  'stickman':         'hand-drawn black ink stick figure illustration, simple line drawing on white paper, minimalist cartoon style,',
   'flat-design':      'flat vector illustration, bold solid colors,',
   'infographie':      'flat infographic illustration, bold colors, icons,',
   '3d-pixar':         'Pixar 3D CGI render, warm lighting, expressive character,',
@@ -49,7 +49,12 @@ export async function POST(request: NextRequest) {
 
     const input: Record<string, unknown> = {
       prompt: fullPrompt,
-      image_size: 'landscape_16_9',
+      // Explicit 16:9 dimensions aligned to final video target (1920x1080).
+      // 1536x864 is exact 16:9 and both dims are multiples of 16 (required by
+      // flux). Using this consistently across preview + HD + scene endpoints
+      // ensures every scene is generated at the same aspect ratio, so
+      // ffmpeg assembly never adds letterbox bars or inconsistent upscales.
+      image_size: { width: 1536, height: 864 },
       num_inference_steps: 4,
       num_images: 1,
     }

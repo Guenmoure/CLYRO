@@ -13,7 +13,7 @@ const STYLE_CONFIGS: Record<string, { model: string; prefix: string }> = {
   'cinematique':     { model: 'fal-ai/flux/dev', prefix: 'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain, golden hour' },
   'stock-vo':        { model: 'fal-ai/flux/dev', prefix: 'realistic cinematic photograph, professional lighting, Canon 5D, 4K ultra-detailed' },
   'whiteboard':      { model: 'fal-ai/flux/dev', prefix: 'whiteboard animation style, black ink hand-drawn illustration on white background, sketch style, educational' },
-  'stickman':        { model: 'fal-ai/flux/dev', prefix: 'RSA Animate hand-drawn whiteboard illustration, black marker stick figures and simple geometric shapes on plain white background, expressive line drawing, no fills, no gradients, no color, ultra clean linework' },
+  'stickman':        { model: 'fal-ai/flux/dev', prefix: 'hand-drawn black ink stick figure illustration on white paper, simple line drawing, minimalist cartoon style, bold expressive strokes' },
   'flat-design':     { model: 'fal-ai/flux/dev', prefix: 'flat design illustration, vibrant colors, geometric shapes, material design style, clean vector art' },
   '3d-pixar':        { model: 'fal-ai/flux/dev', prefix: '3D Pixar animation style, subsurface scattering, warm lighting, expressive characters, cinematic render' },
   'minimaliste':     { model: 'fal-ai/flux/dev', prefix: 'minimalist design, clean white background, bold typography, geometric shapes, Bauhaus style' },
@@ -46,7 +46,11 @@ export async function POST(request: NextRequest) {
     const result = await fal.run(config.model, {
       input: {
         prompt: fullPrompt,
-        image_size: 'landscape_16_9',
+        // Explicit 16:9 dimensions aligned to final video target — see
+        // preview-image/stream-image for rationale. Using the exact same
+        // size across all three endpoints is what guarantees the video
+        // assembly never letterboxes or upscales inconsistently.
+        image_size: { width: 1536, height: 864 },
         num_inference_steps: 24,
         num_images: 1,
         enable_safety_checker: true,
