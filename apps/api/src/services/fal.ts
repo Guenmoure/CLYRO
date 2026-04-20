@@ -154,9 +154,15 @@ interface GenerateImageResult {
 }
 
 /**
- * Génère une image pour une scène avec le style donné
- * Utilise flux/dev pour la qualité de production (recommandation PDF)
- * Retry 2x en cas d'erreur — seed optionnel pour character consistency
+ * Génère une image pour une scène avec le style donné.
+ *
+ * Single-pass via fal-ai/flux/schnell at 1536×864 / 8 inference steps.
+ * Previously a two-phase pipeline (schnell preview + flux/dev HD) — removed
+ * because the 2× fal.ai requests saturated the 10-concurrent account cap at
+ * 40+ scenes, and the preview→HD swap occasionally flashed blank frames.
+ *
+ * `modelOverride` is accepted for API-compat but ignored — everything goes
+ * through schnell now. Seed optional for character consistency.
  */
 export interface BrandColors {
   primary_color: string
@@ -171,7 +177,9 @@ export async function generateSceneImage(
   modelOverride?: string
 ): Promise<GenerateImageResult> {
   const styleConfig = STYLE_CONFIGS[style] ?? DEFAULT_STYLE
-  const model = modelOverride ?? selectFalModelForF1Style(style)
+  // Single-pass: always schnell. modelOverride accepted for API-compat but ignored.
+  const model = 'fal-ai/flux/schnell'
+  void modelOverride
   // Brand color injection: append palette hint so fal.ai respects the brand palette
   const brandSuffix = brand
     ? `, color palette ${brand.primary_color}${brand.secondary_color ? ` and ${brand.secondary_color}` : ''}`
@@ -189,20 +197,16 @@ export async function generateSceneImage(
     try {
       const startTime = Date.now()
 
-      const isSchnell = model.includes('schnell')
       const input: Record<string, unknown> = {
         prompt: fullPrompt,
-        num_inference_steps: isSchnell ? 4 : (modelOverride ? 28 : styleConfig.num_inference_steps),
+        // 8 is the max useful inference steps for flux/schnell — visibly
+        // sharper than the default 4, still under ~5s per image.
+        num_inference_steps: 8,
         num_images: 1,
-      }
-
-      if (ASPECT_RATIO_MODELS.has(model)) {
-        input.aspect_ratio = IMAGE_SIZE_TO_ASPECT_RATIO[styleConfig.image_size] ?? '16:9'
-      } else {
-        // Prefer explicit {width, height} over the string preset — keeps every
-        // scene at the exact same resolution and avoids the 1024x576 default.
-        input.image_size =
-          IMAGE_SIZE_TO_DIMS[styleConfig.image_size] ?? { width: 1536, height: 864 }
+        // Explicit {width,height} keeps every scene at the exact same resolution
+        // regardless of the style's image_size preset. Defaults to 1536×864.
+        image_size:
+          IMAGE_SIZE_TO_DIMS[styleConfig.image_size] ?? { width: 1536, height: 864 },
       }
 
       // Seed fixe = character consistency entre scènes (PDF: cref pattern)
@@ -242,39 +246,8 @@ export async function generateSceneImage(
     }
   }
 
-  // Fallback final : flux/schnell (4 steps, ~3s) si flux/dev échoue toutes les tentatives
-  logger.warn({ style, prompt: prompt.slice(0, 60) }, 'fal.ai: flux/dev failed — trying flux/schnell fallback')
-  try {
-    const input: Record<string, unknown> = {
-      prompt: fullPrompt,
-      // Same explicit dimensions as the primary path so the schnell
-      // fallback produces images at the exact same resolution — a scene
-      // falling back to schnell then shouldn't visibly change aspect
-      // ratio or upscale factor at assembly time.
-      image_size:
-        IMAGE_SIZE_TO_DIMS[styleConfig.image_size] ?? { width: 1536, height: 864 },
-      num_inference_steps: 4,
-      num_images: 1,
-    }
-    if (seed !== undefined) input.seed = seed
-
-    const result = await Promise.race([
-      fal.subscribe('fal-ai/flux/schnell', { input } as any),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('flux/schnell timeout')), TIMEOUT_IMAGE_MS)
-      ),
-    ])
-
-    const output = ((result as any).data ?? result) as { images?: Array<{ url: string }> }
-    const imageUrl = output.images?.[0]?.url
-    if (!imageUrl) throw new Error('No image URL in flux/schnell response')
-
-    logger.info({ style }, 'fal.ai: flux/schnell fallback succeeded')
-    return { imageUrl, promptUsed: fullPrompt }
-  } catch (schnellErr) {
-    logger.error({ error: lastError, schnellErr, style, prompt }, 'fal.ai: all attempts including schnell fallback failed')
-    throw new Error(`Image generation failed: ${lastError?.message ?? 'Unknown error'}`)
-  }
+  logger.error({ error: lastError, style, prompt }, 'fal.ai: all schnell attempts failed')
+  throw new Error(`Image generation failed: ${lastError?.message ?? 'Unknown error'}`)
 }
 
 /**
@@ -358,69 +331,9 @@ export async function generateSceneImages(
     .filter((r) => r.imageUrl !== '')
 }
 
-/**
- * Génère une image en utilisant une image de référence pour la cohérence visuelle.
- * Utilise flux/dev/image-to-image.
- *
- * Convention fal.ai strength :
- *   0.0 → sortie = copie exacte de la référence (0% prompt)
- *   1.0 → sortie = génération libre par le prompt (100% prompt, ignore référence)
- *
- * Pour cohérence de style sans copier le contenu, utiliser 0.65–0.80.
- * Pour fortes contraintes visuelles (cref / personnage), utiliser 0.15–0.30.
- */
-async function generateSceneImageWithReference(
-  prompt: string,
-  style: string,
-  referenceImageUrl: string,
-  seed?: number,
-  brand?: BrandColors,
-  strength = 0.15  // override par l'appelant selon le cas d'usage
-): Promise<GenerateImageResult> {
-  const styleConfig = STYLE_CONFIGS[style] ?? DEFAULT_STYLE
-  const brandSuffix = brand
-    ? `, color palette ${brand.primary_color}${brand.secondary_color ? ` and ${brand.secondary_color}` : ''}`
-    : ''
-  const fullPrompt = `${styleConfig.prompt_prefix} ${prompt}, ${styleConfig.prompt_suffix}${brandSuffix}`
-
-  let lastError: Error | null = null
-
-  for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
-    try {
-      const input: Record<string, unknown> = {
-        prompt: fullPrompt,
-        image_url: referenceImageUrl,
-        strength,
-        image_size: styleConfig.image_size,
-        num_inference_steps: styleConfig.num_inference_steps,
-        num_images: 1,
-      }
-      if (seed !== undefined) input.seed = seed
-
-      const result = await Promise.race([
-        fal.subscribe('fal-ai/flux/dev/image-to-image', { input } as any),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('fal.ai img2img timeout')), TIMEOUT_IMAGE_MS)
-        ),
-      ])
-
-      const output = ((result as any).data ?? result) as { images?: Array<{ url: string }> }
-      const imageUrl = output.images?.[0]?.url
-      if (!imageUrl) throw new Error('No image URL in img2img response')
-
-      logger.info({ style, attempt, referenceUsed: true }, 'fal.ai: img2img scene generated')
-      return { imageUrl, promptUsed: fullPrompt }
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err))
-      logger.warn({ attempt, error: lastError.message }, 'fal.ai: img2img failed, retrying or falling back')
-      if (attempt <= MAX_RETRIES) await sleep(1000 * attempt)
-    }
-  }
-
-  // Fallback: génération pure sans référence
-  logger.warn({ style }, 'fal.ai: img2img failed, falling back to text-to-image')
-  return generateSceneImage(prompt, style, seed, brand)
-}
+// generateSceneImageWithReference (flux/dev img2img) retiré — flux/schnell ne
+// supporte pas image-to-image. Les anciens appelants doivent utiliser
+// generateSceneImage directement (cohérence via styleTokens dans le prompt).
 
 // ── Logo & Brand Asset generation ─────────────────────────────────────────────
 

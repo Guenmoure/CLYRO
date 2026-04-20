@@ -17,12 +17,25 @@ export function getAvatarBaseName(name: string): string {
     .trim()
 }
 
-/** Group avatars by their base name (removing look suffixes). */
+/**
+ * Group avatars into persona bundles.
+ *
+ * Preferred strategy: HeyGen's native `group_id` — every variant of the same
+ * persona shares one. This is canonical and can't misfire. When `group_id`
+ * is missing (older personas, custom uploads), we fall back to regex-based
+ * name parsing, which strips "look", "style", "(v2)", etc. suffixes.
+ *
+ * Using a hybrid key (`group:<id>` vs `name:<base>`) means the two strategies
+ * can't accidentally merge — an avatar with group_id "grp_42" never ends up
+ * in the same bucket as an unrelated avatar named "grp_42".
+ */
 export function groupAvatarsByName(avatars: StudioAvatar[]): AvatarGroup[] {
   const map = new Map<string, StudioAvatar[]>()
 
   for (const av of avatars) {
-    const key = getAvatarBaseName(av.avatar_name).toLowerCase()
+    const key = av.group_id
+      ? `group:${av.group_id}`
+      : `name:${getAvatarBaseName(av.avatar_name).toLowerCase()}`
     if (!map.has(key)) map.set(key, [])
     map.get(key)!.push(av)
   }

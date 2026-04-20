@@ -20,6 +20,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { authMiddleware } from '../../middleware/auth'
 import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
+import { memoizeTTL } from '../../lib/memoize-ttl'
 import {
   F5_SCRIPT_DIRECTOR_SYSTEM,
   F5_YOUTUBE_IMPROVER_SYSTEM,
@@ -36,6 +37,18 @@ import {
 import { generateVoiceoverWithTimestamps } from '../../services/elevenlabs'
 import { transcribeYouTube, isValidYouTubeUrl } from '../../services/transcribe'
 import { assembleStudioVideo, type StudioSceneClip } from '../../services/ffmpeg'
+import { renderMotionVideo } from '../../services/remotion'
+
+// Scene types rendered by Remotion (not HeyGen)
+const REMOTION_SCENE_TYPES = new Set(['infographic', 'broll', 'demo', 'typography'])
+
+// Map studio scene type → Remotion scene_type layout
+const REMOTION_SCENE_TYPE_MAP: Record<string, 'text_hero' | 'split_text_image' | 'product_showcase' | 'stats_counter' | 'cta_end' | 'image_full'> = {
+  infographic: 'stats_counter',
+  broll:       'image_full',
+  demo:        'product_showcase',
+  typography:  'text_hero',
+}
 
 export const studioRouter = Router()
 
@@ -317,29 +330,23 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
         .update({ status: 'generating' })
         .in('id', sceneList.map((s) => s.id))
 
-      // Short-circuit: if the project has no avatar, mark all scenes 'error'
-      // and stop — no point doing audio or HeyGen work.
-      if (!project.avatar_id) {
+      // Partition scenes by renderer type
+      const avatarScenes = sceneList.filter(
+        (s) => s.type === 'avatar' || s.type === 'split',
+      )
+      const remotionScenesList = sceneList.filter((s) => REMOTION_SCENE_TYPES.has(s.type))
+
+      // Short-circuit: if the project has no avatar AND there are avatar-type
+      // scenes, mark only those as error. Remotion scenes can proceed without
+      // an avatar.
+      if (!project.avatar_id && avatarScenes.length > 0) {
         await supabaseAdmin
           .from('studio_scenes')
           .update({
             status: 'error',
             error_message: 'No avatar configured on project — select an avatar before generating',
           })
-          .in('id', sceneList.map((s) => s.id))
-        return
-      }
-
-      // Non-avatar types (infographic, demo, typography, broll) are not yet
-      // fully implemented as separate Remotion/Pexels pipelines. We fall back
-      // to a standard avatar render so every scene produces a real video.
-      for (const scene of sceneList) {
-        if (scene.type !== 'avatar' && scene.type !== 'split') {
-          logger.info(
-            { sceneId: scene.id, type: scene.type },
-            `generate-all: type "${scene.type}" not implemented — falling back to avatar render`,
-          )
-        }
+          .in('id', avatarScenes.map((s) => s.id))
       }
 
       // Per-scene error tracker — any scene that fails in an earlier phase
@@ -357,14 +364,22 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
           .eq('id', sceneId)
       }
 
-      // ── Phase 1 — ElevenLabs audio pre-gen ────────────────────────────
-      // We keep this sequential (with the existing 800ms inter-call guard)
-      // to stay comfortably under ElevenLabs' per-minute rate limit. Audio
-      // is tiny compared to HeyGen render time, so this is not the
-      // bottleneck — the big win is in phases 2/3 below.
-      const audioUrls = new Map<string, string>()
+      // Pre-mark avatar scenes that are blocked (no avatar) so they don't
+      // proceed to Phase 1 audio gen unnecessarily.
+      if (!project.avatar_id) {
+        for (const s of avatarScenes) sceneErrors.set(s.id, 'no avatar')
+      }
+
+      // ── Phase 1 — ElevenLabs audio pre-gen (ALL scenes) ───────────────
+      // Sequential with 800ms guard to stay under ElevenLabs rate limit.
+      // audioBuffers kept in memory for Remotion; audioUrls (signed) for HeyGen.
+      const audioUrls    = new Map<string, string>()
+      const audioBuffers = new Map<string, Buffer>()
 
       for (const scene of sceneList) {
+        // Skip scenes already marked as errored (e.g. avatar scenes with no avatar)
+        if (sceneErrors.has(scene.id)) continue
+
         if (!effectiveVoiceId) {
           await markSceneError(
             scene.id,
@@ -379,32 +394,38 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
             effectiveVoiceId,
             `scene-${scene.id}`,
           )
-          // Upload to voice-samples bucket — already allows audio/mpeg,
-          // no migration needed. Path starts with projectId so
-          // service-role RLS bypass applies cleanly.
-          const audioPath = `studio-${projectId}/scene-${scene.id}.mp3`
-          const { error: uploadErr } = await supabaseAdmin.storage
-            .from('voice-samples')
-            .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
 
-          if (uploadErr) {
-            await markSceneError(
-              scene.id,
-              new Error(`Audio upload failed: ${uploadErr.message}`),
-            )
-          } else {
-            const { data: signed } = await supabaseAdmin.storage
+          // Keep buffer in memory for Remotion render
+          audioBuffers.set(scene.id, audioBuffer)
+
+          // Upload to voice-samples bucket — signed URL is only needed for HeyGen scenes
+          if (!REMOTION_SCENE_TYPES.has(scene.type)) {
+            const audioPath = `studio-${projectId}/scene-${scene.id}.mp3`
+            const { error: uploadErr } = await supabaseAdmin.storage
               .from('voice-samples')
-              .createSignedUrl(audioPath, 60 * 60 * 24 * 7) // 7-day URL for HeyGen CDN fetch
-            if (signed?.signedUrl) {
-              audioUrls.set(scene.id, signed.signedUrl)
-              logger.info({ sceneId: scene.id }, 'generate-all: audio pre-gen OK')
-            } else {
+              .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
+
+            if (uploadErr) {
               await markSceneError(
                 scene.id,
-                new Error('Audio pre-generation failed — could not sign URL'),
+                new Error(`Audio upload failed: ${uploadErr.message}`),
               )
+            } else {
+              const { data: signed } = await supabaseAdmin.storage
+                .from('voice-samples')
+                .createSignedUrl(audioPath, 60 * 60 * 24 * 7) // 7-day URL for HeyGen CDN fetch
+              if (signed?.signedUrl) {
+                audioUrls.set(scene.id, signed.signedUrl)
+                logger.info({ sceneId: scene.id }, 'generate-all: audio pre-gen OK (HeyGen path)')
+              } else {
+                await markSceneError(
+                  scene.id,
+                  new Error('Audio pre-generation failed — could not sign URL'),
+                )
+              }
             }
+          } else {
+            logger.info({ sceneId: scene.id, type: scene.type }, 'generate-all: audio pre-gen OK (Remotion path)')
           }
         } catch (audioErr) {
           await markSceneError(
@@ -419,57 +440,105 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
         await new Promise((r) => setTimeout(r, 800))
       }
 
-      // ── Phase 2 — fire all HeyGen jobs in parallel ────────────────────
-      // This is the main speed-up: instead of waiting for scene N to
-      // finish rendering before even *submitting* scene N+1, we submit
-      // every scene up front and let HeyGen render them concurrently.
-      // HeyGen's per-plan concurrency limit handles back-pressure server
-      // side — failures propagate to per-scene errors via allSettled.
-      const scenesWithAudio = sceneList.filter((s) => audioUrls.has(s.id))
+      // ── Phase 2a — fire all HeyGen jobs in parallel (avatar + split) ──
+      const heygenEligible = avatarScenes.filter((s) => audioUrls.has(s.id))
       const heygenVideoIds = new Map<string, string>()
 
-      const submitResults = await Promise.allSettled(
-        scenesWithAudio.map(async (scene) => {
-          const audioUrl = audioUrls.get(scene.id)!
-          const { heygenVideoId } = await generateAvatarScene({
-            avatarId: project.avatar_id!,
-            audioUrl,
-            script: scene.script,
-            background: { type: 'color', value: project.background_color ?? '#0D1117' },
-            callbackId: `${projectId}_scene_${scene.index}`,
-            format: project.format === 'both' ? '16_9' : project.format as '16_9' | '9_16',
-          })
-          await supabaseAdmin
-            .from('studio_scenes')
-            .update({ heygen_video_id: heygenVideoId })
-            .eq('id', scene.id)
-          return { sceneId: scene.id, heygenVideoId }
+      if (project.avatar_id && heygenEligible.length > 0) {
+        const submitResults = await Promise.allSettled(
+          heygenEligible.map(async (scene) => {
+            const audioUrl = audioUrls.get(scene.id)!
+            const { heygenVideoId } = await generateAvatarScene({
+              avatarId: project.avatar_id!,
+              audioUrl,
+              script: scene.script,
+              background: { type: 'color', value: project.background_color ?? '#0D1117' },
+              callbackId: `${projectId}_scene_${scene.index}`,
+              format: project.format === 'both' ? '16_9' : project.format as '16_9' | '9_16',
+            })
+            await supabaseAdmin
+              .from('studio_scenes')
+              .update({ heygen_video_id: heygenVideoId })
+              .eq('id', scene.id)
+            return { sceneId: scene.id, heygenVideoId }
+          }),
+        )
+
+        for (let i = 0; i < submitResults.length; i++) {
+          const r = submitResults[i]
+          const scene = heygenEligible[i]
+          if (r.status === 'fulfilled') {
+            heygenVideoIds.set(scene.id, r.value.heygenVideoId)
+          } else {
+            await markSceneError(scene.id, r.reason)
+          }
+        }
+
+        logger.info(
+          { projectId, submitted: heygenVideoIds.size },
+          'generate-all: HeyGen jobs submitted in parallel',
+        )
+      }
+
+      // ── Phase 2b — Remotion render (infographic, broll, demo, typography) ──
+      const remotionEligible = remotionScenesList.filter((s) => audioBuffers.has(s.id))
+
+      const remotionFormat: '16:9' | '9:16' | '1:1' =
+        project.format === '9_16' ? '9:16' : '16:9'
+
+      await Promise.allSettled(
+        remotionEligible.map(async (scene) => {
+          const voiceoverBuffer = audioBuffers.get(scene.id)!
+          const remotionParams  = (scene.remotion_params ?? {}) as Record<string, unknown>
+          const sceneLayout     = REMOTION_SCENE_TYPE_MAP[scene.type] ?? 'text_hero'
+
+          logger.info({ sceneId: scene.id, type: scene.type, sceneLayout }, 'generate-all: Remotion render start')
+
+          try {
+            const { mp4 } = await renderMotionVideo({
+              scenes: [{
+                id: scene.id,
+                description_visuelle: String(remotionParams.hint ?? scene.script),
+                texte_voix:           scene.script,
+                duree_estimee:        scene.duration_est ?? 10,
+                display_text:         scene.script,
+                animation_type:       'fade',
+                scene_type:           sceneLayout,
+              }],
+              brandConfig: {
+                primary_color:   project.background_color ?? '#0D1117',
+                secondary_color: '#6366f1',
+              },
+              format:          remotionFormat,
+              duration:        String(scene.duration_est ?? 10),
+              voiceoverBuffer,
+            })
+
+            // Upload rendered MP4 to studio-videos bucket
+            const videoPath = `${projectId}/scene-${scene.id}-remotion.mp4`
+            const { error: uploadErr } = await supabaseAdmin.storage
+              .from('studio-videos')
+              .upload(videoPath, mp4, { contentType: 'video/mp4', upsert: true })
+
+            if (uploadErr) throw new Error(`Remotion video upload failed: ${uploadErr.message}`)
+
+            const { data: pub } = supabaseAdmin.storage
+              .from('studio-videos')
+              .getPublicUrl(videoPath)
+
+            await supabaseAdmin.from('studio_scenes').update({
+              status:    'done',
+              video_url: pub.publicUrl,
+            }).eq('id', scene.id)
+
+            logger.info({ sceneId: scene.id, type: scene.type }, 'generate-all: Remotion render done')
+          } catch (err) {
+            await markSceneError(scene.id, err)
+          }
         }),
       )
 
-      for (let i = 0; i < submitResults.length; i++) {
-        const res = submitResults[i]
-        const scene = scenesWithAudio[i]
-        if (res.status === 'fulfilled') {
-          heygenVideoIds.set(scene.id, res.value.heygenVideoId)
-        } else {
-          await markSceneError(scene.id, res.reason)
-        }
-      }
-
-      logger.info(
-        { projectId, submitted: heygenVideoIds.size, total: sceneList.length },
-        'generate-all: HeyGen jobs submitted in parallel',
-      )
-
-      // ── Phase 3 — poll all scenes in parallel ─────────────────────────
-      // pollUntilDone is self-contained: it updates the scene row on
-      // completion/failure/timeout. Running them all at once means the
-      // whole batch finishes in ~max(scene render time) instead of
-      // sum(scene render time). If HEYGEN_WEBHOOK_SECRET is configured,
-      // scenes flip to 'done' via webhook before this poll wakes up —
-      // pollUntilDone will then observe status=completed on its first
-      // tick and exit immediately.
+      // ── Phase 3 — poll all HeyGen scenes in parallel ──────────────────
       await Promise.allSettled(
         Array.from(heygenVideoIds.entries()).map(([sceneId, heygenVideoId]) =>
           pollUntilDone(sceneId, heygenVideoId),
@@ -533,31 +602,85 @@ studioRouter.post('/regenerate-scene', authMiddleware, async (req, res) => {
       .from('studio_projects').select('avatar_id, voice_id, background_color, format')
       .eq('id', projectId).single()
 
-    if (project?.avatar_id) {
-      const regenVoiceId = project.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ELEVENLABS_FALLBACK_VOICE_ID
+    const regenVoiceId = project?.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ELEVENLABS_FALLBACK_VOICE_ID
+    const sceneType = newType ?? scene.type
+    const isRemotionScene = REMOTION_SCENE_TYPES.has(sceneType)
+
+    if (isRemotionScene) {
+      // ── Remotion regen path ──────────────────────────────────────────
       ;(async () => {
         try {
-          // Pre-generate ElevenLabs audio (same fix as generate-all)
+          const audioBuffer = await generateAudioWithFallback(scriptToUse, regenVoiceId, `regen-${sceneId}`)
+          const remotionParams  = (scene.remotion_params ?? {}) as Record<string, unknown>
+          const sceneLayout     = REMOTION_SCENE_TYPE_MAP[sceneType] ?? 'text_hero'
+          const remotionFormat: '16:9' | '9:16' | '1:1' =
+            project?.format === '9_16' ? '9:16' : '16:9'
+
+          const { mp4 } = await renderMotionVideo({
+            scenes: [{
+              id: sceneId,
+              description_visuelle: String(remotionParams.hint ?? scriptToUse),
+              texte_voix:           scriptToUse,
+              duree_estimee:        scene.duration_est ?? 10,
+              display_text:         scriptToUse,
+              animation_type:       'fade',
+              scene_type:           sceneLayout,
+            }],
+            brandConfig: {
+              primary_color:   project?.background_color ?? '#0D1117',
+              secondary_color: '#6366f1',
+            },
+            format:          remotionFormat,
+            duration:        String(scene.duration_est ?? 10),
+            voiceoverBuffer: audioBuffer,
+          })
+
+          const videoPath = `${projectId}/regen-${sceneId}-remotion.mp4`
+          const { error: uploadErr } = await supabaseAdmin.storage
+            .from('studio-videos')
+            .upload(videoPath, mp4, { contentType: 'video/mp4', upsert: true })
+
+          if (uploadErr) throw new Error(`Remotion video upload failed: ${uploadErr.message}`)
+
+          const { data: pub } = supabaseAdmin.storage
+            .from('studio-videos')
+            .getPublicUrl(videoPath)
+
+          await supabaseAdmin.from('studio_scenes').update({
+            status:    'done',
+            video_url: pub.publicUrl,
+          }).eq('id', sceneId)
+
+          logger.info({ sceneId, sceneType }, 'regenerate-scene: Remotion render done')
+        } catch (err) {
+          logger.error({ err, sceneId }, 'regenerate-scene Remotion task failed')
+          await supabaseAdmin.from('studio_scenes')
+            .update({ status: 'error', error_message: err instanceof Error ? err.message : 'Unknown error' })
+            .eq('id', sceneId)
+        }
+      })().catch((err) => logger.error({ err, sceneId }, 'regenerate-scene Remotion unhandled rejection'))
+    } else if (project?.avatar_id) {
+      // ── HeyGen regen path ────────────────────────────────────────────
+      ;(async () => {
+        try {
           let audioUrl: string | undefined
-          if (regenVoiceId) {
-            try {
-              const audioBuffer = await generateAudioWithFallback(scriptToUse, regenVoiceId, `regen-${sceneId}`)
-              const audioPath = `studio-${projectId}/regen-${sceneId}.mp3`
-              const { error: uploadErr } = await supabaseAdmin.storage
+          try {
+            const audioBuffer = await generateAudioWithFallback(scriptToUse, regenVoiceId, `regen-${sceneId}`)
+            const audioPath = `studio-${projectId}/regen-${sceneId}.mp3`
+            const { error: uploadErr } = await supabaseAdmin.storage
+              .from('voice-samples')
+              .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
+            if (uploadErr) {
+              logger.warn({ uploadErr: uploadErr.message, audioPath, sceneId }, 'regenerate-scene: audio upload failed')
+            } else {
+              const { data: signed } = await supabaseAdmin.storage
                 .from('voice-samples')
-                .upload(audioPath, audioBuffer, { contentType: 'audio/mpeg', upsert: true })
-              if (uploadErr) {
-                logger.warn({ uploadErr: uploadErr.message, audioPath, sceneId }, 'regenerate-scene: audio upload failed')
-              } else {
-                const { data: signed } = await supabaseAdmin.storage
-                  .from('voice-samples')
-                  .createSignedUrl(audioPath, 60 * 60 * 24 * 7)
-                audioUrl = signed?.signedUrl ?? undefined
-                logger.info({ sceneId, hasAudioUrl: !!audioUrl }, 'regenerate-scene: audio pre-gen OK')
-              }
-            } catch (audioErr) {
-              logger.warn({ audioErr, sceneId }, 'regenerate-scene: ElevenLabs pre-gen failed — HeyGen TTS fallback')
+                .createSignedUrl(audioPath, 60 * 60 * 24 * 7)
+              audioUrl = signed?.signedUrl ?? undefined
+              logger.info({ sceneId, hasAudioUrl: !!audioUrl }, 'regenerate-scene: audio pre-gen OK')
             }
+          } catch (audioErr) {
+            logger.warn({ audioErr, sceneId }, 'regenerate-scene: ElevenLabs pre-gen failed')
           }
 
           if (!audioUrl) {
@@ -577,16 +700,16 @@ studioRouter.post('/regenerate-scene', authMiddleware, async (req, res) => {
             .eq('id', sceneId)
           await pollUntilDone(sceneId, heygenVideoId)
         } catch (err) {
-          logger.error({ err, sceneId }, 'regenerate-scene background task failed')
+          logger.error({ err, sceneId }, 'regenerate-scene HeyGen task failed')
           await supabaseAdmin.from('studio_scenes')
             .update({ status: 'error', error_message: err instanceof Error ? err.message : 'Unknown error' })
             .eq('id', sceneId)
         }
       })().catch((err) => logger.error({ err, sceneId }, 'regenerate-scene unhandled rejection'))
     } else {
-      logger.info({ sceneId }, 'scene regen queued — no avatar/voice on project, marking error')
+      logger.info({ sceneId }, 'scene regen queued — no avatar on project, marking error')
       await supabaseAdmin.from('studio_scenes')
-        .update({ status: 'error', error_message: 'No avatar or voice configured on project' })
+        .update({ status: 'error', error_message: 'No avatar configured on project — select an avatar before generating' })
         .eq('id', sceneId)
     }
 
@@ -816,9 +939,16 @@ async function runStudioFinalRender(
 
 // ── GET /avatars ────────────────────────────────────────────────────────
 
+// HeyGen's /v2/avatars returns 300-600 avatars with ~1-3s latency. The list
+// is effectively static per-user (HeyGen adds avatars weekly at most), so a
+// 15-minute cache slashes p50 latency to near-zero for repeat visitors.
+// Cache is process-local — resets on redeploy, which is the desired "cache bust".
+const CACHE_TTL_AVATARS_MS = 15 * 60 * 1000
+const getCachedAvatars = memoizeTTL('heygen.avatars', CACHE_TTL_AVATARS_MS, listAvatars)
+
 studioRouter.get('/avatars', authMiddleware, async (_req, res) => {
   try {
-    const avatars = await listAvatars()
+    const avatars = await getCachedAvatars()
     // Group by category for the frontend tabs
     const categories = [...new Set(avatars.map((a) => a.category))]
     res.json({ avatars, categories })

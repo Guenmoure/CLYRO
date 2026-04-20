@@ -4,8 +4,31 @@ import { authMiddleware } from '../middleware/auth'
 import { supabaseAdmin } from '../lib/supabase'
 import { listPublicVoices, cloneVoice, getVoiceFilters } from '../services/elevenlabs'
 import { logger } from '../lib/logger'
+import { memoizeTTL } from '../lib/memoize-ttl'
 
 export const voicesRouter = Router()
+
+// ── ElevenLabs response caches ────────────────────────────────────────────────
+// The public voice library and the filters endpoint are effectively static for
+// 15-minute windows (ElevenLabs adds voices slowly, filters almost never change).
+// Caching here cuts the p50 from ~1-2s to near-zero on repeat page loads.
+//
+// `listPublicVoices` takes an optional filters object — we key the cache on its
+// JSON serialization so each filter combo is cached independently. This means
+// "all French female voices" and "all English male voices" are separate cache
+// entries that refresh independently.
+const CACHE_TTL_VOICES_MS = 15 * 60 * 1000
+const getCachedPublicVoices = memoizeTTL(
+  'elevenlabs.publicVoices',
+  CACHE_TTL_VOICES_MS,
+  (filters: Parameters<typeof listPublicVoices>[0]) => listPublicVoices(filters),
+  (filters) => JSON.stringify(filters ?? {}),
+)
+const getCachedVoiceFilters = memoizeTTL(
+  'elevenlabs.filters',
+  CACHE_TTL_VOICES_MS,
+  getVoiceFilters,
+)
 
 const SUPABASE_HOST = new URL(process.env.SUPABASE_URL ?? 'https://placeholder.supabase.co').hostname
 
@@ -28,7 +51,7 @@ const cloneVoiceSchema = z.object({
 voicesRouter.get('/voices', authMiddleware, async (req, res) => {
   try {
     const [publicVoices, { data: personalVoices, error }] = await Promise.all([
-      listPublicVoices(),
+      getCachedPublicVoices(undefined),
       supabaseAdmin
         .from('cloned_voices')
         .select('id, name, elevenlabs_voice_id, created_at')
@@ -177,7 +200,7 @@ voicesRouter.get('/voices/public', authMiddleware, async (req, res) => {
       .eq('user_id', req.userId)
 
     const favoriteIds = new Set((favData ?? []).map((f: { voice_id: string }) => f.voice_id))
-    const voices = await listPublicVoices(filters)
+    const voices = await getCachedPublicVoices(filters)
 
     res.json({
       voices: voices.map((v) => ({ ...v, isFavorite: favoriteIds.has(v.id) })),
@@ -192,7 +215,7 @@ voicesRouter.get('/voices/public', authMiddleware, async (req, res) => {
 
 voicesRouter.get('/voices/filters', authMiddleware, async (req, res) => {
   try {
-    const filters = await getVoiceFilters()
+    const filters = await getCachedVoiceFilters()
     res.json(filters)
   } catch (err) {
     logger.error({ err }, 'voices.filters error')

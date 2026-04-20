@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button'
 import { VoiceCard } from '@/components/assets/VoiceCard'
 import { VoiceFilters } from '@/components/assets/VoiceFilters'
 import { VoicePreviewModal } from '@/components/assets/VoicePreviewModal'
-import { getVoices, getPublicVoices, type ClyroVoice } from '@/lib/api'
+import {
+  getVoices, getPublicVoices, getVoiceFilters, toggleVoiceFavorite,
+  type ClyroVoice,
+} from '@/lib/api'
 import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
@@ -52,17 +55,68 @@ export default function VoicesAssetsPage() {
   const [category, setCategory]     = useState<string | null>(null)
   const [playingId, setPlayingId]   = useState<string | null>(null)
   const [selected, setSelected]     = useState<ClyroVoice | null>(null)
+  // Server-side filter state — pushed as query params to /voices/public.
+  // Separate from client-side `search` + `category` which narrow further
+  // within the already-returned list without a round trip.
+  const [gender, setGender]         = useState('')
+  const [language, setLanguage]     = useState('')
+  const [useCase, setUseCase]       = useState('')
+  const [filterOptions, setFilterOptions] = useState<{
+    genders: string[]
+    languages: Array<{ value: string; label: string; flag: string }>
+    useCases: string[]
+  } | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  // Filter dropdown options are fetched once — they're cached server-side
+  // for 15min via memoizeTTL, so the cost is negligible on repeat navigations.
   useEffect(() => {
-    Promise.all([getPublicVoices(), getVoices()])
+    getVoiceFilters()
+      .then((opts) => setFilterOptions(opts))
+      .catch(() => {})
+  }, [])
+
+  // Refetch public voices whenever a server-side filter changes. Personal
+  // voices don't accept filters so they're fetched once.
+  useEffect(() => {
+    setLoading(true)
+    const filters = {
+      ...(gender   ? { gender }   : {}),
+      ...(language ? { language } : {}),
+      ...(useCase  ? { useCase }  : {}),
+    }
+    Promise.all([getPublicVoices(filters), getVoices()])
       .then(([pub, mine]) => {
         setAllVoices(pub.voices)
         setMyVoices((mine.personal ?? []) as ClyroVoice[])
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [])
+  }, [gender, language, useCase])
+
+  /**
+   * Optimistic favorite toggle — flip the UI immediately, roll back on
+   * network failure. The backend's `upsert`/`delete` is idempotent so a
+   * retry on rollback is safe.
+   */
+  function handleFavorite(voice: ClyroVoice) {
+    const nextState = !voice.isFavorite
+    const action = nextState ? 'add' : 'remove'
+
+    const flip = (v: ClyroVoice): ClyroVoice =>
+      v.id === voice.id ? { ...v, isFavorite: nextState } : v
+
+    setAllVoices((prev) => prev.map(flip))
+    setMyVoices((prev) => prev.map(flip))
+
+    toggleVoiceFavorite(voice.id, action).catch(() => {
+      // Rollback — the server rejected the change.
+      const revert = (v: ClyroVoice): ClyroVoice =>
+        v.id === voice.id ? { ...v, isFavorite: !nextState } : v
+      setAllVoices((prev) => prev.map(revert))
+      setMyVoices((prev) => prev.map(revert))
+    })
+  }
 
   // Single audio singleton
   function handlePlay(id: string | null) {
@@ -164,6 +218,13 @@ export default function VoicesAssetsPage() {
         activeCategory={category}
         onSearch={setSearch}
         onCategory={setCategory}
+        filterOptions={filterOptions ?? undefined}
+        gender={gender}
+        language={language}
+        useCase={useCase}
+        onGender={setGender}
+        onLanguage={setLanguage}
+        onUseCase={setUseCase}
       />
 
       {/* Content */}
@@ -185,6 +246,7 @@ export default function VoicesAssetsPage() {
                   playing={playingId === voice.id}
                   onPlay={handlePlay}
                   onClick={() => setSelected(voice)}
+                  onFavorite={handleFavorite}
                 />
               ))}
             </div>
@@ -245,6 +307,7 @@ export default function VoicesAssetsPage() {
                   playing={playingId === voice.id}
                   onPlay={handlePlay}
                   onClick={() => setSelected(voice)}
+                  onFavorite={handleFavorite}
                 />
               ))}
             </div>

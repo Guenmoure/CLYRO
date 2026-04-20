@@ -1,6 +1,6 @@
 'use client'
 
-import { Play, Square, Check } from 'lucide-react'
+import { Play, Square, Check, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { ClyroVoice } from '@/lib/api'
@@ -24,14 +24,18 @@ function WaveformAnimated() {
 // ── VoiceCard ──────────────────────────────────────────────────────────────────
 
 interface VoiceCardProps {
-  voice:   ClyroVoice
-  playing: boolean
-  onPlay:  (id: string | null) => void
-  onClick: () => void
-  onUse?:  (voice: ClyroVoice) => void
+  voice:     ClyroVoice
+  playing:   boolean
+  onPlay:    (id: string | null) => void
+  onClick:   () => void
+  onUse?:    (voice: ClyroVoice) => void
+  /** When provided, renders a heart toggle. Called with the voice on click;
+   *  the page is expected to optimistically flip `voice.isFavorite` and
+   *  sync with the backend. */
+  onFavorite?: (voice: ClyroVoice) => void
 }
 
-export function VoiceCard({ voice, playing, onPlay, onClick, onUse }: VoiceCardProps) {
+export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }: VoiceCardProps) {
   function togglePlay(e: React.MouseEvent) {
     e.stopPropagation()
     onPlay(playing ? null : voice.id)
@@ -122,6 +126,23 @@ export function VoiceCard({ voice, playing, onPlay, onClick, onUse }: VoiceCardP
         >
           Utiliser
         </Button>
+      )}
+
+      {/* Favorite heart toggle.
+          Fills red when the voice is in the user's favorites list.
+          The page owns the isFavorite state — we just report the click. */}
+      {onFavorite && (
+        <button
+          type="button"
+          className="p-1.5 rounded-full hover:bg-border transition-colors shrink-0"
+          onClick={(e) => { e.stopPropagation(); onFavorite(voice) }}
+          aria-label={voice.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+        >
+          <Heart
+            size={14}
+            className={cn(voice.isFavorite ? 'text-red-400 fill-red-400' : 'text-[--text-muted]')}
+          />
+        </button>
       )}
     </div>
   )

@@ -119,6 +119,8 @@ export function AvatarPreviewModal({ avatar, isOpen, onClose, onUse }: AvatarPre
                       <img
                         src={look.preview_image_url}
                         alt={look.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute bottom-0 inset-x-0 bg-black/60 px-1 py-0.5">

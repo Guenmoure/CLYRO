@@ -1244,7 +1244,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       ? [...(scene.imageHistory ?? []).slice(-2), scene.imageUrl]
       : scene.imageHistory ?? []
 
-    updateScene(id, { imageStatus: 'generating', streamLog: 'Draft generation…', imageHistory: history, qualityHint: undefined })
+    updateScene(id, { imageStatus: 'generating', streamLog: 'HD generation…', imageHistory: history, qualityHint: undefined })
 
     try {
       // Calculate deterministic seed: masterSeed + sceneIndex for visual consistency
@@ -1266,72 +1266,37 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
         }
       }
 
-      // ── Phase 1 : flux/schnell draft preview (~3-4s) ──────────────────────
-      // Note: styleReferenceUrl intentionally NOT passed here. img2img with high
-      // strength clones scene 0 content — consistency comes from styleTokens in
-      // the text prompt, not image-to-image transfer.
-      const previewRes = await fetch('/api/preview-image', {
+      // ── Single-pass generation via fal-ai/flux/schnell (8 steps, 1536×864) ─
+      // Previously: two-phase (schnell preview + flux/dev HD). Removed because
+      // (a) 2× fal.ai requests saturated the 10-concurrent cap at 40+ scenes,
+      // (b) the preview→HD swap sometimes flashed blank or illegible frames.
+      // One call, one final image. Style consistency via styleTokens in prompt.
+      const res = await fetch('/api/stream-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: finalPrompt, style, seed }),
       })
-      if (previewRes.ok) {
-        const previewData = await previewRes.json() as { imageUrl: string }
-        if (previewData.imageUrl) {
-          // Show draft immediately — HD will replace silently
-          updateScene(id, {
-            imageStatus: 'done',
-            imageUrl: previewData.imageUrl,
-            qualityHint: 'draft',
-            streamLog: 'Draft ready - HD enhancement in progress…',
-          })
-        }
-      } else {
-        const errText = await previewRes.text().catch(() => '')
-        console.warn(`[preview-image] Scene ${scene.index} failed: ${previewRes.status} ${errText.slice(0, 200)}`)
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` })) as { error?: string }
+        throw new Error(errData.error ?? `HTTP ${res.status}`)
       }
 
-      // ── Phase 2 : flux/dev HD (blocking fal.run — reliable on Vercel) ────
-      // styleReferenceUrl removed: img2img strength 0.72 was cloning scene 0
-      // content into every scene. Style consistency is handled via styleTokens
-      // injected into the text prompt by validateScene0().
-      updateScene(id, { streamLog: 'HD generation in progress…' })
-      const hdRes = await fetch('/api/stream-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: finalPrompt, style, seed }),
+      const data = await res.json() as { imageUrl?: string }
+      if (!data.imageUrl) {
+        throw new Error('Génération sans URL — réessaie.')
+      }
+
+      updateScene(id, {
+        imageStatus: 'done',
+        imageUrl: data.imageUrl,
+        qualityHint: 'hd',
+        streamLog: undefined,
       })
 
-      if (!hdRes.ok) {
-        const errData = await hdRes.json().catch(() => ({ error: `HTTP ${hdRes.status}` })) as { error?: string }
-        const hdError = errData.error ?? `HTTP ${hdRes.status}`
-        console.warn(`[stream-image] Scene ${scene.index} HD failed: ${hdError}`)
-        // If we have a draft, keep it. If not, this is a full failure.
-        const currentScene = scenesRef.current.find((s) => s.id === id)
-        if (!currentScene?.imageUrl) {
-          throw new Error(`Génération échouée (preview + HD): ${hdError}`)
-        }
-        // Draft exists — mark as done with draft quality
-        updateScene(id, { streamLog: undefined })
-      } else {
-        const hdData = await hdRes.json() as { imageUrl?: string }
-        if (hdData.imageUrl) {
-          updateScene(id, { imageStatus: 'done', imageUrl: hdData.imageUrl, qualityHint: 'hd', streamLog: undefined })
-          // Capture style reference from first HD image (scene 0)
-          if (scene.index === 0 && !localStyleRef) {
-            setLocalStyleRef(hdData.imageUrl)
-          }
-        } else {
-          // HD returned 200 but no imageUrl. If we already have a draft, keep
-          // it; otherwise surface the failure instead of silently marking the
-          // scene done with an empty preview.
-          const currentScene = scenesRef.current.find((s) => s.id === id)
-          if (currentScene?.imageUrl) {
-            updateScene(id, { imageStatus: 'done', streamLog: undefined })
-          } else {
-            throw new Error('Génération HD sans URL — réessaie.')
-          }
-        }
+      // Capture style reference from scene 0 for downstream scene consistency
+      if (scene.index === 0 && !localStyleRef) {
+        setLocalStyleRef(data.imageUrl)
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)

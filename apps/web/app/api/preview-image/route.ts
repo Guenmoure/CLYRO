@@ -23,8 +23,10 @@ const STYLE_PREFIXES: Record<string, string> = {
 /**
  * POST /api/preview-image
  *
- * Fast draft preview using flux/schnell (4 inference steps, ~3-4s).
- * Uses direct fetch to fal.ai REST API (no SDK dependency).
+ * @deprecated Use /api/stream-image instead — the two-phase preview+HD pipeline
+ * has been removed in favor of single-pass schnell HD. This route is kept for
+ * backward compatibility and now produces the same 8-step 1536×864 output as
+ * /api/stream-image. Any new caller should use /api/stream-image directly.
  */
 export async function POST(request: NextRequest) {
   const falKey = process.env.FAL_KEY
@@ -55,7 +57,9 @@ export async function POST(request: NextRequest) {
       // ensures every scene is generated at the same aspect ratio, so
       // ffmpeg assembly never adds letterbox bars or inconsistent upscales.
       image_size: { width: 1536, height: 864 },
-      num_inference_steps: 4,
+      // Bumped from 4 → 8 to match the single-pass HD standard in
+      // /api/stream-image. Deprecated route, kept for backward compat only.
+      num_inference_steps: 8,
       num_images: 1,
     }
 

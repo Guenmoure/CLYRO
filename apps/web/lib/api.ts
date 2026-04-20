@@ -436,6 +436,14 @@ export interface StudioAvatar {
   preview_video_url?: string
   premium?: boolean
   avatar_type?: string
+  /**
+   * HeyGen's native grouping ID. When present, avatars sharing the same
+   * group_id are variants of the same persona (different outfits, angles,
+   * etc.). We prefer this over the regex-based name parsing because HeyGen
+   * guarantees it's canonical, whereas the regex can misfire on names that
+   * happen to contain "look" or "(v2)" substrings for unrelated reasons.
+   */
+  group_id?: string
   looks_count: number
   looks: Array<{
     look_id: string
