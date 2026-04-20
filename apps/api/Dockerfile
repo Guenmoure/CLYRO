@@ -90,10 +90,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # bypasses within days. Pinning guarantees breakage within weeks. Every
 # Render rebuild pulls the freshest release; hit "Clear build cache &
 # deploy" if YouTube blocks playback after a quiet period.
-RUN wget -qO /usr/local/bin/yt-dlp \
-      "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp" \
-  && chmod +x /usr/local/bin/yt-dlp \
-  && /usr/local/bin/yt-dlp --version
+#
+# NON-FATAL: if GitHub is flaky during the build (502, timeout), we continue
+# without yt-dlp instead of failing the entire deploy. Only YouTube
+# transcription breaks at runtime; the rest of the API still boots. The
+# service layer already surfaces a clear error when yt-dlp is missing.
+RUN (wget -qO /usr/local/bin/yt-dlp \
+        "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp" \
+      && chmod +x /usr/local/bin/yt-dlp \
+      && /usr/local/bin/yt-dlp --version) \
+    || echo "yt-dlp install failed during build — YouTube transcription will return a runtime error until next redeploy"
 
 WORKDIR /app
 
