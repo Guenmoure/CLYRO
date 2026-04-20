@@ -245,6 +245,7 @@ interface SceneData {
   clipStatus: 'idle' | 'generating' | 'done' | 'error'
   duree_estimee?: number          // estimated duration in seconds
   audioDuration?: number          // actual audio duration in seconds from ElevenLabs
+  overlayText?: string            // optional caption burned on the clip via ffmpeg drawtext
 }
 
 interface ProjectState {
@@ -1694,6 +1695,27 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                       placeholder="Prompt image…" rows={3}
                       className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none" />
 
+                    {/* Overlay text — incruste du texte sur l'image au montage (drawtext ffmpeg).
+                        Évite les textes illisibles générés par flux. Max 200 chars. */}
+                    <div className="space-y-1">
+                      <label className="block font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
+                        Texte à l'écran (optionnel)
+                      </label>
+                      <input
+                        type="text"
+                        value={scene.overlayText ?? ''}
+                        onChange={(e) => updateScene(scene.id, { overlayText: e.target.value.slice(0, 200) })}
+                        placeholder="Ex : « Lance-toi aujourd'hui »"
+                        maxLength={200}
+                        className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-body text-foreground focus:outline-none focus:border-blue-500"
+                      />
+                      {scene.overlayText && scene.overlayText.length > 0 && (
+                        <p className="text-[10px] text-[--text-muted]">
+                          {scene.overlayText.length}/200 · incrusté en bas du clip
+                        </p>
+                      )}
+                    </div>
+
                     {/* Improve prompt panel */}
                     {improveResult && improvingId === null && (
                       <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2.5 space-y-1.5">
@@ -2962,7 +2984,9 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
   async function goToFinal() {
     setLoading(true)
     try {
-      // Inclure les scènes pré-générées pour éviter de re-générer images + clips en backend
+      // Inclure les scènes pré-générées pour éviter de re-générer images + clips en backend.
+      // IMPORTANT: le backend rejette la requête (400) si script vide ET pre_generated_scenes vide.
+      // On s'assure qu'au moins l'un des deux est toujours non-vide avant d'appeler l'API.
       const preGeneratedScenes = project.scenes.length > 0
         ? project.scenes.map((s) => ({
             id: s.id,
@@ -2971,6 +2995,11 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
             clip_url: s.clipUrl,
             image_prompt: s.imagePrompt,
             animation_prompt: s.animationPrompt,
+            // Incrustation texte optionnelle (drawtext ffmpeg) — ne pas
+            // envoyer si vide pour préserver les scènes sans overlay.
+            overlay_text: s.overlayText && s.overlayText.trim().length > 0
+              ? s.overlayText.trim()
+              : undefined,
           }))
         : undefined
 
@@ -2998,13 +3027,38 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
         ? preGeneratedScenes?.map((s) => ({ ...s, clip_url: undefined }))
         : preGeneratedScenes
 
+      // Compute effective script: preserve order-of-preference but fall back to
+      // joined scene text if the top-level script/description are both empty.
+      // A non-undefined `script` is what prevents the backend 400 when scenes are
+      // present but their scriptText is empty OR pre_generated_scenes ends up nil.
+      const joinedSceneText = project.scenes.map((s) => s.scriptText || '').join(' ').trim()
+      const rawScript = (project.script || project.description || joinedSceneText).trim()
+      const effectiveScript = rawScript.length > 0 ? rawScript : undefined
+
+      // Hard guard: if nothing would reach the backend, surface a clear error
+      // instead of letting the server respond with the opaque 400.
+      const hasPreGen = Array.isArray(sanitizedPreGenerated) && sanitizedPreGenerated.length > 0
+      if (!effectiveScript && !hasPreGen) {
+        toast.error('Aucun script ou scène à générer. Régénérez les scènes ou saisissez un script.')
+        setLoading(false)
+        return
+      }
+
+      // Debug payload — paste the console output if the 400 reappears.
+      console.log('[goToFinal] payload', {
+        scriptLen: effectiveScript?.length ?? 0,
+        sceneCount: sanitizedPreGenerated?.length ?? 0,
+        animationMode: project.animationMode,
+        inputType: project.inputType,
+      })
+
       const { video_id, script_condensed } = await startFacelessGeneration({
         title: project.title || 'Faceless video',
         style: project.style ?? 'cinematique',
         input_type: project.inputType,
         format: project.format,
         duration: project.duration,
-        script: (project.script || project.description || project.scenes.map((s) => s.scriptText).join(' ')).trim() || undefined,
+        script: effectiveScript,
         voice_id: project.voiceId || undefined,
         pre_generated_scenes: sanitizedPreGenerated,
         dialogue_mode: dialogue.hasDialogue,

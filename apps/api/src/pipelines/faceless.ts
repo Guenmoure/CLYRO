@@ -45,6 +45,8 @@ export interface PreGeneratedScene {
   clip_url?: string
   image_prompt?: string
   animation_prompt?: string
+  /** Optional caption burned over the Ken Burns clip via ffmpeg drawtext. */
+  overlay_text?: string
 }
 
 export interface FacelessPipelineParams {
@@ -309,6 +311,19 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       // aucune dépendance Chrome → plus de SIGSEGV ni de bundle webpack à bâtir.
       // Concurrence 4 : FFmpeg est léger (pas de browser), 4 clips simultanés.
       const KB_CONCURRENCY = 4
+
+      // Index overlay_text par scene.id pour le drawtext ffmpeg.
+      // Seulement alimenté si le frontend a envoyé pre_generated_scenes avec
+      // un champ overlay_text non vide.
+      const overlayTextBySceneId = new Map<string, string>()
+      if (preGeneratedScenes) {
+        for (const s of preGeneratedScenes) {
+          if (s.overlay_text && s.overlay_text.trim().length > 0) {
+            overlayTextBySceneId.set(s.id, s.overlay_text.trim())
+          }
+        }
+      }
+
       const kbResults: PromiseSettledResult<{ sceneId: string; videoUrl: string }>[] = []
       for (let i = 0; i < sceneImages.length; i += KB_CONCURRENCY) {
         const batch = sceneImages.slice(i, i + KB_CONCURRENCY)
@@ -321,6 +336,7 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
               durationSeconds: durationSec,
               sceneIndex: idx,
               format: videoFormat as '16:9' | '9:16' | '1:1',
+              overlayText: overlayTextBySceneId.get(sceneId),
             })
             // Write to temp file and expose as file:// URL for assembleVideoFromVideoClips
             const tmpPath = pathJoin(workDir, `kb_${sceneId}.mp4`)

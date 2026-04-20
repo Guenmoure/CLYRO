@@ -1,4 +1,5 @@
 import { spawn } from 'child_process'
+import { existsSync } from 'fs'
 import { writeFile, readFile, unlink, mkdir, rm, copyFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -119,17 +120,53 @@ const KB_FFMPEG_PRESETS = [
   { z: "min(zoom+0.0015,1.20)", x: "iw-iw/zoom",       y: "ih-ih/zoom"       }, // diagonal
 ]
 
+// Default font for drawtext overlays. `fonts-liberation` is installed in the
+// Docker image (see apps/api/Dockerfile), so this path is present on Render.
+// macOS dev fallback is handled via the FALLBACK below. Ubuntu/WSL dev boxes
+// that lack the Liberation package will silently drop overlays (ffmpeg logs a
+// warning) rather than fail the whole render.
+const DRAWTEXT_FONT_PRIMARY  = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
+const DRAWTEXT_FONT_FALLBACK = '/System/Library/Fonts/Supplemental/Arial Bold.ttf' // macOS
+
+/**
+ * Escape text for ffmpeg drawtext: any character in [\ : ' %] must be backslash-
+ * escaped, and single quotes cannot appear inside a single-quoted token so we
+ * split them with '\''.
+ *
+ * ffmpeg also treats `:` and `\` specially inside the `text=...` option.
+ * We strip control chars and collapse whitespace so a careless multiline
+ * overlay doesn't break the filter graph.
+ */
+function escapeDrawtext(raw: string): string {
+  const cleaned = raw
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  // Backslash-escape ffmpeg metacharacters, then split single quotes out of the
+  // quoted token.
+  return cleaned
+    .replace(/\\/g, '\\\\')
+    .replace(/:/g,  '\\:')
+    .replace(/%/g,  '\\%')
+    .replace(/'/g,  "'\\''")
+}
+
 /**
  * Génère un clip Ken Burns (zoom+pan) sur une image statique via FFmpeg zoompan.
  * 50× plus rapide que Remotion/Chromium — aucune dépendance Chrome.
+ *
+ * Si `overlayText` est fourni, une incrustation de texte (drawtext) est ajoutée
+ * au filtre — positionnée en bas-centre avec une boîte noire semi-transparente
+ * pour garantir la lisibilité quel que soit le fond.
  */
 export async function renderKenBurnsFFmpeg(options: {
   imageUrl: string
   durationSeconds: number
   sceneIndex?: number
   format?: '16:9' | '9:16' | '1:1'
+  overlayText?: string
 }): Promise<Buffer> {
-  const { imageUrl, durationSeconds, sceneIndex = 0, format = '16:9' } = options
+  const { imageUrl, durationSeconds, sceneIndex = 0, format = '16:9', overlayText } = options
   const { width, height } = FORMAT_DIMS_KB[format] ?? FORMAT_DIMS_KB['16:9']
   const durationFrames = Math.max(30, Math.round(durationSeconds * 30))
   const preset = KB_FFMPEG_PRESETS[sceneIndex % KB_FFMPEG_PRESETS.length]
@@ -137,11 +174,50 @@ export async function renderKenBurnsFFmpeg(options: {
   // Scale to 2× output resolution before zoompan → no pixelation during zoom
   const scaleW = width * 2
   const scaleH = height * 2
-  const zoompanFilter = [
+
+  // Caption sizing: ~4.5% of output height → roughly 32px at 720p, 58px at 1280p
+  // (vertical). Box padding scales with fontsize so it stays proportional.
+  const filterParts = [
     `scale=${scaleW}:${scaleH}:force_original_aspect_ratio=increase`,
     `crop=${scaleW}:${scaleH}`,
     `zoompan=z='${preset.z}':x='${preset.x}':y='${preset.y}':d=${durationFrames}:s=${width}x${height}:fps=30`,
-  ].join(',')
+  ]
+
+  const trimmed = overlayText?.trim()
+  if (trimmed && trimmed.length > 0) {
+    const fontSize = Math.max(22, Math.round(height * 0.045))
+    const boxBorder = Math.max(8, Math.round(fontSize * 0.35))
+    // Try primary path, fall back gracefully. drawtext errors out if the font is
+    // missing, so we resolve to the first path that exists on disk at render time.
+    const fontPath = existsSync(DRAWTEXT_FONT_PRIMARY)
+      ? DRAWTEXT_FONT_PRIMARY
+      : existsSync(DRAWTEXT_FONT_FALLBACK)
+        ? DRAWTEXT_FONT_FALLBACK
+        : null
+
+    if (fontPath) {
+      const text = escapeDrawtext(trimmed)
+      filterParts.push(
+        [
+          `drawtext=fontfile='${fontPath}'`,
+          `text='${text}'`,
+          `fontsize=${fontSize}`,
+          `fontcolor=white`,
+          `box=1`,
+          `boxcolor=black@0.55`,
+          `boxborderw=${boxBorder}`,
+          // Bottom-centered with a safe-area margin of ~8% of height.
+          `x=(w-text_w)/2`,
+          `y=h-text_h-${Math.round(height * 0.08)}`,
+          // Line-wrap longer overlays at ~80% of the frame width.
+          `line_spacing=6`,
+        ].join(':'),
+      )
+    } else {
+      logger.warn({ sceneIndex }, 'drawtext: no font available — overlay skipped')
+    }
+  }
+  const zoompanFilter = filterParts.join(',')
 
   const tmpImgPath = join(tmpdir(), `clyro-kb-img-${randomUUID()}.jpg`)
   const tmpOutPath = join(tmpdir(), `clyro-kb-out-${randomUUID()}.mp4`)

@@ -163,6 +163,8 @@ export interface PreGeneratedScene {
   clip_url?: string
   image_prompt?: string
   animation_prompt?: string
+  /** Optional on-screen caption burned over the clip via ffmpeg drawtext. */
+  overlay_text?: string
 }
 
 export interface CreateFacelessVideoPayload {

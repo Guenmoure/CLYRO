@@ -42,6 +42,9 @@ const preGeneratedSceneSchema = z.object({
   clip_url:         z.string().url().optional(),
   image_prompt:     z.string().optional(),
   animation_prompt: z.string().optional(),
+  // Texte optionnel à incruster (drawtext) sur l'image pendant le Ken Burns.
+  // Limité à 200 caractères pour rester lisible à l'écran.
+  overlay_text:     z.string().max(200).optional(),
 })
 
 const createFacelessSchema = z.object({
