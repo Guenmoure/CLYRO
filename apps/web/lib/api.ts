@@ -55,14 +55,24 @@ async function apiFetch<T>(
 ): Promise<T> {
   const token = await getAuthToken()
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  })
+  let response: Response
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      },
+    })
+  } catch (networkErr) {
+    // fetch() throws a TypeError when the server is unreachable (down, CORS
+    // preflight blocked, no network). Re-throw with a clearer French message.
+    console.error('[apiFetch] Network error reaching', API_URL + path, networkErr)
+    throw new Error(
+      `Impossible de joindre le serveur API. Vérifie ta connexion ou réessaie dans quelques instants.`
+    )
+  }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({
