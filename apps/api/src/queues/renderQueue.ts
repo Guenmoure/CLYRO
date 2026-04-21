@@ -88,7 +88,25 @@ export interface FacelessJobData {
   voiceId: string
 }
 
-export type RenderJobData = MotionJobData | FacelessJobData
+export interface MotionDesignJobData {
+  type: 'motion_design'
+  videoId:   string
+  userId:    string
+  userEmail: string
+  title:     string
+  brief:     string
+  format:    '16_9' | '9_16' | '1_1'
+  duration:  string
+  brandConfig: {
+    primary_color:   string
+    secondary_color?: string
+    logo_url?:        string
+  }
+  voiceId?:  string
+  musicUrl?: string
+}
+
+export type RenderJobData = MotionJobData | FacelessJobData | MotionDesignJobData
 
 // ── Queue instance (null si Redis indisponible) ───────────────────────────
 export let renderQueue: Queue<RenderJobData> | null = null

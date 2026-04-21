@@ -357,6 +357,151 @@ Réponds UNIQUEMENT avec ce JSON valide :
   throw new Error(`Motion storyboard generation failed: ${lastError?.message ?? 'Unknown error'}`)
 }
 
+/**
+ * Génère une séquence de MotionScene[] (F2 Motion Design) à partir d'un brief.
+ * Chaque scène utilise le système de types discriminants (hero_typo, 3d_cards, etc.)
+ * défini dans @clyro/video.
+ */
+export interface MotionDesignResult {
+  scenes: import('@clyro/video').MotionScene[]
+  voiceoverScript: string   // texte consolidé pour ElevenLabs
+  totalFrames: number        // somme des durées en frames (30 fps)
+}
+
+export async function generateMotionDesignScenes(
+  brief: string,
+  format: string,
+  duration: string,
+  brandConfig: { primary_color: string; secondary_color?: string; logo_url?: string },
+): Promise<MotionDesignResult> {
+  const FPS = 30
+
+  // Nombre de scènes cible selon durée
+  const durationMap: Record<string, number> = {
+    '6s': 2, '15s': 3, '30s': 5, '60s': 8, '90s': 10, '120s': 12, '180s': 16, '300s': 22, 'auto': 6,
+  }
+  const sceneCount = durationMap[duration] ?? 6
+
+  const systemPrompt = `Tu es Motion Design Director chez une agence de haut niveau (Pentagram, Buck, ManvsMachine).
+Tu génères des scripts de vidéos en Motion Design de qualité agency pour des marques premium.
+Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
+
+  const color = brandConfig.primary_color
+  const logoUrl = brandConfig.logo_url ?? null
+
+  const userPrompt = `Crée une séquence F2 Motion Design de ${sceneCount} scènes pour ce brief :
+
+"""
+${brief}
+"""
+
+Format vidéo : ${format}
+Durée cible : ${duration}
+Couleur de marque : ${color}
+${logoUrl ? `Logo disponible : ${logoUrl}` : ''}
+
+Chaque scène est un objet JSON avec ces champs :
+- "id": string unique ("scene_001", "scene_002", …)
+- "type": l'un des types de scène ci-dessous
+- "duration": durée en frames (30 fps) — entre 60 (2s) et 210 (7s)
+- "props": objet de props selon le type (voir types ci-dessous)
+- "voiceover": texte narré en français pendant cette scène (peut être "")
+
+TYPES DE SCÈNES DISPONIBLES :
+
+1. hero_typo — Typographie plein écran cinématique
+   props: { type: "hero_typo", text: string, subtext?: string, mode: "dark"|"light", animation: "word_by_word"|"line_by_line"|"scale_bounce"|"split_reveal"|"3d_rotate", color: "${color}", fontSize?: number }
+
+2. 3d_cards — Grille de cartes sociales 3D flottantes
+   props: { type: "3d_cards", cards: [{name: string, content: string, metrics?: {likes?: number, comments?: number}, platform?: "instagram"|"linkedin"|"tiktok"|"twitter"}], headline: string, mode: "dark"|"light", layout?: "scatter"|"v_shape"|"tunnel"|"orbit" }
+
+3. stats_counter — Compteurs animés de statistiques
+   props: { type: "stats_counter", stats: [{value: number, unit: string, label: string, color: "${color}"}], headline?: string, mode: "dark"|"light" }
+
+4. floating_icons — Icônes flottantes en cercle avec avatar central
+   props: { type: "floating_icons", icons: [{emoji: string, label: string, color: string}], headline: string, mode: "dark"|"light" }
+
+5. dark_light_switch — Transition dramatique dark/light
+   props: { type: "dark_light_switch", direction: "dark_to_light"|"light_to_dark", style?: "flash"|"wipe"|"circle_reveal" }
+
+6. logo_reveal — Reveal cinématique du logo
+   props: { type: "logo_reveal", logoUrl: "${logoUrl ?? color}", tagline?: string, brandColor: "${color}", style?: "assemble"|"scale_bounce"|"particles_in", mode: "dark"|"light" }
+
+RÈGLES :
+1. Commence toujours par hero_typo (accroche forte)
+2. Termine toujours par logo_reveal ou hero_typo (CTA)
+3. Varie les types — jamais deux hero_typo consécutifs
+4. mode "dark" pour scènes dramatiques/premium, "light" pour scènes claires/produit
+5. Les stats_counter doivent avoir des chiffres réels et pertinents pour le brief
+6. voiceover distribue la narration sur les scènes clés (peut être vide sur dark_light_switch)
+
+Réponds UNIQUEMENT avec ce JSON valide :
+{
+  "scenes": [
+    { "id": "scene_001", "type": "hero_typo", "duration": 90, "props": {...}, "voiceover": "..." },
+    ...
+  ]
+}`
+
+  let lastError: Error | null = null
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const startTime = Date.now()
+      const message = await client.messages.create({
+        model: MODEL,
+        max_tokens: 6000,
+        messages: [{ role: 'user', content: userPrompt }],
+        system: systemPrompt,
+      })
+
+      logger.info(
+        { model: MODEL, inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens, durationMs: Date.now() - startTime, attempt },
+        'Claude motion design scenes generated'
+      )
+
+      const content = message.content[0]
+      if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
+
+      const jsonText = content.text
+        .replace(/^```json\s*/m, '')
+        .replace(/^```\s*/m, '')
+        .replace(/\s*```$/m, '')
+        .trim()
+
+      const parsed = JSON.parse(jsonText) as { scenes: Array<{ id: string; type: string; duration: number; props: object; voiceover?: string }> }
+
+      if (!parsed.scenes || !Array.isArray(parsed.scenes)) {
+        throw new Error('Invalid response: missing scenes array')
+      }
+
+      // Build voiceover script from all non-empty voiceover fields
+      const voiceoverScript = parsed.scenes
+        .map((s) => s.voiceover ?? '')
+        .filter((v) => v.trim().length > 0)
+        .join(' ')
+
+      // Convert to MotionScene[] (strip voiceover from final props — it's separate)
+      const scenes = parsed.scenes.map((s) => ({
+        id:       s.id,
+        type:     s.type as import('@clyro/video').MotionSceneType,
+        duration: Math.max(30, s.duration),
+        props:    s.props as import('@clyro/video').MotionSceneProps,
+      }))
+
+      const totalFrames = scenes.reduce((sum, s) => sum + s.duration, 0)
+
+      return { scenes, voiceoverScript, totalFrames }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err))
+      logger.warn({ attempt, maxRetries: MAX_RETRIES, error: lastError.message }, 'Claude motion design attempt failed, retrying')
+      if (attempt < MAX_RETRIES) await sleep(RETRY_DELAY_MS * attempt)
+    }
+  }
+
+  throw new Error(`Motion design scene generation failed: ${lastError?.message ?? 'Unknown error'}`)
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }

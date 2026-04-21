@@ -145,6 +145,27 @@ export async function startMotionGeneration(payload: CreateMotionVideoPayload) {
   })
 }
 
+export interface CreateMotionDesignPayload {
+  title:    string
+  brief:    string
+  format:   '16_9' | '9_16' | '1_1'
+  duration: string
+  brand_config: {
+    primary_color:   string
+    secondary_color?: string
+    logo_url?:        string
+  }
+  voice_id?:  string
+  music_url?: string
+}
+
+export async function startMotionDesignGeneration(payload: CreateMotionDesignPayload) {
+  return apiFetch<{ video_id: string; status: string }>('/api/v1/pipeline/motion/design', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 // ---- Videos ----
 
 export async function getVideos() {

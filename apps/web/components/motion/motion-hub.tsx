@@ -700,12 +700,17 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
         <div className="p-4 glass-border-b">
           <h2 className="font-display text-sm font-semibold text-foreground">Motion Design</h2>
         </div>
-        <div className="p-3 glass-border-b">
+        <div className="p-3 glass-border-b space-y-2">
           <button type="button" onClick={handleReset}
             className="flex items-center gap-2 w-full bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-purple-500/10 hover:border-purple-500/40 transition-all">
             <Plus size={16} className="text-purple-500" />
             Nouvelle vidéo
           </button>
+          <a href="/motion/design"
+            className="flex items-center gap-2 w-full bg-purple-500/10 border border-purple-500/30 rounded-xl px-3 py-2.5 text-sm font-body text-purple-400 hover:bg-purple-500/20 transition-all">
+            <Wand2 size={16} className="text-purple-500" />
+            F2 Motion Design
+          </a>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (

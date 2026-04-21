@@ -6,6 +6,7 @@ import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
 import { renderQueue, isRedisReady } from '../../queues/renderQueue'
 import { runMotionPipeline } from '../../pipelines/motion'
+import { runMotionDesignPipeline } from '../../pipelines/motion-design'
 import { getMusicTrackUrl } from '../../lib/music'
 import { uploadFalUrlToStorage } from '../../services/fal'
 import { generateVoiceoverWithTimestamps } from '../../services/elevenlabs'
@@ -345,3 +346,114 @@ pipelineMotionRouter.post('/motion/audio-scene', authMiddleware, async (req, res
   }
 })
 
+// ── F2 Motion Design ─────────────────────────────────────────────────────────
+
+const MOTION_DESIGN_FORMATS   = ['16_9', '9_16', '1_1'] as const
+const MOTION_DESIGN_DURATIONS = ['6s', '15s', '30s', '60s', '90s', '120s', '180s', '300s', 'auto'] as const
+
+const createMotionDesignSchema = z.object({
+  title:    z.string().min(1).max(200),
+  brief:    z.string().min(20).max(3000),
+  format:   z.enum(MOTION_DESIGN_FORMATS),
+  duration: z.enum(MOTION_DESIGN_DURATIONS),
+  brand_config: z.object({
+    logo_url:        z.string().url().optional(),
+    primary_color:   z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color'),
+    secondary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  }),
+  voice_id:  z.string().optional(),
+  music_url: z.string().url().optional(),
+})
+
+/**
+ * POST /api/v1/pipeline/motion/design
+ * Lance le pipeline F2 Motion Design (MotionComposition)
+ * Retourne immédiatement { video_id } — génération en arrière-plan
+ */
+pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, async (req, res) => {
+  const parsed = createMotionDesignSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
+    return
+  }
+
+  const { title, brief, format, duration, brand_config, voice_id, music_url } = parsed.data
+
+  try {
+    const profile = req.userProfile!
+
+    const { data: video, error: dbError } = await supabaseAdmin
+      .from('videos')
+      .insert({
+        user_id:  req.userId,
+        module:   'motion_design',
+        style:    'motion_design',
+        title,
+        status:   'pending',
+        metadata: { brief, format, duration, brand_config, voice_id, progress: 0 },
+      })
+      .select()
+      .single()
+
+    if (dbError || !video) {
+      logger.error({ dbError }, 'Failed to create motion design video entry')
+      res.status(500).json({ error: 'Failed to create video', code: 'DB_ERROR' })
+      return
+    }
+
+    const jobData = {
+      type: 'motion_design' as const,
+      videoId:    video.id,
+      userId:     req.userId,
+      userEmail:  req.userEmail,
+      title,
+      brief,
+      format,
+      duration,
+      brandConfig: brand_config,
+      voiceId:    voice_id,
+      musicUrl:   music_url,
+    }
+
+    const allowInlineFallback = process.env.ALLOW_INLINE_FALLBACK === 'true'
+    let enqueued = false
+
+    if (renderQueue && isRedisReady()) {
+      try {
+        await renderQueue.add('motion_design', jobData)
+        enqueued = true
+        logger.info({ videoId: video.id }, 'MotionDesign job enqueued to BullMQ')
+      } catch (err) {
+        logger.warn({ err, videoId: video.id }, 'MotionDesign queue add failed')
+      }
+    }
+
+    if (!enqueued) {
+      if (!allowInlineFallback) {
+        await supabaseAdmin
+          .from('videos')
+          .update({ status: 'error', metadata: { error_message: 'Video processing worker is currently unavailable', error_at: new Date().toISOString() } })
+          .eq('id', video.id)
+        res.status(503).json({ error: 'Video processing worker is currently unavailable. Please try again shortly.', code: 'WORKER_UNAVAILABLE', video_id: video.id })
+        return
+      }
+
+      logger.warn({ videoId: video.id }, 'MotionDesign: falling back to inline pipeline')
+      runMotionDesignPipeline(jobData).catch(async (err) => {
+        logger.error({ err, videoId: video.id }, 'MotionDesign pipeline inline failed')
+        await supabaseAdmin
+          .from('videos')
+          .update({ status: 'error', metadata: { error_message: err instanceof Error ? err.message : String(err), error_at: new Date().toISOString() } })
+          .eq('id', video.id)
+          .then(() => null, () => null)
+      })
+    }
+
+    await deductCredit(req.userId, profile)
+
+    res.status(202).json({ video_id: video.id, status: 'pending' })
+  } catch (err) {
+    logger.error({ err, userId: req.userId }, 'pipeline.motion.design error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})

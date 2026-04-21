@@ -74,6 +74,7 @@ async function main(): Promise<void> {
   let WorkerCtor: typeof import('bullmq').Worker
   let runMotionPipeline: typeof import('../pipelines/motion').runMotionPipeline
   let runFacelessPipeline: typeof import('../pipelines/faceless').runFacelessPipeline
+  let runMotionDesignPipeline: typeof import('../pipelines/motion-design').runMotionDesignPipeline
 
   try {
     const queueMod = await import('../queues/renderQueue')
@@ -85,6 +86,8 @@ async function main(): Promise<void> {
     runMotionPipeline = motionMod.runMotionPipeline
     const facelessMod = await import('../pipelines/faceless')
     runFacelessPipeline = facelessMod.runFacelessPipeline
+    const motionDesignMod = await import('../pipelines/motion-design')
+    runMotionDesignPipeline = motionDesignMod.runMotionDesignPipeline
   } catch (err) {
     Sentry.captureException(err)
     logger.error({ err }, 'Failed to load worker modules (likely missing env var or broken import)')
@@ -96,8 +99,7 @@ async function main(): Promise<void> {
   }
 
   // ── 4. Start the BullMQ worker ──────────────────────────────────────────
-  type RenderJobData = import('../queues/renderQueue').MotionJobData
-                     | import('../queues/renderQueue').FacelessJobData
+  type RenderJobData = import('../queues/renderQueue').RenderJobData
 
   const worker: WorkerType<RenderJobData> = new WorkerCtor!<RenderJobData>(
     RENDER_QUEUE_NAME!,
@@ -108,6 +110,8 @@ async function main(): Promise<void> {
         await runMotionPipeline!(job.data)
       } else if (job.data.type === 'faceless') {
         await runFacelessPipeline!(job.data)
+      } else if (job.data.type === 'motion_design') {
+        await runMotionDesignPipeline!(job.data)
       } else {
         throw new Error(`Unknown job type: ${(job.data as { type: string }).type}`)
       }
