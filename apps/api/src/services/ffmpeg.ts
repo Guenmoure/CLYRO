@@ -612,7 +612,12 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
       // This turns a 10-30 min xfade encode into a ~1s file-copy concat.
       await concatenateClips(downloadedPaths.map((d) => d.clipPath), concatPath)
     } else {
-      const CLIP_CONCURRENCY = 6
+      // Re-encode concurrency limit: each ffmpeg process peaks at ~250-400MB RSS
+      // when converting a Kling 5-10s 720p clip to 1280×720 yuv420p. Render
+      // Standard = 2GB RAM → 6 in parallel = OOM (SIGKILL = exit code 137) on
+      // the final filter_complex pass. 2 keeps peak at ~800MB leaving room for
+      // the final encode + Node heap + the mp4Buffer we hold until upload.
+      const CLIP_CONCURRENCY = 2
       const reEncodedPaths: string[] = []
 
       for (let i = 0; i < downloadedPaths.length; i += CLIP_CONCURRENCY) {
