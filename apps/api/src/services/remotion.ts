@@ -3,7 +3,7 @@ import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
 import { unlink } from 'fs/promises'
 import { logger } from '../lib/logger'
-import type { BrandOverlayProps, KenBurnsClipProps } from '@clyro/video'
+import type { BrandOverlayProps, KenBurnsClipProps, MotionCompositionProps, MotionScene } from '@clyro/video'
 
 const FPS = 30
 
@@ -306,6 +306,112 @@ export async function renderMotionVideo(options: RenderMotionVideoOptions): Prom
       logger.info({ thumbSize: thumbnail.length, frame: thumbFrame }, 'Remotion: thumbnail captured')
     } catch (thumbErr) {
       logger.warn({ thumbErr }, 'Remotion: thumbnail capture failed — continuing without')
+    }
+
+    return { mp4, thumbnail }
+  } finally {
+    await Promise.all(tempFiles.map((f) => unlink(f).catch(() => null)))
+  }
+}
+
+// ── F2 Motion Design render ───────────────────────────────────────────────────
+
+const MOTION_FORMAT_MAP: Record<string, { compositionId: string; width: number; height: number }> = {
+  '16_9': { compositionId: 'MotionDesign-16-9', width: 1920, height: 1080 },
+  '9_16': { compositionId: 'MotionDesign-9-16', width: 1080, height: 1920 },
+  '1_1':  { compositionId: 'MotionDesign-1-1',  width: 1080, height: 1080 },
+}
+
+export interface RenderMotionDesignOptions {
+  scenes:          MotionScene[]
+  format:          '16_9' | '9_16' | '1_1'
+  voiceoverBuffer?: Buffer | null
+  musicUrl?:       string
+}
+
+/**
+ * Renders a F2 Motion Design video (MotionComposition) using Remotion.
+ * Returns mp4 buffer + optional thumbnail PNG.
+ */
+export async function renderMotionDesignVideo(
+  options: RenderMotionDesignOptions,
+): Promise<RenderMotionVideoResult> {
+  const { scenes, format, voiceoverBuffer, musicUrl } = options
+  const { selectComposition, renderMedia } = await import('@remotion/renderer')
+  const { readFile } = await import('fs/promises')
+
+  const { compositionId, width, height } = MOTION_FORMAT_MAP[format] ?? MOTION_FORMAT_MAP['16_9']
+
+  const durationInFrames = Math.max(
+    FPS,
+    scenes.reduce((sum, s) => sum + Math.max(1, s.duration), 0),
+  )
+
+  let audioUrl: string | undefined
+  if (voiceoverBuffer && voiceoverBuffer.length > 0) {
+    audioUrl = `data:audio/mpeg;base64,${voiceoverBuffer.toString('base64')}`
+    logger.info({ bytes: voiceoverBuffer.length }, 'MotionDesign: voiceover converted to data URL')
+  }
+
+  const inputProps: MotionCompositionProps = {
+    scenes,
+    format,
+    audioUrl,
+    musicUrl,
+  }
+
+  const tempFiles: string[] = []
+  const bundlePath     = await getBundle()
+  const chromiumOptions = { gl: 'swiftshader' as const }
+
+  try {
+    const composition = await selectComposition({
+      serveUrl: bundlePath,
+      id: compositionId,
+      inputProps: inputProps as unknown as Record<string, unknown>,
+      chromiumOptions,
+    })
+
+    const outputPath = path.join(tmpdir(), `motion-design-${randomUUID()}.mp4`)
+    tempFiles.push(outputPath)
+
+    logger.info({ compositionId, durationInFrames, width, height, sceneCount: scenes.length }, 'MotionDesign: starting render')
+
+    await renderMedia({
+      composition: { ...composition, durationInFrames, width, height },
+      serveUrl: bundlePath,
+      codec: 'h264',
+      outputLocation: outputPath,
+      inputProps: inputProps as unknown as Record<string, unknown>,
+      chromiumOptions,
+      onProgress: ({ progress }) => {
+        if (Math.round(progress * 100) % 20 === 0) {
+          logger.info({ progress: Math.round(progress * 100) }, 'MotionDesign render progress')
+        }
+      },
+    })
+
+    const mp4 = await readFile(outputPath)
+    logger.info({ outputSize: mp4.length, compositionId }, 'MotionDesign: render complete')
+
+    let thumbnail: Buffer | null = null
+    try {
+      const { renderStill } = await import('@remotion/renderer')
+      const thumbFrame = Math.min(3 * FPS, durationInFrames - 1)
+      const thumbPath  = path.join(tmpdir(), `motion-design-thumb-${randomUUID()}.png`)
+      tempFiles.push(thumbPath)
+      await renderStill({
+        composition: { ...composition, durationInFrames, width, height },
+        serveUrl:    bundlePath,
+        output:      thumbPath,
+        frame:       thumbFrame,
+        inputProps:  inputProps as unknown as Record<string, unknown>,
+        chromiumOptions,
+      })
+      thumbnail = await readFile(thumbPath)
+      logger.info({ thumbSize: thumbnail.length }, 'MotionDesign: thumbnail captured')
+    } catch (thumbErr) {
+      logger.warn({ thumbErr }, 'MotionDesign: thumbnail capture failed — continuing without')
     }
 
     return { mp4, thumbnail }

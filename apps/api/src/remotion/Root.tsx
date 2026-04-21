@@ -1,19 +1,26 @@
 import React from 'react'
 import { Composition, registerRoot } from 'remotion'
-import { BrandOverlay, BrandOverlayProps, KenBurnsClip, DynamicComposition } from '@clyro/video'
+import { BrandOverlay, BrandOverlayProps, KenBurnsClip, DynamicComposition, MotionComposition } from '@clyro/video'
+import type { MotionCompositionProps } from '@clyro/video'
 import type { ComponentType } from 'react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const BrandOverlayAny      = BrandOverlay      as ComponentType<any>
+const BrandOverlayAny       = BrandOverlay       as ComponentType<any>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const KenBurnsClipAny      = KenBurnsClip      as ComponentType<any>
+const KenBurnsClipAny       = KenBurnsClip       as ComponentType<any>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const DynamicCompositionAny = DynamicComposition as ComponentType<any>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MotionCompositionAny  = MotionComposition  as ComponentType<any>
 
 const DEFAULT_FPS = 30
 
-// Default props used only for the Remotion Studio preview / type inference.
-// Actual values are injected at render time via inputProps.
+// Default props — Remotion Studio preview only; actual values come from inputProps at render time.
+const defaultMotionProps: MotionCompositionProps = {
+  scenes: [],
+  format: '16_9',
+}
+
 const defaultProps: BrandOverlayProps = {
   scenes: [
     {
@@ -104,6 +111,35 @@ const RemotionRoot: React.FC = () => (
       width={1080}
       height={1080}
       defaultProps={{ ...defaultProps, format: '1:1' }}
+    />
+
+    {/* MotionDesign — F2 high-quality agency-level compositions */}
+    <Composition
+      id="MotionDesign-16-9"
+      component={MotionCompositionAny}
+      durationInFrames={DEFAULT_FPS * 45}
+      fps={DEFAULT_FPS}
+      width={1920}
+      height={1080}
+      defaultProps={{ ...defaultMotionProps, format: '16_9' }}
+    />
+    <Composition
+      id="MotionDesign-9-16"
+      component={MotionCompositionAny}
+      durationInFrames={DEFAULT_FPS * 45}
+      fps={DEFAULT_FPS}
+      width={1080}
+      height={1920}
+      defaultProps={{ ...defaultMotionProps, format: '9_16' }}
+    />
+    <Composition
+      id="MotionDesign-1-1"
+      component={MotionCompositionAny}
+      durationInFrames={DEFAULT_FPS * 45}
+      fps={DEFAULT_FPS}
+      width={1080}
+      height={1080}
+      defaultProps={{ ...defaultMotionProps, format: '1_1' }}
     />
   </>
 )
