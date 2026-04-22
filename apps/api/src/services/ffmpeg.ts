@@ -90,8 +90,8 @@ async function runFFmpeg(args: string[]): Promise<void> {
       if (code === 0) {
         resolve()
       } else {
-        logger.error({ code, stderr: stderr.slice(-500) }, 'FFmpeg error')
-        reject(new Error(`FFmpeg exited with code ${code}: ${stderr.slice(-200)}`))
+        logger.error({ code, stderr: stderr.slice(-2000) }, 'FFmpeg error')
+        reject(new Error(`FFmpeg exited with code ${code}: ${stderr.slice(-500)}`))
       }
     })
 
@@ -332,10 +332,10 @@ export async function mixAudio(
       // Normalize voiceover in the filter chain (single-pass loudnorm within the complex filter)
       // Smart ducking: music ducks when voice is detected, fills during silence
       const duckFilter = [
-        '[1:a]loudnorm=I=-16:TP=-1.5:LRA=11[voice]',
+        '[1:a]loudnorm=I=-16:TP=-1.5:LRA=11,asplit=2[voice1][voice2]',
         '[2:a]volume=0.35,aloop=loop=-1:size=2147483647[music_loop]',
-        '[music_loop][voice]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[music_ducked]',
-        '[voice][music_ducked]amix=inputs=2:duration=first:dropout_transition=0[aout]',
+        '[music_loop][voice1]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[music_ducked]',
+        '[voice2][music_ducked]amix=inputs=2:duration=first:dropout_transition=0[aout]',
       ].join(';')
 
       await runFFmpeg([
@@ -682,11 +682,13 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
       let audioMap: string
 
       if (backgroundMusicPath) {
+        // [normv] split into [normv1] (sidechain) + [normv2] (amix input)
+        // to avoid "pad already connected" error — each named pad can only be consumed once
         filterComplex = [
-          `[1:a]${loudnormFilter}[normv]`,
+          `[1:a]${loudnormFilter},asplit=2[normv1][normv2]`,
           `[${musicIdx}:a]volume=0.35,aloop=loop=-1:size=2147483647[mloop]`,
-          '[mloop][normv]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[mduck]',
-          '[normv][mduck]amix=inputs=2:duration=first:dropout_transition=0[aout]',
+          '[mloop][normv1]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[mduck]',
+          '[normv2][mduck]amix=inputs=2:duration=first:dropout_transition=0[aout]',
           ...(srtPath ? [`[0:v]subtitles=${srtPath}:force_style=${forceStyle}[vout]`] : []),
         ].join(';')
         videoMap = srtPath ? '[vout]' : '0:v'
@@ -721,10 +723,10 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
         logger.warn({ finalErr }, 'FFmpeg: final pass with subtitles failed — retrying without subtitles')
         const filterSimple = backgroundMusicPath
           ? [
-              `[1:a]${loudnormFilter}[normv]`,
+              `[1:a]${loudnormFilter},asplit=2[normv1][normv2]`,
               `[${musicIdx}:a]volume=0.35,aloop=loop=-1:size=2147483647[mloop]`,
-              '[mloop][normv]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[mduck]',
-              '[normv][mduck]amix=inputs=2:duration=first:dropout_transition=0[aout]',
+              '[mloop][normv1]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[mduck]',
+              '[normv2][mduck]amix=inputs=2:duration=first:dropout_transition=0[aout]',
             ].join(';')
           : `[1:a]${loudnormFilter}[aout]`
         await runFFmpeg([

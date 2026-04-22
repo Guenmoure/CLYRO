@@ -2545,7 +2545,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
   onVideoReady?: (videoId: string, outputUrl: string) => void
   onEditScenes?: () => void
 }) {
-  const { status, progress, outputUrl, isError, isDone } = useVideoStatus(project.videoId ?? null)
+  const { status, progress, outputUrl, errorMessage, isError, isDone } = useVideoStatus(project.videoId ?? null)
   const [downloading, setDownloading] = useState(false)
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null)
   const notifiedRef = useRef(false)
@@ -2629,7 +2629,11 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
             <X size={26} className="text-red-500" />
           </div>
           <h2 className="font-display text-xl font-bold text-foreground">Generation error</h2>
-          <p className="font-body text-sm text-[--text-muted]">La génération a échoué. Vérifie les logs du serveur.</p>
+          {errorMessage ? (
+            <p className="font-mono text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2 max-w-sm mx-auto text-left break-all">{errorMessage}</p>
+          ) : (
+            <p className="font-body text-sm text-[--text-muted]">La génération a échoué. Vérifie les logs du serveur.</p>
+          )}
           <div className="flex items-center gap-3 justify-center">
             {onRetry && (
               <button type="button" onClick={onRetry}
