@@ -703,17 +703,23 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
       }
 
       try {
+        // Final pass encode — runs ONCE per video. ultrafast/crf26 was chosen
+        // for speed when this was 3 separate passes; now it's a single pass so
+        // we can afford a tighter encode. veryfast+crf28 is ~40-50% smaller
+        // at 720p with quasi-identical perceived quality, keeping us well
+        // below the Supabase bucket per-file cap (default 50 MiB on Free).
         await runFFmpeg([
           ...inputs,
           '-filter_complex', filterComplex,
           '-map', videoMap,
           '-map', audioMap,
           '-c:v', 'libx264',
-          '-preset', 'ultrafast',
-          '-crf', '26',
+          '-preset', 'veryfast',
+          '-crf', '28',
           '-pix_fmt', 'yuv420p',
           '-c:a', 'aac',
-          '-b:a', '192k',
+          '-b:a', '128k',
+          '-movflags', '+faststart',
           '-shortest',
           finalPath,
         ])
@@ -736,7 +742,7 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
           '-map', '[aout]',
           '-c:v', 'copy',
           '-c:a', 'aac',
-          '-b:a', '192k',
+          '-b:a', '128k',
           '-shortest',
           finalPath,
         ])
