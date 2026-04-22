@@ -628,18 +628,39 @@ function CtaSection() {
 
 // ── 11. FOOTER ────────────────────────────────────────────────────────────────
 
-const FOOTER_COLS = [
+// Each link is a [label, href] tuple. `#` placeholders are kept for Product
+// entries that anchor to sections still in flux on the landing page; the
+// Resources and Legal columns point to real pages under /resources/* and
+// /legal/*. Keep this list in sync with the files under app/(public)/.
+const FOOTER_COLS: Array<{ title: string; links: Array<[string, string]> }> = [
   {
     title: 'Product',
-    links: ['Faceless Videos', 'AI Avatar Studio', 'Motion Design', 'Brand Kit', 'Pricing'],
+    links: [
+      ['Faceless Videos',   '#features'],
+      ['AI Avatar Studio',  '#avatar-studio'],
+      ['Motion Design',     '#styles'],
+      ['Brand Kit',         '#features'],
+      ['Pricing',           '/pricing'],
+    ],
   },
   {
     title: 'Resources',
-    links: ['Documentation', 'Video examples', 'Blog', 'Changelog', 'Status'],
+    links: [
+      ['Documentation',   '/resources/docs'],
+      ['Video examples',  '/resources/examples'],
+      ['Blog',            '/resources/blog'],
+      ['Changelog',       '/resources/changelog'],
+      ['Status',          '/resources/status'],
+    ],
   },
   {
     title: 'Legal',
-    links: ['Privacy policy', 'Terms of service', 'Legal notice', 'Contact'],
+    links: [
+      ['Privacy policy',    '/legal/privacy'],
+      ['Terms of service',  '/legal/terms'],
+      ['Legal notice',      '/legal/notice'],
+      ['Contact',           '/legal/contact'],
+    ],
   },
 ]
 
@@ -673,11 +694,14 @@ function Footer() {
                 {col.title}
               </h4>
               <ul className="flex flex-col gap-2.5">
-                {col.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors">
-                      {link}
-                    </a>
+                {col.links.map(([label, href]) => (
+                  <li key={label}>
+                    <Link
+                      href={href}
+                      className="font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors"
+                    >
+                      {label}
+                    </Link>
                   </li>
                 ))}
               </ul>
