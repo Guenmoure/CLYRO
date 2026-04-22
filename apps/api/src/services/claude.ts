@@ -161,14 +161,15 @@ Pour chaque scène, génère :
 - "index": numéro de scène (commence à 0)
 - "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). DOIT respecter le style visuel ci-dessus. Ne jamais mentionner de personnes identifiables.
 - "animation_prompt": prompt de mouvement en ANGLAIS pour image-to-video (max 80 chars). Décrit le mouvement de caméra et l'action visible : ex "slow zoom in, character gestures forward, subtle breathing motion", "camera pans left, gentle wind effect, dynamic energy".
-- "texte_voix": OBLIGATOIRE — texte narré en français pendant cette scène. Toujours rempli, jamais vide. Correspond exactement au contenu du script pour cette partie.
+- "texte_voix": OBLIGATOIRE — texte narré DANS LA MÊME LANGUE QUE LE SCRIPT fourni plus bas (FR, EN, ES, DE, IT, PT, NL, etc.). Ne traduis JAMAIS. Toujours rempli, jamais vide. Correspond exactement au contenu du script pour cette partie.
 - "duree_estimee": durée en secondes (nombre entier, entre 3 et 10)
 
 RÈGLES CRITIQUES :
-1. description_visuelle DOIT visuellement correspondre au style "${style}" — applique strictement : ${styleGuide}
-2. animation_prompt DOIT décrire un mouvement concret visible dans la scène (jamais générique)
-3. texte_voix est OBLIGATOIRE sur chaque scène — distribue le script complet sur toutes les scènes
-4. La somme des duree_estimee doit être cohérente avec la longueur du script
+1. LANGUE : détecte la langue du script ci-dessous et produis tous les "texte_voix" dans CETTE langue. Ne traduis jamais. Les "description_visuelle" et "animation_prompt" restent en ANGLAIS comme spécifié (c'est Flux/Kling qui les consomme, pas l'utilisateur).
+2. description_visuelle DOIT visuellement correspondre au style "${style}" — applique strictement : ${styleGuide}
+3. animation_prompt DOIT décrire un mouvement concret visible dans la scène (jamais générique)
+4. texte_voix est OBLIGATOIRE sur chaque scène — distribue le script complet sur toutes les scènes, SANS le traduire
+5. La somme des duree_estimee doit être cohérente avec la longueur du script
 
 Script :
 """
@@ -287,8 +288,8 @@ Pour chaque scène, génère :
 - "id": "scene_001", "scene_002", etc.
 - "index": numéro de scène (commence à 0)
 - "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). Doit respecter STRICTEMENT le style "${style}" : ${styleGuide}. Aucune personne identifiable. VIDE ("") si needs_background est false.
-- "display_text": texte court et percutant en français affiché à l'écran (max 8 mots). Différent de texte_voix. OBLIGATOIRE sur chaque scène.
-- "texte_voix": voix off publicitaire en français (peut être vide si scène visuelle sans narration)
+- "display_text": texte court et percutant DANS LA MÊME LANGUE que le brief/script fourni (max 8 mots). Différent de texte_voix. OBLIGATOIRE sur chaque scène. Ne traduis jamais.
+- "texte_voix": voix off publicitaire DANS LA MÊME LANGUE que le brief/script fourni (peut être vide si scène visuelle sans narration). Ne traduis jamais.
 - "duree_estimee": durée en secondes (entre 2 et 8)
 - "animation_type": type d'animation Remotion — choisir parmi : "slide-in" (texte glisse depuis le bas), "zoom" (zoom dramatique image+texte), "fade" (fondu doux), "particle-burst" (explosion de particules colorées), "typewriter" (texte s'écrit caractère par caractère). Varié, jamais le même 2 fois consécutivement.
 - "scene_type": type de scène Remotion — choisir parmi : "text_hero" (typographie plein écran, pas d'image), "split_text_image" (texte gauche, image droite), "product_showcase" (image produit centrée, logo + CTA), "stats_counter" (chiffre animé, display_text = la valeur ex: "87%"), "cta_end" (UNIQUEMENT sur la DERNIÈRE scène, appel à l'action final), "image_full" (image plein cadre avec texte overlay — style narratif/cinématique)
@@ -296,13 +297,14 @@ Pour chaque scène, génère :
 - "cta_text": texte du bouton call-to-action UNIQUEMENT sur la dernière scène (ex: "Essayez gratuitement"), null pour toutes les autres
 
 RÈGLES PUBLICITÉ :
-1. Structure narrative : Accroche → Problème → Solution → Bénéfice → Call to action
-2. Chaque scène doit avoir un impact visuel fort et immédiat
-3. La description_visuelle DOIT coller au style "${style}" — vide si needs_background est false
-4. La DERNIÈRE scène : needs_background: false, animation_type: "slide-in", scene_type: "cta_end", display_text: message CTA fort
-5. Varie les animation_type sur l'ensemble des scènes
-6. display_text = accroche principale visible à l'écran, courte et punchy
-7. RÈGLES scene_type : Première scène → souvent "text_hero" pour accrocher. Scènes narratives → "image_full". Scènes chiffrées → "stats_counter" (display_text = la valeur chiffrée ex: "87%"). Produit mis en avant → "product_showcase". Explication visuelle → "split_text_image". DERNIÈRE scène → toujours "cta_end" avec needs_background: false.
+1. LANGUE : display_text et texte_voix DOIVENT être dans la même langue que le brief/script fourni (FR, EN, ES, DE, IT, PT, NL, etc.). Ne traduis JAMAIS. description_visuelle reste en ANGLAIS (Flux la consomme).
+2. Structure narrative : Accroche → Problème → Solution → Bénéfice → Call to action
+3. Chaque scène doit avoir un impact visuel fort et immédiat
+4. La description_visuelle DOIT coller au style "${style}" — vide si needs_background est false
+5. La DERNIÈRE scène : needs_background: false, animation_type: "slide-in", scene_type: "cta_end", display_text: message CTA fort
+6. Varie les animation_type sur l'ensemble des scènes
+7. display_text = accroche principale visible à l'écran, courte et punchy
+8. RÈGLES scene_type : Première scène → souvent "text_hero" pour accrocher. Scènes narratives → "image_full". Scènes chiffrées → "stats_counter" (display_text = la valeur chiffrée ex: "87%"). Produit mis en avant → "product_showcase". Explication visuelle → "split_text_image". DERNIÈRE scène → toujours "cta_end" avec needs_background: false.
 
 Réponds UNIQUEMENT avec ce JSON valide :
 {
@@ -405,7 +407,7 @@ Chaque scène est un objet JSON avec ces champs :
 - "type": l'un des types de scène ci-dessous
 - "duration": durée en frames (30 fps) — entre 60 (2s) et 210 (7s)
 - "props": objet de props selon le type (voir types ci-dessous)
-- "voiceover": texte narré en français pendant cette scène (peut être "")
+- "voiceover": texte narré DANS LA MÊME LANGUE que le brief fourni, ne traduis jamais (peut être "" pour les scènes sans narration)
 
 TYPES DE SCÈNES DISPONIBLES :
 
@@ -428,12 +430,13 @@ TYPES DE SCÈNES DISPONIBLES :
    props: { type: "logo_reveal", logoUrl: "${logoUrl ?? color}", tagline?: string, brandColor: "${color}", style?: "assemble"|"scale_bounce"|"particles_in", mode: "dark"|"light" }
 
 RÈGLES :
-1. Commence toujours par hero_typo (accroche forte)
-2. Termine toujours par logo_reveal ou hero_typo (CTA)
-3. Varie les types — jamais deux hero_typo consécutifs
-4. mode "dark" pour scènes dramatiques/premium, "light" pour scènes claires/produit
-5. Les stats_counter doivent avoir des chiffres réels et pertinents pour le brief
-6. voiceover distribue la narration sur les scènes clés (peut être vide sur dark_light_switch)
+1. LANGUE : tous les champs text/subtext/headline/label/tagline/voiceover DOIVENT être dans la même langue que le brief ci-dessus (FR, EN, ES, DE, IT, PT, NL, etc.). Ne traduis JAMAIS le brief.
+2. Commence toujours par hero_typo (accroche forte)
+3. Termine toujours par logo_reveal ou hero_typo (CTA)
+4. Varie les types — jamais deux hero_typo consécutifs
+5. mode "dark" pour scènes dramatiques/premium, "light" pour scènes claires/produit
+6. Les stats_counter doivent avoir des chiffres réels et pertinents pour le brief
+7. voiceover distribue la narration sur les scènes clés (peut être vide sur dark_light_switch)
 
 Réponds UNIQUEMENT avec ce JSON valide :
 {
