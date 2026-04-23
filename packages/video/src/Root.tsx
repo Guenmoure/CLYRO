@@ -2,12 +2,15 @@ import React from 'react'
 import { Composition, registerRoot } from 'remotion'
 import { BrandOverlay, BrandOverlayProps } from './compositions/BrandOverlay'
 import { DynamicComposition } from './compositions/DynamicComposition'
+import { InfographicChart, InfographicChartProps } from './compositions/scenes/InfographicChart'
 import type { ComponentType } from 'react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const BrandOverlayAny = BrandOverlay as ComponentType<any>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const DynamicCompositionAny = DynamicComposition as ComponentType<any>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const InfographicChartAny = InfographicChart as ComponentType<any>
 
 const DEFAULT_FPS = 30
 
@@ -94,6 +97,62 @@ const RemotionRoot: React.FC = () => (
       width={1080}
       height={1080}
       defaultProps={{ ...defaultProps, format: '1:1' }}
+    />
+
+    {/*
+      InfographicChart — programmatic bar chart for faceless/infographie scenes.
+      Pixel-perfect numbers (no diffusion model involved), registered in all
+      three formats so the pipeline can render it via renderMedia() when a
+      storyboard scene carries chart data. Durations here are nominal; actual
+      render uses `durationFrames` from inputProps.
+    */}
+    <Composition
+      id="InfographicChart-16-9"
+      component={InfographicChartAny}
+      durationInFrames={DEFAULT_FPS * 5}
+      fps={DEFAULT_FPS}
+      width={1920}
+      height={1080}
+      defaultProps={{
+        title: 'Sample Chart',
+        bars: [
+          { label: 'Alpha', value: 87, suffix: '%' },
+          { label: 'Beta',  value: 64, suffix: '%' },
+          { label: 'Gamma', value: 42, suffix: '%' },
+        ],
+      } satisfies InfographicChartProps}
+    />
+    <Composition
+      id="InfographicChart-9-16"
+      component={InfographicChartAny}
+      durationInFrames={DEFAULT_FPS * 5}
+      fps={DEFAULT_FPS}
+      width={1080}
+      height={1920}
+      defaultProps={{
+        title: 'Sample Chart',
+        bars: [
+          { label: 'Alpha', value: 87, suffix: '%' },
+          { label: 'Beta',  value: 64, suffix: '%' },
+          { label: 'Gamma', value: 42, suffix: '%' },
+        ],
+      } satisfies InfographicChartProps}
+    />
+    <Composition
+      id="InfographicChart-1-1"
+      component={InfographicChartAny}
+      durationInFrames={DEFAULT_FPS * 5}
+      fps={DEFAULT_FPS}
+      width={1080}
+      height={1080}
+      defaultProps={{
+        title: 'Sample Chart',
+        bars: [
+          { label: 'Alpha', value: 87, suffix: '%' },
+          { label: 'Beta',  value: 64, suffix: '%' },
+          { label: 'Gamma', value: 42, suffix: '%' },
+        ],
+      } satisfies InfographicChartProps}
     />
   </>
 )

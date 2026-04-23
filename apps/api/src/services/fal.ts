@@ -177,9 +177,12 @@ export async function generateSceneImage(
   modelOverride?: string
 ): Promise<GenerateImageResult> {
   const styleConfig = STYLE_CONFIGS[style] ?? DEFAULT_STYLE
-  // Single-pass: always schnell. modelOverride accepted for API-compat but ignored.
-  const model = 'fal-ai/flux/schnell'
-  void modelOverride
+  // Model is now routed per style via F1_STYLE_MODEL_MAP (see fal-models.ts):
+  //   - flux/schnell     → cinematique, stock-vo, 3d-pixar, luxe, fun, … (pure imagery)
+  //   - flux-pro v1.1    → flat-design, minimaliste (typography-sensitive)
+  //   - ideogram v2      → infographie, motion-graphics, whiteboard (text-heavy)
+  // modelOverride still wins if an upstream caller insists.
+  const model = modelOverride ?? selectFalModelForF1Style(style)
   // Brand color injection: append palette hint so fal.ai respects the brand palette
   const brandSuffix = brand
     ? `, color palette ${brand.primary_color}${brand.secondary_color ? ` and ${brand.secondary_color}` : ''}`
@@ -191,6 +194,11 @@ export async function generateSceneImage(
   const styleSuffix = styleConfig.prompt_suffix.replace(/^\s*,/, '').trim()
   const fullPrompt = `${prompt}, ${stylePrefix}, ${styleSuffix}${brandSuffix}`
 
+  const useAspectRatio = ASPECT_RATIO_MODELS.has(model)
+  const isIdeogram    = model.startsWith('fal-ai/ideogram/')
+  const isFluxPro     = model.startsWith('fal-ai/flux-pro/')
+  const isFluxSchnell = model === 'fal-ai/flux/schnell'
+
   let lastError: Error | null = null
 
   for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
@@ -199,14 +207,31 @@ export async function generateSceneImage(
 
       const input: Record<string, unknown> = {
         prompt: fullPrompt,
+        num_images: 1,
+      }
+
+      if (useAspectRatio) {
+        // Ideogram + flux-pro use aspect_ratio, not {width,height}.
+        input.aspect_ratio = IMAGE_SIZE_TO_ASPECT_RATIO[styleConfig.image_size] ?? '16:9'
+      } else {
+        // Flux schnell/dev — explicit pixel dims keep every scene at identical resolution.
+        input.image_size =
+          IMAGE_SIZE_TO_DIMS[styleConfig.image_size] ?? { width: 1536, height: 864 }
+      }
+
+      if (isFluxSchnell) {
         // 8 is the max useful inference steps for flux/schnell — visibly
         // sharper than the default 4, still under ~5s per image.
-        num_inference_steps: 8,
-        num_images: 1,
-        // Explicit {width,height} keeps every scene at the exact same resolution
-        // regardless of the style's image_size preset. Defaults to 1536×864.
-        image_size:
-          IMAGE_SIZE_TO_DIMS[styleConfig.image_size] ?? { width: 1536, height: 864 },
+        input.num_inference_steps = 8
+      } else if (isFluxPro) {
+        // flux-pro v1.1 has a fixed internal step count; expose safety_tolerance instead.
+        input.safety_tolerance = '2'
+        input.output_format   = 'jpeg'
+      } else if (isIdeogram) {
+        // Ideogram: "design" style matches our flat/motion-graphics aesthetic best;
+        // expand_prompt=false keeps our carefully-crafted prompt intact.
+        input.style          = 'design'
+        input.expand_prompt  = false
       }
 
       // Seed fixe = character consistency entre scènes (PDF: cref pattern)

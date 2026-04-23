@@ -151,6 +151,106 @@ function escapeDrawtext(raw: string): string {
     .replace(/'/g,  "'\\''")
 }
 
+// ── Scene overlay (programmatic text burn) ─────────────────────────────────
+// Used when a stat/title/quote/CTA must render pixel-perfect on top of an
+// image or clip — diffusion models (Flux, Ideogram) cannot be trusted to
+// render readable text, so we burn it in post via drawtext.
+
+export type OverlayPosition =
+  | 'top-center'    | 'top-left'    | 'top-right'
+  | 'center'
+  | 'bottom-center' | 'bottom-left' | 'bottom-right'
+
+export type OverlayEmphasis = 'stat' | 'title' | 'quote' | 'cta' | 'default'
+
+export interface OverlayOptions {
+  text: string
+  position?: OverlayPosition
+  emphasis?: OverlayEmphasis
+}
+
+/**
+ * Resolves the drawtext font path on disk, trying the primary Liberation Sans
+ * Bold first (installed in the Docker image) then the macOS dev fallback.
+ * Returns null if neither is available — caller should skip the overlay and
+ * log a warning rather than fail the render.
+ */
+function resolveOverlayFont(): string | null {
+  if (existsSync(DRAWTEXT_FONT_PRIMARY))  return DRAWTEXT_FONT_PRIMARY
+  if (existsSync(DRAWTEXT_FONT_FALLBACK)) return DRAWTEXT_FONT_FALLBACK
+  return null
+}
+
+/**
+ * Builds an ffmpeg `drawtext=...` filter string from overlay options. Returns
+ * null if no font is available on disk or the text is empty.
+ *
+ * Font size and box styling are computed per `emphasis`:
+ *   - stat    → very large, semi-transparent box (the number is the star)
+ *   - title   → medium-large, solid box (headline treatment)
+ *   - quote   → medium, soft box, wider line spacing
+ *   - cta     → small-medium, brand-accent box
+ *   - default → medium with black box (legacy bottom-caption look)
+ */
+function buildOverlayFilter(
+  overlay: OverlayOptions,
+  width: number,
+  height: number,
+): string | null {
+  const fontPath = resolveOverlayFont()
+  if (!fontPath) return null
+
+  const text = overlay.text?.trim()
+  if (!text) return null
+
+  const emphasis = overlay.emphasis ?? 'default'
+  const position = overlay.position ?? (emphasis === 'cta' ? 'bottom-center' : 'center')
+
+  // Base font size as a percentage of output height.
+  const baseRatio =
+      emphasis === 'stat'   ? 0.14
+    : emphasis === 'title'  ? 0.075
+    : emphasis === 'quote'  ? 0.055
+    : emphasis === 'cta'    ? 0.055
+    : 0.045
+  const fontSize = Math.max(24, Math.round(height * baseRatio))
+  const boxBorder = Math.max(10, Math.round(fontSize * 0.35))
+
+  // Box styling — stat is punchier (thicker border, darker box); others softer.
+  const boxColor =
+      emphasis === 'stat'  ? 'black@0.70'
+    : emphasis === 'cta'   ? 'black@0.75'
+    : emphasis === 'title' ? 'black@0.65'
+    : 'black@0.55'
+
+  // X position — left / center / right with an 8% safe-area margin.
+  const marginX = Math.round(width * 0.06)
+  const xExpr =
+      position.endsWith('-left')   ? `${marginX}`
+    : position.endsWith('-right')  ? `w-text_w-${marginX}`
+    : '(w-text_w)/2'
+
+  // Y position — top / center / bottom with an 8% safe-area margin.
+  const marginY = Math.round(height * 0.08)
+  const yExpr =
+      position.startsWith('top-')    ? `${marginY}`
+    : position.startsWith('bottom-') ? `h-text_h-${marginY}`
+    : '(h-text_h)/2'
+
+  return [
+    `drawtext=fontfile='${fontPath}'`,
+    `text='${escapeDrawtext(text)}'`,
+    `fontsize=${fontSize}`,
+    `fontcolor=white`,
+    `box=1`,
+    `boxcolor=${boxColor}`,
+    `boxborderw=${boxBorder}`,
+    `x=${xExpr}`,
+    `y=${yExpr}`,
+    `line_spacing=6`,
+  ].join(':')
+}
+
 /**
  * Génère un clip Ken Burns (zoom+pan) sur une image statique via FFmpeg zoompan.
  * 50× plus rapide que Remotion/Chromium — aucune dépendance Chrome.
@@ -164,9 +264,12 @@ export async function renderKenBurnsFFmpeg(options: {
   durationSeconds: number
   sceneIndex?: number
   format?: '16:9' | '9:16' | '1:1'
+  /** Legacy string overlay — treated as a bottom-center caption. */
   overlayText?: string
+  /** Preferred: typed overlay with position + emphasis (stat/title/quote/cta). */
+  overlay?: OverlayOptions
 }): Promise<Buffer> {
-  const { imageUrl, durationSeconds, sceneIndex = 0, format = '16:9', overlayText } = options
+  const { imageUrl, durationSeconds, sceneIndex = 0, format = '16:9', overlayText, overlay } = options
   const { width, height } = FORMAT_DIMS_KB[format] ?? FORMAT_DIMS_KB['16:9']
   const durationFrames = Math.max(30, Math.round(durationSeconds * 30))
   const preset = KB_FFMPEG_PRESETS[sceneIndex % KB_FFMPEG_PRESETS.length]
@@ -175,44 +278,24 @@ export async function renderKenBurnsFFmpeg(options: {
   const scaleW = width * 2
   const scaleH = height * 2
 
-  // Caption sizing: ~4.5% of output height → roughly 32px at 720p, 58px at 1280p
-  // (vertical). Box padding scales with fontsize so it stays proportional.
   const filterParts = [
     `scale=${scaleW}:${scaleH}:force_original_aspect_ratio=increase`,
     `crop=${scaleW}:${scaleH}`,
     `zoompan=z='${preset.z}':x='${preset.x}':y='${preset.y}':d=${durationFrames}:s=${width}x${height}:fps=30`,
   ]
 
-  const trimmed = overlayText?.trim()
-  if (trimmed && trimmed.length > 0) {
-    const fontSize = Math.max(22, Math.round(height * 0.045))
-    const boxBorder = Math.max(8, Math.round(fontSize * 0.35))
-    // Try primary path, fall back gracefully. drawtext errors out if the font is
-    // missing, so we resolve to the first path that exists on disk at render time.
-    const fontPath = existsSync(DRAWTEXT_FONT_PRIMARY)
-      ? DRAWTEXT_FONT_PRIMARY
-      : existsSync(DRAWTEXT_FONT_FALLBACK)
-        ? DRAWTEXT_FONT_FALLBACK
-        : null
+  // Resolve overlay: prefer the typed variant, fall back to the legacy string.
+  const resolvedOverlay: OverlayOptions | null =
+      overlay
+    ? overlay
+    : overlayText && overlayText.trim().length > 0
+      ? { text: overlayText, position: 'bottom-center', emphasis: 'default' }
+      : null
 
-    if (fontPath) {
-      const text = escapeDrawtext(trimmed)
-      filterParts.push(
-        [
-          `drawtext=fontfile='${fontPath}'`,
-          `text='${text}'`,
-          `fontsize=${fontSize}`,
-          `fontcolor=white`,
-          `box=1`,
-          `boxcolor=black@0.55`,
-          `boxborderw=${boxBorder}`,
-          // Bottom-centered with a safe-area margin of ~8% of height.
-          `x=(w-text_w)/2`,
-          `y=h-text_h-${Math.round(height * 0.08)}`,
-          // Line-wrap longer overlays at ~80% of the frame width.
-          `line_spacing=6`,
-        ].join(':'),
-      )
+  if (resolvedOverlay) {
+    const drawtext = buildOverlayFilter(resolvedOverlay, width, height)
+    if (drawtext) {
+      filterParts.push(drawtext)
     } else {
       logger.warn({ sceneIndex }, 'drawtext: no font available — overlay skipped')
     }
@@ -317,6 +400,63 @@ export async function adjustClipDurationFromUrl(
   ])
 
   // Nettoyer le fichier source (pas le dossier — l'appelant lit outPath)
+  await unlink(srcPath).catch(() => null)
+  return outPath
+}
+
+/**
+ * Burne un overlay texte (drawtext) sur un clip vidéo existant (typiquement un
+ * clip Kling après re-sync). Retourne le chemin absolu du MP4 avec overlay
+ * appliqué, prêt à être uploadé et concaténé.
+ *
+ * No-op silencieux (retourne le clip inchangé via copyFile) si :
+ *   - overlay.text est vide,
+ *   - aucune font disponible,
+ *   - emphasis indique un overlay purement décoratif.
+ */
+export async function applyOverlayToClipUrl(
+  clipUrl: string,
+  overlay: OverlayOptions,
+  format: '16:9' | '9:16' | '1:1' = '16:9',
+): Promise<string> {
+  const workDir = join(tmpdir(), `clyro-overlay-${randomUUID()}`)
+  await mkdir(workDir, { recursive: true })
+  const srcPath = join(workDir, 'src.mp4')
+  const outPath = join(workDir, 'out.mp4')
+
+  // Télécharger le clip source (URL Supabase Storage publique ou file://)
+  if (clipUrl.startsWith('file://')) {
+    await copyFile(clipUrl.replace(/^file:\/\//, ''), srcPath)
+  } else {
+    const res = await fetch(clipUrl, { signal: AbortSignal.timeout(30_000) })
+    if (!res.ok) throw new Error(`applyOverlay: failed to download clip (${res.status})`)
+    await writeFile(srcPath, Buffer.from(await res.arrayBuffer()))
+  }
+
+  const { width, height } = FORMAT_DIMS_KB[format] ?? FORMAT_DIMS_KB['16:9']
+  const drawtext = buildOverlayFilter(overlay, width, height)
+
+  // Pas de font disponible ou texte vide → on retourne le clip inchangé.
+  if (!drawtext) {
+    logger.warn({ clipUrl: clipUrl.slice(0, 80) }, 'applyOverlay: skipped (no font or empty text)')
+    await copyFile(srcPath, outPath)
+    await unlink(srcPath).catch(() => null)
+    return outPath
+  }
+
+  // Ré-encode h264/yuv420p pour rester compatible avec concatenateClips
+  // (le concat demuxer exige les mêmes codec/pix_fmt/dimensions entre clips).
+  await runFFmpeg([
+    '-i', srcPath,
+    '-vf', drawtext,
+    '-c:v', 'libx264',
+    '-preset', 'veryfast',
+    '-crf', '23',
+    '-pix_fmt', 'yuv420p',
+    '-c:a', 'copy',
+    outPath,
+  ])
+
   await unlink(srcPath).catch(() => null)
   return outPath
 }

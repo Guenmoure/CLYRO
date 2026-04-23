@@ -24,25 +24,35 @@ const SCENE_COUNT_MAP: Record<string, number> = {
 }
 
 // Instructions visuelles par style — transmises à Claude pour générer description_visuelle cohérente avec fal.ai
+//
+// Règle d'or : styles routés sur flux/schnell (cinematique, stock-vo, 3d-pixar,
+// animation-2d, flat-design, stickman, corporate, luxe, fun, dynamique) ne DOIVENT
+// JAMAIS demander de texte/chiffres/labels lisibles — schnell les rend illisibles.
+// Seuls infographie / motion-graphics / whiteboard routent sur Ideogram v2 qui
+// sait réellement écrire du texte, donc ces trois styles peuvent inclure des labels.
 const STYLE_VISUAL_GUIDE: Record<string, string> = {
-  // Faceless — Catégorie 1 : Narratif & Immersif
-  'cinematique':      'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain — movie still quality, NO illustration',
-  'stock-vo':         'National Geographic style, natural light, realistic textures, real-world documentary scene — fully photorealistic, no illustration, no cartoon',
-  // Faceless — Catégorie 2 : Explicatif & Didactique (PDF 4-style canonical)
-  'whiteboard':       'hand-drawn sketch on whiteboard, black marker on plain white — NO color fills, NO shading, rough strokes only, RSA Animate educational style',
-  'stickman':         'black stick figures and geometric shapes on white background, RSA animate bonhommes style — NO fills, NO gradients, bold expressive line drawing, symbolic minimal storytelling',
-  'minimaliste':      'simple black line art on white background, minimalist stickman/stick-figure illustration — NO fills, NO gradients, ultra clean linework only',
-  'flat-design':      'flat vector illustration, bold solid colors, no shadows, no gradients, Dribbble-quality SVG aesthetic — modern digital design, geometric shapes, vibrant palette',
-  'infographie':      'flat icon infographic, animated data visualization chart, color-coded sections, isometric perspective — informational design, professional B2B',
-  '3d-pixar':         'Pixar-style 3D CGI render, claymation texture, rounded adorable characters, soft studio lighting, rich vibrant colors — Disney Pixar movie quality, no photorealism',
-  // Faceless — Catégorie 3 : Design & Rythme
-  'motion-graphics':  'flat design motion graphics, geometric shapes, vibrant vector colors, bold animated typography, kinetic composition — tech brand, high-end ad quality',
-  'animation-2d':     'flat vector 2D cartoon illustration, bold outlines, vibrant saturated colors — absolutely NO photorealism, no 3D, traditional animation frame',
-  // Motion styles
-  'corporate':        'clean corporate business illustration, navy blue / white palette, minimal geometric shapes — professional B2B',
-  'dynamique':        'high-energy composition, motion blur, neon accents on dark background, diagonal lines — sports / action',
-  'luxe':             'luxury brand photography, gold and black palette, bokeh, marble surfaces — high-fashion editorial',
-  'fun':              'playful cartoon, candy-colored palette, bubbly rounded shapes, confetti — kawaii cheerful style',
+  // Faceless — Catégorie 1 : Narratif & Immersif  (schnell)
+  'cinematique':      'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain — movie still quality, NO illustration, NO visible text or letters in frame',
+  'stock-vo':         'National Geographic style, natural light, realistic textures, real-world documentary scene — fully photorealistic, no illustration, no cartoon, NO signs or readable text in frame',
+  // Faceless — Catégorie 2 : Explicatif & Didactique
+  // whiteboard → Ideogram v2 (text-heavy): can include handwritten annotations, arrows, callouts
+  'whiteboard':       'hand-drawn sketch on whiteboard, black marker on plain white — NO color fills, NO shading, rough strokes only, RSA Animate educational style — handwritten single-word labels and arrows are OK (rendered via Ideogram)',
+  // stickman / minimaliste / flat-design → schnell: NO text
+  'stickman':         'black stick figures and geometric shapes on white background, RSA animate bonhommes style — NO fills, NO gradients, NO text, bold expressive line drawing, symbolic minimal storytelling',
+  'minimaliste':      'simple black line art on white background, minimalist stickman/stick-figure illustration — NO fills, NO gradients, NO text or labels, ultra clean linework only',
+  'flat-design':      'flat vector illustration, bold solid colors, no shadows, no gradients, Dribbble-quality SVG aesthetic — modern digital design, geometric shapes, vibrant palette, NO visible text or readable labels',
+  // infographie → Ideogram v2: can include readable percentages, labels, axis text
+  'infographie':      'flat icon infographic, data visualization chart with simple bar/donut/line graph, color-coded sections, isometric perspective — professional B2B editorial design, readable axis labels and short percentage callouts are OK (rendered via Ideogram)',
+  // 3d-pixar, animation-2d → schnell: NO text
+  '3d-pixar':         'Pixar-style 3D CGI render, claymation texture, rounded adorable characters, soft studio lighting, rich vibrant colors — Disney Pixar movie quality, no photorealism, NO visible text in frame',
+  'animation-2d':     'flat vector 2D cartoon illustration, bold outlines, vibrant saturated colors — absolutely NO photorealism, no 3D, NO readable text, traditional animation frame',
+  // motion-graphics → Ideogram v2: can include bold animated typography
+  'motion-graphics':  'flat design motion graphics, geometric shapes, vibrant vector colors, kinetic composition — tech brand, high-end ad quality, bold typographic headline (1-3 words max, rendered via Ideogram)',
+  // Motion styles — all schnell
+  'corporate':        'clean corporate business illustration, navy blue / white palette, minimal geometric shapes — professional B2B, NO visible text in frame',
+  'dynamique':        'high-energy composition, motion blur, neon accents on dark background, diagonal lines — sports / action, NO readable text',
+  'luxe':             'luxury brand photography, gold and black palette, bokeh, marble surfaces — high-fashion editorial, NO visible text or typography',
+  'fun':              'playful cartoon, candy-colored palette, bubbly rounded shapes, confetti — kawaii cheerful style, NO visible text',
 }
 
 interface StoryboardResult {
@@ -143,6 +153,16 @@ export async function generateStoryboard(
 
   const systemPrompt = `Tu es un expert en production vidéo et en storytelling visuel.
 Tu génères des storyboards précis et professionnels pour des vidéos sans présentateur.
+
+RÈGLE CRITIQUE — Texte dans l'image :
+Les modèles de diffusion (Flux, Ideogram) ne savent PAS écrire du texte lisible de manière fiable.
+→ Les chiffres précis, stats, titres, quotes et CTA sont TOUJOURS rendus en post-production
+  sous forme d'overlay (drawtext). Tu les mets dans le champ "overlay", JAMAIS dans
+  "description_visuelle".
+→ "description_visuelle" ne décrit QUE l'arrière-plan visuel (décor, personnages, ambiance,
+  formes abstraites). Si la scène exprime une donnée, décris le GRAPHIQUE MUET
+  (ex: "bar chart silhouette, three rising bars") — pas les chiffres.
+
 Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
 
   const styleGuide = STYLE_VISUAL_GUIDE[style] ?? 'professional visual composition'
@@ -159,10 +179,17 @@ STYLE VISUEL OBLIGATOIRE pour description_visuelle : ${styleGuide}${brandContext
 Pour chaque scène, génère :
 - "id": identifiant unique ("scene_001", "scene_002", etc.)
 - "index": numéro de scène (commence à 0)
-- "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). DOIT respecter le style visuel ci-dessus. Ne jamais mentionner de personnes identifiables.
+- "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). DOIT respecter le style visuel ci-dessus. Ne jamais mentionner de personnes identifiables. NE demande JAMAIS de chiffres/stats/titres/quotes lisibles dans l'image — ils vont dans "overlay".
 - "animation_prompt": prompt de mouvement en ANGLAIS pour image-to-video (max 80 chars). Décrit le mouvement de caméra et l'action visible : ex "slow zoom in, character gestures forward, subtle breathing motion", "camera pans left, gentle wind effect, dynamic energy".
 - "texte_voix": OBLIGATOIRE — texte narré DANS LA MÊME LANGUE QUE LE SCRIPT fourni plus bas (FR, EN, ES, DE, IT, PT, NL, etc.). Ne traduis JAMAIS. Toujours rempli, jamais vide. Correspond exactement au contenu du script pour cette partie.
 - "duree_estimee": durée en secondes (nombre entier, entre 3 et 10)
+- "overlay" (OPTIONNEL) : objet { "type": "stat" | "title" | "quote" | "cta", "text": "...", "position": "top-center" | "center" | "bottom-center" | ... }
+  → À renseigner UNIQUEMENT si le texte_voix contient un chiffre précis, une stat marquante,
+    un titre punchy, une citation, ou un CTA de fin. Ex :
+      texte_voix: "87% des PME échouent en 3 ans." → overlay: { type: "stat", text: "87%", position: "center" }
+      texte_voix: "Voici la règle numéro un." → overlay: { type: "title", text: "Règle n°1", position: "top-center" }
+      texte_voix: "Abonne-toi maintenant." → overlay: { type: "cta", text: "Abonne-toi", position: "bottom-center" }
+  → "text" reste dans la LANGUE DU SCRIPT. Max 30 caractères. Absent si la scène n'a pas de point-clé mémorable.
 
 RÈGLES CRITIQUES :
 1. LANGUE : détecte la langue du script ci-dessous et produis tous les "texte_voix" dans CETTE langue. Ne traduis jamais. Les "description_visuelle" et "animation_prompt" restent en ANGLAIS comme spécifié (c'est Flux/Kling qui les consomme, pas l'utilisateur).
@@ -170,6 +197,7 @@ RÈGLES CRITIQUES :
 3. animation_prompt DOIT décrire un mouvement concret visible dans la scène (jamais générique)
 4. texte_voix est OBLIGATOIRE sur chaque scène — distribue le script complet sur toutes les scènes, SANS le traduire
 5. La somme des duree_estimee doit être cohérente avec la longueur du script
+6. Chiffres, stats, titres, CTA → champ "overlay" UNIQUEMENT, jamais dans "description_visuelle"
 
 Script :
 """

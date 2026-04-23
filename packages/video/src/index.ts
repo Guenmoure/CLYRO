@@ -12,6 +12,12 @@ export type { KenBurnsClipProps } from './compositions/KenBurnsClip'
 
 export { DynamicComposition } from './compositions/DynamicComposition'
 
+// Programmatic bar chart for infographie / data-driven scenes.
+// Pixel-perfect values (React/SVG, not diffusion) — the only reliable way to
+// show precise percentages or multi-series data in a faceless video.
+export { InfographicChart } from './compositions/scenes/InfographicChart'
+export type { InfographicChartProps, ChartBar } from './compositions/scenes/InfographicChart'
+
 // ── F2 Motion Design ──────────────────────────────────────────────────────────
 export { MotionComposition } from './compositions/motion/MotionComposition'
 export type {

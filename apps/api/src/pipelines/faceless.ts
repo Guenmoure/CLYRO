@@ -297,6 +297,31 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       klingSceneAudioDurations.set(audioResult.sceneId, audioDuration > 5 ? '10' : '5')
     }
 
+    // Index overlays par scene.id (partagé entre Ken Burns et Kling) :
+    //   1. preGeneratedScenes[].overlay_text (Motion Design front)  → string legacy
+    //   2. storyboard.scenes[].overlay (Claude storyboard)          → typed, position/emphasis
+    type OverlayOpts = { text: string; position?: 'top-center' | 'top-left' | 'top-right' | 'center' | 'bottom-center' | 'bottom-left' | 'bottom-right'; emphasis?: 'stat' | 'title' | 'quote' | 'cta' | 'default' }
+    const overlayTextBySceneId = new Map<string, string>()
+    const overlayOptsBySceneId = new Map<string, OverlayOpts>()
+    if (preGeneratedScenes) {
+      for (const s of preGeneratedScenes) {
+        if (s.overlay_text && s.overlay_text.trim().length > 0) {
+          overlayTextBySceneId.set(s.id, s.overlay_text.trim())
+        }
+      }
+    }
+    for (const s of storyboard.scenes) {
+      if (overlayTextBySceneId.has(s.id)) continue
+      const ov = s.overlay
+      if (ov && ov.text && ov.text.trim().length > 0) {
+        overlayOptsBySceneId.set(s.id, {
+          text: ov.text.trim(),
+          position: ov.position,
+          emphasis: ov.type,
+        })
+      }
+    }
+
     // Clips vidéo : utiliser ceux du frontend si disponibles, sinon générer via Ken Burns ou Kling i2v
     let sceneVideoUrls: Array<{ sceneId: string; videoUrl: string }>
     const kenBurnsTmpDir = `clyro-kb-${videoId}`
@@ -324,17 +349,8 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       // Concurrence 4 : FFmpeg est léger (pas de browser), 4 clips simultanés.
       const KB_CONCURRENCY = 4
 
-      // Index overlay_text par scene.id pour le drawtext ffmpeg.
-      // Seulement alimenté si le frontend a envoyé pre_generated_scenes avec
-      // un champ overlay_text non vide.
-      const overlayTextBySceneId = new Map<string, string>()
-      if (preGeneratedScenes) {
-        for (const s of preGeneratedScenes) {
-          if (s.overlay_text && s.overlay_text.trim().length > 0) {
-            overlayTextBySceneId.set(s.id, s.overlay_text.trim())
-          }
-        }
-      }
+      // overlayTextBySceneId + overlayOptsBySceneId are already built above,
+      // shared across both Ken Burns and Kling paths.
 
       const kbResults: PromiseSettledResult<{ sceneId: string; videoUrl: string }>[] = []
       for (let i = 0; i < sceneImages.length; i += KB_CONCURRENCY) {
@@ -350,12 +366,16 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
             const durationSec = exactAudioDur && exactAudioDur > 0.5
               ? Math.round(exactAudioDur * 100) / 100
               : 5
+            const typedOverlay = overlayOptsBySceneId.get(sceneId)
             const mp4Buffer = await renderKenBurnsFFmpeg({
               imageUrl,
               durationSeconds: durationSec,
               sceneIndex: idx,
               format: videoFormat as '16:9' | '9:16' | '1:1',
-              overlayText: overlayTextBySceneId.get(sceneId),
+              // Typed overlay from Claude storyboard takes priority; string
+              // overlay from Motion Design (pre-generated scenes) is the fallback.
+              overlay: typedOverlay,
+              overlayText: typedOverlay ? undefined : overlayTextBySceneId.get(sceneId),
             })
             // Write to temp file and expose as file:// URL for assembleVideoFromVideoClips
             const tmpPath = pathJoin(workDir, `kb_${sceneId}.mp4`)
@@ -416,6 +436,35 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
             } catch (err) {
               // Pas d'échec du pipeline si le recalage échoue — on garde le clip original
               logger.warn({ sceneId, err }, 'Kling clip re-sync failed — using original 5/10s clip')
+            }
+          }
+
+          // Burn programmatic text overlay (stat/title/quote/cta) on top of the
+          // Kling clip if the storyboard requested one. Flux/Kling can't render
+          // legible text, so this is the only reliable way to show numbers.
+          const klingOverlay = overlayOptsBySceneId.get(sceneId)
+            ?? (overlayTextBySceneId.has(sceneId)
+                 ? { text: overlayTextBySceneId.get(sceneId)!, position: 'bottom-center' as const, emphasis: 'default' as const }
+                 : null)
+          if (klingOverlay) {
+            try {
+              const { applyOverlayToClipUrl } = await import('../services/ffmpeg.js')
+              const videoFormat: '16:9' | '9:16' | '1:1' = (params.format === '9:16' || params.format === '1:1') ? params.format : '16:9'
+              const overlayPath = await applyOverlayToClipUrl(videoUrl, klingOverlay, videoFormat)
+              const overlayStoragePath = `${userId}/${videoId}/clips/scene-${sceneId}-overlay.mp4`
+              const { readFile: rf2 } = await import('fs/promises')
+              const overlayBuf = await rf2(overlayPath)
+              const { data: upload2, error: upErr2 } = await supabaseAdmin.storage
+                .from('videos')
+                .upload(overlayStoragePath, overlayBuf, { contentType: 'video/mp4', upsert: true })
+              if (!upErr2 && upload2) {
+                const { data: pub } = supabaseAdmin.storage.from('videos').getPublicUrl(overlayStoragePath)
+                videoUrl = pub.publicUrl
+                logger.info({ sceneId, emphasis: klingOverlay.emphasis, position: klingOverlay.position }, 'Kling clip: overlay text burned')
+              }
+            } catch (err) {
+              // Si le burn échoue, on garde le clip Kling sans overlay plutôt que de casser le pipeline
+              logger.warn({ sceneId, err }, 'Kling overlay burn failed — proceeding without overlay')
             }
           }
 

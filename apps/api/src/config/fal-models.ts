@@ -67,22 +67,59 @@ export function selectFalModel(sceneType?: string, style?: string): FalModelConf
 // img2img (scene coherence reference) always uses flux/dev/image-to-image regardless of
 // the style model — it is the only guaranteed i2i endpoint across all fal.ai plans.
 
+// Text-heavy styles route to Ideogram v2 — the only consumer image model
+// that renders legible words, numbers, and chart labels reliably. ~2× the
+// cost of schnell but required when the visual must include readable text.
+const TEXT_HEAVY_STYLES: ReadonlySet<string> = new Set([
+  'infographie',
+  'motion-graphics',
+  'whiteboard',
+])
+
+// Typography-sensitive styles where schnell produces soft/blurry type even
+// without explicit text — flux-pro v1.1 gives noticeably cleaner vector look.
+const TYPOGRAPHY_STYLES: ReadonlySet<string> = new Set([
+  'flat-design',
+  'minimaliste',
+])
+
 const F1_STYLE_MODEL_MAP: Record<string, string> = {
-  // All styles use flux/schnell — 10× cheaper than flux/dev, ~3s/image, sufficient for scene backgrounds
+  // Pure image / background styles — schnell is fine, 10× cheaper, ~3s/image
   cinematique:      'fal-ai/flux/schnell',
   luxe:             'fal-ai/flux/schnell',
   '3d-pixar':       'fal-ai/flux/schnell',
   'animation-2d':   'fal-ai/flux/schnell',
-  'flat-design':    'fal-ai/flux/schnell',
-  'motion-graphics':'fal-ai/flux/schnell',
   corporate:        'fal-ai/flux/schnell',
-  infographie:      'fal-ai/flux/schnell',
-  whiteboard:       'fal-ai/flux/schnell',
   stickman:         'fal-ai/flux/schnell',
-  minimaliste:      'fal-ai/flux/schnell',
   'stock-vo':       'fal-ai/flux/schnell',
   dynamique:        'fal-ai/flux/schnell',
   fun:              'fal-ai/flux/schnell',
+
+  // Typography-sensitive → flux-pro v1.1 for cleaner vector edges
+  'flat-design':    'fal-ai/flux-pro/v1.1',
+  minimaliste:      'fal-ai/flux-pro/v1.1',
+
+  // Text-heavy → Ideogram v2 (the only model that renders legible labels)
+  infographie:      'fal-ai/ideogram/v2',
+  'motion-graphics':'fal-ai/ideogram/v2',
+  whiteboard:       'fal-ai/ideogram/v2',
+}
+
+/**
+ * True if the style requires readable text/labels/numbers in the frame.
+ * Callers can use this to (a) keep text in Claude's image prompt, and
+ * (b) know that an Ideogram-class model is being used downstream.
+ */
+export function styleNeedsLegibleText(style: string): boolean {
+  return TEXT_HEAVY_STYLES.has(style)
+}
+
+/**
+ * True if the style benefits from better typography rendering than schnell
+ * (flat-design, minimaliste) but doesn't need full text legibility.
+ */
+export function styleIsTypographySensitive(style: string): boolean {
+  return TYPOGRAPHY_STYLES.has(style)
 }
 
 /**

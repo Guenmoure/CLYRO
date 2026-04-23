@@ -79,6 +79,21 @@ export type VideoDuration = '6s' | '15s' | '30s' | '60s' | '120s' | '180s' | '30
 export type AnimationType = 'slide-in' | 'zoom' | 'fade' | 'particle-burst' | 'typewriter'
 export type SceneType = 'text_hero' | 'split_text_image' | 'product_showcase' | 'stats_counter' | 'cta_end' | 'image_full'
 
+// Programmatic text overlay burned onto the scene's background image.
+// Used for stats, titles, quotes — anything that must render pixel-perfect
+// and that diffusion models (Flux, Ideogram) cannot reliably draw.
+export type SceneOverlayType = 'stat' | 'title' | 'quote' | 'cta'
+export type SceneOverlayPosition =
+  | 'top-center'    | 'top-left'    | 'top-right'
+  | 'center'
+  | 'bottom-center' | 'bottom-left' | 'bottom-right'
+
+export interface SceneOverlay {
+  type: SceneOverlayType
+  text: string                          // "87%", "1M€ en 30 jours", "Think different"
+  position?: SceneOverlayPosition       // default: 'center' for stat/title, 'bottom-center' for cta
+}
+
 export interface Scene {
   id: string
   index: number
@@ -90,6 +105,8 @@ export interface Scene {
   // Multi-character dialogue support
   speaker?: string                // nom du personnage parlant (ex: "Alice", "Bob")
   voice_id?: string               // voice_id ElevenLabs pour ce personnage (si dialogue_mode actif)
+  // Programmatic overlay — chiffres, titres, quotes rendus via drawtext en post
+  overlay?: SceneOverlay
   // Motion Design fields (optionnel — ignoré par le pipeline Faceless)
   display_text?: string           // texte affiché à l'écran (peut différer de la narration)
   animation_type?: AnimationType  // type d'animation Remotion pour cette scène
