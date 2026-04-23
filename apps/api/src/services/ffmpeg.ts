@@ -628,17 +628,113 @@ export async function addSubtitles(
   }
 }
 
+// ── Style-aware xfade transition router ───────────────────────────────────
+//
+// xfade offers ~40 transition kinds. Picking the right one per visual style is
+// the single biggest lever for a "produced" feel: a cinematic reel wants a slow
+// fade-to-black, a motion-graphics reel wants a snappy slide, a whiteboard
+// explainer wants a wipe, etc.
+//
+// Each style maps to an ORDERED list of xfade kinds. The pipeline alternates
+// through the list so two adjacent transitions are rarely identical — that
+// "dissolve, dissolve, dissolve…" feel is the #1 reason generated videos look
+// cheap.
+
+type XfadeKind =
+  // Fades
+  | 'fade' | 'fadeblack' | 'fadewhite' | 'fadegrays' | 'dissolve'
+  // Wipes
+  | 'wipeleft' | 'wiperight' | 'wipeup' | 'wipedown'
+  | 'wipetl' | 'wipetr' | 'wipebl' | 'wipebr'
+  // Slides
+  | 'slideleft' | 'slideright' | 'slideup' | 'slidedown'
+  // Smooth
+  | 'smoothleft' | 'smoothright' | 'smoothup' | 'smoothdown'
+  // Geometric
+  | 'circleopen' | 'circleclose' | 'rectcrop' | 'circlecrop'
+  | 'horzopen' | 'horzclose' | 'vertopen' | 'vertclose'
+  // Dynamic
+  | 'zoomin' | 'radial' | 'pixelize' | 'hblur'
+  // Covers
+  | 'coverleft' | 'coverright' | 'revealleft' | 'revealright'
+  // Diagonals
+  | 'diagtl' | 'diagtr' | 'diagbl' | 'diagbr'
+
+export interface TransitionPlan {
+  /** Ordered list of xfade kinds the router cycles through. */
+  kinds: XfadeKind[]
+  /** Duration of each transition, in seconds. */
+  duration: number
+}
+
 /**
- * Concatène des clips MP4 avec une transition cross-dissolve entre chaque clip.
- * Utilise le filtre FFmpeg xfade. Tous les clips doivent avoir le même codec/résolution/fps.
+ * Per-style transition recipes — tuned by feel:
+ *   • Cinematic / docu → slow fade-to-black, dissolve (weight and patience).
+ *   • Whiteboard / stickman → crisp wipes (flipbook sketch feel).
+ *   • Flat / infographie → clean slides (editorial look).
+ *   • Pixar / 2D animation → iris/circle (cartoon feel).
+ *   • Motion-graphics / dynamique → snappy slide + zoom (tech ad feel).
+ *   • Luxe → slow dissolve + fadegrays (fashion feel).
+ *   • Fun → zoomin + pixelize (playful).
+ */
+const TRANSITION_PLANS: Record<string, TransitionPlan> = {
+  cinematique:      { kinds: ['fadeblack', 'dissolve',  'fadeblack',  'fade'],       duration: 0.55 },
+  'stock-vo':       { kinds: ['dissolve',  'fade',      'fadeblack',  'dissolve'],   duration: 0.50 },
+  whiteboard:       { kinds: ['wipeleft',  'wiperight', 'wipeup',     'wipedown'],   duration: 0.35 },
+  stickman:         { kinds: ['wipeleft',  'wipetl',    'wiperight',  'wipebr'],     duration: 0.35 },
+  minimaliste:      { kinds: ['slideleft', 'wiperight', 'slideright', 'wipeleft'],   duration: 0.40 },
+  'flat-design':    { kinds: ['slideleft', 'slideright','slideup',    'slidedown'],  duration: 0.40 },
+  infographie:      { kinds: ['slideleft', 'wipeleft',  'slideright', 'horzopen'],   duration: 0.40 },
+  '3d-pixar':       { kinds: ['circleopen','circleclose','zoomin',    'dissolve'],   duration: 0.50 },
+  'animation-2d':   { kinds: ['circleopen','wipeleft',  'zoomin',     'rectcrop'],   duration: 0.45 },
+  'motion-graphics':{ kinds: ['slideleft', 'zoomin',    'slideright', 'radial'],     duration: 0.30 },
+  corporate:        { kinds: ['fade',      'slideleft', 'dissolve',   'slideright'], duration: 0.45 },
+  dynamique:        { kinds: ['slideleft', 'zoomin',    'radial',     'slideright'], duration: 0.30 },
+  luxe:             { kinds: ['dissolve',  'fadegrays', 'fade',       'fadeblack'],  duration: 0.60 },
+  fun:              { kinds: ['zoomin',    'pixelize',  'circleopen', 'slideup'],    duration: 0.35 },
+}
+
+const DEFAULT_PLAN: TransitionPlan = { kinds: ['dissolve', 'fade'], duration: 0.40 }
+
+/**
+ * Builds a deterministic transition plan for N joins given a style. The same
+ * (style, sceneCount) pair always yields the same sequence — reproducible.
+ * Adjacent transitions are guaranteed distinct when the plan has ≥2 kinds.
+ */
+export function pickTransitionPlan(style: string, sceneCount: number): { kinds: XfadeKind[]; duration: number } {
+  const plan = TRANSITION_PLANS[style] ?? DEFAULT_PLAN
+  const joins = Math.max(0, sceneCount - 1)
+  const list = plan.kinds
+  if (list.length === 0) return { kinds: [], duration: plan.duration }
+
+  // Cycle through the list; if two adjacent would collide (possible when
+  // list.length doesn't divide evenly), rotate forward.
+  const out: XfadeKind[] = []
+  for (let i = 0; i < joins; i++) {
+    let kind = list[i % list.length]
+    if (out.length > 0 && out[out.length - 1] === kind && list.length > 1) {
+      kind = list[(i + 1) % list.length]
+    }
+    out.push(kind)
+  }
+  return { kinds: out, duration: plan.duration }
+}
+
+/**
+ * Concatène des clips MP4 avec une transition xfade entre chaque clip.
+ * Tous les clips doivent avoir le même codec/résolution/fps.
  * @param clipPaths - Chemins vers les clips re-encodés (même codec, fps, résolution)
  * @param outputPath - Chemin de sortie
- * @param transitionDuration - Durée de la transition en secondes (default 0.4s)
+ * @param transitionDuration - Durée de la transition en secondes (default 0.4s).
+ *   Ignoré si `transitionPlan` est fourni.
+ * @param transitionPlan - Plan de transitions par style (via pickTransitionPlan).
+ *   Si absent, utilise `dissolve` uniforme (rétrocompatible).
  */
 export async function concatenateClipsWithTransitions(
   clipPaths: string[],
   outputPath: string,
-  transitionDuration = 0.4
+  transitionDuration = 0.4,
+  transitionPlan?: { kinds: XfadeKind[]; duration: number }
 ): Promise<void> {
   if (clipPaths.length < 2) {
     return concatenateClips(clipPaths, outputPath)
@@ -683,7 +779,7 @@ export async function concatenateClipsWithTransitions(
   // [0:v][1:v]xfade=transition=dissolve:duration=T:offset=D0-T[v01]
   // [v01][2:v]xfade=transition=dissolve:duration=T:offset=D0+D1-2T[v012]...
   const inputs = clipPaths.flatMap((p) => ['-i', p])
-  const td = transitionDuration
+  const td = transitionPlan?.duration ?? transitionDuration
 
   let filterParts = ''
   let currentLabel = '[0:v]'
@@ -693,7 +789,8 @@ export async function concatenateClipsWithTransitions(
     const prevDuration = durations[i - 1]
     const offset = cumulativeOffset + prevDuration - td
     const outLabel = i === clipPaths.length - 1 ? '[vout]' : `[v${i}]`
-    filterParts += `${currentLabel}[${i}:v]xfade=transition=dissolve:duration=${td}:offset=${offset.toFixed(3)}${outLabel};`
+    const kind: XfadeKind = transitionPlan?.kinds[i - 1] ?? 'dissolve'
+    filterParts += `${currentLabel}[${i}:v]xfade=transition=${kind}:duration=${td}:offset=${offset.toFixed(3)}${outLabel};`
     currentLabel = outLabel
     cumulativeOffset += prevDuration - td
   }
@@ -776,9 +873,12 @@ interface AssembleFromClipsOptions {
   voiceoverBuffer: Buffer | null
   backgroundMusicPath?: string
   karaokeSubsContent?: string
-  /** Skip xfade transitions and re-encode — use stream-copy concat instead.
-   *  Set to true for Ken Burns clips which are already uniform h264/yuv420p. */
+  /** Skip re-encoding step (Ken Burns clips are already uniform h264/yuv420p).
+   *  Transitions are still applied via xfade when `style` is provided. */
   skipTransitions?: boolean
+  /** Video style (cinematique, whiteboard, flat-design, motion-graphics, …).
+   *  Used to pick a per-style xfade recipe via pickTransitionPlan(). */
+  style?: string
 }
 
 /**
@@ -790,7 +890,7 @@ interface AssembleFromClipsOptions {
  * 5. (optionnel) Ajoute les sous-titres karaoke mot par mot
  */
 export async function assembleVideoFromVideoClips(options: AssembleFromClipsOptions): Promise<Buffer> {
-  const { sceneVideoUrls, voiceoverBuffer, backgroundMusicPath, karaokeSubsContent, skipTransitions = false } = options
+  const { sceneVideoUrls, voiceoverBuffer, backgroundMusicPath, karaokeSubsContent, skipTransitions = false, style } = options
 
   const workDir = join(tmpdir(), `clyro-kling-${randomUUID()}`)
   await mkdir(workDir, { recursive: true })
@@ -817,9 +917,17 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
     tempFiles.push(concatPath)
 
     if (skipTransitions) {
-      // Ken Burns path: clips are already uniform — stream-copy concat, no xfade.
-      // This turns a 10-30 min xfade encode into a ~1s file-copy concat.
-      await concatenateClips(downloadedPaths.map((d) => d.clipPath), concatPath)
+      // Ken Burns path: clips are already uniform 1280×720 24fps h264 yuv420p,
+      // so xfade filter_complex is cheap (no re-encode pre-pass needed).
+      // If a style is provided we pick a matching recipe; otherwise we fall
+      // back to the fast stream-copy concat (no transitions).
+      const kenBurnsPaths = downloadedPaths.map((d) => d.clipPath)
+      if (kenBurnsPaths.length < 2 || !style) {
+        await concatenateClips(kenBurnsPaths, concatPath)
+      } else {
+        const plan = pickTransitionPlan(style, kenBurnsPaths.length)
+        await concatenateClipsWithTransitions(kenBurnsPaths, concatPath, plan.duration, plan)
+      }
     } else {
       // Re-encode concurrency limit: each ffmpeg process peaks at ~250-400MB RSS
       // when converting a Kling 5-10s 720p clip to 1280×720 yuv420p. Render
@@ -856,7 +964,8 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
       if (reEncodedPaths.length === 1) {
         await concatenateClips(reEncodedPaths, concatPath)
       } else {
-        await concatenateClipsWithTransitions(reEncodedPaths, concatPath, 0.4)
+        const plan = style ? pickTransitionPlan(style, reEncodedPaths.length) : undefined
+        await concatenateClipsWithTransitions(reEncodedPaths, concatPath, plan?.duration ?? 0.4, plan)
       }
     }
 

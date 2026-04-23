@@ -520,8 +520,10 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
           voiceoverBuffer: combinedAudioBuffer,
           backgroundMusicPath: musicTmpPath,
           karaokeSubsContent,
-          // Ken Burns clips are already uniform h264/yuv420p — skip re-encode + xfade
+          // Ken Burns clips are already uniform h264/yuv420p — skip re-encode
+          // but still apply style-aware xfade transitions between scenes.
           skipTransitions: skipAnimation,
+          style,
         })
       : await assembleVideo({
           scenes: scenesWithImages,
