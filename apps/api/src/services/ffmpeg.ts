@@ -253,6 +253,75 @@ export async function renderKenBurnsFFmpeg(options: {
 }
 
 /**
+ * Recalibre un clip vidéo existant (typiquement un 5s ou 10s de Kling) sur
+ * une durée audio exacte.
+ *
+ *  • Si clip est *plus long* que la cible : on coupe avec `-t`.
+ *  • Si clip est *plus court* : on étend par freeze-frame de la dernière
+ *    image via le filtre `tpad=stop_mode=clone:stop_duration=Δ` (pas de
+ *    boucle → c'est naturel : la voix finit, l'image reste).
+ *
+ * Ré-encode en h264/yuv420p pour rester compatible avec concatenateClips.
+ * Retourne le chemin absolu du MP4 aligné (dans tmpdir).
+ */
+export async function adjustClipDurationFromUrl(
+  clipUrl: string,
+  targetDurationSeconds: number,
+): Promise<string> {
+  const target = Math.round(targetDurationSeconds * 100) / 100
+  const workDir = join(tmpdir(), `clyro-clip-sync-${randomUUID()}`)
+  await mkdir(workDir, { recursive: true })
+
+  const srcPath = join(workDir, 'src.mp4')
+  const outPath = join(workDir, 'out.mp4')
+
+  // Télécharger le clip source (URL Supabase Storage publique ou file://)
+  if (clipUrl.startsWith('file://')) {
+    await copyFile(clipUrl.replace('file://', ''), srcPath)
+  } else {
+    const res = await fetch(clipUrl)
+    if (!res.ok) throw new Error(`adjustClipDurationFromUrl: fetch ${res.status}`)
+    const buf = Buffer.from(await res.arrayBuffer())
+    await writeFile(srcPath, buf)
+  }
+
+  // Mesurer la durée source via ffprobe
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const execFileAsync = promisify(execFile)
+  const { stdout } = await execFileAsync('ffprobe', [
+    '-v', 'error',
+    '-show_entries', 'format=duration',
+    '-of', 'default=noprint_wrappers=1:nokey=1',
+    srcPath,
+  ])
+  const srcDuration = parseFloat(stdout.trim()) || 0
+
+  // Le filtre tpad a besoin d'une marge pour extension ; `-t` re-coupe à la fin
+  // pour que ce soit exact quoi qu'il arrive.
+  const needsExtend = srcDuration < target - 0.05
+  const vf = needsExtend
+    ? `tpad=stop_mode=clone:stop_duration=${(target - srcDuration + 0.2).toFixed(2)},fps=30`
+    : `fps=30`
+
+  await runFFmpeg([
+    '-i', srcPath,
+    '-vf', vf,
+    '-t', String(target),
+    '-c:v', 'libx264',
+    '-preset', 'veryfast',
+    '-crf', '23',
+    '-pix_fmt', 'yuv420p',
+    '-an',
+    outPath,
+  ])
+
+  // Nettoyer le fichier source (pas le dossier — l'appelant lit outPath)
+  await unlink(srcPath).catch(() => null)
+  return outPath
+}
+
+/**
  * Crée un clip vidéo à partir d'une image en la loopant sur la durée donnée
  */
 export async function loopImageToClip(
@@ -767,6 +836,12 @@ interface AssembleVideoOptions {
     description_visuelle: string
     texte_voix: string
     duree_estimee: number
+    /**
+     * Durée réelle de la voix off ElevenLabs pour cette scène (en secondes).
+     * Si présente, c'est elle qui détermine la durée du clip image — sinon on
+     * retombe sur `duree_estimee` (estimation word-count, imprécise).
+     */
+    audioDuration?: number
     image_url?: string
   }>
   sceneImages: Array<{ sceneId: string; imageUrl: string }>
@@ -819,7 +894,11 @@ export async function assembleVideo(options: AssembleVideoOptions): Promise<Buff
       const batchPaths = await Promise.all(
         batch.map(async ({ scene, imageBuffer }) => {
           const clipPath = join(workDir, `clip_${scene.id}.mp4`)
-          await loopImageToClip(imageBuffer, scene.duree_estimee, clipPath)
+          // Durée de l'image = durée *réelle* de la voix off si disponible
+          // (évite le drift images-voix). Fallback sur l'estimation word-count.
+          const exact = scene.audioDuration
+          const durationSec = exact && exact > 0.5 ? exact : scene.duree_estimee
+          await loopImageToClip(imageBuffer, durationSec, clipPath)
           tempFiles.push(clipPath)
           return clipPath
         })

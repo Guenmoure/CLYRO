@@ -274,15 +274,27 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
     // Durée calée sur la durée audio réelle de la scène (5s ou 10s selon Kling API)
     await updateStatus('visuals', 60)
 
-    // Précalculer la durée audio par scène pour calibrer Kling
-    // Kling ne supporte que '5' ou '10' secondes.
-    // 10s seulement si audio > 7.5s — sinon 5s (2× plus rapide à générer).
-    const sceneAudioDurations = new Map<string, '5' | '10'>()
+    // Précalculer la durée audio par scène pour calibrer les clips.
+    //
+    // ── exactSceneAudioDurations (fractional seconds) ──
+    // Durée réelle ElevenLabs par scène, utilisée par Ken Burns (ffmpeg accepte
+    // n'importe quelle durée) ET pour trimmer/étendre chaque clip Kling afin
+    // que chaque image s'aligne *exactement* sur sa voix off — sinon les
+    // images « défilent » plus vite que la voix (drift cumulatif).
+    //
+    // ── klingSceneAudioDurations ('5' | '10') ──
+    // Kling n'accepte que 5 ou 10 secondes à la génération. Seuil abaissé à
+    // 5s (vs. 7.5 auparavant) : dès qu'une scène dépasse 5s on demande un
+    // clip 10s et on le trim à la durée audio exacte en post — ça évite les
+    // scènes où la voix continue après la coupe visuelle.
+    const exactSceneAudioDurations = new Map<string, number>()
+    const klingSceneAudioDurations  = new Map<string, '5' | '10'>()
     for (const audioResult of audioResults) {
       const audioDuration = audioResult.words.length > 0
         ? audioResult.words[audioResult.words.length - 1].end
         : 5
-      sceneAudioDurations.set(audioResult.sceneId, audioDuration > 7.5 ? '10' : '5')
+      exactSceneAudioDurations.set(audioResult.sceneId, audioDuration)
+      klingSceneAudioDurations.set(audioResult.sceneId, audioDuration > 5 ? '10' : '5')
     }
 
     // Clips vidéo : utiliser ceux du frontend si disponibles, sinon générer via Ken Burns ou Kling i2v
@@ -330,7 +342,14 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
         const batchResults = await Promise.allSettled(
           batch.map(async ({ sceneId, imageUrl }, batchIdx) => {
             const idx = i + batchIdx
-            const durationSec = Number(sceneAudioDurations.get(sceneId) ?? 5)
+            // Durée = voix off réelle ElevenLabs. Ken Burns (ffmpeg zoompan)
+            // accepte n'importe quelle valeur fractionnaire → image et voix
+            // s'alignent au centième de seconde, plus de drift.
+            // Fallback 5s si pas de voix (muet).
+            const exactAudioDur = exactSceneAudioDurations.get(sceneId)
+            const durationSec = exactAudioDur && exactAudioDur > 0.5
+              ? Math.round(exactAudioDur * 100) / 100
+              : 5
             const mp4Buffer = await renderKenBurnsFFmpeg({
               imageUrl,
               durationSeconds: durationSec,
@@ -369,14 +388,41 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
         sceneImages.map(async ({ sceneId, imageUrl }) => {
           const scene = storyboard.scenes.find((s) => s.id === sceneId)
           const animationPrompt = scene?.animation_prompt ?? scene?.description_visuelle ?? 'smooth cinematic camera movement, natural motion'
-          const clipDuration = sceneAudioDurations.get(sceneId) ?? '5'
+          const clipDuration = klingSceneAudioDurations.get(sceneId) ?? '5'
+          const exactAudioDur = exactSceneAudioDurations.get(sceneId)
           const { videoUrl: falVideoUrl, model } = await generateSceneVideoAuto(imageUrl, animationPrompt, clipDuration, style)
           const storagePath = `${userId}/${videoId}/clips/scene-${sceneId}.mp4`
-          const videoUrl = await uploadFalUrlToStorage(falVideoUrl, storagePath, 'videos')
+          let videoUrl = await uploadFalUrlToStorage(falVideoUrl, storagePath, 'videos')
+
+          // Recalibrer la durée du clip Kling sur la durée audio réelle —
+          // Kling ne sort que du 5s ou 10s, donc une scène de 6.3s voit son
+          // image se couper à 5s ou traîner en freeze 3.7s sur 10s. On retaille
+          // (ou on étend par freeze-frame) pour un alignement parfait.
+          if (exactAudioDur && exactAudioDur > 0.5) {
+            try {
+              const { adjustClipDurationFromUrl } = await import('../services/ffmpeg.js')
+              const adjustedPath = await adjustClipDurationFromUrl(videoUrl, exactAudioDur)
+              const adjustedStoragePath = `${userId}/${videoId}/clips/scene-${sceneId}-sync.mp4`
+              const { readFile: rf } = await import('fs/promises')
+              const adjustedBuf = await rf(adjustedPath)
+              const { data: upload, error: upErr } = await supabaseAdmin.storage
+                .from('videos')
+                .upload(adjustedStoragePath, adjustedBuf, { contentType: 'video/mp4', upsert: true })
+              if (!upErr && upload) {
+                const { data } = supabaseAdmin.storage.from('videos').getPublicUrl(adjustedStoragePath)
+                videoUrl = data.publicUrl
+                logger.info({ sceneId, exactAudioDur, klingDuration: clipDuration }, 'Kling clip re-synced to exact audio duration')
+              }
+            } catch (err) {
+              // Pas d'échec du pipeline si le recalage échoue — on garde le clip original
+              logger.warn({ sceneId, err }, 'Kling clip re-sync failed — using original 5/10s clip')
+            }
+          }
+
           completedClips++
           const clipProgress = 60 + Math.round((completedClips / totalClips) * 18)
           await updateStatus('visuals', clipProgress)
-          logger.info({ sceneId, model, clipDuration, completedClips, totalClips }, 'Scene video generated')
+          logger.info({ sceneId, model, clipDuration, exactAudioDur, completedClips, totalClips }, 'Scene video generated')
           return { sceneId, videoUrl }
         })
       )
