@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createBrowserClient } from '@/lib/supabase'
 
 const SUGGESTIONS = [
   'The 5 habits of millionaires',
@@ -15,6 +16,19 @@ export function HeroScript() {
   const router               = useRouter()
   const [script, setScript]  = useState('')
   const [focused, setFocused] = useState(false)
+  const [isAuthed, setIsAuthed] = useState(false)
+
+  // Detect whether the visitor already has a session so we can skip /signup.
+  useEffect(() => {
+    let cancelled = false
+    try {
+      const supabase = createBrowserClient()
+      supabase.auth.getSession().then(({ data }: any) => {
+        if (!cancelled) setIsAuthed(!!data?.session)
+      }).catch(() => { /* ignore — treat as logged-out */ })
+    } catch { /* ignore */ }
+    return () => { cancelled = true }
+  }, [])
 
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0
   const ready     = wordCount >= 5
@@ -22,7 +36,21 @@ export function HeroScript() {
 
   function handleGenerate() {
     if (!ready) return
-    const encoded = encodeURIComponent(script.trim())
+    const trimmed = script.trim()
+
+    // Persist directly so the script survives any redirect round-trip
+    // (auth callback, email confirmation, etc.) without URL-encoding issues.
+    try {
+      localStorage.setItem('clyro_prefilled_script', trimmed)
+    } catch { /* privacy mode — fall back to URL param */ }
+
+    // Logged-in users skip /signup and jump straight into the faceless flow.
+    if (isAuthed) {
+      router.push('/faceless/new')
+      return
+    }
+
+    const encoded = encodeURIComponent(trimmed)
     router.push(`/signup?script=${encoded}`)
   }
 
