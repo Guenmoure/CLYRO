@@ -524,12 +524,14 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
           // but still apply style-aware xfade transitions between scenes.
           skipTransitions: skipAnimation,
           style,
+          format: (params.format === '9:16' || params.format === '1:1') ? params.format : '16:9',
         })
       : await assembleVideo({
           scenes: scenesWithImages,
           sceneImages,
           voiceoverBuffer: combinedAudioBuffer,
           backgroundMusicPath: musicTmpPath,
+          format: (params.format === '9:16' || params.format === '1:1') ? params.format : '16:9',
         })
 
     // Cleanup musique tmp

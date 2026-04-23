@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { Logo } from '@/components/ui/Logo'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -21,11 +22,11 @@ export function Navbar() {
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="font-display font-extrabold text-xl">
-            <span className="text-clyro-cyan">C</span>
-            <span className="text-gray-900 dark:text-white">LYRO</span>
-          </span>
+        <Link href="/" className="flex items-center gap-2" aria-label="CLYRO home">
+          {/* Unified wordmark — fixes the 'LYRO'-looks-isolated issue from
+              the competitive audit. Using the shared gradient Logo ensures
+              "CLYRO" reads as a single brand mark instead of "[C] LYRO". */}
+          <Logo variant="full" size="sm" href={false} />
           <span className="font-mono text-[11px] uppercase tracking-wider glass-blue px-1.5 py-0.5 rounded-full text-clyro-blue">
             Beta
           </span>
@@ -34,8 +35,8 @@ export function Navbar() {
         <nav className="hidden md:flex items-center gap-8">
           {[
             { href: '#modules',      label: 'Modules' },
-            { href: '#how-it-works', label: 'How it works' },
-            { href: '#pricing',      label: 'Pricing' },
+            { href: '#how-it-works', label: 'Comment ça marche' },
+            { href: '#pricing',      label: 'Tarifs' },
           ].map(({ href, label }) => (
             <a
               key={href}
@@ -53,13 +54,13 @@ export function Navbar() {
             href="/login"
             className="font-body text-sm text-white/50 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 px-3 py-1.5"
           >
-            Sign in
+            Connexion
           </Link>
           <Link
             href="/signup"
             className="shimmer font-body text-sm font-medium bg-gradient-to-r from-clyro-blue to-clyro-purple text-white px-4 py-1.5 rounded-xl hover:opacity-90 transition-opacity duration-200 flex items-center gap-1.5"
           >
-            Get started free <ArrowRight size={13} />
+            Commencer gratuitement <ArrowRight size={13} />
           </Link>
         </div>
       </div>
