@@ -16,7 +16,12 @@ import { useVideoStatus } from '@/hooks/use-video-status'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
 import { ContentTemplateGallery } from './ContentTemplateGallery'
-import { buildTemplateDescription, type ContentTemplate } from '@/lib/faceless-content-templates'
+import {
+  buildTemplateDescription,
+  tName,
+  FACELESS_STYLES_META,
+  type ContentTemplate,
+} from '@/lib/faceless-content-templates'
 
 // ── fal.ai concurrency control ─────────────────────────────────────────────
 // fal.ai caps accounts at 10 concurrent requests. Each scene fires 2 calls
@@ -215,15 +220,18 @@ function PreviewAnimation2d({ selected: _s }: { selected: boolean }) {
   )
 }
 
+// 2026 trend labels from FACELESS_STYLES_META, preserving pipeline IDs.
+// Short French descriptions focused on the 2026 repositioning; full bilingual
+// copy + best-for lists live in FACELESS_STYLES_META.
 const STYLE_TEMPLATES: StyleTemplate[] = [
-  { id: 'cinematique',     label: 'Cinématique',     desc: 'Lumière dramatique, 8K',               category: 'cinematic', preview: PreviewCinematic    },
-  { id: 'stock-vo',        label: 'Stock + VO',      desc: 'Style documentaire National Geo',       category: 'cinematic', preview: PreviewStockVo      },
-  { id: 'whiteboard',      label: 'Whiteboard',      desc: 'Marqueur sur tableau blanc',            category: 'handmade',  preview: PreviewWhiteboard   },
-  { id: 'stickman',        label: 'Stickman',        desc: 'Personnages simples & formes',          category: 'handmade',  badge: 'Nouveau', preview: PreviewStickman    },
-  { id: 'flat-design',     label: 'Flat Design',     desc: 'Illustration plate, couleurs vives',    category: 'animation', badge: 'Nouveau', preview: PreviewFlatDesign  },
-  { id: '3d-pixar',        label: '3D Pixar',        desc: 'Style Pixar 3D',                        category: '3d',        badge: 'Nouveau', preview: Preview3dPixar     },
-  { id: 'motion-graphics', label: 'Motion Graphics', desc: 'Formes géométriques, typo animée',      category: '3d',        preview: PreviewMotionGraphics },
-  { id: 'animation-2d',    label: 'Animation 2D',    desc: 'Animation vectorielle',                  category: 'animation', preview: PreviewAnimation2d  },
+  { id: 'cinematique',     label: FACELESS_STYLES_META['cinematique'].label_fr,     desc: 'Scènes photoréalistes IA, éclairage dramatique, grain filmique',  category: 'cinematic', badge: '2026', preview: PreviewCinematic    },
+  { id: 'stock-vo',        label: FACELESS_STYLES_META['stock-vo'].label_fr,        desc: 'Archives documentaires + voix off broadcast',                     category: 'cinematic', preview: PreviewStockVo      },
+  { id: 'whiteboard',      label: FACELESS_STYLES_META['whiteboard'].label_fr,      desc: 'Récit sombre : atmosphère noir, ombres, tension horror',          category: 'cinematic', badge: 'Nouveau', preview: PreviewWhiteboard   },
+  { id: 'stickman',        label: FACELESS_STYLES_META['stickman'].label_fr,        desc: 'Planches BD manga, bulles de texte, personnages expressifs',      category: 'handmade',  badge: 'Nouveau', preview: PreviewStickman    },
+  { id: 'flat-design',     label: FACELESS_STYLES_META['flat-design'].label_fr,     desc: 'Fonds épurés, typo bold, espace négatif — l’esthétique « less »', category: 'animation', badge: '2026', preview: PreviewFlatDesign  },
+  { id: '3d-pixar',        label: FACELESS_STYLES_META['3d-pixar'].label_fr,        desc: 'Rendu 3D ludique, ambient occlusion doux, perspective isométrique', category: '3d',      preview: Preview3dPixar     },
+  { id: 'motion-graphics', label: FACELESS_STYLES_META['motion-graphics'].label_fr, desc: 'Formes animées, typographie cinétique, data-viz corporate',      category: '3d',        preview: PreviewMotionGraphics },
+  { id: 'animation-2d',    label: FACELESS_STYLES_META['animation-2d'].label_fr,    desc: 'Illustrations chaleureuses aquarelle, personnages amicaux, cosy', category: 'animation', badge: 'Nouveau', preview: PreviewAnimation2d  },
 ]
 
 // ── Pipeline types ─────────────────────────────────────────────────────────────
@@ -835,18 +843,19 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
       <ContentTemplateGallery
         selectedTemplateId={project.contentTemplateId ?? null}
         onSelect={(template: ContentTemplate) => {
+          const templateName = tName(template, 'fr')
           onChange({
             contentTemplateId: template.id,
-            description: buildTemplateDescription(template),
+            description: buildTemplateDescription(template, 'fr'),
             style: template.fal_style as FacelessStyle,
             // Pre-fill title only if user hasn't typed one yet
-            title: project.title.trim() ? project.title : template.name,
+            title: project.title.trim() ? project.title : templateName,
           })
           // Smooth scroll back to the top so the user sees the auto-filled fields
           if (typeof window !== 'undefined') {
             window.scrollTo({ top: 0, behavior: 'smooth' })
           }
-          toast.success(`Template "${template.name}" appliqué — édite la description et écris ton script`)
+          toast.success(`Template "${templateName}" appliqué — édite la description et écris ton script`)
         }}
       />
     </div>
