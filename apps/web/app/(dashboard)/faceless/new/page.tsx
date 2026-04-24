@@ -10,6 +10,7 @@ import { WizardLayout } from '@/components/creation/WizardLayout'
 import { GenerationOverlay, type GenerationStage } from '@/components/creation/GenerationOverlay'
 import { StyleCarousel, type StyleConfig } from '@/components/creation/StyleCarousel'
 import { VoicePickerModal, type ClyroVoice } from '@/components/creation/VoicePickerModal'
+import { CloneVoiceModal, type UserPlan } from '@/components/assets/CloneVoiceModal'
 import { ResultModal } from '@/components/creation/ResultModal'
 import AnimationModeSelector from '@/components/creation/AnimationModeSelector'
 import { Button } from '@/components/ui/button'
@@ -739,7 +740,9 @@ function FacelessNewPageInner() {
   // Voice picker
   const [voicePickerOpen, setVoicePickerOpen] = useState(false)
   const [libraryVoices,   setLibraryVoices]   = useState<ClyroVoice[]>([])
+  const [clonedVoices,    setClonedVoices]    = useState<ClyroVoice[]>([])
   const [voicesLoading,   setVoicesLoading]   = useState(false)
+  const [cloneVoiceOpen,  setCloneVoiceOpen]  = useState(false)
 
   // Generation
   const [generating,     setGenerating]     = useState(false)
@@ -777,9 +780,26 @@ function FacelessNewPageInner() {
     })
   }, [])
 
+  // Reload the user's cloned voices (called after the clone modal succeeds
+  // and when the picker first opens). Uses getVoices(), which merges public
+  // + personal voices on the server.
+  const reloadClonedVoices = useCallback(async () => {
+    try {
+      const { getVoices } = await import('@/lib/api')
+      const res = await getVoices()
+      const personal = (res.personal ?? []) as ClyroVoice[]
+      setClonedVoices(personal)
+    } catch {
+      // silent — cloned tab just stays empty
+    }
+  }, [])
+
   // Load voices when voice picker opens
   async function handleOpenVoicePicker() {
     setVoicePickerOpen(true)
+    // Always refresh cloned voices on open — they might have changed in
+    // another tab (or via the clone modal inside this picker).
+    reloadClonedVoices()
     if (libraryVoices.length > 0) return
     setVoicesLoading(true)
     try {
@@ -982,7 +1002,17 @@ function FacelessNewPageInner() {
         selectedVoiceId={selectedVoice?.id}
         onSelect={v => { setSelectedVoice(v as ClyroVoice); setVoicePickerOpen(false) }}
         libraryVoices={libraryVoices as ClyroVoice[]}
+        clonedVoices={clonedVoices}
         loading={voicesLoading}
+        onRequestClone={() => setCloneVoiceOpen(true)}
+      />
+
+      <CloneVoiceModal
+        isOpen={cloneVoiceOpen}
+        onClose={() => setCloneVoiceOpen(false)}
+        onCloned={() => reloadClonedVoices()}
+        userPlan={userPlan as UserPlan}
+        existingClonedCount={clonedVoices.length}
       />
 
       <GenerationOverlay

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, Play, Pause, Star, Check } from 'lucide-react'
+import { Search, Play, Pause, Star, Check, Mic2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,8 @@ interface VoicePickerModalProps {
   libraryVoices?: ClyroVoice[]
   /** Loading state for the library */
   loading?: boolean
+  /** If provided, shows a "Clone a voice" CTA in the cloned tab */
+  onRequestClone?: () => void
 }
 
 // ── Filter pills ───────────────────────────────────────────────────────────────
@@ -178,6 +180,7 @@ export function VoicePickerModal({
   clonedVoices = [],
   libraryVoices = [],
   loading = false,
+  onRequestClone,
 }: VoicePickerModalProps) {
   const [tab,        setTab]        = useState<'library' | 'cloned'>('library')
   const [search,     setSearch]     = useState('')
@@ -280,8 +283,28 @@ export function VoicePickerModal({
           )}
 
           {!loading && filtered.length === 0 && (
-            <div className="py-10 text-center">
-              <p className="font-mono text-sm text-[--text-muted]">No voices found</p>
+            <div className="py-8 text-center">
+              {tab === 'cloned' && onRequestClone ? (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
+                    <Mic2 size={16} className="text-blue-400" />
+                  </div>
+                  <p className="font-body text-sm text-foreground mb-1">No cloned voices yet</p>
+                  <p className="font-mono text-xs text-[--text-muted] mb-4">
+                    Upload a 30 s audio sample to create your own AI voice.
+                  </p>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<Plus size={13} />}
+                    onClick={onRequestClone}
+                  >
+                    Clone a voice
+                  </Button>
+                </>
+              ) : (
+                <p className="font-mono text-sm text-[--text-muted]">No voices found</p>
+              )}
             </div>
           )}
 

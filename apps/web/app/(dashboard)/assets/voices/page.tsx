@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { Plus, ChevronRight, TrendingUp, Sparkles, Mic2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { VoiceCard } from '@/components/assets/VoiceCard'
 import { VoiceFilters } from '@/components/assets/VoiceFilters'
 import { VoicePreviewModal } from '@/components/assets/VoicePreviewModal'
+import { CloneVoiceModal, type UserPlan } from '@/components/assets/CloneVoiceModal'
 import {
   getVoices, getPublicVoices, getVoiceFilters, toggleVoiceFavorite,
   type ClyroVoice,
 } from '@/lib/api'
+import { useUser } from '@/hooks/use-user'
 import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
@@ -47,10 +49,12 @@ function CollectionCard({ title, icon }: { title: string; icon: React.ReactNode 
 
 export default function VoicesAssetsPage() {
   const { t } = useLanguage()
+  const { profile } = useUser()
   const [allVoices, setAllVoices]   = useState<ClyroVoice[]>([])
   const [myVoices, setMyVoices]     = useState<ClyroVoice[]>([])
   const [loading, setLoading]       = useState(true)
   const [activeTab, setActiveTab]   = useState<VoiceTab>('explore')
+  const [cloneOpen, setCloneOpen]   = useState(false)
   const [search, setSearch]         = useState('')
   const [category, setCategory]     = useState<string | null>(null)
   const [playingId, setPlayingId]   = useState<string | null>(null)
@@ -78,7 +82,7 @@ export default function VoicesAssetsPage() {
 
   // Refetch public voices whenever a server-side filter changes. Personal
   // voices don't accept filters so they're fetched once.
-  useEffect(() => {
+  const reload = useCallback(() => {
     setLoading(true)
     const filters = {
       ...(gender   ? { gender }   : {}),
@@ -93,6 +97,8 @@ export default function VoicesAssetsPage() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [gender, language, useCase])
+
+  useEffect(() => { reload() }, [reload])
 
   /**
    * Optimistic favorite toggle — flip the UI immediately, roll back on
@@ -207,7 +213,12 @@ export default function VoicesAssetsPage() {
           ))}
         </div>
 
-        <Button variant="primary" size="sm" leftIcon={<Plus size={13} />}>
+        <Button
+          variant="primary"
+          size="sm"
+          leftIcon={<Plus size={13} />}
+          onClick={() => setCloneOpen(true)}
+        >
           {t('createVoice')}
         </Button>
       </div>
@@ -320,6 +331,18 @@ export default function VoicesAssetsPage() {
         voice={selected}
         isOpen={!!selected}
         onClose={() => setSelected(null)}
+      />
+
+      {/* Clone-a-voice modal (audit P2 — voice cloning UI surfaced) */}
+      <CloneVoiceModal
+        isOpen={cloneOpen}
+        onClose={() => setCloneOpen(false)}
+        onCloned={() => {
+          setActiveTab('my_voices')
+          reload()
+        }}
+        userPlan={(profile?.plan ?? 'free') as UserPlan}
+        existingClonedCount={myVoices.length}
       />
     </>
   )
