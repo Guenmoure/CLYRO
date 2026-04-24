@@ -332,6 +332,76 @@ export async function deleteBrandKit(id: string) {
   })
 }
 
+// ---- Autopilot series ----
+
+export type AutopilotCadence = 'daily' | 'weekly' | 'manual'
+
+export interface AutopilotSeries {
+  id:             string
+  user_id:        string
+  name:           string
+  topic:          string
+  style:          string
+  cadence:        AutopilotCadence
+  voice_id:       string | null
+  brand_kit_id:   string | null
+  format:         '9:16' | '16:9' | '1:1'
+  duration:       number
+  language:       string
+  enabled:        boolean
+  next_run_at:    string
+  last_run_at:    string | null
+  last_video_id:  string | null
+  run_count:      number
+  created_at:     string
+  updated_at:     string
+}
+
+export interface CreateAutopilotPayload {
+  name:          string
+  topic:         string
+  style?:        string
+  cadence?:      AutopilotCadence
+  voice_id?:     string
+  brand_kit_id?: string
+  format?:       '9:16' | '16:9' | '1:1'
+  duration?:     number
+  language?:     string
+  enabled?:      boolean
+}
+
+export type UpdateAutopilotPayload = Partial<CreateAutopilotPayload>
+
+export async function getAutopilotSeries() {
+  return apiFetch<{ data: AutopilotSeries[] }>('/api/v1/autopilot')
+}
+
+export async function createAutopilotSeries(payload: CreateAutopilotPayload) {
+  return apiFetch<{ data: AutopilotSeries }>('/api/v1/autopilot', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateAutopilotSeries(id: string, payload: UpdateAutopilotPayload) {
+  return apiFetch<{ data: AutopilotSeries }>(`/api/v1/autopilot/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteAutopilotSeries(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/autopilot/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function runAutopilotSeries(id: string) {
+  return apiFetch<{ data: AutopilotSeries; queued: boolean }>(`/api/v1/autopilot/${id}/run`, {
+    method: 'POST',
+  })
+}
+
 // ---- Brand Asset Generation ----
 
 export interface BrandAsset {

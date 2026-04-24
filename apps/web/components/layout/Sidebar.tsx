@@ -26,7 +26,7 @@ import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 import {
   Film, Video, Sparkles, Palette,
-  FolderOpen, Package, BarChart3,
+  FolderOpen, Package, BarChart3, Rocket,
   ChevronLeft, ChevronRight, ChevronUp,
   Settings, HelpCircle, Bell, LogOut,
   CreditCard, ExternalLink, X,
@@ -37,10 +37,11 @@ import type { SidebarUser } from './DashboardShell'
 // ── Nav structure ──────────────────────────────────────────────────────────────
 
 const CREATE_ITEMS = [
-  { id: 'studio',   icon: Film,     label: 'Avatar Studio',   href: '/studio' },
-  { id: 'faceless', icon: Video,    label: 'Faceless Videos', href: '/faceless' },
-  { id: 'motion',   icon: Sparkles, label: 'Motion Design',   href: '/motion' },
-  { id: 'brand',    icon: Palette,  label: 'Brand Kit',       href: '/brand' },
+  { id: 'studio',    icon: Film,     label: 'Avatar Studio',   href: '/studio' },
+  { id: 'faceless',  icon: Video,    label: 'Faceless Videos', href: '/faceless' },
+  { id: 'motion',    icon: Sparkles, label: 'Motion Design',   href: '/motion' },
+  { id: 'autopilot', icon: Rocket,   label: 'Autopilot',       href: '/autopilot' },
+  { id: 'brand',     icon: Palette,  label: 'Brand Kit',       href: '/brand' },
 ]
 
 const WORKSPACE_ITEMS = [
@@ -104,11 +105,12 @@ export function Sidebar({
   const quickActions: Array<{
     id: string; label: string; sub: string; icon: typeof Plus; href: string
   }> = [
-    { id: 'faceless', label: 'Faceless video',   sub: 'Script → narrated video', icon: Video,    href: '/faceless/new' },
-    { id: 'url',      label: 'Import from URL',  sub: 'Blog / article → video',  icon: Link2,    href: '/faceless/new?source=url' },
-    { id: 'motion',   label: 'Motion design',    sub: 'Animated graphics',       icon: Sparkles, href: '/motion/new' },
-    { id: 'studio',   label: 'Avatar studio',    sub: 'Talking-head video',      icon: Film,     href: '/studio/new' },
-    { id: 'brand',    label: 'Brand kit',        sub: 'Colors · fonts · logo',   icon: Palette,  href: '/brand/new' },
+    { id: 'faceless',  label: 'Faceless video',  sub: 'Script → narrated video', icon: Video,    href: '/faceless/new' },
+    { id: 'url',       label: 'Import from URL', sub: 'Blog / article → video',  icon: Link2,    href: '/faceless/new?source=url' },
+    { id: 'motion',    label: 'Motion design',   sub: 'Animated graphics',       icon: Sparkles, href: '/motion/new' },
+    { id: 'studio',    label: 'Avatar studio',   sub: 'Talking-head video',      icon: Film,     href: '/studio/new' },
+    { id: 'autopilot', label: 'Autopilot series', sub: 'Auto-generate on schedule', icon: Rocket, href: '/autopilot' },
+    { id: 'brand',     label: 'Brand kit',       sub: 'Colors · fonts · logo',   icon: Palette,  href: '/brand/new' },
   ]
 
   useEffect(() => {

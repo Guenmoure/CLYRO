@@ -17,6 +17,7 @@ import { voicesRouter } from './routes/voices'
 import { checkoutRouter } from './routes/checkout'
 import { brandKitsRouter } from './routes/brand-kits'
 import { brandGenerateRouter } from './routes/brand-generate'
+import { autopilotRouter } from './routes/autopilot'
 import { mixAudioRouter } from './routes/mix-audio'
 import { generatePdfRouter } from './routes/generate-pdf'
 import { generateRouter } from './routes/generate'
@@ -182,6 +183,7 @@ app.use('/api/v1', voicesRouter)
 app.use('/api/v1', checkoutRouter)
 app.use('/api/v1', brandKitsRouter)
 app.use('/api/v1', brandGenerateRouter)
+app.use('/api/v1', autopilotRouter)
 app.use('/api/v1', mixAudioRouter)
 app.use('/api/v1', generatePdfRouter)
 app.use('/api/v1', generateRouter)
