@@ -26,7 +26,7 @@ import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 import {
   Film, Video, Sparkles, Palette,
-  FolderOpen, Package,
+  FolderOpen, Package, BarChart3,
   ChevronLeft, ChevronRight, ChevronUp,
   Settings, HelpCircle, Bell, LogOut,
   CreditCard, ExternalLink, X,
@@ -44,8 +44,9 @@ const CREATE_ITEMS = [
 ]
 
 const WORKSPACE_ITEMS = [
-  { id: 'projects', icon: FolderOpen, label: 'Projects', href: '/projects' },
-  { id: 'assets',   icon: Package,    label: 'Assets',   href: '/assets' },
+  { id: 'projects',  icon: FolderOpen, label: 'Projects',  href: '/projects' },
+  { id: 'assets',    icon: Package,    label: 'Assets',    href: '/assets' },
+  { id: 'analytics', icon: BarChart3,  label: 'Analytics', href: '/analytics' },
 ]
 
 // ── Props ──────────────────────────────────────────────────────────────────────
