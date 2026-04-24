@@ -216,6 +216,7 @@ export default async function AnalyticsPage() {
           value={m.last30.toString()}
           sublabel={delta.text === '—' ? 'vs prior 30d' : `${delta.text} vs prior 30d`}
           sublabelTone={delta.positive ? 'positive' : 'negative'}
+          emphasis
         />
         <KpiCard
           icon={<CheckCircle2 size={16} aria-hidden="true" />}
@@ -303,24 +304,27 @@ function KpiCard({
   value,
   sublabel,
   sublabelTone = 'muted',
+  emphasis = false,
 }: {
   icon: React.ReactNode
   label: string
   value: string
   sublabel?: string
   sublabelTone?: 'muted' | 'positive' | 'negative'
+  /** Promote this card visually — used for the KPI with the most momentum. */
+  emphasis?: boolean
 }) {
   const subClass =
     sublabelTone === 'positive' ? 'text-emerald-400' :
     sublabelTone === 'negative' ? 'text-red-400' :
     'text-[--text-muted]'
   return (
-    <Card variant="default" padding="md">
+    <Card variant={emphasis ? 'highlight' : 'default'} padding="md">
       <div className="flex items-center gap-2 text-[--text-muted] mb-2">
         {icon}
         <span className="font-body text-[11px] uppercase tracking-wide">{label}</span>
       </div>
-      <p className="font-display text-2xl font-semibold text-foreground leading-none">
+      <p className={`font-display font-semibold text-foreground leading-none ${emphasis ? 'text-3xl' : 'text-2xl'}`}>
         {value}
       </p>
       {sublabel && (

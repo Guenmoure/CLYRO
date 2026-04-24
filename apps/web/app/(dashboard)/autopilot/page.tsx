@@ -4,13 +4,14 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Plus, Sparkles, Play, Pause, Trash2, Rocket, Calendar, Clock,
-  Lock, ArrowRight, AlertCircle, Loader2,
+  AlertCircle, Loader2,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast'
 import { useUser } from '@/hooks/use-user'
 import { hasAutopilot, planLabel, type UserPlan } from '@/lib/plans'
+import { UpgradeCard } from '@/components/plans/UpgradeCard'
 import {
   getAutopilotSeries,
   createAutopilotSeries,
@@ -99,45 +100,34 @@ export default function AutopilotPage() {
     return (
       <div className="px-4 sm:px-6 py-10 max-w-3xl mx-auto">
         <header className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <h1 className="font-display text-2xl font-semibold text-foreground">Autopilot</h1>
-            <span className="font-mono text-[10px] uppercase tracking-wide bg-muted text-[--text-muted] border border-border px-2 py-0.5 rounded-full">
-              Locked on {planLabel(plan)}
-            </span>
-          </div>
-          <p className="font-body text-sm text-[--text-muted]">
+          <h1 className="font-display text-2xl font-semibold text-foreground">Autopilot</h1>
+          <p className="font-body text-sm text-[--text-muted] mt-1">
             Set a topic and cadence once — CLYRO writes, narrates, and renders a new video every day or week.
           </p>
+          <span className="inline-block mt-3 font-mono text-[11px] uppercase tracking-wide bg-muted text-[--text-muted] border border-border px-2 py-0.5 rounded-full">
+            Locked on {planLabel(plan)}
+          </span>
         </header>
 
-        <Card variant="gradient" padding="lg">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0" aria-hidden="true">
-              <Lock size={18} className="text-amber-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-display text-base font-semibold text-foreground">
-                Ship videos while you sleep
-              </h2>
-              <p className="font-body text-sm text-[--text-muted] mt-1">
-                Set a topic and cadence once — CLYRO writes, narrates, and renders a new video every
-                day or week. Included on <strong className="text-foreground">Pro</strong>,{' '}
-                <strong className="text-foreground">Creator</strong>, and{' '}
-                <strong className="text-foreground">Studio</strong>.
-              </p>
-              <Link
-                href="/settings/billing"
-                className="inline-flex items-center gap-2 mt-4 bg-blue-500 text-white font-body font-medium px-4 py-2 rounded-xl text-sm hover:bg-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              >
-                See plans
-                <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-            </div>
-          </div>
-        </Card>
+        <UpgradeCard
+          headline="Ship videos while you sleep"
+          description={
+            <>
+              Set a topic and cadence once — CLYRO writes, narrates, and renders a new
+              video every day or week.
+            </>
+          }
+          plans={['Pro', 'Creator', 'Studio']}
+        />
       </div>
     )
   }
+
+  // Flagship = the enabled series with the most successful runs. Promote
+  // its card to `highlight` so the eye lands on the creator's workhorse.
+  const flagshipId = series
+    .filter(s => s.enabled && s.run_count > 0)
+    .sort((a, b) => b.run_count - a.run_count)[0]?.id
 
   return (
     <div className="px-4 sm:px-6 py-10 max-w-5xl mx-auto">
@@ -179,7 +169,7 @@ export default function AutopilotPage() {
         <ul className="space-y-3">
           {series.map(s => (
             <li key={s.id}>
-              <Card variant="default" padding="lg">
+              <Card variant={s.id === flagshipId ? 'highlight' : 'default'} padding="lg">
                 <div className="flex items-start gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -187,8 +177,13 @@ export default function AutopilotPage() {
                         {s.name}
                       </h3>
                       <CadenceBadge cadence={s.cadence} />
+                      {s.id === flagshipId && (
+                        <span className="font-mono text-[11px] uppercase tracking-wide bg-blue-500/10 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full">
+                          Flagship
+                        </span>
+                      )}
                       {!s.enabled && (
-                        <span className="font-mono text-[10px] uppercase tracking-wide bg-muted text-[--text-muted] border border-border px-2 py-0.5 rounded-full">
+                        <span className="font-mono text-[11px] uppercase tracking-wide bg-muted text-[--text-muted] border border-border px-2 py-0.5 rounded-full">
                           Paused
                         </span>
                       )}
@@ -198,11 +193,11 @@ export default function AutopilotPage() {
                     </p>
                     <div className="flex items-center gap-4 mt-3 font-mono text-[11px] text-[--text-muted] flex-wrap">
                       <span className="inline-flex items-center gap-1.5">
-                        <Calendar size={11} aria-hidden="true" />
+                        <Calendar size={12} aria-hidden="true" />
                         Next: {s.cadence === 'manual' ? '—' : new Date(s.next_run_at).toLocaleString()}
                       </span>
                       <span className="inline-flex items-center gap-1.5">
-                        <Clock size={11} aria-hidden="true" />
+                        <Clock size={12} aria-hidden="true" />
                         {s.run_count} run{s.run_count === 1 ? '' : 's'}
                       </span>
                       <span>{s.format} · {s.duration}s · {s.language}</span>
@@ -213,7 +208,7 @@ export default function AutopilotPage() {
                       type="button"
                       onClick={() => handleRun(s)}
                       disabled={busyId === s.id}
-                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
                       aria-label={`Run "${s.name}" now`}
                     >
                       <Play size={12} aria-hidden="true" />
@@ -223,20 +218,22 @@ export default function AutopilotPage() {
                       type="button"
                       onClick={() => handleToggle(s)}
                       disabled={busyId === s.id}
-                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
                       aria-label={s.enabled ? `Pause "${s.name}"` : `Resume "${s.name}"`}
                     >
                       {s.enabled ? <Pause size={12} aria-hidden="true" /> : <Play size={12} aria-hidden="true" />}
                       {s.enabled ? 'Pause' : 'Resume'}
                     </button>
+                    {/* Visual separator so Delete reads as destructive, not peer of primary actions */}
+                    <div className="w-px h-6 bg-border/60 mx-0.5" aria-hidden="true" />
                     <button
                       type="button"
                       onClick={() => handleDelete(s)}
                       disabled={busyId === s.id}
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-card text-[--text-muted] hover:text-red-400 hover:border-red-500/40 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60"
+                      className="inline-flex items-center justify-center w-11 h-11 rounded-lg border border-border bg-card text-[--text-muted] hover:text-red-400 hover:border-red-500/40 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60"
                       aria-label={`Delete "${s.name}"`}
                     >
-                      <Trash2 size={12} aria-hidden="true" />
+                      <Trash2 size={14} aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -271,7 +268,7 @@ function CadenceBadge({ cadence }: { cadence: AutopilotCadence }) {
     cadence === 'weekly' ? 'bg-blue-500/10 text-blue-300 border-blue-500/30' :
                            'bg-muted text-[--text-muted] border-border'
   return (
-    <span className={`font-mono text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${tone}`}>
+    <span className={`font-mono text-[11px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${tone}`}>
       {cadence}
     </span>
   )
