@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { createBrowserClient } from '@/lib/supabase'
-import { Mic, MicOff, Volume2, AlertTriangle, ShoppingCart, Captions, Music } from 'lucide-react'
+import { Mic, MicOff, Volume2, AlertTriangle, ShoppingCart, Captions, Music, Link2, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { WizardLayout } from '@/components/creation/WizardLayout'
 import { GenerationOverlay, type GenerationStage } from '@/components/creation/GenerationOverlay'
@@ -19,6 +19,7 @@ import {
   startFacelessGeneration,
   getPublicVoices,
   subscribeToVideoStatus,
+  generateScriptFromUrl,
 } from '@/lib/api'
 import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
 import { ANIMATION_MODES } from '@clyro/shared'
@@ -94,6 +95,9 @@ function SectionSub({ children }: { children: React.ReactNode }) {
 
 // ── Step 0 — Script ────────────────────────────────────────────────────────────
 
+type ScriptSource = 'text' | 'url'
+type UrlImportLength = 'short' | 'medium' | 'long'
+
 function StepScript({
   script,
   onChange,
@@ -102,27 +106,130 @@ function StepScript({
   onChange: (v: string) => void
 }) {
   const wordCount = script.trim().split(/\s+/).filter(Boolean).length
+  const [source, setSource] = useState<ScriptSource>('text')
+  const [url, setUrl] = useState('')
+  const [urlLength, setUrlLength] = useState<UrlImportLength>('medium')
+  const [importing, setImporting] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+
+  const handleImport = useCallback(async () => {
+    const clean = url.trim()
+    if (!clean) return
+    setImportError(null)
+    setImporting(true)
+    try {
+      const data = await generateScriptFromUrl({ url: clean, length: urlLength })
+      const next = data.script.trim()
+      if (!next) throw new Error('Script vide.')
+      onChange(next)
+      toast.success(
+        `Script importé : ${data.source.title || data.source.finalUrl} · ${data.wordCount} mots`,
+      )
+      setSource('text')  // show the imported text so users can edit before continuing
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Import failed'
+      setImportError(msg)
+      toast.error(msg)
+    } finally {
+      setImporting(false)
+    }
+  }, [url, urlLength, onChange])
 
   return (
     <div className="space-y-4">
       <SectionTitle>Your script</SectionTitle>
       <SectionSub>Paste or write the text you want to transform into a video.</SectionSub>
 
-      <textarea
-        value={script}
-        onChange={e => onChange(e.target.value)}
-        rows={14}
-        placeholder="Ex: Today, we're talking about the AI revolution in digital marketing..."
-        className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
-      />
-      <div className="flex items-center justify-between">
-        <p className="font-mono text-xs text-[--text-muted]">
-          {wordCount} words · ~{Math.round(wordCount / 130)} min narration
-        </p>
-        {wordCount > 600 && (
-          <Badge variant="warning">Long script — will be condensed</Badge>
-        )}
+      {/* Source tabs — text OR import from URL */}
+      <div className="inline-flex rounded-lg bg-muted border border-border p-1">
+        <button
+          type="button"
+          onClick={() => setSource('text')}
+          className={cn(
+            'px-3 py-1.5 text-xs font-display rounded-md transition-colors',
+            source === 'text' ? 'bg-background text-foreground shadow-sm' : 'text-[--text-muted] hover:text-foreground',
+          )}
+        >
+          Text
+        </button>
+        <button
+          type="button"
+          onClick={() => setSource('url')}
+          className={cn(
+            'px-3 py-1.5 text-xs font-display rounded-md transition-colors flex items-center gap-1.5',
+            source === 'url' ? 'bg-background text-foreground shadow-sm' : 'text-[--text-muted] hover:text-foreground',
+          )}
+        >
+          <Link2 size={13} />
+          From URL
+        </button>
       </div>
+
+      {source === 'url' ? (
+        <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-4">
+          <p className="font-body text-sm text-[--text-muted]">
+            Paste a blog post, news article or landing page URL — we'll turn it into a ready-to-narrate script.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="url"
+              inputMode="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://exemple.com/article"
+              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60"
+              onKeyDown={(e) => { if (e.key === 'Enter' && !importing) handleImport() }}
+              disabled={importing}
+            />
+            <select
+              value={urlLength}
+              onChange={(e) => setUrlLength(e.target.value as UrlImportLength)}
+              className="bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground"
+              disabled={importing}
+            >
+              <option value="short">Short (~30s)</option>
+              <option value="medium">Medium (~60s)</option>
+              <option value="long">Long (~2 min)</option>
+            </select>
+            <Button
+              type="button"
+              onClick={handleImport}
+              disabled={!url.trim() || importing}
+              className="min-w-[110px]"
+            >
+              {importing ? (
+                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" />Importing…</span>
+              ) : (
+                'Import'
+              )}
+            </Button>
+          </div>
+          {importError && (
+            <p className="font-mono text-xs text-red-400">{importError}</p>
+          )}
+          <p className="font-mono text-xs text-[--text-muted]">
+            Tip: works best on article pages. We'll keep a source credit in the video metadata.
+          </p>
+        </div>
+      ) : (
+        <>
+          <textarea
+            value={script}
+            onChange={e => onChange(e.target.value)}
+            rows={14}
+            placeholder="Ex: Today, we're talking about the AI revolution in digital marketing..."
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+          />
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-xs text-[--text-muted]">
+              {wordCount} words · ~{Math.round(wordCount / 130)} min narration
+            </p>
+            {wordCount > 600 && (
+              <Badge variant="warning">Long script — will be condensed</Badge>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

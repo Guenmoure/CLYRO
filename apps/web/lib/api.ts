@@ -85,6 +85,39 @@ async function apiFetch<T>(
   return response.json() as Promise<T>
 }
 
+// ---- URL-to-Script (audit P2: Pictory-style blog-to-video) ----
+
+export interface UrlToScriptPayload {
+  url: string
+  length?: 'short' | 'medium' | 'long'
+  language?: 'fr' | 'en'
+}
+
+export interface UrlToScriptResponse {
+  source: {
+    url: string
+    finalUrl: string
+    title: string
+    description: string
+    wordCount: number
+    language?: string
+  }
+  title: string
+  script: string
+  hook: string
+  cta: string
+  estimatedSeconds: number
+  wordCount: number
+  attribution: string
+}
+
+export async function generateScriptFromUrl(payload: UrlToScriptPayload) {
+  return apiFetch<UrlToScriptResponse>('/api/v1/generate/script-from-url', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 // ---- Pipeline Faceless ----
 
 export async function startFacelessGeneration(payload: CreateFacelessVideoPayload) {

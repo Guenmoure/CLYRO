@@ -11,9 +11,12 @@ import {
   buildBrandStrategyUserPrompt,
   buildBrandChartePrompts,
   buildBrandHybridUserPrompt,
+  buildUrlToScriptPrompts,
+  type UrlToScriptLength,
 } from '../prompts'
 import { generateMotionStoryboard } from '../services/claude'
 import { sendBrandKitReadyEmail } from '../services/resend'
+import { extractArticleFromUrl, UrlExtractError } from '../services/urlExtract'
 
 export const generateRouter = Router()
 
@@ -653,5 +656,105 @@ Réponds UNIQUEMENT avec ce JSON :
   } catch (err) {
     logger.error({ err, userId: req.userId }, '[generate/extract-style-tokens] error')
     res.status(500).json({ error: 'Failed to extract style tokens', code: 'SERVICE_ERROR' })
+  }
+})
+
+// ── POST /generate/script-from-url ────────────────────────────────────────────
+// Audit P2: Pictory-style blog-to-video. Scrapes a public URL, extracts the main
+// article text, and asks Claude to rewrite it as a spoken voice-over script
+// compatible with the faceless pipeline. Response is ready to be POSTed to
+// /generate/storyboard or passed to /pipeline/faceless.
+
+const VALID_URL_LENGTHS = new Set<UrlToScriptLength>(['short', 'medium', 'long'])
+
+generateRouter.post('/generate/script-from-url', authMiddleware, async (req, res) => {
+  try {
+    const { url, length = 'medium', language } = req.body as {
+      url?: string
+      length?: string
+      language?: 'fr' | 'en'
+    }
+
+    if (!url || typeof url !== 'string') {
+      res.status(400).json({ error: 'url requis.', code: 'VALIDATION_ERROR' })
+      return
+    }
+    const safeLength: UrlToScriptLength = VALID_URL_LENGTHS.has(length as UrlToScriptLength)
+      ? (length as UrlToScriptLength)
+      : 'medium'
+
+    const article = await extractArticleFromUrl(url)
+
+    // Auto-detect language when not forced
+    const detectedLang: 'fr' | 'en' = language ?? (article.language === 'en' ? 'en' : 'fr')
+
+    const { system, user } = buildUrlToScriptPrompts({
+      sourceUrl: article.finalUrl,
+      title: article.title,
+      description: article.description,
+      content: article.content,
+      length: safeLength,
+      targetLanguage: detectedLang,
+    })
+
+    const message = await withRetry(
+      () => anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        system,
+        messages: [{ role: 'user', content: user }],
+      }),
+      2,
+      'url-to-script',
+    )
+
+    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+    const parsed = JSON.parse(extractJson(raw)) as {
+      title: string
+      script: string
+      hook: string
+      cta: string
+      estimatedSeconds: number
+      wordCount: number
+      attribution: string
+    }
+
+    if (!parsed.script || typeof parsed.script !== 'string' || parsed.script.trim().length < 30) {
+      throw new Error('Script généré invalide.')
+    }
+
+    logger.info(
+      {
+        userId: req.userId,
+        sourceUrl: article.finalUrl,
+        sourceWords: article.wordCount,
+        length: safeLength,
+        scriptWords: parsed.wordCount,
+        tokens: message.usage,
+      },
+      'URL-to-script generated',
+    )
+
+    res.json({
+      source: {
+        url: article.url,
+        finalUrl: article.finalUrl,
+        title: article.title,
+        description: article.description,
+        wordCount: article.wordCount,
+        language: article.language ?? detectedLang,
+      },
+      ...parsed,
+    })
+  } catch (err) {
+    if (err instanceof UrlExtractError) {
+      res.status(err.status).json({ error: err.message, code: err.code })
+      return
+    }
+    logger.error({ err, userId: req.userId }, '[generate/script-from-url] error')
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'URL-to-script generation failed',
+      code: 'GENERATION_ERROR',
+    })
   }
 })

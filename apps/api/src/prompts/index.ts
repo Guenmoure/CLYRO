@@ -465,3 +465,73 @@ Réponds UNIQUEMENT avec ce JSON valide (format BrandDirection) :
   "keywords": ["...", "...", "...", "...", "..."]
 }`
 }
+
+// ── URL-to-Script (blog → faceless video) ──────────────────────────────────────
+// Audit P2: Pictory's moat is URL ingestion. This prompt turns a scraped article
+// into a natural spoken script formatted for the standard faceless pipeline.
+
+export type UrlToScriptLength = 'short' | 'medium' | 'long'
+
+export interface UrlToScriptParams {
+  sourceUrl: string
+  title?: string
+  description?: string
+  content: string
+  targetLanguage?: 'fr' | 'en'
+  length?: UrlToScriptLength
+}
+
+const LENGTH_TARGETS: Record<UrlToScriptLength, { seconds: number; words: number; label: string }> = {
+  short:  { seconds: 30,  words: 75,  label: '~30 s (TikTok/Reels)' },
+  medium: { seconds: 60,  words: 150, label: '~60 s (équilibré)' },
+  long:   { seconds: 120, words: 300, label: '~2 min (YouTube Shorts long)' },
+}
+
+export function buildUrlToScriptPrompts(p: UrlToScriptParams): { system: string; user: string } {
+  const length = p.length ?? 'medium'
+  const target = LENGTH_TARGETS[length]
+  const lang = p.targetLanguage ?? 'fr'
+
+  const system = `Tu es un scénariste vidéo expert en vulgarisation et en formats courts (TikTok, Reels, Shorts).
+Tu transformes des articles de blog ou pages web en scripts de voix-off naturels, engageants et concis.
+Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
+
+  const langInstruction = lang === 'en'
+    ? 'Réponds en ANGLAIS (le script final doit être en anglais naturel, parlé).'
+    : 'Réponds en FRANÇAIS (le script final doit être en français naturel, parlé).'
+
+  const user = `Transforme ce contenu web en un SCRIPT de voix-off pour vidéo faceless.
+
+DURÉE CIBLE : ${target.label} — environ ${target.words} mots.
+LANGUE : ${langInstruction}
+
+RÈGLES :
+- Ouvre avec un hook fort (1 phrase qui accroche en 3 s).
+- Utilise un ton conversationnel, pas journalistique. "Tu" / "vous" plutôt que "on".
+- Phrases courtes (< 15 mots) adaptées à la narration orale.
+- Pas de listes à puces, pas de markdown, pas de titres — prose pure.
+- Pas de mentions "dans cet article" ou "selon l'auteur" : reformule comme une vidéo originale.
+- Termine par un CTA simple (1 phrase : "Abonne-toi", "Essaye-le", "Dis-moi en commentaire", etc.).
+- Cite ${p.sourceUrl} comme source dans le champ "attribution", pas dans le script.
+
+SOURCE :
+URL : ${p.sourceUrl}
+${p.title ? `Titre : ${p.title}\n` : ''}${p.description ? `Description : ${p.description}\n` : ''}
+CONTENU EXTRAIT :
+"""
+${p.content.slice(0, 8000)}
+"""
+
+Réponds UNIQUEMENT avec ce JSON valide :
+{
+  "title": "titre accrocheur pour la vidéo (max 70 car.)",
+  "script": "script complet prêt pour TTS, ${target.words}±20 mots",
+  "hook": "la première phrase du script, isolée",
+  "cta": "la dernière phrase du script, isolée",
+  "estimatedSeconds": nombre,
+  "wordCount": nombre,
+  "attribution": "Source : ${p.sourceUrl}"
+}`
+
+  return { system, user }
+}
