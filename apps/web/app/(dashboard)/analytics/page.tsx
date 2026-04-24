@@ -172,9 +172,9 @@ export default async function AnalyticsPage() {
           <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
             <Activity size={20} className="text-[--text-muted]" aria-hidden="true" />
           </div>
-          <h2 className="font-display text-base font-semibold text-foreground">No data yet</h2>
+          <h2 className="font-display text-base font-semibold text-foreground">Nothing to chart yet</h2>
           <p className="font-body text-sm text-[--text-muted] mt-1 max-w-sm mx-auto">
-            Once you generate your first video, you'll see render counts, style performance, and a 30-day activity timeline here.
+            Render your first video and this page lights up — counts, top styles, a 30-day timeline.
           </p>
           <Link
             href="/faceless/new"
@@ -227,7 +227,7 @@ export default async function AnalyticsPage() {
           icon={<Clock size={16} aria-hidden="true" />}
           label="Avg length"
           value={m.avgDurationMinutes !== null ? `${m.avgDurationMinutes} min` : '—'}
-          sublabel={m.processing > 0 ? `${m.processing} in progress` : 'across completed renders'}
+          sublabel={m.processing > 0 ? `${m.processing} in progress` : 'completed renders'}
         />
       </section>
 

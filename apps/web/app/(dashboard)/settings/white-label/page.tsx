@@ -85,7 +85,7 @@ export default async function WhiteLabelPage() {
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-display text-base font-semibold text-foreground">
-                Upgrade to remove CLYRO branding
+                Make it look like yours, not ours
               </h2>
               <p className="font-body text-sm text-[--text-muted] mt-1">
                 White-label is included on <strong className="text-foreground">Pro</strong>,{' '}
@@ -111,7 +111,7 @@ export default async function WhiteLabelPage() {
         <FeatureRow
           icon={<ImageIcon size={16} aria-hidden="true" />}
           title="No CLYRO watermark on renders"
-          desc="Every video exports clean — no bottom-right badge, no outro frame."
+          desc="Clean exports. No badge, no outro — just your video."
           active={unlocked}
         />
         <FeatureRow

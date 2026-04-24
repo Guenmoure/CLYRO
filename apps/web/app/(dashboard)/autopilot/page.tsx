@@ -72,7 +72,7 @@ export default function AutopilotPage() {
     try {
       const { data } = await runAutopilotSeries(s.id)
       setSeries(prev => prev.map(x => x.id === s.id ? data : x))
-      toast.success('Queued for the next scheduler tick')
+      toast.success('On it — your next render is queued')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Run failed')
     } finally {
@@ -81,7 +81,7 @@ export default function AutopilotPage() {
   }
 
   async function handleDelete(s: AutopilotSeries) {
-    if (!window.confirm(`Delete the series "${s.name}"? This can't be undone.`)) return
+    if (!window.confirm(`Delete "${s.name}"? Scheduled runs will stop. Videos already rendered stay in your library.`)) return
     setBusyId(s.id)
     try {
       await deleteAutopilotSeries(s.id)
@@ -106,7 +106,7 @@ export default function AutopilotPage() {
             </span>
           </div>
           <p className="font-body text-sm text-[--text-muted]">
-            Set a topic + cadence once. CLYRO generates a new video on schedule — no clicks.
+            Set a topic and cadence once — CLYRO writes, narrates, and renders a new video every day or week.
           </p>
         </header>
 
@@ -117,13 +117,13 @@ export default function AutopilotPage() {
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-display text-base font-semibold text-foreground">
-                Upgrade to unlock Autopilot
+                Ship videos while you sleep
               </h2>
               <p className="font-body text-sm text-[--text-muted] mt-1">
-                Autopilot is included on <strong className="text-foreground">Pro</strong>,{' '}
+                Set a topic and cadence once — CLYRO writes, narrates, and renders a new video every
+                day or week. Included on <strong className="text-foreground">Pro</strong>,{' '}
                 <strong className="text-foreground">Creator</strong>, and{' '}
-                <strong className="text-foreground">Studio</strong>. Keep shipping daily or weekly
-                without touching the wizard.
+                <strong className="text-foreground">Studio</strong>.
               </p>
               <Link
                 href="/settings/billing"
@@ -166,10 +166,9 @@ export default function AutopilotPage() {
           <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
             <Rocket size={20} className="text-[--text-muted]" aria-hidden="true" />
           </div>
-          <h2 className="font-display text-base font-semibold text-foreground">No series yet</h2>
+          <h2 className="font-display text-base font-semibold text-foreground">Start your first series</h2>
           <p className="font-body text-sm text-[--text-muted] mt-1 max-w-md mx-auto">
-            A series is a topic + style + cadence. CLYRO picks a fresh angle each run,
-            writes the script, generates visuals, and delivers the finished video.
+            Pick a topic and a cadence. We handle the rest — script, visuals, voiceover, render — on schedule.
           </p>
           <Button onClick={() => setCreateOpen(true)} className="mt-5">
             <Sparkles size={14} aria-hidden="true" />
@@ -251,8 +250,7 @@ export default function AutopilotPage() {
       <div className="mt-8 flex items-start gap-2 text-[--text-muted] font-body text-xs">
         <AlertCircle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
         <span>
-          Autopilot runs are queued at each cadence tick. Each run consumes credits
-          like a normal faceless render. You can pause or delete a series anytime.
+          Each run uses credits like a regular render. Pause anytime — we won't charge for a paused series.
         </span>
       </div>
 
