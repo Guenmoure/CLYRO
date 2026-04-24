@@ -20,8 +20,8 @@
  *   4. onCloned() fires so callers can refetch their voice lists
  */
 
-import { useEffect, useState } from 'react'
-import { Mic2, Upload, AlertTriangle, Lock } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Mic2, Upload, AlertTriangle, Lock, X } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { cloneVoice } from '@/lib/api'
 import { toast } from '@/components/ui/toast'
@@ -58,6 +58,9 @@ export function CloneVoiceModal({
   const [durationSeconds, setDurationSeconds] = useState<number | null>(null)
   const [uploading, setUploading] = useState(false)
 
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+
   // Reset on close so next open starts fresh.
   useEffect(() => {
     if (!isOpen) {
@@ -68,11 +71,39 @@ export function CloneVoiceModal({
     }
   }, [isOpen])
 
-  // Escape to close.
+  // Auto-focus the first input when the dialog opens.
+  useEffect(() => {
+    if (!isOpen) return
+    // next tick so the node is mounted
+    const id = window.setTimeout(() => nameInputRef.current?.focus(), 0)
+    return () => window.clearTimeout(id)
+  }, [isOpen])
+
+  // Escape to close + Tab trap inside the dialog (WCAG 2.4.3).
   useEffect(() => {
     if (!isOpen) return
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !uploading) onClose()
+      if (e.key === 'Escape' && !uploading) {
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab' || !dialogRef.current) return
+      const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      const active = document.activeElement as HTMLElement | null
+      if (e.shiftKey) {
+        if (active === first || !dialogRef.current.contains(active)) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else if (active === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -159,9 +190,9 @@ export function CloneVoiceModal({
       aria-labelledby="clone-voice-title"
       onClick={(e) => { if (e.target === e.currentTarget && !uploading) onClose() }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
+      <div ref={dialogRef} className="w-full max-w-md rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
         <div className="flex items-start gap-3 px-6 pt-6 pb-4">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0" aria-hidden="true">
             <Mic2 size={18} className="text-blue-500" />
           </div>
           <div className="flex-1 min-w-0">
@@ -172,16 +203,28 @@ export function CloneVoiceModal({
               Upload a clean audio sample of your voice — we'll create a custom AI voice you can use in your videos.
             </p>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={uploading}
+            aria-label="Close dialog"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 disabled:opacity-50 shrink-0"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
         </div>
 
         {planMessage ? (
-          <div className="mx-6 mb-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
-            <Lock size={16} className="text-amber-400 mt-0.5 shrink-0" />
+          <div
+            id="clone-voice-plan-message"
+            className="mx-6 mb-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3"
+          >
+            <Lock size={16} className="text-amber-400 mt-0.5 shrink-0" aria-hidden="true" />
             <div className="flex-1 min-w-0">
               <p className="font-body text-sm text-foreground">{planMessage}</p>
               <a
                 href="/settings/billing"
-                className="inline-block mt-2 font-display text-xs font-medium text-amber-400 hover:text-amber-300 underline underline-offset-2"
+                className="inline-block mt-2 font-display text-xs font-medium text-amber-400 hover:text-amber-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 rounded"
               >
                 See plans →
               </a>
@@ -196,13 +239,14 @@ export function CloneVoiceModal({
             </label>
             <input
               id="clone-voice-name"
+              ref={nameInputRef}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: My main voice"
               maxLength={100}
               disabled={uploading || planBlocked || starterLimitReached}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors disabled:opacity-50"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 transition-colors disabled:opacity-50"
             />
           </div>
 
@@ -221,9 +265,9 @@ export function CloneVoiceModal({
               />
               <label
                 htmlFor="clone-voice-file"
-                className="flex items-center gap-3 w-full rounded-xl border border-dashed border-border bg-muted/40 px-3 py-3 cursor-pointer hover:border-blue-500/40 hover:bg-muted/70 transition-colors peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"
+                className="flex items-center gap-3 w-full rounded-xl border border-dashed border-border bg-muted/40 px-3 py-3 cursor-pointer hover:border-blue-500/40 hover:bg-muted/70 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500/40 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"
               >
-                <Upload size={16} className="text-[--text-muted] shrink-0" />
+                <Upload size={16} className="text-[--text-muted] shrink-0" aria-hidden="true" />
                 <span className="flex-1 min-w-0 truncate font-body text-sm text-foreground">
                   {file ? file.name : 'Choose an mp3, wav or m4a file'}
                 </span>
@@ -240,7 +284,7 @@ export function CloneVoiceModal({
             </p>
             {durationWarning && (
               <p className="mt-1 flex items-start gap-1.5 font-body text-[11px] text-amber-400">
-                <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
                 <span>{durationWarning}</span>
               </p>
             )}
@@ -252,7 +296,7 @@ export function CloneVoiceModal({
             type="button"
             onClick={onClose}
             disabled={uploading}
-            className="flex-1 border border-border bg-card text-foreground font-body font-medium py-2.5 rounded-xl text-sm hover:bg-muted transition-colors disabled:opacity-50"
+            className="flex-1 border border-border bg-card text-foreground font-body font-medium py-2.5 rounded-xl text-sm hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
           >
             Cancel
           </button>
@@ -260,7 +304,8 @@ export function CloneVoiceModal({
             type="button"
             onClick={handleSubmit}
             disabled={!name.trim() || !file || uploading || planBlocked || starterLimitReached}
-            className="flex-1 bg-blue-500 text-white font-body font-medium py-2.5 rounded-xl text-sm hover:bg-blue-600 disabled:opacity-50 transition-colors"
+            aria-describedby={planMessage ? 'clone-voice-plan-message' : undefined}
+            className="flex-1 bg-blue-500 text-white font-body font-medium py-2.5 rounded-xl text-sm hover:bg-blue-600 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           >
             {uploading ? 'Uploading…' : 'Clone voice'}
           </button>

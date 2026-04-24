@@ -143,13 +143,16 @@ function StepScript({
       <SectionTitle>Your script</SectionTitle>
       <SectionSub>Paste or write the text you want to transform into a video.</SectionSub>
 
-      {/* Source tabs — text OR import from URL */}
-      <div className="inline-flex rounded-lg bg-muted border border-border p-1">
+      {/* Source tabs — text OR import from URL (use aria-pressed since these
+          are toggle-style buttons, not a full tablist pattern) */}
+      <div className="inline-flex rounded-lg bg-muted border border-border p-1" role="group" aria-label="Script source">
         <button
           type="button"
+          aria-pressed={source === 'text'}
           onClick={() => setSource('text')}
           className={cn(
             'px-3 py-1.5 text-xs font-display rounded-md transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
             source === 'text' ? 'bg-background text-foreground shadow-sm' : 'text-[--text-muted] hover:text-foreground',
           )}
         >
@@ -157,13 +160,15 @@ function StepScript({
         </button>
         <button
           type="button"
+          aria-pressed={source === 'url'}
           onClick={() => setSource('url')}
           className={cn(
             'px-3 py-1.5 text-xs font-display rounded-md transition-colors flex items-center gap-1.5',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
             source === 'url' ? 'bg-background text-foreground shadow-sm' : 'text-[--text-muted] hover:text-foreground',
           )}
         >
-          <Link2 size={13} />
+          <Link2 size={13} aria-hidden="true" />
           From URL
         </button>
       </div>
@@ -175,19 +180,24 @@ function StepScript({
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
+              id="url-import-input"
               type="url"
               inputMode="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://exemple.com/article"
-              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60"
+              aria-label="Article URL"
+              aria-invalid={importError ? true : undefined}
+              aria-describedby={importError ? 'url-import-error' : undefined}
+              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40"
               onKeyDown={(e) => { if (e.key === 'Enter' && !importing) handleImport() }}
               disabled={importing}
             />
             <select
               value={urlLength}
               onChange={(e) => setUrlLength(e.target.value as UrlImportLength)}
-              className="bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground"
+              aria-label="Target video length"
+              className="bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
               disabled={importing}
             >
               <option value="short">Short (~30s)</option>
@@ -201,14 +211,20 @@ function StepScript({
               className="min-w-[110px]"
             >
               {importing ? (
-                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" />Importing…</span>
+                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" aria-hidden="true" />Importing…</span>
               ) : (
                 'Import'
               )}
             </Button>
           </div>
           {importError && (
-            <p className="font-mono text-xs text-red-400">{importError}</p>
+            <p
+              id="url-import-error"
+              role="alert"
+              className="font-mono text-xs text-red-400"
+            >
+              {importError}
+            </p>
           )}
           <p className="font-mono text-xs text-[--text-muted]">
             Tip: works best on article pages. We'll keep a source credit in the video metadata.

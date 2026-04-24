@@ -286,7 +286,7 @@ export function VoicePickerModal({
             <div className="py-8 text-center">
               {tab === 'cloned' && onRequestClone ? (
                 <>
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3" aria-hidden="true">
                     <Mic2 size={16} className="text-blue-400" />
                   </div>
                   <p className="font-body text-sm text-foreground mb-1">No cloned voices yet</p>

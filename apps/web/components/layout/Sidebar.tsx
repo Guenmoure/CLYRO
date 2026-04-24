@@ -220,15 +220,18 @@ export function Sidebar({
           onClick={() => setCreateMenuOpen((v) => !v)}
           aria-haspopup="menu"
           aria-expanded={createMenuOpen}
+          aria-label={(collapsed && !mobileOpen) ? 'New — create a video' : undefined}
           className={cn(
             'w-full flex items-center gap-2 rounded-xl font-display text-sm font-medium',
             'text-white bg-gradient-to-r from-blue-500 to-purple-500',
             'hover:from-blue-500/90 hover:to-purple-500/90',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card',
             'shadow-sm transition-all duration-150',
-            collapsed && !mobileOpen ? 'justify-center h-10 w-10 mx-auto px-0' : 'justify-center px-3 py-2.5',
+            // Touch target min 44×44 (WCAG 2.5.5) — h-11 w-11 = 44 px, py-2.5 + 14 px line-height = ~44 px
+            collapsed && !mobileOpen ? 'justify-center h-11 w-11 mx-auto px-0' : 'justify-center px-3 py-2.5',
           )}
         >
-          <Plus size={16} strokeWidth={2.5} />
+          <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
           {(!collapsed || mobileOpen) && <span>New</span>}
         </button>
 
@@ -256,7 +259,7 @@ export function Sidebar({
                     onClick={() => { setCreateMenuOpen(false); router.push(a.href) }}
                     className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-muted transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0" aria-hidden="true">
                       <Icon size={14} className="text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
