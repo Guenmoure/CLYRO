@@ -221,7 +221,19 @@ async function fetchAccountVoices(): Promise<ElevenLabsVoice[]> {
   return data.voices ?? []
 }
 
-async function fetchSharedVoices(pageSize = 100, maxPages = 3): Promise<ElevenLabsSharedVoice[]> {
+// Competitive audit P2: Fliki ships 1300+ voices, we capped at 300 (3 pages × 100).
+// Raising to 6 pages (600 voices) — a pragmatic middle ground that keeps the single
+// upstream fetch under ~1s while closing the "library depth" gap in the scoring
+// matrix. Override via ELEVENLABS_SHARED_VOICES_MAX_PAGES if you need more.
+const DEFAULT_SHARED_VOICES_MAX_PAGES = Math.max(
+  1,
+  Number(process.env.ELEVENLABS_SHARED_VOICES_MAX_PAGES ?? 6),
+)
+
+async function fetchSharedVoices(
+  pageSize = 100,
+  maxPages = DEFAULT_SHARED_VOICES_MAX_PAGES,
+): Promise<ElevenLabsSharedVoice[]> {
   const all: ElevenLabsSharedVoice[] = []
   let page = 0
 
