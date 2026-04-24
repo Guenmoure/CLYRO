@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { ProfileForm } from '@/components/settings/profile-form'
-import { Shield, CreditCard, ChevronRight, User, Bell, Loader2, Check } from 'lucide-react'
+import { Shield, CreditCard, ChevronRight, User, Bell, Loader2, Check, Palette } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
 
@@ -76,6 +76,26 @@ export default function SettingsPage() {
             <h2 className="font-display font-semibold text-foreground">Abonnement & crédits</h2>
             <p className="font-body text-sm text-[--text-secondary] mt-0.5">
               Gérer ton plan, tes crédits et tes moyens de paiement.
+            </p>
+          </div>
+          <ChevronRight
+            size={18}
+            className="text-[--text-secondary] group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0"
+          />
+        </Link>
+
+        {/* White-label — plan-gated */}
+        <Link
+          href="/settings/white-label"
+          className="card-interactive flex items-center gap-4 rounded-2xl border border-border bg-card px-6 py-5 group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center shrink-0">
+            <Palette size={18} className="text-pink-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-display font-semibold text-foreground">White-label</h2>
+            <p className="font-body text-sm text-[--text-secondary] mt-0.5">
+              Retire le watermark CLYRO et applique ta marque sur les pages partagées.
             </p>
           </div>
           <ChevronRight
