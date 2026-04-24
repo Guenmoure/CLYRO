@@ -101,12 +101,14 @@ type UrlImportLength = 'short' | 'medium' | 'long'
 function StepScript({
   script,
   onChange,
+  initialSource = 'text',
 }: {
   script: string
   onChange: (v: string) => void
+  initialSource?: ScriptSource
 }) {
   const wordCount = script.trim().split(/\s+/).filter(Boolean).length
-  const [source, setSource] = useState<ScriptSource>('text')
+  const [source, setSource] = useState<ScriptSource>(initialSource)
   const [url, setUrl] = useState('')
   const [urlLength, setUrlLength] = useState<UrlImportLength>('medium')
   const [importing, setImporting] = useState(false)
@@ -915,7 +917,11 @@ function FacelessNewPageInner() {
       >
         <div className="max-w-2xl mx-auto px-6 py-8">
           {currentStep === 0 && (
-            <StepScript script={script} onChange={setScript} />
+            <StepScript
+              script={script}
+              onChange={setScript}
+              initialSource={params.get('source') === 'url' ? 'url' : 'text'}
+            />
           )}
           {currentStep === 1 && (
             <StepStyleVoice

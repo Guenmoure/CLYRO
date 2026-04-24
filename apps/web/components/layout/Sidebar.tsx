@@ -30,6 +30,7 @@ import {
   ChevronLeft, ChevronRight, ChevronUp,
   Settings, HelpCircle, Bell, LogOut,
   CreditCard, ExternalLink, X,
+  Plus, Link2,
 } from 'lucide-react'
 import type { SidebarUser } from './DashboardShell'
 
@@ -77,6 +78,37 @@ export function Sidebar({
   // User menu state
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  // Quick-actions popover state (audit P1 — sidebar quick actions)
+  const [createMenuOpen, setCreateMenuOpen] = useState(false)
+  const createMenuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!createMenuOpen) return
+    function onMouse(e: MouseEvent) {
+      if (createMenuRef.current && !createMenuRef.current.contains(e.target as Node))
+        setCreateMenuOpen(false)
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setCreateMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onMouse)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onMouse)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [createMenuOpen])
+  useEffect(() => { setCreateMenuOpen(false) }, [pathname])
+
+  const quickActions: Array<{
+    id: string; label: string; sub: string; icon: typeof Plus; href: string
+  }> = [
+    { id: 'faceless', label: 'Faceless video',   sub: 'Script → narrated video', icon: Video,    href: '/faceless/new' },
+    { id: 'url',      label: 'Import from URL',  sub: 'Blog / article → video',  icon: Link2,    href: '/faceless/new?source=url' },
+    { id: 'motion',   label: 'Motion design',    sub: 'Animated graphics',       icon: Sparkles, href: '/motion/new' },
+    { id: 'studio',   label: 'Avatar studio',    sub: 'Talking-head video',      icon: Film,     href: '/studio/new' },
+    { id: 'brand',    label: 'Brand kit',        sub: 'Colors · fonts · logo',   icon: Palette,  href: '/brand/new' },
+  ]
 
   useEffect(() => {
     if (!userMenuOpen) return
@@ -178,6 +210,66 @@ export function Sidebar({
           >
             <X size={16} />
           </button>
+        )}
+      </div>
+
+      {/* ── QUICK ACTION — "+ New" primary CTA ───────────────────── */}
+      <div ref={createMenuRef} className="relative px-3 pt-1 pb-1 shrink-0">
+        <button
+          type="button"
+          onClick={() => setCreateMenuOpen((v) => !v)}
+          aria-haspopup="menu"
+          aria-expanded={createMenuOpen}
+          className={cn(
+            'w-full flex items-center gap-2 rounded-xl font-display text-sm font-medium',
+            'text-white bg-gradient-to-r from-blue-500 to-purple-500',
+            'hover:from-blue-500/90 hover:to-purple-500/90',
+            'shadow-sm transition-all duration-150',
+            collapsed && !mobileOpen ? 'justify-center h-10 w-10 mx-auto px-0' : 'justify-center px-3 py-2.5',
+          )}
+        >
+          <Plus size={16} strokeWidth={2.5} />
+          {(!collapsed || mobileOpen) && <span>New</span>}
+        </button>
+
+        {createMenuOpen && (
+          <div
+            role="menu"
+            className={cn(
+              'absolute z-50 rounded-2xl overflow-hidden bg-card border border-border shadow-xl',
+              collapsed && !mobileOpen ? 'left-full top-0 ml-2 w-64' : 'left-3 right-3 top-full mt-2',
+            )}
+          >
+            <div className="px-4 py-2.5 border-b border-border/60">
+              <p className="font-display text-xs font-semibold text-foreground uppercase tracking-wider">
+                Quick create
+              </p>
+            </div>
+            <div className="py-1.5">
+              {quickActions.map((a) => {
+                const Icon = a.icon
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => { setCreateMenuOpen(false); router.push(a.href) }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-muted transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <Icon size={14} className="text-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-sm text-foreground leading-tight">{a.label}</p>
+                      <p className="font-mono text-[11px] text-[--text-muted] leading-tight mt-0.5 truncate">
+                        {a.sub}
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         )}
       </div>
 
