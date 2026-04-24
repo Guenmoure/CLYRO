@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils'
 import { createBrowserClient } from '@/lib/supabase'
 
 const SUGGESTIONS = [
-  'The 5 habits of millionaires',
-  'How Bitcoin works in 2 minutes',
-  'The secrets of deep sleep',
+  'Les 5 habitudes des millionnaires',
+  'Comment fonctionne Bitcoin en 2 minutes',
+  'Les secrets du sommeil profond',
 ]
 
 export function HeroScript() {
@@ -77,9 +77,9 @@ export function HeroScript() {
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onKeyDown={handleKey}
-          placeholder={"Paste your script here...\n\nExample: \"Octopuses are the most intelligent animals in the ocean. They can open jars, solve mazes, and change color in a fraction of a second...\""}
+          placeholder={"Colle ton script ici...\n\nExemple : \"Les pieuvres sont les animaux les plus intelligents de l'océan. Elles peuvent ouvrir des bocaux, résoudre des labyrinthes et changer de couleur en une fraction de seconde...\""}
           rows={4}
-          aria-label="Paste your video script"
+          aria-label="Colle ton script vidéo"
           className={cn(
             'w-full bg-transparent px-4 pt-4 pb-14',
             'font-body text-sm text-foreground',
@@ -98,8 +98,8 @@ export function HeroScript() {
             )}
           >
             {wordCount > 0
-              ? `${wordCount} words · ~${estMin} min video`
-              : 'Minimum 5 words'}
+              ? `${wordCount} mots · vidéo ~${estMin} min`
+              : 'Minimum 5 mots'}
           </span>
 
           {/* Bouton Générer */}
@@ -107,7 +107,7 @@ export function HeroScript() {
             type="button"
             onClick={handleGenerate}
             disabled={!ready}
-            aria-label="Generate my video"
+            aria-label="Générer ma vidéo"
             className={cn(
               'flex items-center gap-1.5 px-4 py-1.5 rounded-xl',
               'font-display text-sm font-medium transition-all duration-200',
@@ -117,14 +117,14 @@ export function HeroScript() {
             )}
           >
             <Zap size={13} />
-            Generate my video →
+            Générer ma vidéo →
           </button>
         </div>
       </div>
 
       {/* Suggestions rapides */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-xs text-[--text-muted]/60 shrink-0">Try:</span>
+        <span className="font-mono text-xs text-[--text-muted]/60 shrink-0">Essayer :</span>
         {SUGGESTIONS.map((s) => (
           <button
             key={s}

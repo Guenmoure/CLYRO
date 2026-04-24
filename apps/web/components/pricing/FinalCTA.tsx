@@ -32,9 +32,12 @@ export function FinalCTA() {
           </Button>
         </div>
 
+        {/* Honest positioning — audit P0: no fake social proof numbers.
+            We lead with differentiators we actually ship instead of inflated
+            user counts (competitors cheat on these all day, we won't). */}
         <p className="font-mono text-xs text-[--text-muted] pt-2">
-          ✓ 500+ créateurs actifs
-          {' · '}✓ 2 000+ vidéos générées
+          ✓ Avatars + faceless + motion dans 1 seul outil
+          {' · '}✓ Paiement Mobile Money
           {' · '}✓ Crédits sans expiration
           {' · '}✓ Support réactif
         </p>
