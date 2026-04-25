@@ -4,23 +4,35 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { DraftsSection } from '@/components/dashboard/DraftsSection'
+import { toast } from '@/components/ui/toast'
 import {
   Search, X, FolderOpen, SlidersHorizontal,
   FolderPlus, Trash2, ChevronDown, Folder,
   ChevronLeft, ChevronRight,
   Video, Clapperboard, Sparkles, Palette, LayoutGrid, PanelLeft,
+  MoreVertical, Pencil, FolderInput, Users, Gem, Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const PAGE_SIZE = 12
 
 const SORT_OPTIONS = [
-  { id: 'recent', label: 'Newest'    },
-  { id: 'oldest', label: 'Oldest'    },
-  { id: 'status', label: 'By Status' },
+  { id: 'recent', label: 'Newest' },
+  { id: 'oldest', label: 'Oldest' },
+  { id: 'az',     label: 'A-Z'    },
+  { id: 'za',     label: 'Z-A'    },
 ] as const
 
 type SortOption = typeof SORT_OPTIONS[number]['id']
+
+const STATUS_FILTERS = [
+  { id: 'all',        label: 'All statuses', match: null as string[] | null },
+  { id: 'done',       label: 'Completed',    match: ['done'] },
+  { id: 'processing', label: 'Processing',   match: ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly', 'animation'] },
+  { id: 'error',      label: 'Failed',       match: ['error'] },
+] as const
+
+type StatusFilter = typeof STATUS_FILTERS[number]['id']
 
 // Sub-navigation entries — filter the videos query by module.
 // `null` = no filter (All Projects).
@@ -58,13 +70,19 @@ export default function ProjectsPage() {
   const [folders,   setFolders]   = useState<string[]>(['Richard'])
   const [activeNav, setActiveNav] = useState<string>('all')
   const [navOpen,   setNavOpen]   = useState(true)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false)
+  const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null)
 
   const activeModule = SUB_NAV.find(n => n.id === activeNav)?.module ?? null
+  const activeStatusMatch = STATUS_FILTERS.find(s => s.id === statusFilter)?.match ?? null
+  const activeFiltersCount = (statusFilter !== 'all' ? 1 : 0)
 
   const fetchVideos = useCallback(async (
     pageIndex: number,
     sortOption: SortOption,
     moduleFilter: string | null,
+    statusMatch: readonly string[] | null,
   ) => {
     setLoading(true)
     try {
@@ -86,12 +104,18 @@ export default function ProjectsPage() {
         query = query.eq('module', moduleFilter)
       }
 
+      if (statusMatch && statusMatch.length > 0) {
+        query = query.in('status', statusMatch)
+      }
+
       if (sortOption === 'recent') {
         query = query.order('created_at', { ascending: false })
       } else if (sortOption === 'oldest') {
         query = query.order('created_at', { ascending: true })
-      } else {
-        query = query.order('status', { ascending: true }).order('created_at', { ascending: false })
+      } else if (sortOption === 'az') {
+        query = query.order('title', { ascending: true })
+      } else if (sortOption === 'za') {
+        query = query.order('title', { ascending: false })
       }
 
       const { data, count, error } = await query
@@ -108,21 +132,58 @@ export default function ProjectsPage() {
     }
   }, [])
 
-  // Reset to page 0 whenever sort or sub-nav changes.
+  // Reset to page 0 whenever any filter / sort changes.
   useEffect(() => {
     setPage(0)
-    fetchVideos(0, sort, activeModule)
+    fetchVideos(0, sort, activeModule, activeStatusMatch)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sort, activeNav])
+  }, [sort, activeNav, statusFilter])
 
   useEffect(() => {
-    fetchVideos(page, sort, activeModule)
+    fetchVideos(page, sort, activeModule, activeStatusMatch)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
+
+  // Escape closes any open popover (filter menu, folder menu).
+  useEffect(() => {
+    if (!filterMenuOpen && !activeFolderMenu) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setFilterMenuOpen(false)
+        setActiveFolderMenu(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [filterMenuOpen, activeFolderMenu])
 
   function handleDeleted(id: string) {
     setVideos((prev) => prev.filter((v) => v.id !== id))
     setTotal((prev) => prev - 1)
+  }
+
+  // Folder actions — local-state only for now (no folders table in Supabase
+  // yet; renaming/moving/deleting is purely client-side until we ship the
+  // schema migration). Toasts confirm the action so users know it landed.
+  function handleFolderRename(name: string) {
+    setActiveFolderMenu(null)
+    const next = window.prompt('Rename folder', name)
+    if (next === null) return
+    const trimmed = next.trim()
+    if (!trimmed || trimmed === name) return
+    if (folders.includes(trimmed)) {
+      toast.error('A folder with that name already exists')
+      return
+    }
+    setFolders(prev => prev.map(f => f === name ? trimmed : f))
+    toast.success('Folder renamed')
+  }
+
+  function handleFolderDelete(name: string) {
+    setActiveFolderMenu(null)
+    if (!window.confirm(`Delete folder "${name}"? Videos inside stay in your library.`)) return
+    setFolders(prev => prev.filter(f => f !== name))
+    toast.success('Folder deleted')
   }
 
   const filtered = useMemo(() => {
@@ -247,13 +308,76 @@ export default function ProjectsPage() {
               </label>
 
               {/* Filters */}
-              <button
-                type="button"
-                aria-label="Filters"
-                className="glass rounded-xl w-11 h-11 flex items-center justify-center text-foreground shrink-0 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
-              >
-                <SlidersHorizontal size={15} />
-              </button>
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  aria-label="Filters"
+                  aria-haspopup="menu"
+                  aria-expanded={filterMenuOpen}
+                  onClick={() => setFilterMenuOpen(v => !v)}
+                  className={cn(
+                    'glass rounded-xl w-11 h-11 flex items-center justify-center text-foreground transition-colors',
+                    'hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
+                    activeFiltersCount > 0 && 'ring-2 ring-blue-500/40',
+                  )}
+                >
+                  <SlidersHorizontal size={15} />
+                  {activeFiltersCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] font-mono font-bold flex items-center justify-center">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </button>
+
+                {filterMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute top-12 right-0 w-56 bg-card border border-border rounded-2xl shadow-xl overflow-hidden z-30"
+                    onMouseLeave={() => setFilterMenuOpen(false)}
+                  >
+                    <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
+                      Status
+                    </p>
+                    <div className="py-1">
+                      {STATUS_FILTERS.map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={statusFilter === opt.id}
+                          onClick={() => {
+                            setStatusFilter(opt.id)
+                            setFilterMenuOpen(false)
+                          }}
+                          className={cn(
+                            'flex items-center gap-3 px-4 py-2.5 text-sm font-body w-full text-left transition-colors',
+                            statusFilter === opt.id
+                              ? 'text-foreground bg-blue-500/5'
+                              : 'text-foreground hover:bg-muted',
+                          )}
+                        >
+                          <span className="flex-1">{opt.label}</span>
+                          {statusFilter === opt.id && (
+                            <Check size={14} className="text-blue-400 shrink-0" aria-hidden="true" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    {activeFiltersCount > 0 && (
+                      <>
+                        <div className="border-t border-border" />
+                        <button
+                          type="button"
+                          onClick={() => { setStatusFilter('all'); setFilterMenuOpen(false) }}
+                          className="w-full px-4 py-2.5 text-sm font-body text-[--text-muted] hover:text-foreground hover:bg-muted text-left transition-colors"
+                        >
+                          Clear filters
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ── Folders section ───────────────────────────────── */}
@@ -272,16 +396,111 @@ export default function ProjectsPage() {
 
               {folders.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {folders.map((name) => (
-                    <button
-                      key={name}
-                      type="button"
-                      className="group flex items-center gap-3 px-4 py-4 rounded-2xl border border-border bg-card hover:bg-muted hover:border-border transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
-                    >
-                      <Folder size={20} className="text-[--text-muted] group-hover:text-foreground shrink-0 transition-colors" aria-hidden="true" />
-                      <span className="font-body text-sm text-foreground truncate flex-1">{name}</span>
-                    </button>
-                  ))}
+                  {folders.map((name) => {
+                    const isSelected = activeFolderMenu === name
+                    return (
+                      <div
+                        key={name}
+                        className={cn(
+                          'group relative rounded-2xl border bg-card transition-colors',
+                          isSelected
+                            ? 'border-blue-500/60 ring-2 ring-blue-500/20'
+                            : 'border-border hover:bg-muted',
+                        )}
+                      >
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                        >
+                          <Folder
+                            size={20}
+                            className={cn(
+                              'shrink-0 transition-colors',
+                              isSelected ? 'text-blue-400' : 'text-[--text-muted] group-hover:text-foreground',
+                            )}
+                            aria-hidden="true"
+                          />
+                          <span className="font-body text-sm text-foreground truncate flex-1 pr-8">{name}</span>
+                        </button>
+
+                        {/* 3-dots menu trigger */}
+                        <button
+                          type="button"
+                          aria-label={`Folder "${name}" options`}
+                          aria-haspopup="menu"
+                          aria-expanded={isSelected}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveFolderMenu(prev => prev === name ? null : name)
+                          }}
+                          className={cn(
+                            'absolute top-1/2 -translate-y-1/2 right-3 w-9 h-9 rounded-lg flex items-center justify-center transition-all',
+                            'text-[--text-muted] hover:text-foreground hover:bg-muted',
+                            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
+                            isSelected ? 'opacity-100' : 'opacity-60 group-hover:opacity-100',
+                          )}
+                        >
+                          <MoreVertical size={14} aria-hidden="true" />
+                        </button>
+
+                        {/* Folder context menu */}
+                        {isSelected && (
+                          <div
+                            role="menu"
+                            className="absolute top-full right-0 mt-1 w-52 bg-card border border-border rounded-2xl shadow-xl overflow-hidden z-20"
+                            onMouseLeave={() => setActiveFolderMenu(null)}
+                          >
+                            <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
+                              Folder
+                            </p>
+                            <div className="py-1">
+                              <button
+                                type="button"
+                                disabled
+                                className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-muted] w-full text-left cursor-not-allowed"
+                                aria-disabled="true"
+                              >
+                                <Users size={14} aria-hidden="true" />
+                                <span>Collaborer</span>
+                                <Gem size={12} className="text-warning ml-auto" aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => handleFolderRename(name)}
+                                className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left"
+                              >
+                                <Pencil size={14} aria-hidden="true" /> Renommer
+                              </button>
+                              <button
+                                type="button"
+                                disabled
+                                className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-muted] w-full text-left cursor-not-allowed"
+                                aria-disabled="true"
+                              >
+                                <FolderInput size={14} aria-hidden="true" />
+                                <span>Déplacer</span>
+                                <span className="ml-auto inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">
+                                  Bientôt
+                                </span>
+                              </button>
+                            </div>
+                            <div className="border-t border-border" />
+                            <div className="py-1">
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => handleFolderDelete(name)}
+                                className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error hover:bg-error/10 transition-colors w-full text-left"
+                              >
+                                <Trash2 size={14} aria-hidden="true" /> Supprimer
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="text-xs text-[--text-muted] font-mono">No folders yet.</p>
