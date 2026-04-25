@@ -469,7 +469,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
-            className="w-9 h-9 rounded-lg bg-background/70 backdrop-blur-sm border border-border/50 flex items-center justify-center text-[--text-muted] hover:text-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 transition-all duration-200"
+            className="w-9 h-9 rounded-lg bg-background/80 backdrop-blur-sm border border-border/60 flex items-center justify-center text-[--text-muted] hover:text-foreground opacity-70 group-hover:opacity-100 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 transition-all duration-200"
           >
             <MoreVertical size={14} />
           </button>

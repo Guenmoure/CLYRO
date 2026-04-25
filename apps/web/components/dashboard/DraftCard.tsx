@@ -334,7 +334,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
                   'w-11 h-11 rounded-lg flex items-center justify-center',
                   'text-[--text-muted] hover:text-foreground hover:bg-muted',
                   'border border-transparent hover:border-border/50',
-                  'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+                  'opacity-60 group-hover:opacity-100 hover:opacity-100 focus-visible:opacity-100',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
                   'transition-all duration-200',
                 )}
