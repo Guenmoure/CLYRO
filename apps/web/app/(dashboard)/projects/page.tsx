@@ -8,6 +8,7 @@ import {
   Search, X, FolderOpen, SlidersHorizontal,
   FolderPlus, Trash2, ChevronDown, Folder,
   ChevronLeft, ChevronRight,
+  Video, Clapperboard, Sparkles, Palette, LayoutGrid, PanelLeft,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +21,18 @@ const SORT_OPTIONS = [
 ] as const
 
 type SortOption = typeof SORT_OPTIONS[number]['id']
+
+// Sub-navigation entries — filter the videos query by module.
+// `null` = no filter (All Projects).
+const SUB_NAV: Array<{
+  id: string; label: string; module: string | null; icon: React.ElementType
+}> = [
+  { id: 'all',      label: 'All Projects',   module: null,       icon: LayoutGrid   },
+  { id: 'faceless', label: 'Faceless Videos', module: 'faceless', icon: Video        },
+  { id: 'studio',   label: 'Avatar Studio',  module: 'studio',   icon: Clapperboard },
+  { id: 'motion',   label: 'Motion Design',  module: 'motion',   icon: Sparkles     },
+  { id: 'brand',    label: 'Brand Kits',     module: 'brand',    icon: Palette      },
+]
 
 interface VideoRow {
   id: string
@@ -35,16 +48,24 @@ interface VideoRow {
 }
 
 export default function ProjectsPage() {
-  const [videos,  setVideos]  = useState<VideoRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [page,    setPage]    = useState(0)
-  const [hasMore, setHasMore] = useState(false)
-  const [total,   setTotal]   = useState(0)
-  const [sort,    setSort]    = useState<SortOption>('recent')
-  const [search,  setSearch]  = useState('')
-  const [folders, setFolders] = useState<string[]>(['Richard'])
+  const [videos,    setVideos]    = useState<VideoRow[]>([])
+  const [loading,   setLoading]   = useState(true)
+  const [page,      setPage]      = useState(0)
+  const [hasMore,   setHasMore]   = useState(false)
+  const [total,     setTotal]     = useState(0)
+  const [sort,      setSort]      = useState<SortOption>('recent')
+  const [search,    setSearch]    = useState('')
+  const [folders,   setFolders]   = useState<string[]>(['Richard'])
+  const [activeNav, setActiveNav] = useState<string>('all')
+  const [navOpen,   setNavOpen]   = useState(true)
 
-  const fetchVideos = useCallback(async (pageIndex: number, sortOption: SortOption) => {
+  const activeModule = SUB_NAV.find(n => n.id === activeNav)?.module ?? null
+
+  const fetchVideos = useCallback(async (
+    pageIndex: number,
+    sortOption: SortOption,
+    moduleFilter: string | null,
+  ) => {
     setLoading(true)
     try {
       const supabase = createBrowserClient()
@@ -60,6 +81,10 @@ export default function ProjectsPage() {
         .eq('user_id', session.user.id)
         .neq('status', 'draft')   // drafts shown separately above
         .range(from, to)
+
+      if (moduleFilter) {
+        query = query.eq('module', moduleFilter)
+      }
 
       if (sortOption === 'recent') {
         query = query.order('created_at', { ascending: false })
@@ -83,15 +108,17 @@ export default function ProjectsPage() {
     }
   }, [])
 
+  // Reset to page 0 whenever sort or sub-nav changes.
   useEffect(() => {
     setPage(0)
-    fetchVideos(0, sort)
+    fetchVideos(0, sort, activeModule)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sort])
+  }, [sort, activeNav])
 
   useEffect(() => {
-    fetchVideos(page, sort)
-  }, [page, fetchVideos, sort])
+    fetchVideos(page, sort, activeModule)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page])
 
   function handleDeleted(id: string) {
     setVideos((prev) => prev.filter((v) => v.id !== id))
@@ -110,114 +137,167 @@ export default function ProjectsPage() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
+  const activeNavLabel = SUB_NAV.find(n => n.id === activeNav)?.label ?? 'Projects'
+
   return (
-    <div className="flex-1 overflow-y-auto bg-background px-6 py-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="flex-1 overflow-y-auto bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
         {/* ── Brouillons ───────────────────────────────────────── */}
         <DraftsSection />
 
-        {/* ── Header row ───────────────────────────────────────── */}
-        <div className="flex items-center gap-3">
-          <h1 className="font-display text-2xl font-bold text-foreground shrink-0">Projects</h1>
+        {/* ── Two-column layout: sub-nav + content ─────────────── */}
+        <div className="mt-8 flex gap-6">
 
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search videos and folders"
-              aria-label="Search videos and folders"
-              className="w-full pl-10 pr-9 py-2.5 glass rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:ring-1 focus:ring-blue-500/40 transition-all"
-            />
-            {search && (
+          {/* ── Sub-nav column ──────────────────────────────────── */}
+          {navOpen && (
+            <aside className="w-56 shrink-0 hidden md:block" aria-label="Project categories">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <p className="font-display text-sm font-semibold text-foreground">Projects</p>
+                <button
+                  type="button"
+                  aria-label="Collapse navigation"
+                  onClick={() => setNavOpen(false)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                >
+                  <PanelLeft size={14} />
+                </button>
+              </div>
+              <nav className="space-y-0.5" role="tablist">
+                {SUB_NAV.map((item) => {
+                  const Icon = item.icon
+                  const active = activeNav === item.id
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setActiveNav(item.id)}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-3 py-2 rounded-xl font-body text-sm transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
+                        active
+                          ? 'bg-blue-500/10 text-foreground border border-blue-500/30'
+                          : 'text-[--text-muted] hover:text-foreground hover:bg-muted border border-transparent',
+                      )}
+                    >
+                      <Icon size={15} aria-hidden="true" className="shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </button>
+                  )
+                })}
+              </nav>
+            </aside>
+          )}
+
+          {/* ── Content column ──────────────────────────────────── */}
+          <div className="flex-1 min-w-0 space-y-6">
+
+            {/* Header row */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              {!navOpen && (
+                <button
+                  type="button"
+                  aria-label="Open navigation"
+                  onClick={() => setNavOpen(true)}
+                  className="w-9 h-9 rounded-lg border border-border bg-card flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                >
+                  <PanelLeft size={15} />
+                </button>
+              )}
+              <h1 className="font-display text-2xl font-bold text-foreground shrink-0">{activeNavLabel}</h1>
+
+              {/* Search */}
+              <div className="relative flex-1 min-w-[180px]">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search videos and folders"
+                  aria-label="Search videos and folders"
+                  className="w-full pl-10 pr-9 py-2.5 glass rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:ring-1 focus:ring-blue-500/40 transition-all"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    aria-label="Clear search"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[--text-muted] hover:text-foreground"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Sort */}
+              <label className={cn('glass rounded-xl px-4 py-2.5 font-body text-sm flex items-center gap-2 text-foreground shrink-0 cursor-pointer')}>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as SortOption)}
+                  aria-label="Sort projects"
+                  className="bg-transparent text-foreground focus:outline-none cursor-pointer appearance-none"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.id} value={opt.id}>{opt.label}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="text-[--text-muted] pointer-events-none shrink-0" />
+              </label>
+
+              {/* Filters */}
               <button
                 type="button"
-                onClick={() => setSearch('')}
-                aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[--text-muted] hover:text-foreground"
+                aria-label="Filters"
+                className="glass rounded-xl w-11 h-11 flex items-center justify-center text-foreground shrink-0 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
               >
-                <X size={14} />
+                <SlidersHorizontal size={15} />
               </button>
-            )}
-          </div>
-
-          {/* Filters */}
-          <button
-            type="button"
-            className="glass rounded-xl px-4 py-2.5 font-body text-sm flex items-center gap-2 text-foreground shrink-0 hover:bg-white/5 transition-colors"
-          >
-            <SlidersHorizontal size={15} />
-            Filters
-            <span className="text-[--text-muted]">0</span>
-          </button>
-
-          {/* Sort */}
-          <label className={cn('glass rounded-xl px-4 py-2.5 font-body text-sm flex items-center gap-2 text-foreground shrink-0 cursor-pointer')}>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortOption)}
-              aria-label="Sort projects"
-              className="bg-transparent text-foreground focus:outline-none cursor-pointer appearance-none"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.id} value={opt.id}>{opt.label}</option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="text-[--text-muted] pointer-events-none shrink-0" />
-          </label>
-        </div>
-
-        {/* ── Folders section ──────────────────────────────────── */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="font-display text-base font-semibold text-foreground">Folders</h2>
-            <button
-              type="button"
-              aria-label="New folder"
-              onClick={() => setFolders((prev) => [...prev, `Folder ${prev.length + 1}`])}
-              className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors"
-            >
-              <FolderPlus size={14} />
-            </button>
-            <button
-              type="button"
-              aria-label="Delete selected folder"
-              className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-error transition-colors"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-
-          {folders.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {folders.map((name) => (
-                <div
-                  key={name}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors font-body text-sm text-foreground cursor-pointer select-none"
-                >
-                  <Folder size={16} className="text-[--text-muted]" />
-                  {name}
-                </div>
-              ))}
             </div>
-          ) : (
-            <p className="text-xs text-[--text-muted] font-mono">No folders yet.</p>
-          )}
-        </section>
 
-        {/* ── Videos section ───────────────────────────────────── */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-base font-semibold text-foreground">Videos</h2>
-            {!loading && total > 0 && (
-              <span className="text-xs text-[--text-muted] font-mono bg-muted border border-border rounded-full px-3 py-1">
-                {total} video{total > 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
+            {/* ── Folders section ───────────────────────────────── */}
+            <section aria-labelledby="folders-heading">
+              <div className="flex items-center gap-2 mb-3">
+                <h2 id="folders-heading" className="font-display text-base font-semibold text-foreground">Folders</h2>
+                <button
+                  type="button"
+                  aria-label="New folder"
+                  onClick={() => setFolders((prev) => [...prev, `Folder ${prev.length + 1}`])}
+                  className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                >
+                  <FolderPlus size={14} aria-hidden="true" />
+                </button>
+              </div>
+
+              {folders.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {folders.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      className="group flex items-center gap-3 px-4 py-4 rounded-2xl border border-border bg-card hover:bg-muted hover:border-border transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                    >
+                      <Folder size={20} className="text-[--text-muted] group-hover:text-foreground shrink-0 transition-colors" aria-hidden="true" />
+                      <span className="font-body text-sm text-foreground truncate flex-1">{name}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[--text-muted] font-mono">No folders yet.</p>
+              )}
+            </section>
+
+            {/* ── Videos section ────────────────────────────────── */}
+            <section aria-labelledby="videos-heading">
+              <div className="flex items-center justify-between mb-4">
+                <h2 id="videos-heading" className="font-display text-base font-semibold text-foreground">Videos</h2>
+                {!loading && total > 0 && (
+                  <span className="text-xs text-[--text-muted] font-mono bg-muted border border-border rounded-full px-3 py-1">
+                    {total} video{total > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -294,7 +374,12 @@ export default function ProjectsPage() {
               )}
             </>
           )}
-        </section>
+            </section>
+
+          </div>
+          {/* /content column */}
+        </div>
+        {/* /two-column layout */}
 
       </div>
     </div>
