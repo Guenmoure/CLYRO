@@ -1,9 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Video, Sparkles, Play, Trash2, Palette, Clapperboard } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import {
+  Video, Sparkles, Play, Trash2, Palette, Clapperboard,
+  MoreVertical, Copy, FilePlus, Users, Pencil, FolderInput, Gem,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
+import { toast } from '@/components/ui/toast'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -75,11 +79,134 @@ function formatRelative(iso: string): string {
   return `il y a ${Math.floor(diffH / 24)}j`
 }
 
+// ── Context menu ───────────────────────────────────────────────────────────────
+
+function DraftContextMenu({
+  draft,
+  moduleLabel,
+  onClose,
+  onDelete,
+  onRename,
+  onEditAsNew,
+  onResume,
+}: {
+  draft: DbDraftMeta
+  moduleLabel: string
+  onClose: () => void
+  onDelete: () => void
+  onRename: () => void
+  onEditAsNew: () => void
+  onResume: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
+
+  function copyId() {
+    navigator.clipboard.writeText(draft.id).catch(() => null)
+    toast.success('ID copié')
+    onClose()
+  }
+
+  const item = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left'
+  const itemDisabled = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-muted] w-full text-left cursor-not-allowed'
+  const soonBadge = 'ml-auto inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[--text-muted]'
+
+  return (
+    <div
+      ref={ref}
+      role="menu"
+      className="absolute top-9 right-0 w-52 bg-card border border-border rounded-2xl shadow-xl overflow-hidden z-50"
+    >
+      {/* Header — module label */}
+      <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
+        {moduleLabel} · Brouillon
+      </p>
+
+      {/* Actions */}
+      <div className="py-1">
+        <button type="button" role="menuitem" onClick={copyId} className={item}>
+          <Copy size={14} aria-hidden="true" /> Copier l'ID
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => { onClose(); onResume() }}
+          className={item}
+        >
+          <Play size={14} aria-hidden="true" /> Reprendre
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => { onClose(); onEditAsNew() }}
+          className={item}
+        >
+          <FilePlus size={14} aria-hidden="true" /> Dupliquer
+        </button>
+
+        <button type="button" disabled className={itemDisabled} aria-disabled="true">
+          <Users size={14} aria-hidden="true" />
+          <span>Collaborer</span>
+          <Gem size={12} className="text-warning ml-auto" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => { onClose(); onRename() }}
+          className={item}
+        >
+          <Pencil size={14} aria-hidden="true" /> Renommer
+        </button>
+
+        <button type="button" disabled className={itemDisabled} aria-disabled="true">
+          <FolderInput size={14} aria-hidden="true" />
+          <span>Déplacer</span>
+          <span className={soonBadge}>Bientôt</span>
+        </button>
+      </div>
+
+      {/* Divider + Trash */}
+      <div className="border-t border-border" />
+      <div className="py-1">
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => { onClose(); onDelete() }}
+          className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error hover:bg-error/10 transition-colors w-full text-left"
+        >
+          <Trash2 size={14} aria-hidden="true" /> Supprimer
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export function DraftCard({ draft, onDelete }: DraftCardProps) {
   const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [localTitle, setLocalTitle] = useState<string | null>(draft.title)
+  const [renaming, setRenaming] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
 
   const config      = MODULE_CONFIG[draft.module] ?? MODULE_CONFIG.faceless!
   const { Icon }    = config
@@ -97,6 +224,53 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
   const href = isHubDraft
     ? `/faceless?draft=${draft.id}`
     : `/${draft.module}/new?draft=${draft.id}`
+
+  function handleResume() {
+    router.push(href)
+  }
+
+  async function handleRename() {
+    if (renaming) return
+    const current = localTitle ?? 'Sans titre'
+    const next = typeof window === 'undefined' ? null : window.prompt('Renommer le brouillon', current)
+    if (next === null) return
+    const trimmed = next.trim()
+    if (!trimmed || trimmed === current) return
+
+    setRenaming(true)
+    try {
+      const res = await fetch(`/api/videos/${draft.id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ title: trimmed }),
+      })
+      if (!res.ok) throw new Error()
+      const updated = await res.json() as { title: string | null }
+      setLocalTitle(updated.title ?? trimmed)
+      router.refresh()
+    } catch {
+      toast.error('Impossible de renommer le brouillon')
+    } finally {
+      setRenaming(false)
+    }
+  }
+
+  async function handleEditAsNew() {
+    if (duplicating) return
+    setDuplicating(true)
+    toast.info('Duplication du brouillon…')
+    try {
+      const res = await fetch(`/api/videos/${draft.id}/duplicate`, { method: 'POST' })
+      if (!res.ok) throw new Error()
+      const { id: newId, module, target } = await res.json() as {
+        id: string; module: string; target: 'hub' | 'new'
+      }
+      router.push(`/${module}/${target}?draft=${newId}`)
+    } catch {
+      toast.error('Impossible de dupliquer — réessaie')
+      setDuplicating(false)
+    }
+  }
 
   return (
     <div className={cn(
@@ -118,10 +292,10 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-display text-sm font-semibold text-foreground truncate">
-                {draft.title || 'Sans titre'}
+                {localTitle || 'Sans titre'}
               </p>
               <span className={cn(
-                'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shrink-0',
+                'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider shrink-0',
                 'bg-warning/10 text-warning border border-warning/20',
               )}>
                 Brouillon
@@ -130,36 +304,54 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
             <p className="font-mono text-[11px] text-[--text-muted] mt-0.5">{config.label}</p>
           </div>
 
-          {/* Delete */}
-          {!confirmDelete ? (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              aria-label="Supprimer le brouillon"
-              className={cn(
-                'w-7 h-7 rounded-lg flex items-center justify-center shrink-0',
-                'text-[--text-muted] hover:text-error hover:bg-error/10 border border-transparent hover:border-error/20',
-                'opacity-0 group-hover:opacity-100 transition-all duration-200',
-              )}
-            >
-              <Trash2 size={13} />
-            </button>
-          ) : (
+          {/* Inline confirm — quick path when the user wants to delete fast */}
+          {confirmDelete ? (
             <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
                 onClick={onDelete}
-                className="font-mono text-[10px] text-white bg-error px-2.5 py-1 rounded-lg hover:bg-error/80 transition-colors"
+                className="font-mono text-[11px] text-white bg-error px-2.5 py-1 rounded-lg hover:bg-error/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60"
               >
                 Confirmer
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="font-mono text-[10px] text-[--text-muted] px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors"
+                className="font-mono text-[11px] text-[--text-muted] px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
               >
                 Annuler
               </button>
+            </div>
+          ) : (
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                aria-label="Options du brouillon"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
+                className={cn(
+                  'w-11 h-11 rounded-lg flex items-center justify-center',
+                  'text-[--text-muted] hover:text-foreground hover:bg-muted',
+                  'border border-transparent hover:border-border/50',
+                  'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
+                  'transition-all duration-200',
+                )}
+              >
+                <MoreVertical size={14} />
+              </button>
+              {menuOpen && (
+                <DraftContextMenu
+                  draft={draft}
+                  moduleLabel={config.label}
+                  onClose={() => setMenuOpen(false)}
+                  onDelete={() => setConfirmDelete(true)}
+                  onRename={handleRename}
+                  onEditAsNew={handleEditAsNew}
+                  onResume={handleResume}
+                />
+              )}
             </div>
           )}
         </div>
