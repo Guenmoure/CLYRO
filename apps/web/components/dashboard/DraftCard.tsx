@@ -8,6 +8,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -69,14 +70,14 @@ const MODULE_CONFIG: Record<string, {
   },
 }
 
-function formatRelative(iso: string): string {
+function formatRelative(iso: string, t: (k: string) => string): string {
   const diffMs  = Date.now() - new Date(iso).getTime()
   const diffMin = Math.round(diffMs / 60_000)
-  if (diffMin < 1)  return "à l'instant"
-  if (diffMin < 60) return `il y a ${diffMin} min`
+  if (diffMin < 1)  return t('time_justNow')
+  if (diffMin < 60) return t('time_minAgo').replace('{n}', String(diffMin))
   const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24)   return `il y a ${diffH}h`
-  return `il y a ${Math.floor(diffH / 24)}j`
+  if (diffH < 24)   return t('time_hAgo').replace('{n}', String(diffH))
+  return t('time_dAgo').replace('{n}', String(Math.floor(diffH / 24)))
 }
 
 // ── Context menu ───────────────────────────────────────────────────────────────
@@ -98,6 +99,7 @@ function DraftContextMenu({
   onEditAsNew: () => void
   onResume: () => void
 }) {
+  const { t } = useLanguage()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -117,7 +119,7 @@ function DraftContextMenu({
 
   function copyId() {
     navigator.clipboard.writeText(draft.id).catch(() => null)
-    toast.success('ID copié')
+    toast.success(t('dc_idCopied'))
     onClose()
   }
 
@@ -133,13 +135,13 @@ function DraftContextMenu({
     >
       {/* Header — module label */}
       <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
-        {moduleLabel} · Brouillon
+        {moduleLabel} · {t('dc_draft')}
       </p>
 
       {/* Actions */}
       <div className="py-1">
         <button type="button" role="menuitem" onClick={copyId} className={item}>
-          <Copy size={14} aria-hidden="true" /> Copier l'ID
+          <Copy size={14} aria-hidden="true" /> {t('dc_copyId')}
         </button>
 
         <button
@@ -148,7 +150,7 @@ function DraftContextMenu({
           onClick={() => { onClose(); onResume() }}
           className={item}
         >
-          <Play size={14} aria-hidden="true" /> Reprendre
+          <Play size={14} aria-hidden="true" /> {t('dc_resume')}
         </button>
 
         <button
@@ -157,12 +159,12 @@ function DraftContextMenu({
           onClick={() => { onClose(); onEditAsNew() }}
           className={item}
         >
-          <FilePlus size={14} aria-hidden="true" /> Dupliquer
+          <FilePlus size={14} aria-hidden="true" /> {t('dc_duplicate')}
         </button>
 
         <button type="button" disabled className={itemDisabled} aria-disabled="true">
           <Users size={14} aria-hidden="true" />
-          <span>Collaborer</span>
+          <span>{t('dc_collaborate')}</span>
           <Gem size={12} className="text-warning ml-auto" aria-hidden="true" />
         </button>
 
@@ -172,13 +174,13 @@ function DraftContextMenu({
           onClick={() => { onClose(); onRename() }}
           className={item}
         >
-          <Pencil size={14} aria-hidden="true" /> Renommer
+          <Pencil size={14} aria-hidden="true" /> {t('dc_rename')}
         </button>
 
         <button type="button" disabled className={itemDisabled} aria-disabled="true">
           <FolderInput size={14} aria-hidden="true" />
-          <span>Déplacer</span>
-          <span className={soonBadge}>Bientôt</span>
+          <span>{t('dc_move')}</span>
+          <span className={soonBadge}>{t('dc_soon')}</span>
         </button>
       </div>
 
@@ -191,7 +193,7 @@ function DraftContextMenu({
           onClick={() => { onClose(); onDelete() }}
           className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error hover:bg-error/10 transition-colors w-full text-left"
         >
-          <Trash2 size={14} aria-hidden="true" /> Supprimer
+          <Trash2 size={14} aria-hidden="true" /> {t('dc_delete')}
         </button>
       </div>
     </div>
@@ -201,6 +203,7 @@ function DraftContextMenu({
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export function DraftCard({ draft, onDelete }: DraftCardProps) {
+  const { t } = useLanguage()
   const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -231,8 +234,8 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
 
   async function handleRename() {
     if (renaming) return
-    const current = localTitle ?? 'Sans titre'
-    const next = typeof window === 'undefined' ? null : window.prompt('Renommer le brouillon', current)
+    const current = localTitle ?? t('dc_untitled')
+    const next = typeof window === 'undefined' ? null : window.prompt(t('dc_renameDraft'), current)
     if (next === null) return
     const trimmed = next.trim()
     if (!trimmed || trimmed === current) return
@@ -249,7 +252,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
       setLocalTitle(updated.title ?? trimmed)
       router.refresh()
     } catch {
-      toast.error('Impossible de renommer le brouillon')
+      toast.error(t('dc_renameError'))
     } finally {
       setRenaming(false)
     }
@@ -258,7 +261,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
   async function handleEditAsNew() {
     if (duplicating) return
     setDuplicating(true)
-    toast.info('Duplication du brouillon…')
+    toast.info(t('dc_duplicating'))
     try {
       const res = await fetch(`/api/videos/${draft.id}/duplicate`, { method: 'POST' })
       if (!res.ok) throw new Error()
@@ -267,7 +270,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
       }
       router.push(`/${module}/${target}?draft=${newId}`)
     } catch {
-      toast.error('Impossible de dupliquer — réessaie')
+      toast.error(t('dc_duplicateError'))
       setDuplicating(false)
     }
   }
@@ -292,13 +295,13 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-display text-sm font-semibold text-foreground truncate">
-                {localTitle || 'Sans titre'}
+                {localTitle || t('dc_untitled')}
               </p>
               <span className={cn(
                 'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider shrink-0',
                 'bg-warning/10 text-warning border border-warning/20',
               )}>
-                Brouillon
+                {t('dc_draft')}
               </span>
             </div>
             <p className="font-mono text-[11px] text-[--text-muted] mt-0.5">{config.label}</p>
@@ -312,21 +315,21 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
                 onClick={onDelete}
                 className="font-mono text-[11px] text-white bg-error px-2.5 py-1 rounded-lg hover:bg-error/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60"
               >
-                Confirmer
+                {t('dc_confirm')}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
                 className="font-mono text-[11px] text-[--text-muted] px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
               >
-                Annuler
+                {t('dc_cancel')}
               </button>
             </div>
           ) : (
             <div className="relative shrink-0">
               <button
                 type="button"
-                aria-label="Options du brouillon"
+                aria-label={t('dc_draftOptions')}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
@@ -360,10 +363,10 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
         <div className="mt-3">
           <div className="flex items-center justify-between mb-1.5">
             <p className="font-mono text-[11px] text-[--text-muted]">
-              Étape {step}/{totalSteps}
+              {t('dc_step')} {step}/{totalSteps}
             </p>
             <p className="font-mono text-[11px] text-[--text-muted]">
-              {formatRelative(draft.updated_at)}
+              {formatRelative(draft.updated_at, t)}
             </p>
           </div>
           <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
@@ -387,7 +390,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
           )}
         >
           <Play size={13} className="fill-white" />
-          Reprendre
+          {t('dc_resume')}
         </button>
       </div>
     </div>

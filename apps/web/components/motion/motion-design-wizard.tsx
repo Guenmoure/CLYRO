@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useLanguage } from '@/lib/i18n'
 import { useRouter } from 'next/navigation'
 import { startMotionDesignGeneration, getPublicVoices, uploadBrandLogo } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
@@ -54,13 +55,13 @@ const DURATIONS: Array<{ id: MDDuration; label: string }> = [
 ]
 
 const PIPELINE_STEPS = [
-  { key: 'storyboard', label: 'Scene generation (Claude AI)', progress: 25 },
-  { key: 'audio',      label: 'Voix off',                     progress: 50 },
-  { key: 'assembly',   label: 'Motion Design render',         progress: 88 },
-  { key: 'done',       label: 'Video ready!',                progress: 100 },
+  { key: 'storyboard', label: 'md_sceneGen', progress: 25 },
+  { key: 'audio',      label: 'md_voiceStep',                     progress: 50 },
+  { key: 'assembly',   label: 'md_renderStep',         progress: 88 },
+  { key: 'done',       label: 'md_videoReadyStep',                progress: 100 },
 ]
 
-const STEP_LABELS = ['Brief', 'Marque', 'Format', 'Voix', 'Confirmer']
+// STEP_LABELS moved inside component
 
 // ── WCAG helpers ───────────────────────────────────────────────────────────
 
@@ -90,6 +91,7 @@ function StepBrief({
   onUpdate: (field: 'title' | 'brief', value: string) => void
   onNext: () => void
 }) {
+  const { t } = useLanguage()
   const canContinue = title.trim().length > 0 && brief.trim().length >= 20
   return (
     <div>
@@ -98,31 +100,31 @@ function StepBrief({
           F2 Motion Design
         </span>
       </div>
-      <h2 className="font-display text-lg font-semibold text-foreground mb-1">Brief créatif</h2>
+      <h2 className="font-display text-lg font-semibold text-foreground mb-1">{t('md_creativeBrief')}</h2>
       <p className="font-body text-sm text-muted-foreground mb-5">
-        Claude génèrera des scènes Motion Design de qualité agency directement depuis ton brief.
+        {t('md_briefSubtitle')}
       </p>
       <div className="mb-4">
         <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2 block">
-          Titre de la vidéo
+          {t('md_videoTitle')}
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => onUpdate('title', e.target.value)}
-          placeholder="Ex : Lancement produit — Motion Design"
+          placeholder={t('md_titlePlaceholder')}
           maxLength={200}
           className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple"
         />
       </div>
       <div className="mb-5">
         <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2 block">
-          Brief ({brief.length}/3000 — min 20 caractères)
+          {t('md_brief')} ({brief.length}/3000)
         </label>
         <textarea
           value={brief}
           onChange={(e) => onUpdate('brief', e.target.value)}
-          placeholder="Décris ta marque, ton message clé, le ton souhaité, le public cible et ton call-to-action. Plus le brief est détaillé, meilleures seront les scènes générées."
+          placeholder={t('md_briefPlaceholder')}
           maxLength={3000}
           rows={7}
           className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:border-clyro-purple resize-none"
@@ -149,6 +151,7 @@ function StepBrand({
   onNext: () => void
   onBack: () => void
 }) {
+  const { t } = useLanguage()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
 
@@ -165,9 +168,9 @@ function StepBrand({
       if (!session) throw new Error('Session expired')
       const logoUrl = await uploadBrandLogo(file, session.user.id)
       onUpdate({ ...brand, logo_url: logoUrl })
-      toast.success('Logo uploadé')
+      toast.success(t('md_logoUploaded'))
     } catch {
-      toast.error('Erreur lors du chargement du logo')
+      toast.error(t('md_logoError'))
     } finally {
       setUploading(false)
     }
@@ -175,15 +178,15 @@ function StepBrand({
 
   return (
     <div>
-      <h2 className="font-display text-lg font-semibold text-foreground mb-4">Identité de marque</h2>
+      <h2 className="font-display text-lg font-semibold text-foreground mb-4">{t('md_brandIdentity')}</h2>
       <p className="font-body text-sm text-muted-foreground mb-5">
-        La couleur principale sera utilisée pour les animations, titres et effets lumineux.
+        {t('md_brandSubtitle')}
       </p>
       <div className="space-y-4 mb-6">
         {/* Logo */}
         <div>
           <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2 block">
-            Logo (optionnel — utilisé dans la scène logo_reveal)
+            {t('md_logoLabel')}
           </label>
           <div className="flex items-center gap-3">
             {brand.logo_url ? (
@@ -204,11 +207,11 @@ function StepBrand({
                 disabled={uploading}
                 className="font-display font-semibold px-4 py-2 rounded-xl border border-border text-sm text-foreground hover:bg-muted disabled:opacity-40"
               >
-                {uploading ? 'Upload…' : brand.logo_url ? 'Changer' : 'Choisir un fichier'}
+                {uploading ? t('md_uploading') : brand.logo_url ? t('md_change') : t('md_chooseFile')}
               </button>
               {brand.logo_url && (
                 <button type="button" onClick={() => onUpdate({ ...brand, logo_url: undefined })} className="text-xs text-muted-foreground hover:text-red-400 text-left">
-                  Supprimer
+                  {t('md_remove')}
                 </button>
               )}
             </div>
@@ -262,8 +265,8 @@ function StepBrand({
         </div>
       </div>
       <div className="flex gap-3">
-        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">← Retour</button>
-        <button onClick={onNext} className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">Suivant →</button>
+        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">{t('md_back')}</button>
+        <button onClick={onNext} className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">{t('md_next')}</button>
       </div>
     </div>
   )
@@ -280,11 +283,12 @@ function StepFormat({
   onNext: () => void
   onBack: () => void
 }) {
+  const { t } = useLanguage()
   return (
     <div>
-      <h2 className="font-display text-lg font-semibold text-foreground mb-4">Format &amp; Durée</h2>
+      <h2 className="font-display text-lg font-semibold text-foreground mb-4">{t('md_formatDuration')}</h2>
       <div className="mb-5">
-        <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3 block">Format</label>
+        <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3 block">{t('md_format')}</label>
         <div className="grid grid-cols-3 gap-3">
           {FORMATS.map((f) => (
             <button
@@ -300,7 +304,7 @@ function StepFormat({
         </div>
       </div>
       <div className="mb-6">
-        <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3 block">Durée</label>
+        <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3 block">{t('md_duration')}</label>
         <div className="flex flex-wrap gap-2">
           {DURATIONS.map((d) => (
             <button
@@ -314,8 +318,8 @@ function StepFormat({
         </div>
       </div>
       <div className="flex gap-3">
-        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">← Retour</button>
-        <button onClick={onNext} className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">Suivant →</button>
+        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">{t('md_back')}</button>
+        <button onClick={onNext} className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">{t('md_next')}</button>
       </div>
     </div>
   )
@@ -331,31 +335,32 @@ function StepVoice({
   onNext: () => void
   onBack: () => void
 }) {
+  const { t } = useLanguage()
   const [voices, setVoices] = useState<VoiceItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     getPublicVoices()
       .then(({ voices }) => setVoices(voices as VoiceItem[]))
-      .catch((err) => toast.error(err instanceof Error ? err.message : 'Impossible de charger les voix'))
+      .catch((err) => toast.error(err instanceof Error ? err.message : t('md_voiceLoadError')))
       .finally(() => setLoading(false))
   }, [])
 
   return (
     <div>
-      <h2 className="font-display text-lg font-semibold text-foreground mb-2">Voix off</h2>
+      <h2 className="font-display text-lg font-semibold text-foreground mb-2">{t('md_voiceOver')}</h2>
       <p className="font-body text-sm text-muted-foreground mb-4">
-        La voix off est synchronisée avec les scènes Motion Design.
+        {t('md_voiceSubtitle')}
       </p>
       {loading ? (
         <div className="space-y-2 mb-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-14 bg-muted rounded-xl animate-pulse" />)}</div>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto mb-4 pr-1">
           <button
-            onClick={() => onSelect('', 'Pas de voix off')}
+            onClick={() => onSelect('', '')}
             className={`w-full bg-muted border rounded-xl px-4 py-3 text-left transition-all ${selectedId === '' ? 'border-clyro-purple bg-clyro-purple/5' : 'border-border hover:border-clyro-purple/40'}`}
           >
-            <p className="font-display font-semibold text-sm text-foreground">🔇 Pas de voix off</p>
+            <p className="font-display font-semibold text-sm text-foreground">🔇 {t('md_noVoice')}</p>
           </button>
           {voices.map((v) => (
             <button
@@ -372,8 +377,8 @@ function StepVoice({
         </div>
       )}
       <div className="flex gap-3">
-        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">← Retour</button>
-        <button onClick={onNext} className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">Suivant →</button>
+        <button onClick={onBack} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm">{t('md_back')}</button>
+        <button onClick={onNext} className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">{t('md_next')}</button>
       </div>
     </div>
   )
@@ -389,32 +394,32 @@ function StepConfirm({
   onBack: () => void
   launching: boolean
 }) {
+  const { t } = useLanguage()
   const formatLabel = FORMATS.find((f) => f.id === state.format)
   return (
     <div>
-      <h2 className="font-display text-lg font-semibold text-foreground mb-4">Confirmer</h2>
+      <h2 className="font-display text-lg font-semibold text-foreground mb-4">{t('md_confirm')}</h2>
       <div className="bg-muted border border-border rounded-xl p-5 space-y-3 mb-5">
-        <Row label="Titre"    value={state.title} />
-        <Row label="Format"   value={`${formatLabel?.label ?? state.format} — ${formatLabel?.desc ?? ''}`} />
-        <Row label="Durée"    value={state.duration} />
-        <Row label="Couleur"  value={state.brand.primary_color} />
-        <Row label="Logo"     value={state.brand.logo_url ? '✓ Uploadé' : '—'} />
-        <Row label="Voix off" value={state.voiceName || 'Pas de voix off'} />
+        <Row label={t('md_videoTitle')}    value={state.title} />
+        <Row label={t('md_format')}   value={`${formatLabel?.label ?? state.format} — ${formatLabel?.desc ?? ''}`} />
+        <Row label={t('md_duration')}    value={state.duration} />
+        <Row label={t('md_primaryColor')}  value={state.brand.primary_color} />
+        <Row label="Logo"     value={state.brand.logo_url ? '✓' : '—'} />
+        <Row label={t('md_voiceOver')} value={state.voiceName || t('md_noVoice')} />
       </div>
       <div className="bg-clyro-purple/5 border border-clyro-purple/20 rounded-xl p-4 mb-5">
         <p className="font-body text-sm text-clyro-purple">
-          Claude va générer des scènes F2 Motion Design (hero_typo, stats_counter, floating_icons, etc.)
-          directement depuis ton brief — sans génération d&apos;image IA. Rendu rapide en 1–3 min.
+          {t('md_confirmDesc')}
         </p>
       </div>
       <div className="flex gap-3">
-        <button onClick={onBack} disabled={launching} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm disabled:opacity-50">← Retour</button>
+        <button onClick={onBack} disabled={launching} className="font-display font-semibold px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm disabled:opacity-50">{t('md_back')}</button>
         <button
           onClick={onLaunch}
           disabled={launching}
           className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-60"
         >
-          {launching ? 'Lancement…' : '🎬 Générer la vidéo'}
+          {launching ? t('md_launching') : t('md_generateVideo')}
         </button>
       </div>
     </div>
@@ -433,6 +438,7 @@ function Row({ label, value }: { label: string; value: string }) {
 // ── Step 6 — Generating ────────────────────────────────────────────────────
 
 function StepGenerating({ videoId, onReset }: { videoId: string; onReset: () => void }) {
+  const { t } = useLanguage()
   const router = useRouter()
   const { status, progress, outputUrl, errorMessage, isDone, isError } = useVideoStatus(videoId)
 
@@ -446,7 +452,7 @@ function StepGenerating({ videoId, onReset }: { videoId: string; onReset: () => 
   return (
     <div>
       <h2 className="font-display text-lg font-semibold text-foreground mb-6">
-        {isError ? '❌ Erreur de génération' : isDone ? '✅ Vidéo prête !' : '⏳ Génération en cours…'}
+        {isError ? t('md_genError') : isDone ? t('md_videoReady') : t('md_generating')}
       </h2>
       <div className="h-2 bg-muted rounded-full mb-6 overflow-hidden">
         <div className="h-full bg-clyro-purple rounded-full transition-all duration-700" style={{ width: `${Math.max(progress, 5)}%` }} />
@@ -462,15 +468,15 @@ function StepGenerating({ videoId, onReset }: { videoId: string; onReset: () => 
               }`}>
                 {isComplete ? '✓' : '·'}
               </div>
-              <span className={`font-body text-sm ${isComplete ? 'text-foreground' : 'text-muted-foreground'}`}>{pStep.label}</span>
-              {isActive && !isComplete && <span className="font-mono text-xs text-clyro-purple animate-pulse">en cours</span>}
+              <span className={`font-body text-sm ${isComplete ? 'text-foreground' : 'text-muted-foreground'}`}>{t(pStep.label)}</span>
+              {isActive && !isComplete && <span className="font-mono text-xs text-clyro-purple animate-pulse">{t('md_inProgress')}</span>}
             </div>
           )
         })}
       </div>
       {isError && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4">
-          <p className="text-red-400 text-sm font-body">{errorMessage ?? 'Une erreur est survenue.'}</p>
+          <p className="text-red-400 text-sm font-body">{errorMessage ?? t('md_errorOccurred')}</p>
         </div>
       )}
       {isDone && outputUrl && (
@@ -479,13 +485,13 @@ function StepGenerating({ videoId, onReset }: { videoId: string; onReset: () => 
           download
           className="inline-flex items-center gap-2 bg-clyro-purple/10 border border-clyro-purple/20 text-clyro-purple font-display font-semibold px-5 py-2.5 rounded-xl hover:bg-clyro-purple/20 text-sm transition-colors mb-3"
         >
-          ↓ Télécharger la vidéo
+          {t('md_downloadVideo')}
         </a>
       )}
-      {isDone && <p className="font-body text-sm text-muted-foreground mt-2">Redirection vers l&apos;historique…</p>}
+      {isDone && <p className="font-body text-sm text-muted-foreground mt-2">{t('md_redirecting')}</p>}
       {isError && (
         <button onClick={onReset} className="font-display font-semibold px-5 py-2.5 rounded-xl border border-border text-foreground hover:bg-muted text-sm mt-2">
-          Recommencer
+          {t('md_tryAgain')}
         </button>
       )}
     </div>
@@ -495,6 +501,8 @@ function StepGenerating({ videoId, onReset }: { videoId: string; onReset: () => 
 // ── Main Wizard ────────────────────────────────────────────────────────────
 
 export function MotionDesignWizard() {
+  const { t } = useLanguage()
+  const STEP_LABELS = [t('md_brief'), t('md_brand'), t('md_format'), t('md_voice'), t('md_confirm')]
   const [step, setStep]       = useState<1 | 2 | 3 | 4 | 5 | 6>(1)
   const [launching, setLaunching] = useState(false)
   const [videoId, setVideoId]     = useState<string | null>(null)
@@ -505,7 +513,7 @@ export function MotionDesignWizard() {
     format:    '16_9',
     duration:  '30s',
     voiceId:   '',
-    voiceName: 'Pas de voix off',
+    voiceName: '',
   })
 
   function updateState<K extends keyof WizardState>(key: K, value: WizardState[K]) {
@@ -528,7 +536,7 @@ export function MotionDesignWizard() {
       setVideoId(video_id)
       setStep(6)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors du lancement')
+      toast.error(err instanceof Error ? err.message : t('md_launchError'))
     } finally {
       setLaunching(false)
     }
@@ -537,7 +545,7 @@ export function MotionDesignWizard() {
   function reset() {
     setStep(1)
     setVideoId(null)
-    setState({ title: '', brief: '', brand: { primary_color: '#7C3AED' }, format: '16_9', duration: '30s', voiceId: '', voiceName: 'Pas de voix off' })
+    setState({ title: '', brief: '', brand: { primary_color: '#7C3AED' }, format: '16_9', duration: '30s', voiceId: '', voiceName: '' })
   }
 
   return (

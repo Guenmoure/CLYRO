@@ -13,23 +13,24 @@ import {
   MoreVertical, Pencil, FolderInput, Users, Gem, Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 const PAGE_SIZE = 12
 
 const SORT_OPTIONS = [
-  { id: 'recent', label: 'Newest' },
-  { id: 'oldest', label: 'Oldest' },
-  { id: 'az',     label: 'A-Z'    },
-  { id: 'za',     label: 'Z-A'    },
+  { id: 'recent', labelKey: 'proj_newest', literal: '' },
+  { id: 'oldest', labelKey: 'proj_oldest', literal: '' },
+  { id: 'az',     labelKey: '',            literal: 'A-Z' },
+  { id: 'za',     labelKey: '',            literal: 'Z-A' },
 ] as const
 
 type SortOption = typeof SORT_OPTIONS[number]['id']
 
 const STATUS_FILTERS = [
-  { id: 'all',        label: 'All statuses', match: null as string[] | null },
-  { id: 'done',       label: 'Completed',    match: ['done'] },
-  { id: 'processing', label: 'Processing',   match: ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly', 'animation'] },
-  { id: 'error',      label: 'Failed',       match: ['error'] },
+  { id: 'all',        labelKey: 'proj_allStatuses', match: null as string[] | null },
+  { id: 'done',       labelKey: 'proj_completed',   match: ['done'] },
+  { id: 'processing', labelKey: 'proj_processing',  match: ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly', 'animation'] },
+  { id: 'error',      labelKey: 'proj_failed',      match: ['error'] },
 ] as const
 
 type StatusFilter = typeof STATUS_FILTERS[number]['id']
@@ -37,13 +38,13 @@ type StatusFilter = typeof STATUS_FILTERS[number]['id']
 // Sub-navigation entries — filter the videos query by module.
 // `null` = no filter (All Projects).
 const SUB_NAV: Array<{
-  id: string; label: string; module: string | null; icon: React.ElementType
+  id: string; labelKey: string; module: string | null; icon: React.ElementType
 }> = [
-  { id: 'all',      label: 'All Projects',   module: null,       icon: LayoutGrid   },
-  { id: 'faceless', label: 'Faceless Videos', module: 'faceless', icon: Video        },
-  { id: 'studio',   label: 'Avatar Studio',  module: 'studio',   icon: Clapperboard },
-  { id: 'motion',   label: 'Motion Design',  module: 'motion',   icon: Sparkles     },
-  { id: 'brand',    label: 'Brand Kits',     module: 'brand',    icon: Palette      },
+  { id: 'all',      labelKey: 'proj_allProjects',    module: null,       icon: LayoutGrid   },
+  { id: 'faceless', labelKey: 'proj_facelessVideos',  module: 'faceless', icon: Video        },
+  { id: 'studio',   labelKey: 'proj_avatarStudio',   module: 'studio',   icon: Clapperboard },
+  { id: 'motion',   labelKey: 'proj_motionDesign',   module: 'motion',   icon: Sparkles     },
+  { id: 'brand',    labelKey: 'proj_brandKits',      module: 'brand',    icon: Palette      },
 ]
 
 interface VideoRow {
@@ -60,6 +61,7 @@ interface VideoRow {
 }
 
 export default function ProjectsPage() {
+  const { t } = useLanguage()
   const [videos,    setVideos]    = useState<VideoRow[]>([])
   const [loading,   setLoading]   = useState(true)
   const [page,      setPage]      = useState(0)
@@ -167,23 +169,23 @@ export default function ProjectsPage() {
   // schema migration). Toasts confirm the action so users know it landed.
   function handleFolderRename(name: string) {
     setActiveFolderMenu(null)
-    const next = window.prompt('Rename folder', name)
+    const next = window.prompt(t('proj_renameFolder'), name)
     if (next === null) return
     const trimmed = next.trim()
     if (!trimmed || trimmed === name) return
     if (folders.includes(trimmed)) {
-      toast.error('A folder with that name already exists')
+      toast.error(t('proj_folderExists'))
       return
     }
     setFolders(prev => prev.map(f => f === name ? trimmed : f))
-    toast.success('Folder renamed')
+    toast.success(t('proj_folderRenamed'))
   }
 
   function handleFolderDelete(name: string) {
     setActiveFolderMenu(null)
-    if (!window.confirm(`Delete folder "${name}"? Videos inside stay in your library.`)) return
+    if (!window.confirm(t('proj_deleteFolderConfirm').replace('{name}', name))) return
     setFolders(prev => prev.filter(f => f !== name))
-    toast.success('Folder deleted')
+    toast.success(t('proj_folderDeleted'))
   }
 
   const filtered = useMemo(() => {
@@ -198,7 +200,7 @@ export default function ProjectsPage() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
-  const activeNavLabel = SUB_NAV.find(n => n.id === activeNav)?.label ?? 'Projects'
+  const activeNavLabelKey = SUB_NAV.find(n => n.id === activeNav)?.labelKey ?? 'proj_projects'
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
@@ -214,10 +216,10 @@ export default function ProjectsPage() {
           {navOpen && (
             <aside className="w-56 shrink-0 hidden md:block" aria-label="Project categories">
               <div className="flex items-center justify-between mb-3 px-1">
-                <p className="font-display text-sm font-semibold text-foreground">Projects</p>
+                <p className="font-display text-sm font-semibold text-foreground">{t('proj_projects')}</p>
                 <button
                   type="button"
-                  aria-label="Collapse navigation"
+                  aria-label={t('proj_collapseNav')}
                   onClick={() => setNavOpen(false)}
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
                 >
@@ -244,7 +246,7 @@ export default function ProjectsPage() {
                       )}
                     >
                       <Icon size={15} aria-hidden="true" className="shrink-0" />
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate">{t(item.labelKey)}</span>
                     </button>
                   )
                 })}
@@ -260,14 +262,14 @@ export default function ProjectsPage() {
               {!navOpen && (
                 <button
                   type="button"
-                  aria-label="Open navigation"
+                  aria-label={t('proj_openNav')}
                   onClick={() => setNavOpen(true)}
                   className="w-9 h-9 rounded-lg border border-border bg-card flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
                 >
                   <PanelLeft size={15} />
                 </button>
               )}
-              <h1 className="font-display text-2xl font-bold text-foreground shrink-0">{activeNavLabel}</h1>
+              <h1 className="font-display text-2xl font-bold text-foreground shrink-0">{t(activeNavLabelKey)}</h1>
 
               {/* Search */}
               <div className="relative flex-1 min-w-[180px]">
@@ -276,8 +278,8 @@ export default function ProjectsPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search videos and folders"
-                  aria-label="Search videos and folders"
+                  placeholder={t('proj_searchPlaceholder')}
+                  aria-label={t('proj_searchPlaceholder')}
                   className="w-full pl-10 pr-9 py-2.5 glass rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:ring-1 focus:ring-blue-500/40 transition-all"
                 />
                 {search && (
@@ -301,7 +303,7 @@ export default function ProjectsPage() {
                   className="bg-transparent text-foreground focus:outline-none cursor-pointer appearance-none"
                 >
                   {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.id} value={opt.id}>{opt.label}</option>
+                    <option key={opt.id} value={opt.id}>{opt.labelKey ? t(opt.labelKey) : opt.literal}</option>
                   ))}
                 </select>
                 <ChevronDown size={14} className="text-[--text-muted] pointer-events-none shrink-0" />
@@ -336,7 +338,7 @@ export default function ProjectsPage() {
                     onMouseLeave={() => setFilterMenuOpen(false)}
                   >
                     <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
-                      Status
+                      {t('proj_status')}
                     </p>
                     <div className="py-1">
                       {STATUS_FILTERS.map(opt => (
@@ -356,7 +358,7 @@ export default function ProjectsPage() {
                               : 'text-foreground hover:bg-muted',
                           )}
                         >
-                          <span className="flex-1">{opt.label}</span>
+                          <span className="flex-1">{t(opt.labelKey)}</span>
                           {statusFilter === opt.id && (
                             <Check size={14} className="text-blue-400 shrink-0" aria-hidden="true" />
                           )}
@@ -371,7 +373,7 @@ export default function ProjectsPage() {
                           onClick={() => { setStatusFilter('all'); setFilterMenuOpen(false) }}
                           className="w-full px-4 py-2.5 text-sm font-body text-[--text-muted] hover:text-foreground hover:bg-muted text-left transition-colors"
                         >
-                          Clear filters
+                          {t('proj_clearFilters')}
                         </button>
                       </>
                     )}
@@ -383,10 +385,10 @@ export default function ProjectsPage() {
             {/* ── Folders section ───────────────────────────────── */}
             <section aria-labelledby="folders-heading">
               <div className="flex items-center gap-2 mb-3">
-                <h2 id="folders-heading" className="font-display text-base font-semibold text-foreground">Folders</h2>
+                <h2 id="folders-heading" className="font-display text-base font-semibold text-foreground">{t('proj_folders')}</h2>
                 <button
                   type="button"
-                  aria-label="New folder"
+                  aria-label={t('proj_newFolder')}
                   onClick={() => setFolders((prev) => [...prev, `Folder ${prev.length + 1}`])}
                   className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
                 >
@@ -451,7 +453,7 @@ export default function ProjectsPage() {
                             onMouseLeave={() => setActiveFolderMenu(null)}
                           >
                             <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
-                              Folder
+                              {t('proj_folder')}
                             </p>
                             <div className="py-1">
                               <button
@@ -461,7 +463,7 @@ export default function ProjectsPage() {
                                 aria-disabled="true"
                               >
                                 <Users size={14} aria-hidden="true" />
-                                <span>Collaborer</span>
+                                <span>{t('proj_collaborate')}</span>
                                 <Gem size={12} className="text-warning ml-auto" aria-hidden="true" />
                               </button>
                               <button
@@ -470,7 +472,7 @@ export default function ProjectsPage() {
                                 onClick={() => handleFolderRename(name)}
                                 className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left"
                               >
-                                <Pencil size={14} aria-hidden="true" /> Renommer
+                                <Pencil size={14} aria-hidden="true" /> {t('proj_rename')}
                               </button>
                               <button
                                 type="button"
@@ -479,9 +481,9 @@ export default function ProjectsPage() {
                                 aria-disabled="true"
                               >
                                 <FolderInput size={14} aria-hidden="true" />
-                                <span>Déplacer</span>
+                                <span>{t('proj_move')}</span>
                                 <span className="ml-auto inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">
-                                  Bientôt
+                                  {t('proj_soon')}
                                 </span>
                               </button>
                             </div>
@@ -493,7 +495,7 @@ export default function ProjectsPage() {
                                 onClick={() => handleFolderDelete(name)}
                                 className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error hover:bg-error/10 transition-colors w-full text-left"
                               >
-                                <Trash2 size={14} aria-hidden="true" /> Supprimer
+                                <Trash2 size={14} aria-hidden="true" /> {t('proj_delete')}
                               </button>
                             </div>
                           </div>
@@ -503,14 +505,14 @@ export default function ProjectsPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-xs text-[--text-muted] font-mono">No folders yet.</p>
+                <p className="text-xs text-[--text-muted] font-mono">{t('proj_noFolders')}</p>
               )}
             </section>
 
             {/* ── Videos section ────────────────────────────────── */}
             <section aria-labelledby="videos-heading">
               <div className="flex items-center justify-between mb-4">
-                <h2 id="videos-heading" className="font-display text-base font-semibold text-foreground">Videos</h2>
+                <h2 id="videos-heading" className="font-display text-base font-semibold text-foreground">{t('proj_videos')}</h2>
                 {!loading && total > 0 && (
                   <span className="text-xs text-[--text-muted] font-mono bg-muted border border-border rounded-full px-3 py-1">
                     {total} video{total > 1 ? 's' : ''}
@@ -536,12 +538,12 @@ export default function ProjectsPage() {
                 <FolderOpen size={28} className="text-blue-500" />
               </div>
               <p className="font-display text-lg font-semibold text-foreground mb-2">
-                {search ? `No results for "${search}"` : 'Your library is empty'}
+                {search ? t('proj_noResults').replace('{q}', search) : t('proj_libraryEmpty')}
               </p>
               <p className="text-sm text-[--text-muted] max-w-sm">
                 {search
-                  ? 'Try a different term or clear the search.'
-                  : 'Create your first video to see it here.'}
+                  ? t('proj_tryDifferent')
+                  : t('proj_createFirst')}
               </p>
               {!search && (
                 <div className="flex items-center gap-3 mt-5">
@@ -549,13 +551,13 @@ export default function ProjectsPage() {
                     href="/faceless/new"
                     className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-4 py-2 font-display text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                   >
-                    New Faceless Video
+                    {t('proj_newFaceless')}
                   </a>
                   <a
                     href="/motion/new"
                     className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 font-display text-sm font-semibold text-foreground hover:bg-muted transition-colors"
                   >
-                    Motion Design
+                    {t('proj_motionDesign')}
                   </a>
                 </div>
               )}
@@ -576,10 +578,10 @@ export default function ProjectsPage() {
                     disabled={page === 0}
                     className="flex items-center gap-1.5 text-xs font-medium text-[--text-muted] disabled:text-[--text-disabled] disabled:cursor-not-allowed hover:text-foreground transition-colors"
                   >
-                    <ChevronLeft size={14} /> Previous
+                    <ChevronLeft size={14} /> {t('proj_previous')}
                   </button>
                   <span className="text-xs text-[--text-muted] font-mono">
-                    Page {page + 1} / {totalPages}
+                    {t('proj_page')} {page + 1} / {totalPages}
                   </span>
                   <button
                     type="button"
@@ -587,7 +589,7 @@ export default function ProjectsPage() {
                     disabled={!hasMore}
                     className="flex items-center gap-1.5 text-xs font-medium text-[--text-muted] disabled:text-[--text-disabled] disabled:cursor-not-allowed hover:text-foreground transition-colors"
                   >
-                    Next <ChevronRight size={14} />
+                    {t('proj_next')} <ChevronRight size={14} />
                   </button>
                 </div>
               )}

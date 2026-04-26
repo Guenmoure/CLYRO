@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -64,17 +65,17 @@ const MODULE_GRADIENTS: Record<string, string> = {
   studio:   'from-rose-900/50 via-pink-800/30 to-slate-900/40',
 }
 
-function formatRelativeDate(dateStr: string): string {
+function formatRelativeDate(dateStr: string, t: (k: string) => string): string {
   const diff  = Date.now() - new Date(dateStr).getTime()
   const days  = Math.floor(diff / 86_400_000)
   const hours = Math.floor(diff / 3_600_000)
   const mins  = Math.floor(diff / 60_000)
   if (days > 30)  return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-  if (days > 1)   return `${days} days ago`
-  if (days === 1) return 'Yesterday'
-  if (hours > 0)  return `${hours}h ago`
-  if (mins > 0)   return `${mins} min ago`
-  return 'Just now'
+  if (days > 1)   return t('time_daysAgo').replace('{n}', String(days))
+  if (days === 1) return t('time_yesterday')
+  if (hours > 0)  return t('time_hAgo').replace('{n}', String(hours))
+  if (mins > 0)   return t('time_minAgo').replace('{n}', String(mins))
+  return t('time_justNow')
 }
 
 function formatDuration(seconds: number): string {
@@ -98,6 +99,7 @@ function VideoPreviewModal({
   videoUrl: string
   onClose: () => void
 }) {
+  const { t } = useLanguage()
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
@@ -116,7 +118,7 @@ function VideoPreviewModal({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <p className="font-display text-sm font-semibold text-foreground truncate pr-4">
-            {title ?? 'Video preview'}
+            {title ?? t('pc_videoPreview')}
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <a
@@ -124,12 +126,12 @@ function VideoPreviewModal({
               download
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-mono text-foreground hover:bg-muted transition-colors"
             >
-              <Download size={12} /> Download
+              <Download size={12} /> {t('pc_download')}
             </a>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close preview"
+              aria-label={t('pc_closePreview')}
               className="w-7 h-7 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
             >
               <X size={14} />
@@ -168,6 +170,7 @@ function ContextMenu({
   onEditAsNew: () => void
   onPreview: () => void
 }) {
+  const { t } = useLanguage()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -180,7 +183,7 @@ function ContextMenu({
 
   function copyId() {
     navigator.clipboard.writeText(project.id).catch(() => null)
-    toast.success('ID copied')
+    toast.success(t('pc_idCopied'))
     onClose()
   }
 
@@ -196,44 +199,44 @@ function ContextMenu({
     >
       {/* Header */}
       <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
-        {MODULE_LABELS[project.module ?? ''] ?? 'Project'}
+        {MODULE_LABELS[project.module ?? ''] ?? t('pc_project')}
       </p>
 
       {/* Actions */}
       <div className="py-1">
         <button type="button" onClick={copyId} className={item}>
-          <Copy size={14} /> Copy ID
+          <Copy size={14} /> {t('pc_copyId')}
         </button>
 
         {/* Preview / View Kit */}
         {isBrand ? (
           project.output_url ? (
             <a href={project.output_url} download onClick={onClose} className={item}>
-              <Download size={14} /> Download Kit
+              <Download size={14} /> {t('pc_downloadKit')}
             </a>
           ) : (
             <button type="button" disabled className={cn(item, 'opacity-40 cursor-not-allowed')}>
-              <Download size={14} /> Download Kit
+              <Download size={14} /> {t('pc_downloadKit')}
             </button>
           )
         ) : project.output_url ? (
           <button type="button" onClick={() => { onClose(); onPreview() }} className={item}>
-            <Play size={14} /> Preview
+            <Play size={14} /> {t('pc_preview')}
           </button>
         ) : (
           <button type="button" disabled className={cn(item, 'opacity-40 cursor-not-allowed')}>
-            <Play size={14} /> Preview
+            <Play size={14} /> {t('pc_preview')}
           </button>
         )}
 
         {!isBrand && project.output_url ? (
           <a href={project.output_url} download onClick={onClose} className={item}>
-            <Download size={14} /> Download
-          </a>
+            <Download size={14} /> {t('pc_download')}
+</a>
         ) : !isBrand ? (
           <button type="button" disabled className={cn(item, 'opacity-40 cursor-not-allowed')}>
-            <Download size={14} /> Download
-          </button>
+            <Download size={14} /> {t('pc_download')}
+</button>
         ) : null}
 
         <button
@@ -241,11 +244,11 @@ function ContextMenu({
           onClick={() => { onClose(); onEditAsNew() }}
           className={item}
         >
-          <FilePlus size={14} /> Edit as New
+          <FilePlus size={14} /> {t('pc_editAsNew')}
         </button>
         <button type="button" disabled className={itemDisabled} aria-disabled="true">
           <Users size={14} />
-          <span>Collaborate</span>
+          <span>{t('pc_collaborate')}</span>
           <Gem size={12} className="text-warning ml-auto" />
         </button>
         <button
@@ -253,12 +256,12 @@ function ContextMenu({
           onClick={() => { onClose(); onRename() }}
           className={item}
         >
-          <Pencil size={14} /> Rename
+          <Pencil size={14} /> {t('pc_rename')}
         </button>
         <button type="button" disabled className={itemDisabled} aria-disabled="true">
           <FolderInput size={14} />
-          <span>Move</span>
-          <span className={soonBadge}>Soon</span>
+          <span>{t('pc_move')}</span>
+          <span className={soonBadge}>{t('pc_soon')}</span>
         </button>
       </div>
 
@@ -270,7 +273,7 @@ function ContextMenu({
           onClick={() => { onClose(); onDelete() }}
           className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error hover:bg-error/10 transition-colors w-full text-left"
         >
-          <Trash2 size={14} /> Delete
+          <Trash2 size={14} /> {t('pc_delete')}
         </button>
       </div>
     </div>
@@ -280,6 +283,7 @@ function ContextMenu({
 // ── ProjectCard ────────────────────────────────────────────────────────────────
 
 export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
+  const { t } = useLanguage()
   const router = useRouter()
   const [menuOpen,       setMenuOpen]       = useState(false)
   const [deleting,       setDeleting]       = useState(false)
@@ -310,8 +314,8 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
 
   async function handleRename() {
     if (renaming) return
-    const current = localTitle ?? 'Untitled'
-    const next = typeof window === 'undefined' ? null : window.prompt('Rename project', current)
+    const current = localTitle ?? t('pc_untitled')
+    const next = typeof window === 'undefined' ? null : window.prompt(t('pc_renameProject'), current)
     if (next === null) return
     const trimmed = next.trim()
     if (!trimmed || trimmed === current) return
@@ -337,7 +341,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   async function handleEditAsNew() {
     if (duplicating) return
     setDuplicating(true)
-    toast.info('Duplication du projet…')
+    toast.info(t('pc_duplicating'))
     try {
       const res = await fetch(`/api/videos/${project.id}/duplicate`, { method: 'POST' })
       if (!res.ok) {
@@ -351,7 +355,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
       router.push(`/${module}/${target}?draft=${newId}`)
     } catch (err) {
       console.error('[EditAsNew]', err)
-      toast.error('Impossible de dupliquer le projet — réessaie')
+      toast.error(t('pc_duplicateError'))
       setDuplicating(false)
     }
   }
@@ -363,17 +367,17 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
       if (!res.ok) throw new Error()
       setDeleted(true)
       onDeleted?.(project.id)
-      toast.success('Project deleted')
+      toast.success(t('pc_projectDeleted'))
     } catch {
       setDeleting(false)
-      toast.error('Failed to delete project')
+      toast.error(t('pc_deleteError'))
     }
   }
 
   const ModuleIcon     = MODULE_ICONS[project.module ?? ''] ?? Video
   const iconColor      = MODULE_ICON_COLORS[project.module ?? ''] ?? 'text-[--text-muted]'
   const moduleGradient = MODULE_GRADIENTS[project.module ?? ''] ?? 'from-slate-900/50 via-slate-800/30 to-slate-900/40'
-  const moduleLabel    = MODULE_LABELS[project.module ?? ''] ?? 'Project'
+  const moduleLabel    = MODULE_LABELS[project.module ?? ''] ?? t('pc_project')
 
   // For brand kit done state: link to brand hub to view results
   const brandHubHref = `/brand/hub?draft=${project.id}`
@@ -419,7 +423,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
           {project.thumbnail_url && (
             <Image
               src={project.thumbnail_url}
-              alt={project.title ?? 'Project'}
+              alt={project.title ?? t('pc_project')}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -447,9 +451,9 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
 
           {/* Status badge — top-left */}
           <div className="absolute top-2 left-2">
-            {isProcessing && <Badge variant="info" dot>Processing</Badge>}
-            {isError && <Badge variant="error">Error</Badge>}
-            {isDone && isBrand && <Badge variant="success">Done</Badge>}
+            {isProcessing && <Badge variant="info" dot>{t('pc_processing')}</Badge>}
+            {isError && <Badge variant="error">{t('pc_error')}</Badge>}
+            {isDone && isBrand && <Badge variant="success">{t('pc_done')}</Badge>}
           </div>
 
           {/* Duration chip — bottom-right */}
@@ -465,7 +469,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
         <div className="absolute top-2 right-2 z-10">
           <button
             type="button"
-            aria-label="Project options"
+            aria-label={t('pc_projectOptions')}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
@@ -488,10 +492,10 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
         {/* Info */}
         <div className="px-3 py-2.5">
           <p className="font-display text-sm font-semibold text-foreground truncate leading-snug">
-            {localTitle ?? 'Untitled'}
+            {localTitle ?? t('pc_untitled')}
           </p>
           <p className="font-mono text-xs text-[--text-muted] mt-0.5">
-            {formatRelativeDate(project.created_at)} · {moduleLabel}
+            {formatRelativeDate(project.created_at, t)} · {moduleLabel}
           </p>
 
           {/* Error recovery */}
@@ -510,7 +514,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
               {reverting
                 ? <Loader2 size={11} className="animate-spin" />
                 : <RotateCcw size={11} />}
-              {reverting ? 'Saving…' : 'Save as draft to resume'}
+              {reverting ? t('pc_saving') : t('pc_saveDraft')}
             </button>
           )}
 
@@ -526,7 +530,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
                 'transition-colors',
               )}
             >
-              <ExternalLink size={11} /> View Brand Kit
+              <ExternalLink size={11} /> {t('pc_viewBrandKit')}
             </button>
           )}
         </div>
