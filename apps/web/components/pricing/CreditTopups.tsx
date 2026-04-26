@@ -166,27 +166,29 @@ export function CreditTopups() {
           </span>
         </div>
 
-        {/* Comparison card */}
+        {/* Comparison card — abonnement vs top-up (calculs basés sur pricing-data.ts) */}
         <Card variant="glass" padding="lg" className="mt-10 max-w-lg mx-auto text-center">
           <p className="font-body text-sm text-foreground">
-            Les crédits d&apos;abonnement sont toujours moins chers que les top-ups.
+            Les crédits d&apos;abonnement restent plus avantageux que les top-ups.
           </p>
           <div className="grid grid-cols-2 gap-3 mt-4">
             <div className="rounded-xl border border-border bg-muted/40 px-3 py-3">
               <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Abonnement Creator</p>
-              <p className="font-display text-lg font-bold text-foreground mt-1">0,011€ / crédit</p>
+              <p className="font-display text-lg font-bold text-foreground mt-1">0,0077€ / crédit</p>
+              <p className="font-mono text-[10px] text-[--text-muted] mt-0.5">69€ / 9 000 crédits</p>
             </div>
             <div className="rounded-xl border border-border bg-muted/40 px-3 py-3">
               <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Top-up Power</p>
               <p className="font-display text-lg font-bold text-foreground mt-1">0,011€ / crédit</p>
+              <p className="font-mono text-[10px] text-[--text-muted] mt-0.5">55€ / 5 000 crédits</p>
             </div>
           </div>
           <div className="mt-4 flex justify-center">
-            <Badge variant="success">Même prix au même niveau</Badge>
+            <Badge variant="success">L&apos;abonnement reste imbattable</Badge>
           </div>
           <p className="font-body text-xs text-[--text-secondary] mt-3 leading-relaxed">
-            Les top-ups grandes quantités offrent le même tarif que l&apos;abonnement Creator.
-            Parfait pour les périodes de production intensive.
+            Les top-ups sont parfaits pour absorber un pic de production ponctuel.
+            Au-delà, passer à l&apos;abonnement supérieur fait toujours baisser le coût par crédit.
           </p>
         </Card>
       </div>
