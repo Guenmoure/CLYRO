@@ -289,13 +289,16 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
 
   return (
     <div className={cn(
-      'group relative rounded-2xl overflow-hidden',
+      // No overflow-hidden so the dropdown menu can extend below the
+      // card boundary without being clipped. The accent strip below
+      // gets its own rounded-t corners so the visual is preserved.
+      'group relative rounded-2xl',
       'bg-card border border-border/60',
       'hover:border-warning/30 hover:shadow-card-hover',
       'transition-all duration-200',
     )}>
-      {/* Amber accent strip */}
-      <div className="h-0.5 w-full bg-gradient-to-r from-warning/60 via-warning/30 to-transparent" />
+      {/* Amber accent strip — rounded-t to follow the card's corners */}
+      <div className="h-0.5 w-full bg-gradient-to-r from-warning/60 via-warning/30 to-transparent rounded-t-2xl" />
 
       <div className="p-4">
         {/* Header */}

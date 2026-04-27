@@ -409,12 +409,20 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   return (
     <>
       <div className={cn(
-        'group relative rounded-2xl overflow-hidden',
+        // NOTE: outer wrapper has rounded corners and the border, but
+        // NOT overflow-hidden — so the dropdown menu can extend below
+        // the card without being clipped. Inner wrapper does the
+        // visual clipping for the thumbnail and info section.
+        'group relative rounded-2xl',
         'bg-card border border-border/60',
         'hover:border-border hover:shadow-card-hover',
         'transition-all duration-200',
         deleting && 'opacity-50 pointer-events-none',
       )}>
+
+        {/* Inner clip wrapper — keeps thumbnail and info contained
+            within the rounded corners, separately from the menu. */}
+        <div className="rounded-2xl overflow-hidden">
 
         {/* Thumbnail */}
         <div
@@ -478,32 +486,6 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
           )}
         </div>
 
-        {/* MoreVertical button */}
-        <div className="absolute top-2 right-2 z-10">
-          <button
-            type="button"
-            aria-label={t('pc_projectOptions')}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
-            className="w-9 h-9 rounded-lg bg-background/80 backdrop-blur-sm border border-border/60 flex items-center justify-center text-[--text-muted] hover:text-foreground opacity-70 group-hover:opacity-100 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 transition-all duration-200"
-          >
-            <MoreVertical size={14} />
-          </button>
-          {menuOpen && (
-            <ContextMenu
-              project={project}
-              onClose={() => setMenuOpen(false)}
-              onDelete={handleDelete}
-              onRename={handleRename}
-              onEditAsNew={handleEditAsNew}
-              onPreview={() => setPreviewOpen(true)}
-              onMove={() => setMoveOpen(true)}
-              onShare={() => setShareOpen(true)}
-            />
-          )}
-        </div>
-
         {/* Info */}
         <div className="px-3 py-2.5">
           <p className="font-display text-sm font-semibold text-foreground truncate leading-snug">
@@ -547,6 +529,37 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
             >
               <ExternalLink size={11} /> {t('pc_viewBrandKit')}
             </button>
+          )}
+        </div>
+        </div>
+        {/* /inner clip wrapper */}
+
+        {/* MoreVertical button — sits OUTSIDE the inner clip wrapper so the
+            dropdown menu can extend below the card without being cut off
+            by overflow-hidden. Positioned absolutely against the outer
+            wrapper (which is `relative`). */}
+        <div className="absolute top-2 right-2 z-20">
+          <button
+            type="button"
+            aria-label={t('pc_projectOptions')}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
+            className="w-9 h-9 rounded-lg bg-background/80 backdrop-blur-sm border border-border/60 flex items-center justify-center text-[--text-muted] hover:text-foreground opacity-70 group-hover:opacity-100 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 transition-all duration-200"
+          >
+            <MoreVertical size={14} />
+          </button>
+          {menuOpen && (
+            <ContextMenu
+              project={project}
+              onClose={() => setMenuOpen(false)}
+              onDelete={handleDelete}
+              onRename={handleRename}
+              onEditAsNew={handleEditAsNew}
+              onPreview={() => setPreviewOpen(true)}
+              onMove={() => setMoveOpen(true)}
+              onShare={() => setShareOpen(true)}
+            />
           )}
         </div>
       </div>
