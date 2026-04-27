@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Video, Sparkles, Palette, MoreVertical,
   Copy, Download, FilePlus, Users, Pencil,
-  FolderInput, Trash2, Gem, Camera, RotateCcw, Loader2,
+  FolderInput, Trash2, Camera, RotateCcw, Loader2,
   X, Play, ExternalLink, Clapperboard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toast'
 import { useLanguage } from '@/lib/i18n'
 import { MoveToFolderModal } from '@/components/dashboard/MoveToFolderModal'
+import { ShareLinkModal } from '@/components/dashboard/ShareLinkModal'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -166,6 +167,7 @@ function ContextMenu({
   onEditAsNew,
   onPreview,
   onMove,
+  onShare,
 }: {
   project: VideoProject
   onClose: () => void
@@ -174,6 +176,7 @@ function ContextMenu({
   onEditAsNew: () => void
   onPreview: () => void
   onMove: () => void
+  onShare: () => void
 }) {
   const { t } = useLanguage()
   const ref = useRef<HTMLDivElement>(null)
@@ -193,7 +196,6 @@ function ContextMenu({
   }
 
   const item = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left'
-  const itemDisabled = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-muted] w-full text-left cursor-not-allowed'
   const isBrand = project.module === 'brand'
 
   return (
@@ -250,10 +252,12 @@ function ContextMenu({
         >
           <FilePlus size={14} /> {t('pc_editAsNew')}
         </button>
-        <button type="button" disabled className={itemDisabled} aria-disabled="true">
-          <Users size={14} />
-          <span>{t('pc_collaborate')}</span>
-          <Gem size={12} className="text-warning ml-auto" />
+        <button
+          type="button"
+          onClick={() => { onClose(); onShare() }}
+          className={item}
+        >
+          <Users size={14} /> {t('pc_collaborate')}
         </button>
         <button
           type="button"
@@ -300,6 +304,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   const [duplicating,    setDuplicating]    = useState(false)
   const [previewOpen,    setPreviewOpen]    = useState(false)
   const [moveOpen,       setMoveOpen]       = useState(false)
+  const [shareOpen,      setShareOpen]      = useState(false)
   const [localFolderId,  setLocalFolderId]  = useState<string | null>(project.folder_id ?? null)
 
   const isProcessing = ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly', 'animation'].includes(project.status)
@@ -494,6 +499,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
               onEditAsNew={handleEditAsNew}
               onPreview={() => setPreviewOpen(true)}
               onMove={() => setMoveOpen(true)}
+              onShare={() => setShareOpen(true)}
             />
           )}
         </div>
@@ -561,6 +567,13 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
         videoId={project.id}
         currentFolderId={localFolderId}
         onMoved={(folder) => setLocalFolderId(folder?.id ?? null)}
+      />
+
+      {/* Share-link modal (Collaborate menu entry) */}
+      <ShareLinkModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        videoId={project.id}
       />
     </>
   )

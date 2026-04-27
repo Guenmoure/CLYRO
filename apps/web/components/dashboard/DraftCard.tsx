@@ -3,13 +3,14 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
   Video, Sparkles, Play, Trash2, Palette, Clapperboard,
-  MoreVertical, Copy, FilePlus, Users, Pencil, FolderInput, Gem,
+  MoreVertical, Copy, FilePlus, Users, Pencil, FolderInput,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/toast'
 import { useLanguage } from '@/lib/i18n'
 import { MoveToFolderModal } from '@/components/dashboard/MoveToFolderModal'
+import { ShareLinkModal } from '@/components/dashboard/ShareLinkModal'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ function DraftContextMenu({
   onEditAsNew,
   onResume,
   onMove,
+  onShare,
 }: {
   draft: DbDraftMeta
   moduleLabel: string
@@ -101,6 +103,7 @@ function DraftContextMenu({
   onEditAsNew: () => void
   onResume: () => void
   onMove: () => void
+  onShare: () => void
 }) {
   const { t } = useLanguage()
   const ref = useRef<HTMLDivElement>(null)
@@ -127,7 +130,6 @@ function DraftContextMenu({
   }
 
   const item = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left'
-  const itemDisabled = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-muted] w-full text-left cursor-not-allowed'
 
   return (
     <div
@@ -164,10 +166,13 @@ function DraftContextMenu({
           <FilePlus size={14} aria-hidden="true" /> {t('dc_duplicate')}
         </button>
 
-        <button type="button" disabled className={itemDisabled} aria-disabled="true">
-          <Users size={14} aria-hidden="true" />
-          <span>{t('dc_collaborate')}</span>
-          <Gem size={12} className="text-warning ml-auto" aria-hidden="true" />
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => { onClose(); onShare() }}
+          className={item}
+        >
+          <Users size={14} aria-hidden="true" /> {t('dc_collaborate')}
         </button>
 
         <button
@@ -216,6 +221,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
   const [renaming, setRenaming] = useState(false)
   const [duplicating, setDuplicating] = useState(false)
   const [moveOpen, setMoveOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const config      = MODULE_CONFIG[draft.module] ?? MODULE_CONFIG.faceless!
   const { Icon }    = config
@@ -360,6 +366,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
                   onEditAsNew={handleEditAsNew}
                   onResume={handleResume}
                   onMove={() => setMoveOpen(true)}
+                  onShare={() => setShareOpen(true)}
                 />
               )}
             </div>
@@ -408,6 +415,13 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
         onClose={() => setMoveOpen(false)}
         videoId={draft.id}
         currentFolderId={null}
+      />
+
+      {/* Share-link modal — shares the underlying video row by token. */}
+      <ShareLinkModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        videoId={draft.id}
       />
     </div>
   )
