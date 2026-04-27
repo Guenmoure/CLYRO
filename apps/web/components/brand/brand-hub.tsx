@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Plus, Palette, Trash2, Loader2, Upload, Wand2, Download, X, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import {
   createBrandKit, updateBrandKit, deleteBrandKit, uploadBrandLogo,
   generateBrandAsset, getBrandAssets, deleteBrandAsset,
@@ -43,9 +44,10 @@ function BrandKitForm({
   const [isDefault,      setIsDefault]      = useState(initial?.is_default ?? false)
   const [saving,         setSaving]         = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const { t } = useLanguage()
 
   async function handleSave() {
-    if (!name.trim()) { toast.error('Name is required.'); return }
+    if (!name.trim()) { toast.error(t('bh_nameRequired')); return }
     setSaving(true)
     try {
       const supabase = createBrowserClient()
@@ -68,10 +70,10 @@ function BrandKitForm({
         ? (await updateBrandKit({ id: initial.id, ...payload })).data
         : (await createBrandKit(payload)).data
 
-      toast.success(initial?.id ? 'Brand kit updated.' : 'Brand kit created.')
+      toast.success(initial?.id ? t('bh_kitUpdated') : t('bh_kitCreated'))
       onSave(result)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error saving.')
+      toast.error(err instanceof Error ? err.message : t('bh_errorSaving'))
     } finally {
       setSaving(false)
     }
@@ -80,19 +82,19 @@ function BrandKitForm({
   return (
     <div className="space-y-4">
       <h3 className="font-display font-semibold text-gray-900 dark:text-white text-sm">
-        {initial?.id ? 'Edit' : 'New brand kit'}
+        {initial?.id ? t('bh_formEdit') : t('bh_formNew')}
       </h3>
 
       <input
         id="brand-hub-name" name="brand_name"
         type="text" value={name} onChange={(e) => setName(e.target.value)}
-        placeholder="Brand name (e.g.: CLYRO Official)"
+        placeholder={t('bh_namePlaceholder')}
         className="w-full glass rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none transition-all"
       />
 
       <div className="flex gap-4">
         <div className="flex-1">
-          <label htmlFor="brand-hub-primary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5 block">Primary color</label>
+          <label htmlFor="brand-hub-primary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5 block">{t('bh_primaryColorLabel')}</label>
           <div className="flex items-center gap-2">
             <input id="brand-hub-primary" name="primary_color" type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)}
               className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
@@ -100,7 +102,7 @@ function BrandKitForm({
           </div>
         </div>
         <div className="flex-1">
-          <label htmlFor="brand-hub-secondary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5 block">Secondary</label>
+          <label htmlFor="brand-hub-secondary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5 block">{t('bh_secondaryLabel')}</label>
           <div className="flex items-center gap-2">
             <input id="brand-hub-secondary" name="secondary_color" type="color" value={secondaryColor || '#ffffff'} onChange={(e) => setSecondaryColor(e.target.value)}
               className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
@@ -115,7 +117,7 @@ function BrandKitForm({
       <input
         id="brand-hub-font" name="font_family"
         type="text" value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}
-        placeholder="Font family (e.g.: Montserrat)"
+        placeholder={t('bh_fontPlaceholder')}
         className="w-full glass rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none transition-all"
       />
 
@@ -123,7 +125,7 @@ function BrandKitForm({
         {logoPreview && <img src={logoPreview} alt="Logo" className="w-10 h-10 object-contain rounded-lg glass" />}
         <button type="button" onClick={() => fileRef.current?.click()}
           className="flex items-center gap-2 glass glass-hover rounded-xl px-3 py-2 text-xs font-body text-gray-500 dark:text-white/50 transition-all">
-          <Upload size={12} /> {logoPreview ? 'Change logo' : 'Import logo'}
+          <Upload size={12} /> {logoPreview ? t('bh_changeLogo') : t('bh_importLogo')}
         </button>
         <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
           className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setLogoFile(f); setLogoPreview(URL.createObjectURL(f)) } }} />
@@ -131,17 +133,17 @@ function BrandKitForm({
 
       <label className="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} className="w-3.5 h-3.5 rounded accent-clyro-primary" />
-        <span className="font-body text-xs text-gray-500 dark:text-white/50">Use by default</span>
+        <span className="font-body text-xs text-gray-500 dark:text-white/50">{t('bh_useByDefault')}</span>
       </label>
 
       <div className="flex items-center gap-3 pt-1">
         <button type="button" onClick={handleSave} disabled={saving}
           className="bg-grad-primary text-white font-display font-semibold px-5 py-2 rounded-xl hover:opacity-90 disabled:opacity-50 text-sm transition-opacity flex items-center gap-1.5">
           {saving && <Loader2 size={12} className="animate-spin" />}
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? t('bh_saving') : t('bh_save')}
         </button>
         <button type="button" onClick={onCancel} className="text-xs font-body text-gray-400 dark:text-white/30 hover:text-gray-600 dark:hover:text-white/60 transition-colors">
-          Cancel
+          {t('bh_cancel')}
         </button>
       </div>
     </div>
@@ -155,9 +157,10 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
   const [prompt,   setPrompt]   = useState('')
   const [platform, setPlatform] = useState<SocialPlatform>('instagram_post')
   const [loading,  setLoading]  = useState(false)
+  const { t } = useLanguage()
 
   async function handleGenerate() {
-    if (!prompt.trim()) { toast.error('Describe what you want to generate.'); return }
+    if (!prompt.trim()) { toast.error(t('bh_describeWhat')); return }
     setLoading(true)
     try {
       const { data } = await generateBrandAsset({
@@ -166,11 +169,11 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
         prompt:   prompt.trim(),
         platform: tab === 'social' ? platform : undefined,
       })
-      toast.success('Asset generated!')
+      toast.success(t('bh_assetGenerated'))
       onGenerated(data)
       setPrompt('')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Generation error.')
+      toast.error(err instanceof Error ? err.message : t('bh_generationError'))
     } finally {
       setLoading(false)
     }
@@ -183,13 +186,13 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
           className={cn('px-3 py-1.5 rounded-lg text-xs font-mono transition-all',
             tab === 'logo' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70'
           )}>
-          Logo
+          {t('bh_logoTab')}
         </button>
         <button type="button" onClick={() => setTab('social')}
           className={cn('px-3 py-1.5 rounded-lg text-xs font-mono transition-all',
             tab === 'social' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70'
           )}>
-          Social posts
+          {t('bh_socialTab')}
         </button>
       </div>
 
@@ -213,10 +216,7 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder={tab === 'logo'
-            ? 'e.g.: abstract geometric logo, tech startup, minimalist…'
-            : 'e.g.: sale promotion -50%, colorful background, bold typography…'
-          }
+          placeholder={tab === 'logo' ? t('bh_logoPromptPlaceholder') : t('bh_socialPromptPlaceholder')}
           rows={3}
           className="w-full glass rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none resize-none transition-all"
         />
@@ -229,7 +229,7 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
           <button type="button" onClick={handleGenerate} disabled={loading || !prompt.trim()}
             className="flex items-center gap-1.5 bg-grad-primary text-white font-display font-semibold px-4 py-2 rounded-xl text-xs hover:opacity-90 disabled:opacity-50 transition-opacity">
             {loading ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-            {loading ? 'Generating…' : 'Generate'}
+            {loading ? t('bh_generating') : t('bh_generate')}
           </button>
         </div>
       </div>
@@ -240,11 +240,13 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
 // ── Asset Gallery ──────────────────────────────────────────────────────────────
 
 function AssetGallery({ assets, onDelete }: { assets: BrandAsset[]; onDelete: (id: string) => void }) {
+  const { t } = useLanguage()
+
   if (assets.length === 0) {
     return (
       <div className="glass rounded-2xl py-12 text-center">
         <Wand2 size={28} className="mx-auto mb-3 text-gray-300 dark:text-white/15" />
-        <p className="font-body text-sm text-gray-400 dark:text-white/30">Generate your first asset to see it here.</p>
+        <p className="font-body text-sm text-gray-400 dark:text-white/30">{t('bh_noAssetsYet')}</p>
       </div>
     )
   }
@@ -257,11 +259,11 @@ function AssetGallery({ assets, onDelete }: { assets: BrandAsset[]; onDelete: (i
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
             <a href={asset.image_url} download={`${asset.type}-${asset.id}.png`} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-body hover:bg-white/30 transition-colors">
-              <Download size={11} /> Download
+              <Download size={11} /> {t('bh_download')}
             </a>
             <button type="button" onClick={() => onDelete(asset.id)}
               className="flex items-center gap-1.5 bg-red-500/30 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-body hover:bg-red-500/50 transition-colors">
-              <Trash2 size={11} /> Delete
+              <Trash2 size={11} /> {t('bh_delete')}
             </button>
           </div>
           <div className="p-2">
@@ -285,6 +287,7 @@ function KitPanel({ kit, onUpdate, onDelete }: {
   const [editing,  setEditing]  = useState(false)
   const [assets,   setAssets]   = useState<BrandAsset[]>([])
   const [loadingAssets, setLoadingAssets] = useState(true)
+  const { t } = useLanguage()
 
   useState(() => {
     getBrandAssets(kit.id)
@@ -302,7 +305,7 @@ function KitPanel({ kit, onUpdate, onDelete }: {
       await deleteBrandAsset(id)
       setAssets((prev) => prev.filter((a) => a.id !== id))
     } catch {
-      toast.error('Unable to delete.')
+      toast.error(t('bh_unableDeleteAsset'))
     }
   }
 
@@ -311,7 +314,7 @@ function KitPanel({ kit, onUpdate, onDelete }: {
       await deleteBrandKit(kit.id)
       onDelete(kit.id)
     } catch {
-      toast.error('Unable to delete brand kit.')
+      toast.error(t('bh_unableDeleteKit'))
     }
   }
 
@@ -333,7 +336,7 @@ function KitPanel({ kit, onUpdate, onDelete }: {
               <span className="w-4 h-4 rounded-full border border-white/10 shadow-sm" style={{ background: kit.primary_color }} />
               {kit.secondary_color && <span className="w-4 h-4 rounded-full border border-white/10 shadow-sm" style={{ background: kit.secondary_color }} />}
               {kit.font_family && <span className="font-mono text-[11px] text-gray-400 dark:text-white/30">{kit.font_family}</span>}
-              {kit.is_default && <span className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">★ Default</span>}
+              {kit.is_default && <span className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">{t('bh_defaultStarLabel')}</span>}
             </div>
           </div>
         </div>
@@ -362,14 +365,14 @@ function KitPanel({ kit, onUpdate, onDelete }: {
 
       {/* Generator */}
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">AI Generator</p>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">{t('bh_aiGenerator')}</p>
         <AssetGenerator kit={kit} onGenerated={handleGenerated} />
       </div>
 
       {/* Gallery */}
       <div>
         <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">
-          Generated assets · {assets.length}
+          {t('bh_generatedAssets').replace('{count}', String(assets.length))}
         </p>
         {loadingAssets ? (
           <div className="grid grid-cols-3 gap-3">
@@ -392,6 +395,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
   const [kits,       setKits]       = useState<BrandKit[]>(initialKits)
   const [activeId,   setActiveId]   = useState<string | null>(initialKits[0]?.id ?? null)
   const [showCreate, setShowCreate] = useState(false)
+  const { t } = useLanguage()
 
   const activeKit = kits.find((k) => k.id === activeId) ?? null
 
@@ -416,7 +420,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
       const { data } = await updateBrandKit({ id, is_default: true })
       setKits((prev) => prev.map((k) => ({ ...k, is_default: k.id === data.id })))
     } catch {
-      toast.error('Unable to set as default.')
+      toast.error(t('bh_unableSetDefault'))
     }
   }
 
@@ -426,8 +430,8 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
       {/* Sidebar */}
       <aside className="glass glass-border-r w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
         <div className="p-4 glass-border-b">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-0.5">Module</p>
-          <h1 className="font-display text-sm font-bold text-foreground">Brand Kit</h1>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-0.5">{t('bh_moduleLabel')}</p>
+          <h1 className="font-display text-sm font-bold text-foreground">{t('bh_moduleTitle')}</h1>
         </div>
 
         {/* Tab switcher */}
@@ -443,7 +447,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                   : 'text-[--text-muted] hover:text-foreground'
               )}
             >
-              <Palette size={11} /> Kits
+              <Palette size={11} /> {t('bh_kitsTab')}
             </button>
             <button
               type="button"
@@ -455,7 +459,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                   : 'text-[--text-muted] hover:text-foreground'
               )}
             >
-              <Sparkles size={11} /> Studio
+              <Sparkles size={11} /> {t('bh_studioTab')}
             </button>
           </div>
         </div>
@@ -466,7 +470,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
               <button type="button" onClick={() => { setActiveId(null); setShowCreate(true) }}
                 className="flex items-center gap-2 w-full bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-cyan-500/10 hover:border-cyan-500/40 transition-all">
                 <Plus size={15} className="text-clyro-accent" />
-                New brand kit
+                {t('bh_newBrandKit')}
               </button>
             </div>
 
@@ -474,7 +478,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
               {kits.length === 0 && !showCreate && (
                 <div className="px-3 py-8 text-center">
                   <Palette size={24} className="mx-auto mb-2 text-[--text-muted]" />
-                  <p className="font-body text-xs text-[--text-muted]">Create your first brand kit</p>
+                  <p className="font-body text-xs text-[--text-muted]">{t('bh_firstBrandKit')}</p>
                 </div>
               )}
               {kits.map((kit) => (
@@ -488,7 +492,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-sm font-medium text-foreground truncate">{kit.name}</p>
                       {kit.is_default && (
-                        <p className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">★ Default</p>
+                        <p className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">{t('bh_defaultStarLabel')}</p>
                       )}
                     </div>
                   </div>
@@ -500,13 +504,13 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
 
         {sidebarTab === 'studio' && (
           <div className="flex-1 p-3 flex flex-col gap-2">
-            <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mt-1 px-1">Identity Studio</p>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mt-1 px-1">{t('bh_identityStudio')}</p>
             <p className="font-body text-xs text-gray-400 dark:text-white/30 px-1 leading-relaxed">
-              Brief → 3 directions → AI Visuals → Brand guidelines → Export
+              {t('bh_identityStudioDesc')}
             </p>
             <div className="mt-2 space-y-1 text-xs font-mono text-gray-400 dark:text-white/30 px-1">
-              {['1 · Brand brief', '2 · Creative directions', '3 · AI visuals', '4 · Brand guidelines', '5 · Export brand kit'].map((s) => (
-                <p key={s}>{s}</p>
+              {(['bh_studioStep_1', 'bh_studioStep_2', 'bh_studioStep_3', 'bh_studioStep_4', 'bh_studioStep_5'] as const).map((key) => (
+                <p key={key}>{t(key)}</p>
               ))}
             </div>
           </div>
@@ -525,7 +529,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
             {showCreate && (
               <div className="flex flex-col h-full overflow-y-auto px-8 py-8">
                 <div className="max-w-lg">
-                  <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">New brand kit</p>
+                  <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">{t('bh_newBrandKitHeader')}</p>
                   <div className="glass glass-heavy rounded-2xl p-6">
                     <BrandKitForm
                       onSave={handleSaved}
@@ -560,37 +564,37 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
 
                 <div className="space-y-2">
                   <h2 className="font-display text-2xl font-bold text-foreground">
-                    Create Your Brand Kit
+                    {t('bh_emptyTitle')}
                   </h2>
                   <p className="font-body text-sm text-[--text-secondary] max-w-sm">
-                    Define your brand guidelines (colors, fonts, logo) and generate in one click posts, banners, logos and visual assets consistent with your identity.
+                    {t('bh_emptyDesc')}
                   </p>
                 </div>
 
                 {/* Feature hints */}
                 <div className="grid grid-cols-3 gap-2 w-full max-w-md">
                   <div className="rounded-xl border border-border bg-muted/50 px-3 py-2 text-left">
-                    <p className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted] mb-0.5">Logos</p>
-                    <p className="font-body text-xs text-foreground">Exportable SVGs</p>
+                    <p className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted] mb-0.5">{t('bh_logosLabel')}</p>
+                    <p className="font-body text-xs text-foreground">{t('bh_logosDesc')}</p>
                   </div>
                   <div className="rounded-xl border border-border bg-muted/50 px-3 py-2 text-left">
-                    <p className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted] mb-0.5">Posts</p>
-                    <p className="font-body text-xs text-foreground">IG · LinkedIn · X</p>
+                    <p className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted] mb-0.5">{t('bh_postsLabel')}</p>
+                    <p className="font-body text-xs text-foreground">{t('bh_postsDesc')}</p>
                   </div>
                   <div className="rounded-xl border border-border bg-muted/50 px-3 py-2 text-left">
-                    <p className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted] mb-0.5">Guidelines</p>
-                    <p className="font-body text-xs text-foreground">PDF + ZIP</p>
+                    <p className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted] mb-0.5">{t('bh_guidelinesLabel')}</p>
+                    <p className="font-body text-xs text-foreground">{t('bh_guidelinesDesc')}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-3 justify-center">
                   <button type="button" onClick={() => setShowCreate(true)}
                     className="bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 transition-opacity flex items-center gap-2 shadow-md hover:shadow-lg">
-                    <Plus size={15} /> Create my first kit
+                    <Plus size={15} /> {t('bh_createFirstKit')}
                   </button>
                   <button type="button" onClick={() => setSidebarTab('studio')}
                     className="glass glass-hover text-foreground font-display font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
-                    <Sparkles size={15} /> Identity Studio
+                    <Sparkles size={15} /> {t('bh_identityStudioBtn')}
                   </button>
                 </div>
               </div>

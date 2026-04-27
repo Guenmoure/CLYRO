@@ -20,11 +20,10 @@ const VOICE_CATEGORIES = [
   { key: 'video games',    translationKey: 'characters',     icon: Film },
 ]
 
-// FR labels for the gender filter — the backend reports raw ElevenLabs values
-// ("male", "female") which aren't user-friendly in a French UI.
-const GENDER_LABELS: Record<string, string> = {
-  male:   'Homme',
-  female: 'Femme',
+// Fallback gender keys — translated at render time via t()
+const GENDER_TRANSLATION_KEYS: Record<string, string> = {
+  male:   'vf_genderMale',
+  female: 'vf_genderFemale',
 }
 
 interface FilterOptionLanguage { value: string; label: string; flag: string }
@@ -136,9 +135,9 @@ export function VoiceFilters({
             onChange={(e) => onGender?.(e.target.value)}
             className="bg-muted border border-border rounded-lg h-9 px-3 font-body text-xs text-foreground focus:outline-none focus:border-blue-500/60"
           >
-            <option value="">Genre</option>
+            <option value="">{t('vf_genderLabel')}</option>
             {filterOptions.genders.map((g) => (
-              <option key={g} value={g}>{GENDER_LABELS[g] ?? g}</option>
+              <option key={g} value={g}>{GENDER_TRANSLATION_KEYS[g] ? t(GENDER_TRANSLATION_KEYS[g] as Parameters<typeof t>[0]) : g}</option>
             ))}
           </select>
           <select
@@ -146,7 +145,7 @@ export function VoiceFilters({
             onChange={(e) => onLanguage?.(e.target.value)}
             className="bg-muted border border-border rounded-lg h-9 px-3 font-body text-xs text-foreground focus:outline-none focus:border-blue-500/60"
           >
-            <option value="">Langue</option>
+            <option value="">{t('vf_languageLabel')}</option>
             {filterOptions.languages.map((l) => (
               <option key={l.value} value={l.value}>{l.flag} {l.label}</option>
             ))}
@@ -156,7 +155,7 @@ export function VoiceFilters({
             onChange={(e) => onUseCase?.(e.target.value)}
             className="bg-muted border border-border rounded-lg h-9 px-3 font-body text-xs text-foreground focus:outline-none focus:border-blue-500/60"
           >
-            <option value="">Usage</option>
+            <option value="">{t('vf_usageLabel')}</option>
             {filterOptions.useCases.map((u) => (
               <option key={u} value={u}>{u}</option>
             ))}
@@ -168,7 +167,7 @@ export function VoiceFilters({
               onClick={() => { onGender?.(''); onLanguage?.(''); onUseCase?.('') }}
               className="inline-flex items-center gap-1 text-xs text-[--text-muted] hover:text-foreground transition-colors px-2"
             >
-              <X size={12} /> Réinitialiser
+              <X size={12} /> {t('vf_reset')}
             </button>
           )}
         </div>

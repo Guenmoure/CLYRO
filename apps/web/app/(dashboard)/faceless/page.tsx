@@ -1,13 +1,12 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, Video, Loader2, AlertCircle, Check, Sparkles, Clapperboard } from 'lucide-react'
-import type { Database } from '@/lib/database.types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-
-export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Faceless Videos — CLYRO' }
+import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 
 type FacelessVideo = {
   id: string
@@ -19,23 +18,51 @@ type FacelessVideo = {
   duration_seconds: number | null
 }
 
-export default async function FacelessIndexPage() {
-  const supabase = createServerComponentClient<Database>({ cookies })
-  const { data: { user } } = await supabase.auth.getUser()
+export default function FacelessIndexPage() {
+  const { t } = useLanguage()
+  const [videos, setVideos] = useState<FacelessVideo[]>([])
+  const [loading, setLoading] = useState(true)
 
-  let videos: FacelessVideo[] = []
-  try {
-    const { data } = await supabase
-      .from('videos')
-      .select('id, title, status, output_url, thumbnail_url, created_at, duration_seconds')
-      .eq('user_id', user?.id ?? '')
-      .eq('module', 'faceless')
-      .neq('status', 'draft')
-      .order('created_at', { ascending: false })
-      .limit(60)
-    videos = (data ?? []) as FacelessVideo[]
-  } catch {
-    videos = []
+  useEffect(() => {
+    async function load() {
+      try {
+        const supabase = createBrowserClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        const { data } = await supabase
+          .from('videos')
+          .select('id, title, status, output_url, thumbnail_url, created_at, duration_seconds')
+          .eq('user_id', user?.id ?? '')
+          .eq('module', 'faceless')
+          .neq('status', 'draft')
+          .order('created_at', { ascending: false })
+          .limit(60)
+        setVideos((data ?? []) as FacelessVideo[])
+      } catch {
+        setVideos([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    void load()
+  }, [])
+
+  const STATUS_META: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
+    pending:    { label: t('fl_statusPending'),    color: 'bg-muted text-[--text-muted]' },
+    processing: { label: t('fl_statusProcessing'), color: 'bg-blue-500/15 text-blue-500',   icon: <Loader2 size={10} className="animate-spin" /> },
+    storyboard: { label: t('fl_statusStoryboard'), color: 'bg-blue-500/15 text-blue-500',   icon: <Loader2 size={10} className="animate-spin" /> },
+    visuals:    { label: t('fl_statusVisuals'),    color: 'bg-amber-500/15 text-amber-500', icon: <Loader2 size={10} className="animate-spin" /> },
+    audio:      { label: t('fl_statusAudio'),      color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
+    assembly:   { label: t('fl_statusRendering'),  color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
+    done:       { label: t('fl_statusReady'),      color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
+    error:      { label: t('fl_statusError'),      color: 'bg-error/15 text-error',         icon: <AlertCircle size={10} /> },
+  }
+
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-background px-6 py-8 flex items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-[--text-muted]" />
+      </div>
+    )
   }
 
   return (
@@ -47,21 +74,19 @@ export default async function FacelessIndexPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Video size={14} className="text-blue-500" />
-              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold">Faceless Videos</p>
+              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('fl_moduleLabel')}</p>
             </div>
-            <h1 className="font-display text-3xl font-bold text-foreground">Your faceless videos</h1>
+            <h1 className="font-display text-3xl font-bold text-foreground">{t('fl_heading')}</h1>
             <p className="font-body text-sm text-[--text-secondary] mt-1 max-w-xl">
-              Script-driven narrated videos with stock footage and captions.
-              ElevenLabs + stock library + Remotion, orchestrated by Claude.
+              {t('fl_subtitle')}
             </p>
           </div>
 
-          {/* CTA header — prominent gradient button → Faceless hub */}
           <Link href="/faceless/hub" className="group relative">
             <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-300" />
             <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-600 to-cyan-600 text-white font-body text-sm font-semibold shadow-lg">
               <Plus size={16} className="group-hover:rotate-90 transition-transform duration-200" />
-              New project
+              {t('fl_newProject')}
             </div>
           </Link>
         </div>
@@ -76,24 +101,32 @@ export default async function FacelessIndexPage() {
               </div>
             </div>
             <div className="space-y-1">
-              <h2 className="font-display text-xl font-bold text-foreground">No Faceless video yet</h2>
+              <h2 className="font-display text-xl font-bold text-foreground">{t('fl_emptyTitle')}</h2>
               <p className="font-body text-sm text-[--text-secondary] max-w-md">
-                Start from a script. CLYRO picks the footage, generates the narration and ships a ready-to-post video in minutes.
+                {t('fl_emptyDesc')}
               </p>
             </div>
             <Link href="/faceless/hub" className="group relative mt-2">
               <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 opacity-60 blur-md group-hover:opacity-90 transition-opacity duration-300" />
               <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-600 to-cyan-600 text-white font-body text-base font-semibold shadow-xl">
                 <Clapperboard size={18} />
-                Create my first Faceless video
+                {t('fl_createFirst')}
                 <Sparkles size={14} className="opacity-80" />
               </div>
             </Link>
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <NewProjectCard />
-            {videos.map((v) => <FacelessVideoCard key={v.id} video={v} />)}
+            <NewProjectCard newProjectLabel={t('fl_cardNewProject')} fromScriptLabel={t('fl_cardFromScript')} badgeLabel={t('fl_cardBadge')} />
+            {videos.map((v) => (
+              <FacelessVideoCard
+                key={v.id}
+                video={v}
+                statusMeta={STATUS_META}
+                untitledLabel={t('fl_untitled')}
+                facelessLabel={t('fl_facelessLabel')}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -101,9 +134,9 @@ export default async function FacelessIndexPage() {
   )
 }
 
-// ── New project card ─────────────────────────────────────────────────────
+// ── New project card ──────────────────────────���──────────────────────────
 
-function NewProjectCard() {
+function NewProjectCard({ newProjectLabel, fromScriptLabel, badgeLabel }: { newProjectLabel: string; fromScriptLabel: string; badgeLabel: string }) {
   return (
     <Link href="/faceless/hub" className="group relative block rounded-2xl overflow-hidden aspect-[4/3]">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-cyan-600 opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
@@ -118,15 +151,15 @@ function NewProjectCard() {
         </div>
         <div className="text-center">
           <p className="font-display text-base font-bold text-foreground group-hover:text-white transition-colors duration-200">
-            New project
+            {newProjectLabel}
           </p>
           <p className="font-body text-xs text-[--text-muted] mt-0.5 group-hover:text-white/60 transition-colors duration-200">
-            From a script
+            {fromScriptLabel}
           </p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/15 to-cyan-500/15 border border-blue-500/20 group-hover:from-blue-500/25 group-hover:to-cyan-500/25 transition-all duration-200">
           <Sparkles size={10} className="text-blue-400" />
-          <span className="font-mono text-[10px] text-blue-400 tracking-wider uppercase">Faceless</span>
+          <span className="font-mono text-[10px] text-blue-400 tracking-wider uppercase">{badgeLabel}</span>
         </div>
       </div>
     </Link>
@@ -135,19 +168,18 @@ function NewProjectCard() {
 
 // ── Project card ─────────────────────────────────────────────────────────
 
-const STATUS_META: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
-  pending:    { label: 'Pending',    color: 'bg-muted text-[--text-muted]' },
-  processing: { label: 'Processing', color: 'bg-blue-500/15 text-blue-500',   icon: <Loader2 size={10} className="animate-spin" /> },
-  storyboard: { label: 'Storyboard', color: 'bg-blue-500/15 text-blue-500',   icon: <Loader2 size={10} className="animate-spin" /> },
-  visuals:    { label: 'Visuals',    color: 'bg-amber-500/15 text-amber-500', icon: <Loader2 size={10} className="animate-spin" /> },
-  audio:      { label: 'Audio',      color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
-  assembly:   { label: 'Rendering',  color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
-  done:       { label: 'Ready',      color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
-  error:      { label: 'Error',      color: 'bg-error/15 text-error',         icon: <AlertCircle size={10} /> },
-}
-
-function FacelessVideoCard({ video }: { video: FacelessVideo }) {
-  const meta = STATUS_META[video.status] ?? STATUS_META.pending
+function FacelessVideoCard({
+  video,
+  statusMeta,
+  untitledLabel,
+  facelessLabel,
+}: {
+  video: FacelessVideo
+  statusMeta: Record<string, { label: string; color: string; icon?: React.ReactNode }>
+  untitledLabel: string
+  facelessLabel: string
+}) {
+  const meta = statusMeta[video.status] ?? statusMeta.pending
   const relativeDate = formatRelative(video.created_at)
 
   return (
@@ -177,10 +209,10 @@ function FacelessVideoCard({ video }: { video: FacelessVideo }) {
 
       <div className="p-4 space-y-1">
         <p className="font-display font-semibold text-foreground truncate">
-          {video.title ?? 'Untitled'}
+          {video.title ?? untitledLabel}
         </p>
         <div className="flex items-center gap-2 text-xs font-mono text-[--text-muted]">
-          <span>Faceless</span>
+          <span>{facelessLabel}</span>
           <span>·</span>
           <span>{relativeDate}</span>
         </div>

@@ -8,6 +8,7 @@ import {
   type StudioScene, type StudioSceneType,
   SCENE_TYPE_COLORS, SCENE_TYPE_LABELS, SCENE_TYPE_DESCRIPTIONS,
 } from '@/lib/studio-types'
+import { useLanguage } from '@/lib/i18n'
 
 interface SceneInspectorProps {
   scene: StudioScene | null
@@ -19,6 +20,7 @@ interface SceneInspectorProps {
 const ALL_TYPES: StudioSceneType[] = ['avatar', 'split', 'infographic', 'demo', 'typography', 'broll']
 
 export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: SceneInspectorProps) {
+  const { t } = useLanguage()
   const [script, setScript]     = useState(scene?.script ?? '')
   const [feedback, setFeedback] = useState('')
   const [type, setType]         = useState<StudioSceneType>(scene?.type ?? 'avatar')
@@ -40,9 +42,9 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
           <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
             <Wand2 size={22} className="text-[--text-muted]" />
           </div>
-          <p className="font-display text-sm font-semibold text-foreground">No scene selected</p>
+          <p className="font-display text-sm font-semibold text-foreground">{t('si_noSceneTitle')}</p>
           <p className="font-body text-xs text-[--text-secondary] max-w-[220px]">
-            Click a scene in the timeline below to inspect it.
+            {t('si_noSceneDesc')}
           </p>
         </div>
       </aside>
@@ -83,7 +85,7 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
               {SCENE_TYPE_LABELS[scene.type]}
             </span>
             <span className="font-display text-sm font-semibold text-foreground">
-              Scene {scene.index + 1}
+              {t('si_sceneLabel')} {scene.index + 1}
             </span>
           </div>
           <span className="font-mono text-[10px] text-[--text-muted]">
@@ -94,7 +96,7 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
         {/* Script */}
         <div className="space-y-2">
           <label htmlFor="scene-script" className="font-body text-xs font-semibold text-foreground">
-            Script
+            {t('si_scriptLabel')}
           </label>
           <textarea
             id="scene-script"
@@ -102,37 +104,37 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
             onChange={(e) => setScript(e.target.value)}
             rows={5}
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors resize-y"
-            placeholder="Scene script…"
+            placeholder={t('si_scriptPlaceholder')}
           />
           {dirtyScript && (
             <p className="font-mono text-[10px] text-amber-400">
-              Modified — click Regenerate to apply
+              {t('si_scriptModified')}
             </p>
           )}
         </div>
 
         {/* Type switcher */}
         <div className="space-y-2">
-          <label className="font-body text-xs font-semibold text-foreground">Scene type</label>
+          <label className="font-body text-xs font-semibold text-foreground">{t('si_sceneType')}</label>
           <div className="grid grid-cols-3 gap-1.5">
-            {ALL_TYPES.map((t) => {
-              const active = t === type
+            {ALL_TYPES.map((tp) => {
+              const active = tp === type
               return (
                 <button
-                  key={t}
+                  key={tp}
                   type="button"
-                  onClick={() => setType(t)}
+                  onClick={() => setType(tp)}
                   className={cn(
                     'rounded-lg px-2 py-1.5 text-[10px] font-mono uppercase tracking-wider transition-all',
                     active
                       ? 'text-white'
                       : 'bg-muted border border-border text-[--text-secondary] hover:text-foreground',
                   )}
-                  style={active ? { backgroundColor: SCENE_TYPE_COLORS[t] } : undefined}
+                  style={active ? { backgroundColor: SCENE_TYPE_COLORS[tp] } : undefined}
                   aria-pressed={active}
-                  title={SCENE_TYPE_DESCRIPTIONS[t]}
+                  title={SCENE_TYPE_DESCRIPTIONS[tp]}
                 >
-                  {SCENE_TYPE_LABELS[t]}
+                  {SCENE_TYPE_LABELS[tp]}
                 </button>
               )
             })}
@@ -146,38 +148,38 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
         {(type === 'avatar' || type === 'split') && (
           <div className="rounded-xl border border-border bg-muted/40 px-3 py-2.5 space-y-1">
             <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">
-              Avatar & voice
+              {t('si_avatarVoiceSection')}
             </p>
             <p className="font-body text-xs text-[--text-secondary]">
-              Inherited from project settings. Per-scene override coming soon.
+              {t('si_avatarVoiceInherited')}
             </p>
           </div>
         )}
         {type === 'broll' && (
           <div className="space-y-2">
-            <label className="font-body text-xs font-semibold text-foreground">Pexels query</label>
+            <label className="font-body text-xs font-semibold text-foreground">{t('si_pexelsQuery')}</label>
             <input
               type="text"
               value={scene.broll_query ?? ''}
-              placeholder="e.g. city skyline sunset"
+              placeholder={t('si_pexelsPlaceholder')}
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
               readOnly
             />
-            <p className="font-mono text-[10px] text-[--text-muted]">Per-scene Pexels search coming soon.</p>
+            <p className="font-mono text-[10px] text-[--text-muted]">{t('si_pexelsSoon')}</p>
           </div>
         )}
 
         {/* AI feedback box */}
         <div className="space-y-2">
           <label htmlFor="scene-feedback" className="font-body text-xs font-semibold text-foreground">
-            AI feedback <span className="text-[--text-muted] font-normal">(optional)</span>
+            {t('si_aiFeedbackLabel')} <span className="text-[--text-muted] font-normal">({t('si_aiFeedbackOptional')})</span>
           </label>
           <input
             id="scene-feedback"
             type="text"
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            placeholder="Describe what you want to change…"
+            placeholder={t('si_aiFeedbackPlaceholder')}
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
           />
         </div>
@@ -192,7 +194,7 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
             disabled={!canRegenerate}
             onClick={handleRegenerate}
           >
-            {busy ? 'Regenerating…' : 'Regenerate this scene'}
+            {busy ? t('si_regenerating') : t('si_regenerateScene')}
           </Button>
 
           {scene.previous_versions.length > 0 && onRestore && (
@@ -203,7 +205,7 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
               leftIcon={<RotateCcw size={12} />}
               onClick={() => onRestore(scene.id, 0)}
             >
-              Restore previous version
+              {t('si_restorePrevious')}
             </Button>
           )}
 
@@ -216,7 +218,7 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
               onClick={() => onDelete(scene.id)}
               className="text-error hover:bg-error/10"
             >
-              Delete scene
+              {t('si_deleteScene')}
             </Button>
           )}
         </div>

@@ -5,6 +5,7 @@ import { PenLine, Video, Sparkles, Clock, Trash2, Palette, Clapperboard, Loader2
 import { cn } from '@/lib/utils'
 import { createBrowserClient } from '@/lib/supabase'
 import { DraftCard, type DbDraftMeta } from '@/components/dashboard/DraftCard'
+import { useLanguage } from '@/lib/i18n'
 
 // PERF-003: paginated fetch — the drafts list can grow large for heavy users,
 // so we page by 50 and expose a "Load more" affordance.
@@ -14,25 +15,26 @@ const DRAFTS_PAGE_SIZE = 50
 
 type Filter = 'all' | 'faceless' | 'motion' | 'brand' | 'studio'
 
-const FILTERS: { value: Filter; label: string; icon: React.ReactNode }[] = [
-  { value: 'all',      label: 'Tous',    icon: <PenLine      size={13} /> },
-  { value: 'faceless', label: 'Faceless',icon: <Video        size={13} /> },
-  { value: 'motion',   label: 'Motion',  icon: <Sparkles     size={13} /> },
-  { value: 'brand',    label: 'Brand',   icon: <Palette      size={13} /> },
-  { value: 'studio',   label: 'Studio',  icon: <Clapperboard size={13} /> },
+const FILTER_DEFS: { value: Filter; tKey: string; icon: React.ReactNode }[] = [
+  { value: 'all',      tKey: 'dr_all',         icon: <PenLine      size={13} /> },
+  { value: 'faceless', tKey: 'fl_facelessLabel',icon: <Video        size={13} /> },
+  { value: 'motion',   tKey: 'ml_motionLabel',  icon: <Sparkles     size={13} /> },
+  { value: 'brand',    tKey: 'brandKit',        icon: <Palette      size={13} /> },
+  { value: 'studio',   tKey: 'bh_studioTab',    icon: <Clapperboard size={13} /> },
 ]
 
 // ── Empty state ────────────────────────────────────────────────────────────────
 
 function EmptyState() {
+  const { t } = useLanguage()
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
       <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center mb-4">
         <PenLine size={24} className="text-[--text-muted]" strokeWidth={1.4} />
       </div>
-      <h3 className="font-display text-base text-foreground mb-1">Aucun brouillon</h3>
+      <h3 className="font-display text-base text-foreground mb-1">{t('dr_noTitle')}</h3>
       <p className="font-body text-sm text-[--text-muted] max-w-xs">
-        Tes projets en cours apparaîtront ici. Lance un projet Faceless, Motion, Brand Kit ou Studio pour commencer.
+        {t('dr_noTitleDesc')}
       </p>
     </div>
   )
@@ -41,6 +43,7 @@ function EmptyState() {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function DraftsPage() {
+  const { t } = useLanguage()
   const [drafts,     setDrafts]     = useState<DbDraftMeta[]>([])
   const [loading,    setLoading]    = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -139,9 +142,9 @@ export default function DraftsPage() {
             <PenLine size={18} className="text-warning" strokeWidth={1.8} />
           </div>
           <div>
-            <h1 className="font-display text-xl font-bold text-foreground">Brouillons</h1>
+            <h1 className="font-display text-xl font-bold text-foreground">{t('dr_title')}</h1>
             <p className="font-mono text-xs text-[--text-muted]">
-              {loading ? '…' : `${drafts.length} projet${drafts.length !== 1 ? 's' : ''} en cours`}
+              {loading ? '…' : drafts.length === 1 ? t('dr_subtitle_one').replace('{n}', '1') : t('dr_subtitle_other').replace('{n}', String(drafts.length))}
             </p>
           </div>
         </div>
@@ -157,14 +160,14 @@ export default function DraftsPage() {
             )}
           >
             <Trash2 size={12} />
-            Supprimer tout
+            {t('dr_deleteAll')}
           </button>
         )}
       </div>
 
       {/* Filter tabs */}
       <div className="flex items-center gap-1 mb-6 p-1 bg-muted rounded-xl w-fit">
-        {FILTERS.map(f => (
+        {FILTER_DEFS.map(f => (
           <button
             key={f.value}
             type="button"
@@ -177,7 +180,7 @@ export default function DraftsPage() {
             )}
           >
             {f.icon}
-            {f.label}
+            {t(f.tKey as Parameters<typeof t>[0])}
             {f.value !== 'all' && (
               <span className="text-[10px] opacity-60">
                 {drafts.filter(d => d.module === f.value).length}
@@ -192,7 +195,7 @@ export default function DraftsPage() {
         <div className="flex items-center gap-2 mb-6 px-3 py-2 rounded-xl bg-muted border border-border/50">
           <Clock size={13} className="text-[--text-muted] shrink-0" />
           <p className="font-mono text-[11px] text-[--text-muted]">
-            Les brouillons non repris depuis 7 jours sont supprimés automatiquement.
+            {t('dr_expiryNotice')}
           </p>
         </div>
       )}
@@ -234,7 +237,7 @@ export default function DraftsPage() {
                 )}
               >
                 {loadingMore ? <Loader2 size={12} className="animate-spin" /> : null}
-                {loadingMore ? 'Chargement…' : 'Charger plus'}
+                {loadingMore ? t('dr_loadingMore') : t('dr_loadMore')}
               </button>
             </div>
           )}

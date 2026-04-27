@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toast'
 import { useLanguage } from '@/lib/i18n'
+import { MoveToFolderModal } from '@/components/dashboard/MoveToFolderModal'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,8 @@ export interface VideoProject {
   created_at: string
   duration_seconds?: number | null
   created_by?: string | null
+  /** Optional folder grouping. NULL/undefined = unfiled. */
+  folder_id?: string | null
 }
 
 interface ProjectCardProps {
@@ -162,6 +165,7 @@ function ContextMenu({
   onRename,
   onEditAsNew,
   onPreview,
+  onMove,
 }: {
   project: VideoProject
   onClose: () => void
@@ -169,6 +173,7 @@ function ContextMenu({
   onRename: () => void
   onEditAsNew: () => void
   onPreview: () => void
+  onMove: () => void
 }) {
   const { t } = useLanguage()
   const ref = useRef<HTMLDivElement>(null)
@@ -189,7 +194,6 @@ function ContextMenu({
 
   const item = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left'
   const itemDisabled = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-muted] w-full text-left cursor-not-allowed'
-  const soonBadge = 'ml-auto inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[--text-muted]'
   const isBrand = project.module === 'brand'
 
   return (
@@ -258,10 +262,12 @@ function ContextMenu({
         >
           <Pencil size={14} /> {t('pc_rename')}
         </button>
-        <button type="button" disabled className={itemDisabled} aria-disabled="true">
-          <FolderInput size={14} />
-          <span>{t('pc_move')}</span>
-          <span className={soonBadge}>{t('pc_soon')}</span>
+        <button
+          type="button"
+          onClick={() => { onClose(); onMove() }}
+          className={item}
+        >
+          <FolderInput size={14} /> {t('pc_move')}
         </button>
       </div>
 
@@ -293,6 +299,8 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   const [renaming,       setRenaming]       = useState(false)
   const [duplicating,    setDuplicating]    = useState(false)
   const [previewOpen,    setPreviewOpen]    = useState(false)
+  const [moveOpen,       setMoveOpen]       = useState(false)
+  const [localFolderId,  setLocalFolderId]  = useState<string | null>(project.folder_id ?? null)
 
   const isProcessing = ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly', 'animation'].includes(project.status)
   const isDone       = project.status === 'done'
@@ -485,6 +493,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
               onRename={handleRename}
               onEditAsNew={handleEditAsNew}
               onPreview={() => setPreviewOpen(true)}
+              onMove={() => setMoveOpen(true)}
             />
           )}
         </div>
@@ -544,6 +553,15 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
           onClose={() => setPreviewOpen(false)}
         />
       )}
+
+      {/* Move-to-folder modal */}
+      <MoveToFolderModal
+        isOpen={moveOpen}
+        onClose={() => setMoveOpen(false)}
+        videoId={project.id}
+        currentFolderId={localFolderId}
+        onMoved={(folder) => setLocalFolderId(folder?.id ?? null)}
+      />
     </>
   )
 }

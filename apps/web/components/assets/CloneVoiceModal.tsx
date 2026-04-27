@@ -25,6 +25,7 @@ import { Mic2, Upload, AlertTriangle, Lock, X } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { cloneVoice } from '@/lib/api'
 import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 
 // Match the server-side enforcement (apps/api/src/routes/voices.ts EDGE-002).
 // Failing fast on the client avoids a wasted upload round-trip.
@@ -53,6 +54,7 @@ export function CloneVoiceModal({
   userPlan = 'free',
   existingClonedCount = 0,
 }: CloneVoiceModalProps) {
+  const { t } = useLanguage()
   const [name, setName] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [durationSeconds, setDurationSeconds] = useState<number | null>(null)
@@ -112,16 +114,16 @@ export function CloneVoiceModal({
   const planBlocked = userPlan === 'free'
   const starterLimitReached = userPlan === 'starter' && existingClonedCount >= 2
   const planMessage = planBlocked
-    ? 'Voice cloning is available on Starter and higher plans.'
+    ? t('cv_planBlockedFree')
     : starterLimitReached
-      ? 'Your Starter plan allows up to 2 cloned voices. Upgrade to Pro for unlimited cloning.'
+      ? t('cv_planBlockedStarter')
       : null
 
   function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0] ?? null
     if (!picked) { setFile(null); setDurationSeconds(null); return }
     if (picked.size > VOICE_SAMPLE_MAX_BYTES) {
-      toast.error(`File is too large (${(picked.size / 1024 / 1024).toFixed(1)} MB). Max ${VOICE_SAMPLE_MAX_LABEL}.`)
+      toast.error(t('cv_fileTooLarge').replace('{size}', (picked.size / 1024 / 1024).toFixed(1)).replace('{max}', VOICE_SAMPLE_MAX_LABEL))
       e.target.value = ''
       setFile(null)
       setDurationSeconds(null)
@@ -145,14 +147,14 @@ export function CloneVoiceModal({
   async function handleSubmit() {
     if (!name.trim() || !file || planBlocked || starterLimitReached) return
     if (file.size > VOICE_SAMPLE_MAX_BYTES) {
-      toast.error(`File is too large. Max ${VOICE_SAMPLE_MAX_LABEL}.`)
+      toast.error(t('cv_fileTooLargeMax').replace('{max}', VOICE_SAMPLE_MAX_LABEL))
       return
     }
     setUploading(true)
     try {
       const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated.')
+      if (!user) throw new Error(t('cv_notAuthenticated'))
       const ext = (file.name.split('.').pop() ?? 'mp3').toLowerCase()
       const path = `${user.id}/${Date.now()}.${ext}`
 
@@ -164,11 +166,11 @@ export function CloneVoiceModal({
       const { data: urlData } = supabase.storage.from('voice-samples').getPublicUrl(path)
       await cloneVoice({ name: name.trim(), sample_url: urlData.publicUrl })
 
-      toast.success(`Voice "${name.trim()}" cloned successfully.`)
+      toast.success(t('cv_cloneSuccess').replace('{name}', name.trim()))
       onCloned?.()
       onClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to clone voice.')
+      toast.error(err instanceof Error ? err.message : t('cv_cloneError'))
     } finally {
       setUploading(false)
     }
@@ -179,7 +181,7 @@ export function CloneVoiceModal({
   const durationWarning =
     durationSeconds !== null &&
     (durationSeconds < RECOMMENDED_MIN_SECONDS || durationSeconds > RECOMMENDED_MAX_SECONDS)
-      ? `For best results, use a clean sample between ${RECOMMENDED_MIN_SECONDS}s and ${RECOMMENDED_MAX_SECONDS / 60} min.`
+      ? t('cv_durationWarning').replace('{min}', String(RECOMMENDED_MIN_SECONDS)).replace('{max}', String(RECOMMENDED_MAX_SECONDS / 60))
       : null
 
   return (
@@ -197,17 +199,17 @@ export function CloneVoiceModal({
           </div>
           <div className="flex-1 min-w-0">
             <h3 id="clone-voice-title" className="font-display text-base font-semibold text-foreground">
-              Clone your voice
+              {t('cv_title')}
             </h3>
             <p className="font-body text-sm text-[--text-muted] mt-0.5">
-              Upload a clean audio sample of your voice — we'll create a custom AI voice you can use in your videos.
+              {t('cv_subtitle')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={uploading}
-            aria-label="Close dialog"
+            aria-label={t('cv_closeDialog')}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 disabled:opacity-50 shrink-0"
           >
             <X size={16} aria-hidden="true" />
@@ -226,7 +228,7 @@ export function CloneVoiceModal({
                 href="/settings/billing"
                 className="inline-block mt-2 font-display text-xs font-medium text-amber-400 hover:text-amber-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 rounded"
               >
-                See plans →
+                {t('cv_seePlans')}
               </a>
             </div>
           </div>
@@ -235,7 +237,7 @@ export function CloneVoiceModal({
         <div className="px-6 pb-2 space-y-4">
           <div>
             <label htmlFor="clone-voice-name" className="block font-body text-xs font-medium text-foreground mb-1.5">
-              Voice name
+              {t('cv_voiceNameLabel')}
             </label>
             <input
               id="clone-voice-name"
@@ -243,7 +245,7 @@ export function CloneVoiceModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: My main voice"
+              placeholder={t('cv_voiceNamePlaceholder')}
               maxLength={100}
               disabled={uploading || planBlocked || starterLimitReached}
               className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 transition-colors disabled:opacity-50"
@@ -252,7 +254,7 @@ export function CloneVoiceModal({
 
           <div>
             <label htmlFor="clone-voice-file" className="block font-body text-xs font-medium text-foreground mb-1.5">
-              Audio sample
+              {t('cv_audioSampleLabel')}
             </label>
             <div className="relative">
               <input
@@ -269,7 +271,7 @@ export function CloneVoiceModal({
               >
                 <Upload size={16} className="text-[--text-muted] shrink-0" aria-hidden="true" />
                 <span className="flex-1 min-w-0 truncate font-body text-sm text-foreground">
-                  {file ? file.name : 'Choose an mp3, wav or m4a file'}
+                  {file ? file.name : t('cv_chooseFile')}
                 </span>
                 {file && (
                   <span className="font-mono text-[11px] text-[--text-muted]">
@@ -280,7 +282,7 @@ export function CloneVoiceModal({
               </label>
             </div>
             <p className="mt-1.5 font-mono text-[11px] text-[--text-muted]">
-              Max {VOICE_SAMPLE_MAX_LABEL}. Ideal: 30 s to 5 min of clean, single-speaker audio.
+              {t('cv_fileHint').replace('{max}', VOICE_SAMPLE_MAX_LABEL)}
             </p>
             {durationWarning && (
               <p className="mt-1 flex items-start gap-1.5 font-body text-[11px] text-amber-400">
@@ -298,7 +300,7 @@ export function CloneVoiceModal({
             disabled={uploading}
             className="flex-1 border border-border bg-card text-foreground font-body font-medium py-2.5 rounded-xl text-sm hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
           >
-            Cancel
+            {t('cv_cancel')}
           </button>
           <button
             type="button"
@@ -307,7 +309,7 @@ export function CloneVoiceModal({
             aria-describedby={planMessage ? 'clone-voice-plan-message' : undefined}
             className="flex-1 bg-blue-500 text-white font-body font-medium py-2.5 rounded-xl text-sm hover:bg-blue-600 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           >
-            {uploading ? 'Uploading…' : 'Clone voice'}
+            {uploading ? t('cv_uploading') : t('cv_cloneVoice')}
           </button>
         </div>
       </div>

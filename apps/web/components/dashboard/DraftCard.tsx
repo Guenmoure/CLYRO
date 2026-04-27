@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/toast'
 import { useLanguage } from '@/lib/i18n'
+import { MoveToFolderModal } from '@/components/dashboard/MoveToFolderModal'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -90,6 +91,7 @@ function DraftContextMenu({
   onRename,
   onEditAsNew,
   onResume,
+  onMove,
 }: {
   draft: DbDraftMeta
   moduleLabel: string
@@ -98,6 +100,7 @@ function DraftContextMenu({
   onRename: () => void
   onEditAsNew: () => void
   onResume: () => void
+  onMove: () => void
 }) {
   const { t } = useLanguage()
   const ref = useRef<HTMLDivElement>(null)
@@ -125,7 +128,6 @@ function DraftContextMenu({
 
   const item = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left'
   const itemDisabled = 'flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-muted] w-full text-left cursor-not-allowed'
-  const soonBadge = 'ml-auto inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[--text-muted]'
 
   return (
     <div
@@ -177,10 +179,13 @@ function DraftContextMenu({
           <Pencil size={14} aria-hidden="true" /> {t('dc_rename')}
         </button>
 
-        <button type="button" disabled className={itemDisabled} aria-disabled="true">
-          <FolderInput size={14} aria-hidden="true" />
-          <span>{t('dc_move')}</span>
-          <span className={soonBadge}>{t('dc_soon')}</span>
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => { onClose(); onMove() }}
+          className={item}
+        >
+          <FolderInput size={14} aria-hidden="true" /> {t('dc_move')}
         </button>
       </div>
 
@@ -210,6 +215,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
   const [localTitle, setLocalTitle] = useState<string | null>(draft.title)
   const [renaming, setRenaming] = useState(false)
   const [duplicating, setDuplicating] = useState(false)
+  const [moveOpen, setMoveOpen] = useState(false)
 
   const config      = MODULE_CONFIG[draft.module] ?? MODULE_CONFIG.faceless!
   const { Icon }    = config
@@ -353,6 +359,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
                   onRename={handleRename}
                   onEditAsNew={handleEditAsNew}
                   onResume={handleResume}
+                  onMove={() => setMoveOpen(true)}
                 />
               )}
             </div>
@@ -393,6 +400,15 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
           {t('dc_resume')}
         </button>
       </div>
+
+      {/* Move-to-folder modal — drafts are videos with status='draft', so they
+          go through the same /api/videos/:id PATCH flow as projects. */}
+      <MoveToFolderModal
+        isOpen={moveOpen}
+        onClose={() => setMoveOpen(false)}
+        videoId={draft.id}
+        currentFolderId={null}
+      />
     </div>
   )
 }

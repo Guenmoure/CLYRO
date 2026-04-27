@@ -1,13 +1,12 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, Sparkles, Loader2, AlertCircle, Check, Clapperboard } from 'lucide-react'
-import type { Database } from '@/lib/database.types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-
-export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Motion Design — CLYRO' }
+import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 
 type MotionVideo = {
   id: string
@@ -19,23 +18,48 @@ type MotionVideo = {
   duration_seconds: number | null
 }
 
-export default async function MotionIndexPage() {
-  const supabase = createServerComponentClient<Database>({ cookies })
-  const { data: { user } } = await supabase.auth.getUser()
+export default function MotionIndexPage() {
+  const { t } = useLanguage()
+  const [videos, setVideos] = useState<MotionVideo[]>([])
+  const [loading, setLoading] = useState(true)
 
-  let videos: MotionVideo[] = []
-  try {
-    const { data } = await supabase
-      .from('videos')
-      .select('id, title, status, output_url, thumbnail_url, created_at, duration_seconds')
-      .eq('user_id', user?.id ?? '')
-      .eq('module', 'motion')
-      .neq('status', 'draft')
-      .order('created_at', { ascending: false })
-      .limit(60)
-    videos = (data ?? []) as MotionVideo[]
-  } catch {
-    videos = []
+  useEffect(() => {
+    async function load() {
+      try {
+        const supabase = createBrowserClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        const { data } = await supabase
+          .from('videos')
+          .select('id, title, status, output_url, thumbnail_url, created_at, duration_seconds')
+          .eq('user_id', user?.id ?? '')
+          .eq('module', 'motion')
+          .neq('status', 'draft')
+          .order('created_at', { ascending: false })
+          .limit(60)
+        setVideos((data ?? []) as MotionVideo[])
+      } catch {
+        setVideos([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    void load()
+  }, [])
+
+  const STATUS_META: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
+    pending:    { label: t('ml_statusPending'),    color: 'bg-muted text-[--text-muted]' },
+    processing: { label: t('ml_statusProcessing'), color: 'bg-blue-500/15 text-blue-500',   icon: <Loader2 size={10} className="animate-spin" /> },
+    assembly:   { label: t('ml_statusRendering'),  color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
+    done:       { label: t('ml_statusReady'),      color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
+    error:      { label: t('ml_statusError'),      color: 'bg-error/15 text-error',         icon: <AlertCircle size={10} /> },
+  }
+
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-background px-6 py-8 flex items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-[--text-muted]" />
+      </div>
+    )
   }
 
   return (
@@ -47,21 +71,19 @@ export default async function MotionIndexPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Sparkles size={14} className="text-purple-500" />
-              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold">Motion Design</p>
+              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('ml_moduleLabel')}</p>
             </div>
-            <h1 className="font-display text-3xl font-bold text-foreground">Your motion projects</h1>
+            <h1 className="font-display text-3xl font-bold text-foreground">{t('ml_heading')}</h1>
             <p className="font-body text-sm text-[--text-secondary] mt-1 max-w-xl">
-              Animated explainers and kinetic typography generated from prompts.
-              Prompt-to-motion with Remotion, orchestrated by Claude.
+              {t('ml_subtitle')}
             </p>
           </div>
 
-          {/* CTA header → Motion hub */}
           <Link href="/motion/hub" className="group relative">
             <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-300" />
             <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 via-violet-600 to-fuchsia-600 text-white font-body text-sm font-semibold shadow-lg">
               <Plus size={16} className="group-hover:rotate-90 transition-transform duration-200" />
-              New project
+              {t('ml_newProject')}
             </div>
           </Link>
         </div>
@@ -76,24 +98,32 @@ export default async function MotionIndexPage() {
               </div>
             </div>
             <div className="space-y-1">
-              <h2 className="font-display text-xl font-bold text-foreground">No Motion project yet</h2>
+              <h2 className="font-display text-xl font-bold text-foreground">{t('ml_emptyTitle')}</h2>
               <p className="font-body text-sm text-[--text-secondary] max-w-md">
-                Describe what you want animated. CLYRO turns the prompt into a kinetic video in minutes.
+                {t('ml_emptyDesc')}
               </p>
             </div>
             <Link href="/motion/hub" className="group relative mt-2">
               <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 opacity-60 blur-md group-hover:opacity-90 transition-opacity duration-300" />
               <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 via-violet-600 to-fuchsia-600 text-white font-body text-base font-semibold shadow-xl">
                 <Clapperboard size={18} />
-                Create my first Motion project
+                {t('ml_createFirst')}
                 <Sparkles size={14} className="opacity-80" />
               </div>
             </Link>
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <NewProjectCard />
-            {videos.map((v) => <MotionVideoCard key={v.id} video={v} />)}
+            <NewProjectCard newProjectLabel={t('ml_cardNewProject')} fromPromptLabel={t('ml_cardFromPrompt')} badgeLabel={t('ml_cardBadge')} />
+            {videos.map((v) => (
+              <MotionVideoCard
+                key={v.id}
+                video={v}
+                statusMeta={STATUS_META}
+                untitledLabel={t('ml_untitled')}
+                motionLabel={t('ml_motionLabel')}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -101,7 +131,7 @@ export default async function MotionIndexPage() {
   )
 }
 
-function NewProjectCard() {
+function NewProjectCard({ newProjectLabel, fromPromptLabel, badgeLabel }: { newProjectLabel: string; fromPromptLabel: string; badgeLabel: string }) {
   return (
     <Link href="/motion/hub" className="group relative block rounded-2xl overflow-hidden aspect-[4/3]">
       <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-violet-600 to-fuchsia-600 opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
@@ -116,31 +146,33 @@ function NewProjectCard() {
         </div>
         <div className="text-center">
           <p className="font-display text-base font-bold text-foreground group-hover:text-white transition-colors duration-200">
-            New project
+            {newProjectLabel}
           </p>
           <p className="font-body text-xs text-[--text-muted] mt-0.5 group-hover:text-white/60 transition-colors duration-200">
-            From a prompt
+            {fromPromptLabel}
           </p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/15 to-fuchsia-500/15 border border-purple-500/20 group-hover:from-purple-500/25 group-hover:to-fuchsia-500/25 transition-all duration-200">
           <Sparkles size={10} className="text-purple-400" />
-          <span className="font-mono text-[10px] text-purple-400 tracking-wider uppercase">Motion</span>
+          <span className="font-mono text-[10px] text-purple-400 tracking-wider uppercase">{badgeLabel}</span>
         </div>
       </div>
     </Link>
   )
 }
 
-const STATUS_META: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
-  pending:    { label: 'Pending',    color: 'bg-muted text-[--text-muted]' },
-  processing: { label: 'Processing', color: 'bg-blue-500/15 text-blue-500',   icon: <Loader2 size={10} className="animate-spin" /> },
-  assembly:   { label: 'Rendering',  color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
-  done:       { label: 'Ready',      color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
-  error:      { label: 'Error',      color: 'bg-error/15 text-error',         icon: <AlertCircle size={10} /> },
-}
-
-function MotionVideoCard({ video }: { video: MotionVideo }) {
-  const meta = STATUS_META[video.status] ?? STATUS_META.pending
+function MotionVideoCard({
+  video,
+  statusMeta,
+  untitledLabel,
+  motionLabel,
+}: {
+  video: MotionVideo
+  statusMeta: Record<string, { label: string; color: string; icon?: React.ReactNode }>
+  untitledLabel: string
+  motionLabel: string
+}) {
+  const meta = statusMeta[video.status] ?? statusMeta.pending
   const relativeDate = formatRelative(video.created_at)
 
   return (
@@ -170,10 +202,10 @@ function MotionVideoCard({ video }: { video: MotionVideo }) {
 
       <div className="p-4 space-y-1">
         <p className="font-display font-semibold text-foreground truncate">
-          {video.title ?? 'Untitled'}
+          {video.title ?? untitledLabel}
         </p>
         <div className="flex items-center gap-2 text-xs font-mono text-[--text-muted]">
-          <span>Motion</span>
+          <span>{motionLabel}</span>
           <span>·</span>
           <span>{relativeDate}</span>
         </div>

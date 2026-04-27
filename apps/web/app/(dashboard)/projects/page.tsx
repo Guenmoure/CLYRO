@@ -10,7 +10,7 @@ import {
   FolderPlus, Trash2, ChevronDown, Folder,
   ChevronLeft, ChevronRight,
   Video, Clapperboard, Sparkles, Palette, LayoutGrid, PanelLeft,
-  MoreVertical, Pencil, FolderInput, Users, Gem, Check,
+  MoreVertical, Pencil, Users, Gem, Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
@@ -58,6 +58,13 @@ interface VideoRow {
   created_at: string
   duration_seconds?: number | null
   created_by?: string | null
+  folder_id?: string | null
+}
+
+interface FolderRow {
+  id: string
+  name: string
+  created_at?: string
 }
 
 export default function ProjectsPage() {
@@ -69,11 +76,16 @@ export default function ProjectsPage() {
   const [total,     setTotal]     = useState(0)
   const [sort,      setSort]      = useState<SortOption>('recent')
   const [search,    setSearch]    = useState('')
-  const [folders,   setFolders]   = useState<string[]>(['Richard'])
+  // Folders are now persisted in Supabase (table public.folders, migration
+  // 20260426000000_folders.sql). Identified by id, displayed by name.
+  const [folders,   setFolders]   = useState<FolderRow[]>([])
+  const [foldersLoading, setFoldersLoading] = useState(true)
+  const [creatingFolder, setCreatingFolder] = useState(false)
   const [activeNav, setActiveNav] = useState<string>('all')
   const [navOpen,   setNavOpen]   = useState(true)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
+  // activeFolderMenu now holds a folder id (or null when closed).
   const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null)
 
   const activeModule = SUB_NAV.find(n => n.id === activeNav)?.module ?? null
@@ -164,28 +176,101 @@ export default function ProjectsPage() {
     setTotal((prev) => prev - 1)
   }
 
-  // Folder actions — local-state only for now (no folders table in Supabase
-  // yet; renaming/moving/deleting is purely client-side until we ship the
-  // schema migration). Toasts confirm the action so users know it landed.
-  function handleFolderRename(name: string) {
-    setActiveFolderMenu(null)
-    const next = window.prompt(t('proj_renameFolder'), name)
-    if (next === null) return
-    const trimmed = next.trim()
-    if (!trimmed || trimmed === name) return
-    if (folders.includes(trimmed)) {
-      toast.error(t('proj_folderExists'))
-      return
+  // ── Folders: persisted via /api/folders ───────────────────────────────
+  // Backed by the public.folders table (migration 20260426000000_folders.sql).
+
+  // Initial load on mount.
+  useEffect(() => {
+    let cancelled = false
+    setFoldersLoading(true)
+    fetch('/api/folders', { credentials: 'include' })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('load')
+        const json = await res.json() as { folders: FolderRow[] }
+        if (!cancelled) setFolders(json.folders)
+      })
+      .catch(() => { /* keep folders empty; toast would be noisy on first paint */ })
+      .finally(() => { if (!cancelled) setFoldersLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  async function handleCreateFolder() {
+    if (creatingFolder) return
+    // Suggest a default name like "Folder 3" if "Folder 1" / "Folder 2" exist.
+    const baseIdx = folders.length + 1
+    const seed = `Folder ${baseIdx}`
+    const name = window.prompt(t('proj_newFolderName') || 'Folder name', seed)
+    if (name === null) return
+    const trimmed = name.trim()
+    if (!trimmed) return
+
+    setCreatingFolder(true)
+    try {
+      const res = await fetch('/api/folders', {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ name: trimmed }),
+      })
+      if (res.status === 409) {
+        toast.error(t('proj_folderExists'))
+        return
+      }
+      if (!res.ok) throw new Error()
+      const created = await res.json() as FolderRow
+      setFolders((prev) => [...prev, created].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+      ))
+    } catch {
+      toast.error(t('proj_folderCreateError') || 'Could not create folder')
+    } finally {
+      setCreatingFolder(false)
     }
-    setFolders(prev => prev.map(f => f === name ? trimmed : f))
-    toast.success(t('proj_folderRenamed'))
   }
 
-  function handleFolderDelete(name: string) {
+  async function handleFolderRename(folder: FolderRow) {
     setActiveFolderMenu(null)
-    if (!window.confirm(t('proj_deleteFolderConfirm').replace('{name}', name))) return
-    setFolders(prev => prev.filter(f => f !== name))
-    toast.success(t('proj_folderDeleted'))
+    const next = window.prompt(t('proj_renameFolder'), folder.name)
+    if (next === null) return
+    const trimmed = next.trim()
+    if (!trimmed || trimmed === folder.name) return
+
+    try {
+      const res = await fetch(`/api/folders/${folder.id}`, {
+        method:      'PATCH',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ name: trimmed }),
+      })
+      if (res.status === 409) {
+        toast.error(t('proj_folderExists'))
+        return
+      }
+      if (!res.ok) throw new Error()
+      const updated = await res.json() as FolderRow
+      setFolders((prev) => prev.map((f) => f.id === folder.id ? updated : f)
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })))
+      toast.success(t('proj_folderRenamed'))
+    } catch {
+      toast.error(t('proj_folderRenameError') || 'Could not rename folder')
+    }
+  }
+
+  async function handleFolderDelete(folder: FolderRow) {
+    setActiveFolderMenu(null)
+    if (!window.confirm(t('proj_deleteFolderConfirm').replace('{name}', folder.name))) return
+
+    try {
+      const res = await fetch(`/api/folders/${folder.id}`, {
+        method:      'DELETE',
+        credentials: 'include',
+      })
+      if (!res.ok) throw new Error()
+      setFolders((prev) => prev.filter((f) => f.id !== folder.id))
+      toast.success(t('proj_folderDeleted'))
+    } catch {
+      toast.error(t('proj_folderDeleteError') || 'Could not delete folder')
+    }
   }
 
   const filtered = useMemo(() => {
@@ -389,20 +474,23 @@ export default function ProjectsPage() {
                 <button
                   type="button"
                   aria-label={t('proj_newFolder')}
-                  onClick={() => setFolders((prev) => [...prev, `Folder ${prev.length + 1}`])}
-                  className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                  onClick={handleCreateFolder}
+                  disabled={creatingFolder}
+                  className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FolderPlus size={14} aria-hidden="true" />
                 </button>
               </div>
 
-              {folders.length > 0 ? (
+              {foldersLoading ? (
+                <p className="text-xs text-[--text-muted] font-mono">{t('move_loading')}</p>
+              ) : folders.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {folders.map((name) => {
-                    const isSelected = activeFolderMenu === name
+                  {folders.map((folder) => {
+                    const isSelected = activeFolderMenu === folder.id
                     return (
                       <div
-                        key={name}
+                        key={folder.id}
                         className={cn(
                           'group relative rounded-2xl border bg-card transition-colors',
                           isSelected
@@ -422,18 +510,18 @@ export default function ProjectsPage() {
                             )}
                             aria-hidden="true"
                           />
-                          <span className="font-body text-sm text-foreground truncate flex-1 pr-8">{name}</span>
+                          <span className="font-body text-sm text-foreground truncate flex-1 pr-8">{folder.name}</span>
                         </button>
 
                         {/* 3-dots menu trigger */}
                         <button
                           type="button"
-                          aria-label={`Folder "${name}" options`}
+                          aria-label={`Folder "${folder.name}" options`}
                           aria-haspopup="menu"
                           aria-expanded={isSelected}
                           onClick={(e) => {
                             e.stopPropagation()
-                            setActiveFolderMenu(prev => prev === name ? null : name)
+                            setActiveFolderMenu(prev => prev === folder.id ? null : folder.id)
                           }}
                           className={cn(
                             'absolute top-1/2 -translate-y-1/2 right-3 w-9 h-9 rounded-lg flex items-center justify-center transition-all',
@@ -469,22 +557,10 @@ export default function ProjectsPage() {
                               <button
                                 type="button"
                                 role="menuitem"
-                                onClick={() => handleFolderRename(name)}
+                                onClick={() => handleFolderRename(folder)}
                                 className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors w-full text-left"
                               >
                                 <Pencil size={14} aria-hidden="true" /> {t('proj_rename')}
-                              </button>
-                              <button
-                                type="button"
-                                disabled
-                                className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-muted] w-full text-left cursor-not-allowed"
-                                aria-disabled="true"
-                              >
-                                <FolderInput size={14} aria-hidden="true" />
-                                <span>{t('proj_move')}</span>
-                                <span className="ml-auto inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">
-                                  {t('proj_soon')}
-                                </span>
                               </button>
                             </div>
                             <div className="border-t border-border" />
@@ -492,7 +568,7 @@ export default function ProjectsPage() {
                               <button
                                 type="button"
                                 role="menuitem"
-                                onClick={() => handleFolderDelete(name)}
+                                onClick={() => handleFolderDelete(folder)}
                                 className="flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error hover:bg-error/10 transition-colors w-full text-left"
                               >
                                 <Trash2 size={14} aria-hidden="true" /> {t('proj_delete')}

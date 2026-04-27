@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Upload, Sparkles, Palette, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { WizardLayout } from '@/components/creation/WizardLayout'
 import { ResultModal, type BrandAsset } from '@/components/creation/ResultModal'
 import { Button } from '@/components/ui/button'
@@ -19,41 +20,27 @@ import { toast } from '@/components/ui/toast'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const STEPS = [
-  { id: 'brief',    label: 'Brief' },
-  { id: 'visuals',  label: 'Visual identity' },
-  { id: 'logo',     label: 'Logo' },
-  { id: 'assets',   label: 'Assets' },
-  { id: 'preview',  label: 'Preview' },
-  { id: 'export',   label: 'Export' },
-]
+const STEP_IDS = ['brief', 'visuals', 'logo', 'assets', 'preview', 'export'] as const
+const STEP_LABEL_KEYS = ['bn_step_brief', 'bn_step_visuals', 'bn_step_logo', 'bn_step_assets', 'bn_step_preview', 'bn_step_export'] as const
+const CONTEXTUAL_HELP_KEYS = ['bn_help_0', 'bn_help_1', 'bn_help_2', 'bn_help_3', 'bn_help_4', 'bn_help_5'] as const
 
-const CONTEXTUAL_HELP = [
-  "Describe your business, sector and brand values.",
-  "Choose your colors and typography.",
-  "Upload your logo or generate one with AI.",
-  "Select asset types to generate.",
-  "Review your full brand identity before export.",
-  "Generate and export your complete brand kit.",
-]
-
-const PRESET_PALETTES = [
-  { name: 'CLYRO Blue',   primary: '#3B8EF0', secondary: '#9B5CF6' },
-  { name: 'Emerald',      primary: '#10B981', secondary: '#06B6D4' },
-  { name: 'Sunset',       primary: '#F97316', secondary: '#EF4444' },
-  { name: 'Rose Gold',    primary: '#F43F5E', secondary: '#EC4899' },
-  { name: 'Midnight',     primary: '#6366F1', secondary: '#8B5CF6' },
-  { name: 'Gold',         primary: '#EAB308', secondary: '#F97316' },
+const PRESET_PALETTE_DEFS = [
+  { key: 'bn_palette_clyroBlue',  primary: '#3B8EF0', secondary: '#9B5CF6' },
+  { key: 'bn_palette_emerald',    primary: '#10B981', secondary: '#06B6D4' },
+  { key: 'bn_palette_sunset',     primary: '#F97316', secondary: '#EF4444' },
+  { key: 'bn_palette_roseGold',   primary: '#F43F5E', secondary: '#EC4899' },
+  { key: 'bn_palette_midnight',   primary: '#6366F1', secondary: '#8B5CF6' },
+  { key: 'bn_palette_gold',       primary: '#EAB308', secondary: '#F97316' },
 ]
 
 const FONTS = ['Inter', 'Poppins', 'Montserrat', 'Playfair Display', 'DM Sans', 'Space Grotesk']
 
-const ASSET_TYPES = [
-  { id: 'logo',         label: 'AI Logo',           desc: 'AI-generated logo' },
-  { id: 'social_post',  label: 'Instagram post',     desc: 'Square visuals 1080×1080 px' },
-  { id: 'banner',       label: 'LinkedIn banner',  desc: 'Format 1584×396 px' },
-  { id: 'thumbnail',    label: 'YouTube thumbnail',  desc: 'Format 1280×720 px' },
-]
+const ASSET_TYPE_DEFS = [
+  { id: 'logo',         labelKey: 'bn_asset_logo_label',    descKey: 'bn_asset_logo_desc'    },
+  { id: 'social_post',  labelKey: 'bn_asset_social_label',  descKey: 'bn_asset_social_desc'  },
+  { id: 'banner',       labelKey: 'bn_asset_banner_label',  descKey: 'bn_asset_banner_desc'  },
+  { id: 'thumbnail',    labelKey: 'bn_asset_thumb_label',   descKey: 'bn_asset_thumb_desc'   },
+] as const
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -72,43 +59,44 @@ function StepBrief({
   name: string; industry: string; values: string
   onChange: (field: 'name' | 'industry' | 'values', v: string) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-5">
-      <SectionTitle>Your business</SectionTitle>
-      <SectionSub>This information will guide AI to create a cohesive identity.</SectionSub>
+      <SectionTitle>{t('bn_brief_title')}</SectionTitle>
+      <SectionSub>{t('bn_brief_sub')}</SectionSub>
 
       <div className="space-y-2">
-        <label htmlFor="brand-name" className="font-mono text-xs text-[--text-muted]">Brand name *</label>
+        <label htmlFor="brand-name" className="font-mono text-xs text-[--text-muted]">{t('bn_brief_nameLabel')}</label>
         <input
           id="brand-name"
           type="text"
           value={name}
           onChange={e => onChange('name', e.target.value)}
-          placeholder="E.g.: CLYRO, Acme Corp, Studio Nova…"
+          placeholder={t('bn_brief_namePlaceholder')}
           className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="brand-industry" className="font-mono text-xs text-[--text-muted]">Business sector</label>
+        <label htmlFor="brand-industry" className="font-mono text-xs text-[--text-muted]">{t('bn_brief_industryLabel')}</label>
         <input
           id="brand-industry"
           type="text"
           value={industry}
           onChange={e => onChange('industry', e.target.value)}
-          placeholder="E.g.: Tech SaaS, Fashion, Restaurants, Consulting…"
+          placeholder={t('bn_brief_industryPlaceholder')}
           className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="brand-values" className="font-mono text-xs text-[--text-muted]">Values &amp; tone</label>
+        <label htmlFor="brand-values" className="font-mono text-xs text-[--text-muted]">{t('bn_brief_valuesLabel')}</label>
         <textarea
           id="brand-values"
           value={values}
           onChange={e => onChange('values', e.target.value)}
           rows={5}
-          placeholder="E.g.: Innovation, trust, accessibility. Tone: modern and warm. Target: entrepreneurs 25-40 years…"
+          placeholder={t('bn_brief_valuesPlaceholder')}
           className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
         />
       </div>
@@ -127,15 +115,16 @@ function StepVisuals({
   onSecondaryChange: (v: string) => void
   onFontChange: (v: string) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-7">
       <div>
-        <SectionTitle>Preset palettes</SectionTitle>
-        <SectionSub>Choose a palette or customize colors below.</SectionSub>
+        <SectionTitle>{t('bn_visuals_title')}</SectionTitle>
+        <SectionSub>{t('bn_visuals_sub')}</SectionSub>
         <div className="flex gap-3 flex-wrap">
-          {PRESET_PALETTES.map(p => (
+          {PRESET_PALETTE_DEFS.map(p => (
             <button
-              key={p.name}
+              key={p.key}
               type="button"
               onClick={() => { onPrimaryChange(p.primary); onSecondaryChange(p.secondary) }}
               className={cn(
@@ -149,7 +138,7 @@ function StepVisuals({
                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: p.primary }} />
                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: p.secondary }} />
               </div>
-              <span className="font-mono text-xs text-[--text-secondary]">{p.name}</span>
+              <span className="font-mono text-xs text-[--text-secondary]">{t(p.key)}</span>
             </button>
           ))}
         </div>
@@ -157,28 +146,28 @@ function StepVisuals({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="font-mono text-xs text-[--text-muted]">Primary color</label>
+          <label className="font-mono text-xs text-[--text-muted]">{t('bn_visuals_primaryColor')}</label>
           <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={primaryColor}
               onChange={e => onPrimaryChange(e.target.value)}
-              title="Primary color"
-              aria-label="Primary color"
+              title={t('bn_visuals_primaryColor')}
+              aria-label={t('bn_visuals_primaryColor')}
               className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
             />
             <span className="font-mono text-sm text-foreground">{primaryColor.toUpperCase()}</span>
           </div>
         </div>
         <div className="space-y-2">
-          <label className="font-mono text-xs text-[--text-muted]">Secondary color</label>
+          <label className="font-mono text-xs text-[--text-muted]">{t('bn_visuals_secondaryColor')}</label>
           <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={secondaryColor}
               onChange={e => onSecondaryChange(e.target.value)}
-              title="Secondary color"
-              aria-label="Secondary color"
+              title={t('bn_visuals_secondaryColor')}
+              aria-label={t('bn_visuals_secondaryColor')}
               className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
             />
             <span className="font-mono text-sm text-foreground">{secondaryColor.toUpperCase()}</span>
@@ -187,7 +176,7 @@ function StepVisuals({
       </div>
 
       <div className="space-y-2">
-        <label className="font-mono text-xs text-[--text-muted]">Typography</label>
+        <label className="font-mono text-xs text-[--text-muted]">{t('bn_visuals_typography')}</label>
         <div className="flex gap-2 flex-wrap">
           {FONTS.map(f => (
             <button
@@ -225,6 +214,8 @@ function StepLogo({
   onUpload: (f: File) => void
   uploading: boolean
 }) {
+  const { t } = useLanguage()
+
   function handleFileDrop(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) onUpload(file)
@@ -232,8 +223,8 @@ function StepLogo({
 
   return (
     <div className="space-y-6">
-      <SectionTitle>Logo</SectionTitle>
-      <SectionSub>Upload your existing logo or generate a new one with AI.</SectionSub>
+      <SectionTitle>{t('bn_logo_title')}</SectionTitle>
+      <SectionSub>{t('bn_logo_sub')}</SectionSub>
 
       {/* Mode toggle */}
       <div className="flex gap-2 bg-muted rounded-xl p-1">
@@ -250,7 +241,7 @@ function StepLogo({
             )}
           >
             {mode === 'upload' ? <Upload size={13} /> : <Sparkles size={13} />}
-            {mode === 'upload' ? 'Upload' : 'Generate with AI'}
+            {mode === 'upload' ? t('bn_logo_upload') : t('bn_logo_generateAi')}
           </button>
         ))}
       </div>
@@ -274,19 +265,19 @@ function StepLogo({
             disabled={uploading}
           />
           {uploading ? (
-            <p className="font-mono text-xs text-[--text-muted]">Uploading…</p>
+            <p className="font-mono text-xs text-[--text-muted]">{t('bn_logo_uploading')}</p>
           ) : logoUrl ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoUrl} alt="Uploaded logo" className="max-h-24 object-contain" />
-              <p className="font-mono text-xs text-success">Uploaded logo — click to change</p>
+              <img src={logoUrl} alt={t('bn_logo_uploadedChange')} className="max-h-24 object-contain" />
+              <p className="font-mono text-xs text-success">{t('bn_logo_uploadedChange')}</p>
             </>
           ) : (
             <>
               <Upload size={24} className="text-[--text-muted]" />
               <div className="text-center">
-                <p className="font-display text-sm text-foreground">Drag and drop or click</p>
-                <p className="font-mono text-xs text-[--text-muted]">PNG, SVG, JPG · Max 5 Mo</p>
+                <p className="font-display text-sm text-foreground">{t('bn_logo_dropOrClick')}</p>
+                <p className="font-mono text-xs text-[--text-muted]">{t('bn_logo_maxSize')}</p>
               </div>
             </>
           )}
@@ -294,18 +285,18 @@ function StepLogo({
       ) : (
         <div className="space-y-3">
           <label htmlFor="logo-prompt" className="font-mono text-xs text-[--text-muted]">
-            Describe your ideal logo
+            {t('bn_logo_describeLabel')}
           </label>
           <textarea
             id="logo-prompt"
             value={logoPrompt}
             onChange={e => onLogoPromptChange(e.target.value)}
             rows={4}
-            placeholder="E.g.: Minimalist logo with stylized lightning, modern tech style, electric blue and purple colors…"
+            placeholder={t('bn_logo_describePlaceholder')}
             className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
           />
           <p className="font-body text-xs text-[--text-muted]">
-            Le logo sera généré lors de l&apos;étape Export.
+            {t('bn_logo_aiNote')}
           </p>
         </div>
       )}
@@ -321,13 +312,14 @@ function StepAssets({
   selectedAssets: string[]
   onToggle: (id: string) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-4">
-      <SectionTitle>Assets to generate</SectionTitle>
-      <SectionSub>Select the formats you want to create with your brand identity.</SectionSub>
+      <SectionTitle>{t('bn_assets_title')}</SectionTitle>
+      <SectionSub>{t('bn_assets_sub')}</SectionSub>
 
       <div className="space-y-2">
-        {ASSET_TYPES.map(asset => {
+        {ASSET_TYPE_DEFS.map(asset => {
           const selected = selectedAssets.includes(asset.id)
           return (
             <button
@@ -348,8 +340,8 @@ function StepAssets({
                 {selected && <Check size={11} className="text-white" />}
               </div>
               <div>
-                <p className="font-display text-sm text-foreground">{asset.label}</p>
-                <p className="font-body text-xs text-[--text-muted]">{asset.desc}</p>
+                <p className="font-display text-sm text-foreground">{t(asset.labelKey)}</p>
+                <p className="font-body text-xs text-[--text-muted]">{t(asset.descKey)}</p>
               </div>
             </button>
           )
@@ -366,10 +358,11 @@ function StepPreview({
 }: {
   name: string; primaryColor: string; secondaryColor: string; fontFamily: string; logoUrl?: string
 }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-5">
-      <SectionTitle>Preview</SectionTitle>
-      <SectionSub>Preview of your brand identity before generation.</SectionSub>
+      <SectionTitle>{t('bn_preview_title')}</SectionTitle>
+      <SectionSub>{t('bn_preview_sub')}</SectionSub>
 
       {/* Brand card preview */}
       <div className="rounded-2xl border border-border overflow-hidden">
@@ -393,7 +386,7 @@ function StepPreview({
               </div>
             )}
             <div>
-              <p className="font-display text-base text-foreground">{name || 'Nom de marque'}</p>
+              <p className="font-display text-base text-foreground">{name || t('bn_preview_brandNamePlaceholder')}</p>
               <p className="font-mono text-xs text-[--text-muted]">{fontFamily}</p>
             </div>
           </div>
@@ -421,23 +414,22 @@ function StepExport({
 }: {
   name: string; selectedAssets: string[]; generating: boolean
 }) {
-  const selectedLabels = ASSET_TYPES.filter(a => selectedAssets.includes(a.id)).map(a => a.label)
+  const { t } = useLanguage()
+  const selectedLabels = ASSET_TYPE_DEFS.filter(a => selectedAssets.includes(a.id)).map(a => t(a.labelKey))
 
   return (
     <div className="space-y-5">
-      <SectionTitle>Ready to export</SectionTitle>
-      <SectionSub>
-        L&apos;IA va générer ton Brand Kit complet et tous les assets sélectionnés.
-      </SectionSub>
+      <SectionTitle>{t('bn_export_title')}</SectionTitle>
+      <SectionSub>{t('bn_export_sub')}</SectionSub>
 
       <div className="rounded-xl bg-muted border border-border p-5 space-y-3">
-        <p className="font-display text-sm text-foreground">{name || 'Mon Brand Kit'}</p>
+        <p className="font-display text-sm text-foreground">{name || t('bn_export_defaultName')}</p>
         <div className="flex flex-wrap gap-2">
           {selectedLabels.map(label => (
             <Badge key={label} variant="neutral">{label}</Badge>
           ))}
           {selectedLabels.length === 0 && (
-            <p className="font-mono text-xs text-[--text-muted]">Aucun asset sélectionné</p>
+            <p className="font-mono text-xs text-[--text-muted]">{t('bn_export_noAssets')}</p>
           )}
         </div>
       </div>
@@ -445,12 +437,12 @@ function StepExport({
       {generating && (
         <div className="rounded-xl bg-muted border border-border px-4 py-3 flex items-center gap-3">
           <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0" />
-          <p className="font-body text-sm text-[--text-secondary]">Génération du Brand Kit en cours…</p>
+          <p className="font-body text-sm text-[--text-secondary]">{t('bn_export_generating')}</p>
         </div>
       )}
 
       <p className="font-body text-xs text-[--text-muted] text-center">
-        La génération prend 30 à 90 secondes selon le nombre d&apos;assets.
+        {t('bn_export_timeNote')}
       </p>
     </div>
   )
@@ -462,9 +454,13 @@ function BrandNewPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialDraftId = searchParams.get('draft')
+  const { t } = useLanguage()
+
+  const STEPS = STEP_IDS.map((id, i) => ({ id, label: t(STEP_LABEL_KEYS[i]) }))
+  const CONTEXTUAL_HELP = CONTEXTUAL_HELP_KEYS.map(k => t(k))
 
   const [currentStep,    setCurrentStep]    = useState(0)
-  const [projectName,    setProjectName]    = useState('New Brand Kit')
+  const [projectName,    setProjectName]    = useState(() => t('bn_defaultProjectName'))
   const [restored,       setRestored]       = useState(false)
 
   // Brief
@@ -518,7 +514,7 @@ function BrandNewPageInner() {
       const step = Math.max(0, (data.wizard_step ?? 1) - 1)
       setCurrentStep(step)
       if (step >= 3) {
-        toast.success('Projet restauré — tes données sont intactes, aucun crédit supplémentaire consommé')
+        toast.success(t('bn_toast_restored'))
       }
     }
     loadDraft()
@@ -540,7 +536,7 @@ function BrandNewPageInner() {
     if (field === 'name')     setBrandName(v)
     if (field === 'industry') setIndustry(v)
     if (field === 'values')   setValues(v)
-    if (field === 'name')     setProjectName(v || 'New Brand Kit')
+    if (field === 'name')     setProjectName(v || t('bn_defaultProjectName'))
   }
 
   function toggleAsset(id: string) {
@@ -603,7 +599,7 @@ function BrandNewPageInner() {
             prompt: `${brandName} — ${values}`,
           })
           assets.push({
-            label: ASSET_TYPES.find(a => a.id === type)?.label ?? type,
+            label: (() => { const def = ASSET_TYPE_DEFS.find(a => a.id === type); return def ? t(def.labelKey) : type })(),
             url: res.data.image_url,
             type: 'image',
           })
@@ -625,9 +621,9 @@ function BrandNewPageInner() {
   return (
     <>
       <WizardLayout
-        featureTitle="Brand Kit"
+        featureTitle={t('bh_moduleTitle')}
         featureHref="/brand"
-        currentPageLabel="Nouveau kit"
+        currentPageLabel={t('bn_currentPageLabel')}
         steps={STEPS}
         currentStep={currentStep}
         projectName={projectName}
@@ -639,7 +635,7 @@ function BrandNewPageInner() {
         canNext={canNext()}
         onPrev={() => setCurrentStep(s => s - 1)}
         onNext={handleNext}
-        nextLabel={isLastStep ? 'Generate Brand Kit' : 'Suivant'}
+        nextLabel={isLastStep ? t('bn_generateLabel') : t('bn_nextLabel')}
         isNextLoading={generating && isLastStep}
       >
         <div className="max-w-2xl mx-auto px-6 py-8">

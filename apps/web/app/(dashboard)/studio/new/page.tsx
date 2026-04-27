@@ -199,7 +199,7 @@ function StudioNewPageInner() {
       })
 
       setStep(t('redirectingToEditor'))
-      toast.success(`Projet créé — ${result.sceneCount} scènes prêtes à générer`)
+      toast.success(`${result.sceneCount} ${t('sceneSplit')}`)
       router.push(`/studio/${result.projectId}/editor`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('analysisError'))
@@ -451,7 +451,7 @@ function StudioNewPageInner() {
         {/* Voice picker */}
         <div className="space-y-2">
           <label className="font-body text-sm font-semibold text-foreground">
-            Voix off <span className="text-[--text-muted] font-normal">(optionnel)</span>
+            {t('sn_voiceLabel')} <span className="text-[--text-muted] font-normal">({t('sn_voiceOptional')})</span>
           </label>
           <button
             type="button"
@@ -468,7 +468,7 @@ function StudioNewPageInner() {
               {selectedVoice ? (
                 <span className="font-body text-sm text-foreground">{selectedVoice.name}</span>
               ) : (
-                <span className="font-body text-sm text-[--text-muted]">Choisir une voix…</span>
+                <span className="font-body text-sm text-[--text-muted]">{t('sn_voiceChoose')}</span>
               )}
             </div>
             {selectedVoice && (
@@ -483,7 +483,7 @@ function StudioNewPageInner() {
           </button>
           {!selectedVoice && (
             <p className="font-mono text-[11px] text-[--text-muted]">
-              Sans sélection, une voix française par défaut sera utilisée.
+              {t('sn_voiceDefault')}
             </p>
           )}
         </div>

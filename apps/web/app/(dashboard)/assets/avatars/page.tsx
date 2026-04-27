@@ -88,7 +88,7 @@ function AvatarGroupCard({
             </p>
             <div className="flex items-center gap-2 mt-1">
               <span className="font-body text-xs text-white/60">
-                {group.totalLooks} look{group.totalLooks !== 1 ? 's' : ''}
+                {group.totalLooks !== 1 ? t('av_looksAvailable_plural').replace('{n}', String(group.totalLooks)) : t('av_looksAvailable').replace('{n}', '1')}
               </span>
               {isExpanded
                 ? <ChevronUp size={12} className="text-white/60" />
@@ -103,7 +103,7 @@ function AvatarGroupCard({
       {isExpanded && (
         <div className="p-3 border-t border-border bg-muted/30">
           <p className="font-body text-xs font-medium text-[--text-muted] mb-2">
-            {group.totalLooks} look{group.totalLooks !== 1 ? 's' : ''} {t('available')}
+            {group.totalLooks !== 1 ? t('av_looksAvailable_plural').replace('{n}', String(group.totalLooks)) : t('av_looksAvailable').replace('{n}', '1')}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {group.avatars.map((av) => {
@@ -283,7 +283,10 @@ export default function AvatarsPage() {
         {/* Footer count */}
         {!loading && groups.length > 0 && (
           <p className="font-body text-xs text-[--text-muted] text-center mt-6">
-            {groups.length} avatar{groups.length > 1 ? 's' : ''} &middot; {totalAvatars} total look{totalAvatars > 1 ? 's' : ''}
+            {groups.length > 1
+              ? t('av_footerSummary_plural').replace('{groups}', String(groups.length)).replace('{total}', String(totalAvatars))
+              : t('av_footerSummary').replace('{groups}', String(groups.length)).replace('{total}', String(totalAvatars))
+            }
           </p>
         )}
       </div>

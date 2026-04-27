@@ -18,57 +18,44 @@ import {
   subscribeToVideoStatus,
 } from '@/lib/api'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 import type { MotionStyle, VideoFormat, VideoDuration } from '@clyro/shared'
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// ── Constants (id-only — labels resolved via t() inside components) ────────────
 
-const STEPS = [
-  { id: 'brief',  label: 'Brief' },
-  { id: 'style',  label: 'Style & Format' },
-  { id: 'brand',  label: 'Brand' },
-  { id: 'voice',  label: 'Voice & Audio' },
-  { id: 'review', label: 'Render' },
+const STEP_IDS = ['brief', 'style', 'brand', 'voice', 'review'] as const
+
+const MOTION_STYLE_IDS: { id: MotionStyle; pro: boolean }[] = [
+  { id: 'corporate', pro: false },
+  { id: 'dynamique', pro: false },
+  { id: 'luxe',      pro: true  },
+  { id: 'fun',       pro: false },
 ]
 
-const GENERATION_STAGES: GenerationStage[] = [
-  { main: 'Analyzing brief…',       sub: 'AI structures your message into scenes' },
-  { main: 'Creating storyboard…', sub: 'Generating narrative sequence' },
-  { main: 'Generating assets…',  sub: 'Creating background visuals' },
-  { main: 'Text-to-speech…',        sub: 'Recording narration' },
-  { main: 'Remotion render…',         sub: 'Animation and final assembly' },
+const FORMAT_VALUES: { value: VideoFormat; tk_label: string; tk_desc: string }[] = [
+  { value: '9:16', tk_label: 'mn_format_vertical_label',  tk_desc: 'mn_format_vertical_desc'  },
+  { value: '1:1',  tk_label: 'mn_format_square_label',    tk_desc: 'mn_format_square_desc'    },
+  { value: '16:9', tk_label: 'mn_format_landscape_label', tk_desc: 'mn_format_landscape_desc' },
 ]
 
-const MOTION_STYLES: StyleConfig[] = [
-  { id: 'corporate', name: 'Corporate',  description: 'Professional and sleek, ideal for B2B', pro: false },
-  { id: 'dynamique', name: 'Dynamic',  description: 'Energy and rhythm, perfect for social media', pro: false },
-  { id: 'luxe',      name: 'Luxury',       description: 'Elegant and premium, for upscale brands', pro: true },
-  { id: 'fun',       name: 'Fun',        description: 'Colorful and quirky, light tone', pro: false },
+const DURATION_VALUES: { value: VideoDuration; tk: string }[] = [
+  { value: 'auto', tk: 'mn_duration_auto'  },
+  { value: '6s',   tk: 'mn_duration_6s'   },
+  { value: '15s',  tk: 'mn_duration_15s'  },
+  { value: '30s',  tk: 'mn_duration_30s'  },
+  { value: '60s',  tk: 'mn_duration_60s'  },
+  { value: '120s', tk: 'mn_duration_120s' },
+  { value: '180s', tk: 'mn_duration_180s' },
+  { value: '300s', tk: 'mn_duration_300s' },
 ]
 
-const FORMAT_OPTIONS: { value: VideoFormat; label: string; desc: string }[] = [
-  { value: '9:16', label: 'Vertical', desc: 'TikTok, Reels, Shorts' },
-  { value: '1:1',  label: 'Square',   desc: 'Instagram, Twitter' },
-  { value: '16:9', label: 'Landscape', desc: 'YouTube, LinkedIn' },
-]
-
-const DURATION_OPTIONS: { value: VideoDuration; label: string }[] = [
-  { value: 'auto', label: 'Auto (script)' },
-  { value: '6s',   label: '6 sec'  },
-  { value: '15s',  label: '15 sec' },
-  { value: '30s',  label: '30 sec' },
-  { value: '60s',  label: '1 min'  },
-  { value: '120s', label: '2 min'  },
-  { value: '180s', label: '3 min'  },
-  { value: '300s', label: '5 min'  },
-]
-
-const CONTEXTUAL_HELP = [
-  'Describe in a few sentences what you want to communicate and to whom.',
-  'Style defines visual atmosphere. Format determines ratio.',
-  'Your brand colors will be integrated into each scene.',
-  'Choose the voice and background music.',
-  'Everything is ready — launch the Remotion render.',
-]
+// Maps style id → translation key prefix
+const styleKeyMap: Record<string, string> = {
+  corporate: 'mn_style_corporate',
+  dynamique: 'mn_style_dynamique',
+  luxe:      'mn_style_luxe',
+  fun:       'mn_style_fun',
+}
 
 const FONTS = ['Inter', 'Poppins', 'Montserrat', 'Playfair Display', 'DM Sans', 'Space Grotesk']
 
@@ -84,21 +71,20 @@ function SectionSub({ children }: { children: React.ReactNode }) {
 // ── Step 0 — Brief ─────────────────────────────────────────────────────────────
 
 function StepBrief({ brief, onChange }: { brief: string; onChange: (v: string) => void }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-4">
-      <SectionTitle>Your brief</SectionTitle>
-      <SectionSub>
-        Describe the message you want to convey, your target audience and the video objective.
-      </SectionSub>
+      <SectionTitle>{t('mn_brief_title')}</SectionTitle>
+      <SectionSub>{t('mn_brief_sub')}</SectionSub>
       <textarea
         value={brief}
         onChange={e => onChange(e.target.value)}
         rows={10}
-        placeholder="Ex: We are a SaaS startup that helps SMEs automate their accounting. Our target: business owners aged 30-50. Objective: generate qualified leads via LinkedIn..."
+        placeholder={t('mn_brief_placeholder')}
         className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
       />
       <p className="font-mono text-xs text-[--text-muted] text-right">
-        {brief.trim().length} / 1000 recommended characters
+        {t('mn_brief_chars').replace('{n}', String(brief.trim().length))}
       </p>
     </div>
   )
@@ -114,13 +100,33 @@ function StepStyleFormat({
   onFormatChange: (v: VideoFormat) => void
   onDurationChange: (v: VideoDuration) => void
 }) {
+  const { t } = useLanguage()
+
+  const motionStyles: StyleConfig[] = MOTION_STYLE_IDS.map(({ id, pro }) => ({
+    id,
+    pro,
+    name:        t(`${styleKeyMap[id]}_name` as any),
+    description: t(`${styleKeyMap[id]}_desc` as any),
+  }))
+
+  const formatOptions = FORMAT_VALUES.map(o => ({
+    ...o,
+    label: t(o.tk_label as any),
+    desc:  t(o.tk_desc  as any),
+  }))
+
+  const durationOptions = DURATION_VALUES.map(o => ({
+    ...o,
+    label: t(o.tk as any),
+  }))
+
   return (
     <div className="space-y-8">
       <div>
-        <SectionTitle>Style</SectionTitle>
-        <SectionSub>The visual atmosphere of your motion design video.</SectionSub>
+        <SectionTitle>{t('mn_style_title')}</SectionTitle>
+        <SectionSub>{t('mn_style_sub')}</SectionSub>
         <StyleCarousel
-          styles={MOTION_STYLES}
+          styles={motionStyles}
           selected={style}
           onChange={(id) => onStyleChange(id as MotionStyle)}
           userPlan="free"
@@ -128,10 +134,10 @@ function StepStyleFormat({
       </div>
 
       <div>
-        <SectionTitle>Format</SectionTitle>
-        <SectionSub>Ratio and distribution network.</SectionSub>
+        <SectionTitle>{t('mn_format_title')}</SectionTitle>
+        <SectionSub>{t('mn_format_sub')}</SectionSub>
         <div className="flex gap-4 flex-wrap mb-6">
-          {FORMAT_OPTIONS.map(opt => (
+          {formatOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
@@ -157,9 +163,9 @@ function StepStyleFormat({
           ))}
         </div>
 
-        <SectionTitle>Duration</SectionTitle>
+        <SectionTitle>{t('mn_duration_title')}</SectionTitle>
         <div className="flex gap-3 flex-wrap mt-3">
-          {DURATION_OPTIONS.map(opt => (
+          {durationOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
@@ -191,21 +197,22 @@ function StepBrand({
   onSecondaryChange: (v: string) => void
   onFontChange: (v: string) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-6">
-      <SectionTitle>Brand identity</SectionTitle>
-      <SectionSub>These elements will be integrated into all scenes of your video.</SectionSub>
+      <SectionTitle>{t('mn_brand_title')}</SectionTitle>
+      <SectionSub>{t('mn_brand_sub')}</SectionSub>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="font-mono text-xs text-[--text-muted]">Primary color</label>
+          <label className="font-mono text-xs text-[--text-muted]">{t('mn_primary_color_label')}</label>
           <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={primaryColor}
               onChange={e => onPrimaryChange(e.target.value)}
-              title="Primary color"
-              aria-label="Primary color"
+              title={t('mn_primary_color_label')}
+              aria-label={t('mn_primary_color_label')}
               className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
             />
             <span className="font-mono text-sm text-foreground">{primaryColor.toUpperCase()}</span>
@@ -213,14 +220,14 @@ function StepBrand({
         </div>
 
         <div className="space-y-2">
-          <label className="font-mono text-xs text-[--text-muted]">Secondary color</label>
+          <label className="font-mono text-xs text-[--text-muted]">{t('mn_secondary_color_label')}</label>
           <div className="flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2">
             <input
               type="color"
               value={secondaryColor}
               onChange={e => onSecondaryChange(e.target.value)}
-              title="Secondary color"
-              aria-label="Secondary color"
+              title={t('mn_secondary_color_label')}
+              aria-label={t('mn_secondary_color_label')}
               className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
             />
             <span className="font-mono text-sm text-foreground">{secondaryColor.toUpperCase()}</span>
@@ -229,7 +236,7 @@ function StepBrand({
       </div>
 
       <div className="space-y-2">
-        <label className="font-mono text-xs text-[--text-muted]">Typography</label>
+        <label className="font-mono text-xs text-[--text-muted]">{t('mn_typography_label')}</label>
         <div className="flex gap-2 flex-wrap">
           {FONTS.map(f => (
             <button
@@ -261,11 +268,12 @@ function StepVoiceAudio({
   selectedVoice?: ClyroVoice
   onVoiceClick: () => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-6">
       <div>
-        <SectionTitle>Voice</SectionTitle>
-        <SectionSub>The voice that will read your scene text.</SectionSub>
+        <SectionTitle>{t('mn_voice_title')}</SectionTitle>
+        <SectionSub>{t('mn_voice_sub')}</SectionSub>
         <button
           type="button"
           onClick={onVoiceClick}
@@ -291,21 +299,21 @@ function StepVoiceAudio({
               </>
             ) : (
               <p className="font-body text-sm text-[--text-muted]">
-                No voice selected — click to choose
+                {t('mn_no_voice')}
               </p>
             )}
           </div>
-          <Badge variant="neutral">Change</Badge>
+          <Badge variant="neutral">{t('mn_voice_change')}</Badge>
         </button>
       </div>
 
       <div>
-        <SectionTitle>Background music</SectionTitle>
-        <SectionSub>Optional — a music track played in the background.</SectionSub>
+        <SectionTitle>{t('mn_bg_music_title')}</SectionTitle>
+        <SectionSub>{t('mn_bg_music_sub')}</SectionSub>
         <div className="flex items-center gap-3 rounded-xl bg-muted border border-border px-4 py-3">
           <Music size={18} className="text-[--text-muted]" />
-          <p className="font-body text-sm text-[--text-muted] flex-1">No music (coming soon)</p>
-          <Badge variant="neutral">Soon</Badge>
+          <p className="font-body text-sm text-[--text-muted] flex-1">{t('mn_no_music_coming_soon')}</p>
+          <Badge variant="neutral">{t('mn_music_soon')}</Badge>
         </div>
       </div>
     </div>
@@ -320,21 +328,22 @@ function StepReview({
   title: string; brief: string; style: MotionStyle; format: VideoFormat
   duration: VideoDuration; primaryColor: string; voice?: ClyroVoice
 }) {
-  const styleConfig = MOTION_STYLES.find(s => s.id === style)
+  const { t } = useLanguage()
+  const styleName = t(`${styleKeyMap[style]}_name` as any)
   const rows: [string, string][] = [
-    ['Title',  title || '—'],
-    ['Brief',  brief.substring(0, 60) + (brief.length > 60 ? '…' : '')],
-    ['Style',  styleConfig?.name ?? style],
-    ['Format', format],
-    ['Duration',  duration],
-    ['Color',primaryColor.toUpperCase()],
-    ['Voice',   voice?.name ?? 'Not selected'],
+    [t('mn_review_row_title'),    title || '—'],
+    [t('mn_review_row_brief'),    brief.substring(0, 60) + (brief.length > 60 ? '…' : '')],
+    [t('mn_review_row_style'),    styleName],
+    [t('mn_review_row_format'),   format],
+    [t('mn_review_row_duration'), duration],
+    [t('mn_review_row_color'),    primaryColor.toUpperCase()],
+    [t('mn_review_row_voice'),    voice?.name ?? t('mn_review_row_voice_none')],
   ]
 
   return (
     <div className="space-y-4">
-      <SectionTitle>Ready to render</SectionTitle>
-      <SectionSub>Review your settings before launching the Remotion render.</SectionSub>
+      <SectionTitle>{t('mn_review_title')}</SectionTitle>
+      <SectionSub>{t('mn_review_sub')}</SectionSub>
 
       <div className="rounded-xl bg-muted border border-border overflow-hidden">
         {rows.map(([label, value], i) => (
@@ -352,7 +361,7 @@ function StepReview({
       </div>
 
       <p className="font-body text-xs text-[--text-muted] text-center mt-4">
-        Rendering takes 1 to 3 minutes. You will be notified as soon as your video is ready.
+        {t('mn_review_timing')}
       </p>
     </div>
   )
@@ -364,9 +373,25 @@ function MotionNewPageInner() {
   const router     = useRouter()
   const params     = useSearchParams()
   const draftParam = params.get('draft')
+  const { t }      = useLanguage()
+
+  const STEPS = STEP_IDS.map((id) => ({
+    id,
+    label: t(`mn_step_${id}` as any),
+  }))
+
+  const GENERATION_STAGES: GenerationStage[] = [
+    { main: t('mn_genStage0_main'), sub: t('mn_genStage0_sub') },
+    { main: t('mn_genStage1_main'), sub: t('mn_genStage1_sub') },
+    { main: t('mn_genStage2_main'), sub: t('mn_genStage2_sub') },
+    { main: t('mn_genStage3_main'), sub: t('mn_genStage3_sub') },
+    { main: t('mn_genStage4_main'), sub: t('mn_genStage4_sub') },
+  ]
+
+  const CONTEXTUAL_HELP = STEP_IDS.map((_, i) => t(`mn_help_${i}` as any))
 
   const [currentStep,    setCurrentStep]    = useState(0)
-  const [projectName,    setProjectName]    = useState('New Motion project')
+  const [projectName,    setProjectName]    = useState(() => t('mn_defaultProjectName'))
   const [brief,          setBrief]          = useState('')
   const [style,          setStyle]          = useState<MotionStyle>('corporate')
   const [format,         setFormat]         = useState<VideoFormat>('16:9')
@@ -400,7 +425,7 @@ function MotionNewPageInner() {
         if (s.fontFamily)     setFontFamily(s.fontFamily as string)
         if (s.selectedVoice)  setSelectedVoice(s.selectedVoice as ClyroVoice)
         if (typeof data.wizard_step === 'number' && data.wizard_step >= 4) {
-          toast.success('Projet restauré — tes scènes sont intactes, aucun crédit supplémentaire consommé')
+          toast.success(t('mn_toast_projectRestored'))
         }
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -459,7 +484,7 @@ function MotionNewPageInner() {
 
   async function handleGenerate() {
     if (brief.trim().length < 20) {
-      toast.error('Le brief doit contenir au moins 20 caractères')
+      toast.error(t('mn_toast_briefTooShort'))
       setCurrentStep(0)
       return
     }
@@ -520,13 +545,9 @@ function MotionNewPageInner() {
       clearDraft()
       setResultOpen(true)
     } catch (err) {
-      // Surface the backend error (400/500 from clyro-api) to the user
-      // instead of failing silently. `apiFetch` puts the backend's `error`
-      // field in Error.message, so we get e.g. "Invalid duration value"
-      // directly from the pipeline service.
-      const msg = err instanceof Error ? err.message : 'Erreur inconnue'
+      const msg = err instanceof Error ? err.message : t('mn_toast_unknownError')
       console.error('[motion/new] generation failed:', err)
-      toast.error(`Génération échouée — ${msg}`)
+      toast.error(t('mn_toast_generationFailed').replace('{msg}', msg))
       setGenerating(false)
     }
   }
@@ -544,9 +565,9 @@ function MotionNewPageInner() {
   return (
     <>
       <WizardLayout
-        featureTitle="Motion Design"
+        featureTitle={t('mn_featureTitle')}
         featureHref="/motion"
-        currentPageLabel="New video"
+        currentPageLabel={t('mn_newVideo')}
         steps={STEPS}
         currentStep={currentStep}
         projectName={projectName}
@@ -560,7 +581,7 @@ function MotionNewPageInner() {
         canNext={canNext()}
         onPrev={() => setCurrentStep(s => s - 1)}
         onNext={handleNext}
-        nextLabel={isLastStep ? 'Launch render' : 'Next'}
+        nextLabel={isLastStep ? t('mn_launchLabel') : t('mn_nextLabel')}
       >
         <div className="max-w-2xl mx-auto px-6 py-8">
           {currentStep === 0 && <StepBrief brief={brief} onChange={setBrief} />}

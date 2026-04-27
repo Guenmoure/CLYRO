@@ -22,67 +22,66 @@ import {
   subscribeToVideoStatus,
   generateScriptFromUrl,
 } from '@/lib/api'
+import { useLanguage } from '@/lib/i18n'
 import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
 import { ANIMATION_MODES } from '@clyro/shared'
 
 // F1-012: music preset type mirrors the one in packages/shared/src/types/video.ts
 type MusicPreset = 'none' | 'soft' | 'upbeat' | 'cinematic' | 'corporate'
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// ── Constants (id-only — labels resolved via t() inside components) ────────────
 
-const STEPS = [
-  { id: 'script',    label: 'Script' },
-  { id: 'style',     label: 'Style & Voice' },
-  { id: 'animation', label: 'Animation' },
-  { id: 'format',    label: 'Format' },
-  { id: 'options',   label: 'Options' },
-  { id: 'review',    label: 'Finalization' },
+const STEP_IDS = ['script', 'styleVoice', 'animation', 'format', 'options', 'review'] as const
+
+const FACELESS_STYLE_IDS: { id: FacelessStyle; pro: boolean }[] = [
+  { id: 'cinematique',     pro: false },
+  { id: 'stock-vo',        pro: false },
+  { id: 'whiteboard',      pro: false },
+  { id: 'stickman',        pro: false },
+  { id: 'flat-design',     pro: true  },
+  { id: '3d-pixar',        pro: true  },
+  { id: 'minimaliste',     pro: false },
+  { id: 'infographie',     pro: true  },
+  { id: 'motion-graphics', pro: true  },
+  { id: 'animation-2d',    pro: true  },
 ]
 
-const GENERATION_STAGES: GenerationStage[] = [
-  { main: 'Analyzing script…',     sub: 'AI breaks down your content into scenes' },
-  { main: 'Generating images…', sub: 'Creating visuals for each scene' },
-  { main: 'Text-to-speech…',       sub: 'Recording the narration' },
-  { main: 'Animating…',             sub: 'Applying effects and transitions' },
-  { main: 'Final assembly…',      sub: 'Editing and rendering the video' },
+// Maps style id → translation key prefix (hyphens stripped for key compatibility)
+const styleKeyMap: Record<string, string> = {
+  'cinematique':     'fn_style_cinematique',
+  'stock-vo':        'fn_style_stockvo',
+  'whiteboard':      'fn_style_whiteboard',
+  'stickman':        'fn_style_stickman',
+  'flat-design':     'fn_style_flatdesign',
+  '3d-pixar':        'fn_style_3dpixar',
+  'minimaliste':     'fn_style_minimaliste',
+  'infographie':     'fn_style_infographie',
+  'motion-graphics': 'fn_style_motiongraphics',
+  'animation-2d':    'fn_style_animation2d',
+}
+
+const FORMAT_VALUES: { value: VideoFormat; tk_label: string; tk_desc: string }[] = [
+  { value: '9:16', tk_label: 'fn_format_vertical_label',  tk_desc: 'fn_format_vertical_desc'  },
+  { value: '1:1',  tk_label: 'fn_format_square_label',    tk_desc: 'fn_format_square_desc'    },
+  { value: '16:9', tk_label: 'fn_format_landscape_label', tk_desc: 'fn_format_landscape_desc' },
 ]
 
-const FACELESS_STYLES: StyleConfig[] = [
-  { id: 'cinematique',      name: 'Cinematic',      description: 'Epic shots and dramatic staging', pro: false },
-  { id: 'stock-vo',         name: 'Stock + Voice',        description: 'Stock footage with professional narration', pro: false },
-  { id: 'whiteboard',       name: 'Whiteboard',        description: 'Whiteboard animation, explainer style', pro: false },
-  { id: 'stickman',         name: 'Stickman',          description: 'Humorous stick figure animation', pro: false },
-  { id: 'flat-design',      name: 'Flat Design',       description: 'Minimalist vector illustrations', pro: true },
-  { id: '3d-pixar',         name: '3D Pixar',          description: '3D rendering animation style', pro: true },
-  { id: 'minimaliste',      name: 'Minimalist',       description: 'Text on clean background, very polished', pro: false },
-  { id: 'infographie',      name: 'Infographics',       description: 'Animated charts, data and diagrams', pro: true },
-  { id: 'motion-graphics',  name: 'Motion Graphics',   description: 'Modern typographic animations', pro: true },
-  { id: 'animation-2d',     name: '2D Animation',      description: 'Cartoon-style animated characters', pro: true },
+const DURATION_VALUES: { value: VideoDuration; tk: string }[] = [
+  { value: 'auto', tk: 'fn_duration_auto'  },
+  { value: '15s',  tk: 'fn_duration_15s'   },
+  { value: '30s',  tk: 'fn_duration_30s'   },
+  { value: '60s',  tk: 'fn_duration_60s'   },
+  { value: '120s', tk: 'fn_duration_120s'  },
+  { value: '180s', tk: 'fn_duration_180s'  },
+  { value: '300s', tk: 'fn_duration_300s'  },
 ]
 
-const FORMAT_OPTIONS: { value: VideoFormat; label: string; desc: string }[] = [
-  { value: '9:16', label: 'Vertical',    desc: 'TikTok, Reels, Shorts' },
-  { value: '1:1',  label: 'Square',       desc: 'Instagram, Twitter' },
-  { value: '16:9', label: 'Landscape',     desc: 'YouTube, LinkedIn' },
-]
-
-const DURATION_OPTIONS: { value: VideoDuration; label: string }[] = [
-  { value: 'auto', label: 'Auto (script)' },
-  { value: '15s',  label: '15 sec' },
-  { value: '30s',  label: '30 sec' },
-  { value: '60s',  label: '1 min'  },
-  { value: '120s', label: '2 min'  },
-  { value: '180s', label: '3 min'  },
-  { value: '300s', label: '5 min'  },
-]
-
-const CONTEXTUAL_HELP: string[] = [
-  'Write or paste your script. AI will automatically break it down into scenes.',
-  'Choose the visual style of your video. Hover over cards to preview.',
-  'Choose how your images will be animated. You can refine scene by scene later.',
-  'Format determines your video ratio and narration duration.',
-  'Advanced options to customize your video further.',
-  'Review everything before launching generation.',
+const MUSIC_PRESET_IDS: { id: MusicPreset; tk_label: string; tk_desc: string }[] = [
+  { id: 'none',      tk_label: 'fn_music_none_label',      tk_desc: 'fn_music_none_desc'      },
+  { id: 'soft',      tk_label: 'fn_music_soft_label',      tk_desc: 'fn_music_soft_desc'      },
+  { id: 'upbeat',    tk_label: 'fn_music_upbeat_label',    tk_desc: 'fn_music_upbeat_desc'    },
+  { id: 'cinematic', tk_label: 'fn_music_cinematic_label', tk_desc: 'fn_music_cinematic_desc' },
+  { id: 'corporate', tk_label: 'fn_music_corporate_label', tk_desc: 'fn_music_corporate_desc' },
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -108,6 +107,7 @@ function StepScript({
   onChange: (v: string) => void
   initialSource?: ScriptSource
 }) {
+  const { t } = useLanguage()
   const wordCount = script.trim().split(/\s+/).filter(Boolean).length
   const [source, setSource] = useState<ScriptSource>(initialSource)
   const [url, setUrl] = useState('')
@@ -123,25 +123,27 @@ function StepScript({
     try {
       const data = await generateScriptFromUrl({ url: clean, length: urlLength })
       const next = data.script.trim()
-      if (!next) throw new Error('Script vide.')
+      if (!next) throw new Error(t('fn_toast_scriptEmpty'))
       onChange(next)
       toast.success(
-        `Script importé : ${data.source.title || data.source.finalUrl} · ${data.wordCount} mots`,
+        t('fn_toast_scriptImported')
+          .replace('{title}', data.source.title || data.source.finalUrl)
+          .replace('{n}', String(data.wordCount)),
       )
       setSource('text')  // show the imported text so users can edit before continuing
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Import failed'
+      const msg = err instanceof Error ? err.message : t('fn_toast_unknownError')
       setImportError(msg)
       toast.error(msg)
     } finally {
       setImporting(false)
     }
-  }, [url, urlLength, onChange])
+  }, [url, urlLength, onChange, t])
 
   return (
     <div className="space-y-4">
-      <SectionTitle>Your script</SectionTitle>
-      <SectionSub>Paste or write the text you want to transform into a video.</SectionSub>
+      <SectionTitle>{t('fn_script_title')}</SectionTitle>
+      <SectionSub>{t('fn_script_sub')}</SectionSub>
 
       {/* Source tabs — text OR import from URL (use aria-pressed since these
           are toggle-style buttons, not a full tablist pattern) */}
@@ -156,7 +158,7 @@ function StepScript({
             source === 'text' ? 'bg-background text-foreground shadow-sm' : 'text-[--text-muted] hover:text-foreground',
           )}
         >
-          Text
+          {t('fn_source_text')}
         </button>
         <button
           type="button"
@@ -169,14 +171,14 @@ function StepScript({
           )}
         >
           <Link2 size={13} aria-hidden="true" />
-          From URL
+          {t('fn_source_url')}
         </button>
       </div>
 
       {source === 'url' ? (
         <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-4">
           <p className="font-body text-sm text-[--text-muted]">
-            Paste a blog post, news article or landing page URL — we'll turn it into a ready-to-narrate script.
+            {t('fn_url_desc')}
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
@@ -185,8 +187,8 @@ function StepScript({
               inputMode="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://exemple.com/article"
-              aria-label="Article URL"
+              placeholder={t('fn_url_placeholder')}
+              aria-label={t('fn_url_ariaLabel')}
               aria-invalid={importError ? true : undefined}
               aria-describedby={importError ? 'url-import-error' : undefined}
               className="flex-1 bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40"
@@ -196,13 +198,13 @@ function StepScript({
             <select
               value={urlLength}
               onChange={(e) => setUrlLength(e.target.value as UrlImportLength)}
-              aria-label="Target video length"
+              aria-label={t('fn_url_targetLength')}
               className="bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
               disabled={importing}
             >
-              <option value="short">Short (~30s)</option>
-              <option value="medium">Medium (~60s)</option>
-              <option value="long">Long (~2 min)</option>
+              <option value="short">{t('fn_url_short')}</option>
+              <option value="medium">{t('fn_url_medium')}</option>
+              <option value="long">{t('fn_url_long')}</option>
             </select>
             <Button
               type="button"
@@ -211,9 +213,9 @@ function StepScript({
               className="min-w-[110px]"
             >
               {importing ? (
-                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" aria-hidden="true" />Importing…</span>
+                <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" aria-hidden="true" />{t('fn_url_importing')}</span>
               ) : (
-                'Import'
+                t('fn_url_import')
               )}
             </Button>
           </div>
@@ -227,7 +229,7 @@ function StepScript({
             </p>
           )}
           <p className="font-mono text-xs text-[--text-muted]">
-            Tip: works best on article pages. We'll keep a source credit in the video metadata.
+            {t('fn_url_tip')}
           </p>
         </div>
       ) : (
@@ -236,15 +238,17 @@ function StepScript({
             value={script}
             onChange={e => onChange(e.target.value)}
             rows={14}
-            placeholder="Ex: Today, we're talking about the AI revolution in digital marketing..."
+            placeholder={t('fn_script_placeholder')}
             className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
           />
           <div className="flex items-center justify-between">
             <p className="font-mono text-xs text-[--text-muted]">
-              {wordCount} words · ~{Math.round(wordCount / 130)} min narration
+              {t('fn_words_narration')
+                .replace('{n}', String(wordCount))
+                .replace('{m}', String(Math.round(wordCount / 130)))}
             </p>
             {wordCount > 600 && (
-              <Badge variant="warning">Long script — will be condensed</Badge>
+              <Badge variant="warning">{t('fn_long_script_badge')}</Badge>
             )}
           </div>
         </>
@@ -268,13 +272,22 @@ function StepStyleVoice({
   onVoiceClick: () => void
   userPlan: 'free' | 'starter' | 'pro' | 'creator' | 'studio'
 }) {
+  const { t } = useLanguage()
+
+  const facelessStyles: StyleConfig[] = FACELESS_STYLE_IDS.map(({ id, pro }) => ({
+    id,
+    pro,
+    name:        t(`${styleKeyMap[id]}_name` as any),
+    description: t(`${styleKeyMap[id]}_desc` as any),
+  }))
+
   return (
     <div className="space-y-8">
       <div>
-        <SectionTitle>Visual style</SectionTitle>
-        <SectionSub>Choose your video aesthetic. Hover to see preview.</SectionSub>
+        <SectionTitle>{t('fn_visual_style_title')}</SectionTitle>
+        <SectionSub>{t('fn_visual_style_sub')}</SectionSub>
         <StyleCarousel
-          styles={FACELESS_STYLES}
+          styles={facelessStyles}
           selected={selectedStyle}
           onChange={(id) => onStyleChange(id as FacelessStyle)}
           userPlan={userPlan}
@@ -282,8 +295,8 @@ function StepStyleVoice({
       </div>
 
       <div>
-        <SectionTitle>Voice</SectionTitle>
-        <SectionSub>Select the voice that will narrate your video.</SectionSub>
+        <SectionTitle>{t('fn_voice_title')}</SectionTitle>
+        <SectionSub>{t('fn_voice_sub')}</SectionSub>
         <button
           type="button"
           onClick={onVoiceClick}
@@ -306,10 +319,10 @@ function StepStyleVoice({
                 </p>
               </>
             ) : (
-              <p className="font-body text-sm text-[--text-muted]">No voice selected — click to choose</p>
+              <p className="font-body text-sm text-[--text-muted]">{t('fn_no_voice_selected')}</p>
             )}
           </div>
-          <Badge variant="neutral">Change</Badge>
+          <Badge variant="neutral">{t('fn_voice_change')}</Badge>
         </button>
       </div>
     </div>
@@ -331,6 +344,7 @@ function StepAnimation({
   wordCount:     number
   creditsBalance: number
 }) {
+  const { t } = useLanguage()
   const durationMin      = Math.max(1, Math.ceil(wordCount / 150))
   const config           = ANIMATION_MODES[animationMode]
   const estimatedCredits = Math.ceil(durationMin * config.creditsPerMin)
@@ -340,11 +354,8 @@ function StepAnimation({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <SectionTitle>Animation mode</SectionTitle>
-        <SectionSub>
-          Choose how your images will be animated.
-          You can adjust scene by scene in the next step.
-        </SectionSub>
+        <SectionTitle>{t('fn_animation_title')}</SectionTitle>
+        <SectionSub>{t('fn_animation_sub')}</SectionSub>
       </div>
 
       <AnimationModeSelector
@@ -358,17 +369,20 @@ function StepAnimation({
       <div className="rounded-2xl border border-border bg-muted p-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="font-display text-sm text-foreground">Estimate for this video</p>
+            <p className="font-display text-sm text-foreground">{t('fn_estimate_title')}</p>
             <p className="font-body text-xs text-[--text-muted] mt-0.5">
-              ~{durationMin} min · {scenesEstimate} scenes · {config.label} mode
+              {t('fn_estimate_sub')
+                .replace('{d}', String(durationMin))
+                .replace('{s}', String(scenesEstimate))
+                .replace('{m}', config.label)}
             </p>
           </div>
           <div className="text-right shrink-0">
             <p className="font-display text-xl bg-grad-primary bg-clip-text text-transparent">
-              ~{estimatedCredits} cr
+              {t('fn_estimate_credits').replace('{c}', String(estimatedCredits))}
             </p>
             <p className="font-mono text-xs text-[--text-muted] mt-0.5">
-              Balance: {creditsBalance} cr
+              {t('fn_estimate_balance').replace('{b}', String(creditsBalance))}
             </p>
           </div>
         </div>
@@ -377,7 +391,7 @@ function StepAnimation({
           <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-3">
             <AlertTriangle size={14} className="text-warning shrink-0" />
             <p className="font-body text-xs text-[--text-muted] flex-1">
-              Insufficient balance for this mode. Buy credits or switch to Storyboard mode.
+              {t('fn_insufficient_msg')}
             </p>
             <Button
               size="sm"
@@ -386,7 +400,7 @@ function StepAnimation({
               onClick={() => window.open('/settings/billing', '_blank')}
             >
               <ShoppingCart size={12} />
-              Credits
+              {t('fn_buy_credits')}
             </Button>
           </div>
         )}
@@ -408,13 +422,26 @@ function StepFormat({
   onFormatChange: (v: VideoFormat) => void
   onDurationChange: (v: VideoDuration) => void
 }) {
+  const { t } = useLanguage()
+
+  const formatOptions = FORMAT_VALUES.map(o => ({
+    ...o,
+    label: t(o.tk_label as any),
+    desc:  t(o.tk_desc  as any),
+  }))
+
+  const durationOptions = DURATION_VALUES.map(o => ({
+    ...o,
+    label: t(o.tk as any),
+  }))
+
   return (
     <div className="space-y-8">
       <div>
-        <SectionTitle>Format</SectionTitle>
-        <SectionSub>Your video ratio determines where it will be distributed.</SectionSub>
+        <SectionTitle>{t('fn_format_title')}</SectionTitle>
+        <SectionSub>{t('fn_format_sub')}</SectionSub>
         <div className="flex gap-4 flex-wrap">
-          {FORMAT_OPTIONS.map(opt => (
+          {formatOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
@@ -442,10 +469,10 @@ function StepFormat({
       </div>
 
       <div>
-        <SectionTitle>Target duration</SectionTitle>
-        <SectionSub>Narration will be adapted to this duration.</SectionSub>
+        <SectionTitle>{t('fn_duration_title')}</SectionTitle>
+        <SectionSub>{t('fn_duration_sub')}</SectionSub>
         <div className="flex gap-3 flex-wrap">
-          {DURATION_OPTIONS.map(opt => (
+          {durationOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
@@ -468,15 +495,6 @@ function StepFormat({
 
 // ── Step 4 — Options ───────────────────────────────────────────────────────────
 
-// F1-012: available music presets for background scoring
-const MUSIC_PRESETS: { id: MusicPreset; label: string; desc: string }[] = [
-  { id: 'none',       label: 'No music',   desc: 'Voiceover only' },
-  { id: 'soft',       label: 'Soft',       desc: 'Ambient, calm background' },
-  { id: 'upbeat',     label: 'Upbeat',     desc: 'Energetic & modern' },
-  { id: 'cinematic',  label: 'Cinematic',  desc: 'Dramatic orchestral' },
-  { id: 'corporate',  label: 'Corporate',  desc: 'Clean, professional' },
-]
-
 function StepOptions({
   dialogueMode,
   onDialogueModeChange,
@@ -492,12 +510,20 @@ function StepOptions({
   subtitlesEnabled: boolean
   onSubtitlesChange: (v: boolean) => void
 }) {
+  const { t } = useLanguage()
+
+  const musicPresets = MUSIC_PRESET_IDS.map(p => ({
+    ...p,
+    label: t(p.tk_label as any),
+    desc:  t(p.tk_desc  as any),
+  }))
+
   return (
     <div className="space-y-6">
-      <SectionTitle>Advanced options</SectionTitle>
-      <SectionSub>Customize the generation behavior.</SectionSub>
+      <SectionTitle>{t('fn_options_title')}</SectionTitle>
+      <SectionSub>{t('fn_options_sub')}</SectionSub>
 
-      {/* Dialogue mode toggle (existing) */}
+      {/* Dialogue mode toggle */}
       <div className="flex items-center justify-between rounded-xl bg-muted border border-border px-4 py-4">
         <div className="flex items-center gap-3">
           {dialogueMode ? (
@@ -506,9 +532,9 @@ function StepOptions({
             <MicOff size={18} className="text-[--text-muted]" />
           )}
           <div>
-            <p className="font-display text-sm text-foreground">Dialogue mode</p>
+            <p className="font-display text-sm text-foreground">{t('fn_dialogue_title')}</p>
             <p className="font-body text-xs text-[--text-muted]">
-              AI detects characters and assigns different voices to each
+              {t('fn_dialogue_desc')}
             </p>
           </div>
         </div>
@@ -520,7 +546,7 @@ function StepOptions({
             dialogueMode ? 'bg-blue-500' : 'bg-border',
           )}
           role="switch"
-          title={dialogueMode ? 'Disable dialogue mode' : 'Enable dialogue mode'}
+          title={dialogueMode ? t('fn_dialogue_disable') : t('fn_dialogue_enable')}
           aria-checked={dialogueMode}
         >
           <span className={cn(
@@ -538,9 +564,9 @@ function StepOptions({
             className={subtitlesEnabled ? 'text-blue-400' : 'text-[--text-muted]'}
           />
           <div>
-            <p className="font-display text-sm text-foreground">Burn-in subtitles</p>
+            <p className="font-display text-sm text-foreground">{t('fn_subtitles_title')}</p>
             <p className="font-body text-xs text-[--text-muted]">
-              Word-level captions synced to the voiceover, burned into the video
+              {t('fn_subtitles_desc')}
             </p>
           </div>
         </div>
@@ -552,7 +578,7 @@ function StepOptions({
             subtitlesEnabled ? 'bg-blue-500' : 'bg-border',
           )}
           role="switch"
-          title={subtitlesEnabled ? 'Disable subtitles' : 'Enable subtitles'}
+          title={subtitlesEnabled ? t('fn_subtitles_disable') : t('fn_subtitles_enable')}
           aria-checked={subtitlesEnabled}
         >
           <span className={cn(
@@ -567,14 +593,14 @@ function StepOptions({
         <div className="flex items-center gap-3 mb-3">
           <Music size={18} className="text-blue-400" />
           <div>
-            <p className="font-display text-sm text-foreground">Background music</p>
+            <p className="font-display text-sm text-foreground">{t('fn_music_title')}</p>
             <p className="font-body text-xs text-[--text-muted]">
-              Mixed under the voiceover at a low gain
+              {t('fn_music_desc')}
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2" role="radiogroup" aria-label="Background music preset">
-          {MUSIC_PRESETS.map(p => {
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2" role="radiogroup" aria-label={t('fn_music_ariaLabel')}>
+          {musicPresets.map(p => {
             const active = musicPreset === p.id
             return (
               <button
@@ -626,28 +652,29 @@ function StepReview({
   musicPreset: MusicPreset
   subtitlesEnabled: boolean
 }) {
+  const { t } = useLanguage()
   const wordCount  = script.trim().split(/\s+/).filter(Boolean).length
-  const styleConfig = FACELESS_STYLES.find(s => s.id === style)
-  const animConfig  = ANIMATION_MODES[animationMode]
-  const musicLabel = MUSIC_PRESETS.find(p => p.id === musicPreset)?.label ?? 'No music'
+  const styleName  = t(`${styleKeyMap[style]}_name` as any)
+  const animConfig = ANIMATION_MODES[animationMode]
+  const musicLabel = t(`fn_music_${musicPreset}_label` as any)
 
   const rows: [string, string][] = [
-    ['Title',        title || '—'],
-    ['Script',       `${wordCount} words`],
-    ['Style',        styleConfig?.name ?? style],
-    ['Voice',         voice?.name ?? 'Not selected'],
-    ['Animation',    `${animConfig.label} · ${animConfig.generationTime}`],
-    ['Format',       format],
-    ['Duration',        duration],
-    ['Dialogue mode',dialogueMode ? 'Enabled' : 'Disabled'],
-    ['Music',        musicLabel],
-    ['Subtitles',    subtitlesEnabled ? 'Burned-in' : 'Off'],
+    [t('fn_review_row_title'),    title || '—'],
+    [t('fn_review_row_script'),   t('fn_review_row_words').replace('{n}', String(wordCount))],
+    [t('fn_review_row_style'),    styleName],
+    [t('fn_review_row_voice'),    voice?.name ?? t('fn_review_row_voice_none')],
+    [t('fn_review_row_animation'), `${animConfig.label} · ${animConfig.generationTime}`],
+    [t('fn_review_row_format'),   format],
+    [t('fn_review_row_duration'), duration],
+    [t('fn_review_row_dialogue'), dialogueMode ? t('fn_review_row_dialogue_on') : t('fn_review_row_dialogue_off')],
+    [t('fn_review_row_music'),    musicLabel],
+    [t('fn_review_row_subtitles'), subtitlesEnabled ? t('fn_review_row_subtitles_on') : t('fn_review_row_subtitles_off')],
   ]
 
   return (
     <div className="space-y-4">
-      <SectionTitle>Summary</SectionTitle>
-      <SectionSub>Review your settings before launching generation.</SectionSub>
+      <SectionTitle>{t('fn_review_title')}</SectionTitle>
+      <SectionSub>{t('fn_review_sub')}</SectionSub>
 
       <div className="rounded-xl bg-muted border border-border overflow-hidden">
         {rows.map(([label, value], i) => (
@@ -668,14 +695,15 @@ function StepReview({
         <div className="flex items-start gap-3 rounded-xl bg-blue-500/5 border border-blue-500/20 px-4 py-3">
           <span className="font-mono text-[11px] text-blue-400 mt-0.5">ℹ</span>
           <p className="font-body text-xs text-[--text-muted]">
-            <strong className="text-foreground">{animConfig.label}</strong> mode — clips
-            will be generated after images ({animConfig.generationTime} additional).
+            {t('fn_review_anim_info')
+              .replace('{label}', animConfig.label)
+              .replace('{time}', animConfig.generationTime)}
           </p>
         </div>
       )}
 
       <p className="font-body text-xs text-[--text-muted] text-center mt-4">
-        Generation typically takes 2 to 15 minutes depending on mode and script length.
+        {t('fn_review_timing')}
       </p>
     </div>
   )
@@ -687,9 +715,25 @@ function FacelessNewPageInner() {
   const router      = useRouter()
   const params      = useSearchParams()
   const draftParam  = params.get('draft')
+  const { t }       = useLanguage()
+
+  const STEPS = STEP_IDS.map((id) => ({
+    id,
+    label: t(`fn_step_${id}` as any),
+  }))
+
+  const GENERATION_STAGES: GenerationStage[] = [
+    { main: t('fn_genStage0_main'), sub: t('fn_genStage0_sub') },
+    { main: t('fn_genStage1_main'), sub: t('fn_genStage1_sub') },
+    { main: t('fn_genStage2_main'), sub: t('fn_genStage2_sub') },
+    { main: t('fn_genStage3_main'), sub: t('fn_genStage3_sub') },
+    { main: t('fn_genStage4_main'), sub: t('fn_genStage4_sub') },
+  ]
+
+  const CONTEXTUAL_HELP = STEP_IDS.map((_, i) => t(`fn_help_${i}` as any))
 
   const [currentStep,    setCurrentStep]    = useState(0)
-  const [projectName,    setProjectName]    = useState('New Faceless project')
+  const [projectName,    setProjectName]    = useState(() => t('fn_defaultProjectName'))
   const [script,         setScript]         = useState('')
   const [style,          setStyle]          = useState<FacelessStyle>('cinematique')
   const [selectedVoice,  setSelectedVoice]  = useState<ClyroVoice | undefined>()
@@ -729,7 +773,7 @@ function FacelessNewPageInner() {
         if (typeof s.musicPreset === 'string')    setMusicPreset(s.musicPreset as MusicPreset)
         if (typeof s.subtitlesEnabled === 'boolean') setSubtitlesEnabled(s.subtitlesEnabled)
         if (typeof data.wizard_step === 'number' && data.wizard_step >= 4) {
-          toast.success('Projet restauré — tes scènes sont intactes, aucun crédit supplémentaire consommé')
+          toast.success(t('fn_toast_projectRestored'))
         }
       }, (err: unknown) => {
         console.error('[faceless/new] Unexpected error restoring draft:', err)
@@ -846,7 +890,9 @@ function FacelessNewPageInner() {
     // silently disabled by canNext()).
     if (creditInsufficient) {
       toast.error(
-        `Crédits insuffisants (solde ${creditsBalance}, requis ~${estimatedCredits}). Ajoute des crédits ou choisis un mode moins coûteux.`,
+        t('fn_toast_insufficientCredits')
+          .replace('{b}', String(creditsBalance))
+          .replace('{r}', String(estimatedCredits)),
       )
       return
     }
@@ -895,7 +941,7 @@ function FacelessNewPageInner() {
           if (data.status === 'done') {
             resolve()
           } else if (data.status === 'error') {
-            reject(new Error('Génération échouée'))
+            reject(new Error('Generation failed'))
           }
         })
         ;(window as Window & { _clyroEs?: EventSource })._clyroEs = es
@@ -913,9 +959,9 @@ function FacelessNewPageInner() {
       clearDraft()
       setResultOpen(true)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erreur inconnue'
+      const msg = err instanceof Error ? err.message : t('fn_toast_unknownError')
       console.error('[faceless/new] generation failed:', err)
-      toast.error(`Génération échouée — ${msg}`)
+      toast.error(t('fn_toast_generationFailed').replace('{msg}', msg))
       setGenerating(false)
     }
   }
@@ -933,9 +979,9 @@ function FacelessNewPageInner() {
   return (
     <>
       <WizardLayout
-        featureTitle="Faceless Videos"
+        featureTitle={t('fn_featureTitle')}
         featureHref="/faceless"
-        currentPageLabel="New video"
+        currentPageLabel={t('fn_newVideo')}
         steps={STEPS}
         currentStep={currentStep}
         projectName={projectName}
@@ -949,7 +995,7 @@ function FacelessNewPageInner() {
         canNext={canNext()}
         onPrev={() => setCurrentStep(s => s - 1)}
         onNext={handleNext}
-        nextLabel={isLastStep ? 'Launch generation' : 'Next'}
+        nextLabel={isLastStep ? t('fn_launchLabel') : t('fn_nextLabel')}
       >
         <div className="max-w-2xl mx-auto px-6 py-8">
           {currentStep === 0 && (
@@ -1026,9 +1072,11 @@ function FacelessNewPageInner() {
       <CloneVoiceModal
         isOpen={cloneVoiceOpen}
         onClose={() => setCloneVoiceOpen(false)}
-        onCloned={() => reloadClonedVoices()}
         userPlan={userPlan as UserPlan}
-        existingClonedCount={clonedVoices.length}
+        onCloned={async () => {
+          await reloadClonedVoices()
+          setCloneVoiceOpen(false)
+        }}
       />
 
       <GenerationOverlay

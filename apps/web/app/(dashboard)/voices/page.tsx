@@ -183,7 +183,7 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
     const picked = e.target.files?.[0] ?? null
     if (picked && picked.size > VOICE_SAMPLE_MAX_BYTES) {
       toast.error(
-        `Fichier trop volumineux (${(picked.size / 1024 / 1024).toFixed(1)} MB). La taille maximale est ${VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB.`,
+        t('cv_fileTooLarge').replace('{size}', (picked.size / 1024 / 1024).toFixed(1)).replace('{max}', `${VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB`),
       )
       e.target.value = ''
       setFile(null)
@@ -196,7 +196,7 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
     if (!name.trim() || !file) return
     if (file.size > VOICE_SAMPLE_MAX_BYTES) {
       toast.error(
-        `Fichier trop volumineux (${(file.size / 1024 / 1024).toFixed(1)} MB). La taille maximale est ${VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB.`,
+        t('cv_fileTooLarge').replace('{size}', (file.size / 1024 / 1024).toFixed(1)).replace('{max}', `${VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB`),
       )
       return
     }
