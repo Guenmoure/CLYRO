@@ -2,6 +2,7 @@
 
 import { Play, Square, Check, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import type { ClyroVoice } from '@/lib/api'
 
@@ -36,6 +37,7 @@ interface VoiceCardProps {
 }
 
 export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }: VoiceCardProps) {
+  const { t } = useLanguage()
   function togglePlay(e: React.MouseEvent) {
     e.stopPropagation()
     onPlay(playing ? null : voice.id)
@@ -111,7 +113,7 @@ export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }
             : 'bg-muted text-[--text-secondary] hover:bg-border',
         )}
         onClick={togglePlay}
-        aria-label={playing ? 'Pause' : 'Play'}
+        aria-label={playing ? t('vc_pause') : t('vc_play')}
       >
         {playing ? <Square size={11} /> : <Play size={11} />}
       </button>
@@ -124,7 +126,7 @@ export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }
           className="opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={(e) => { e.stopPropagation(); onUse(voice) }}
         >
-          Utiliser
+          {t('vc_use')}
         </Button>
       )}
 
@@ -136,7 +138,7 @@ export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }
           type="button"
           className="p-1.5 rounded-full hover:bg-border transition-colors shrink-0"
           onClick={(e) => { e.stopPropagation(); onFavorite(voice) }}
-          aria-label={voice.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          aria-label={voice.isFavorite ? t('vc_remove_from_favorites') : t('vc_add_to_favorites')}
         >
           <Heart
             size={14}

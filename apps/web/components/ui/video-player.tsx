@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Download, Copy, Check, Play, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 interface VideoPlayerProps {
   url: string
@@ -12,6 +13,7 @@ interface VideoPlayerProps {
 }
 
 export function VideoPlayer({ url, title, className, onError }: VideoPlayerProps) {
+  const { t } = useLanguage()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [copied, setCopied] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -51,15 +53,15 @@ export function VideoPlayer({ url, title, className, onError }: VideoPlayerProps
         {loadError ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-white p-6 text-center">
             <AlertCircle size={32} className="text-red-400" />
-            <p className="font-display font-semibold text-sm">Impossible de charger la vidéo</p>
+            <p className="font-display font-semibold text-sm">{t('vp_loadError')}</p>
             <p className="font-body text-xs text-white/70 max-w-sm">
-              Le lien a peut-être expiré ou le fichier est momentanément indisponible.
+              {t('vp_linkExpired')}
             </p>
             <button
               onClick={handleRetry}
               className="mt-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-body transition-colors"
             >
-              Réessayer
+              {t('vp_retry')}
             </button>
           </div>
         ) : (
@@ -79,7 +81,7 @@ export function VideoPlayer({ url, title, className, onError }: VideoPlayerProps
               <button
                 onClick={handlePlay}
                 className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Lire la vidéo"
+                aria-label={t('vp_playVideo')}
               >
                 <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-xl">
                   <Play size={22} className="text-gray-900 ml-1" fill="currentColor" />
@@ -105,7 +107,7 @@ export function VideoPlayer({ url, title, className, onError }: VideoPlayerProps
           )}
         >
           {copied ? <Check size={12} /> : <Copy size={12} />}
-          {copied ? 'Copié !' : 'Copier le lien'}
+          {copied ? t('vp_copied') : t('vp_copyLink')}
         </button>
         <a
           href={url}
@@ -113,7 +115,7 @@ export function VideoPlayer({ url, title, className, onError }: VideoPlayerProps
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-white text-xs font-mono hover:opacity-80 transition-opacity"
         >
           <Download size={12} />
-          Télécharger
+          {t('vp_download')}
         </a>
       </div>
     </div>

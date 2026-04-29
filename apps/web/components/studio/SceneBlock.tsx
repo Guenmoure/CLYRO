@@ -2,6 +2,7 @@
 
 import { Loader2, AlertCircle, RefreshCw, MoreVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import {
   type StudioScene, SCENE_TYPE_COLORS, SCENE_TYPE_LABELS,
 } from '@/lib/studio-types'
@@ -19,6 +20,7 @@ interface SceneBlockProps {
 export function SceneBlock({
   scene, selected, onClick, onRegenerate, onContextMenu, scale = 8,
 }: SceneBlockProps) {
+  const { t } = useLanguage()
   const duration = scene.duration_actual ?? scene.duration_est ?? 10
   const width = Math.max(64, duration * scale)
   const bg = SCENE_TYPE_COLORS[scene.type]
@@ -75,7 +77,7 @@ export function SceneBlock({
         {onRegenerate && (
           <button
             type="button"
-            aria-label="Regenerate scene"
+            aria-label={t('sb_regenerateScene')}
             className="bg-black/60 rounded p-1 hover:bg-black/80"
             onClick={(e) => { e.stopPropagation(); onRegenerate() }}
           >
@@ -85,7 +87,7 @@ export function SceneBlock({
         {onContextMenu && (
           <button
             type="button"
-            aria-label="More actions"
+            aria-label={t('sb_moreActions')}
             className="bg-black/60 rounded p-1 hover:bg-black/80"
             onClick={(e) => { e.stopPropagation(); onContextMenu(e) }}
           >

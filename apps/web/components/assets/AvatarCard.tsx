@@ -2,6 +2,7 @@
 
 import { Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { StudioAvatar } from '@/lib/api'
@@ -15,6 +16,7 @@ interface AvatarCardProps {
 }
 
 export function AvatarCard({ avatar, isFavorite, onClick, onFavorite, onUse }: AvatarCardProps) {
+  const { t } = useLanguage()
   return (
     <div
       className="relative rounded-2xl overflow-hidden cursor-pointer group aspect-[3/4] bg-muted"
@@ -51,7 +53,7 @@ export function AvatarCard({ avatar, isFavorite, onClick, onFavorite, onUse }: A
         </p>
         {avatar.looks_count > 1 && (
           <p className="font-mono text-xs text-white/60 mt-0.5">
-            {avatar.looks_count} looks
+            {avatar.looks_count} {t('ac_looks')}
           </p>
         )}
       </div>
@@ -59,14 +61,14 @@ export function AvatarCard({ avatar, isFavorite, onClick, onFavorite, onUse }: A
       {/* Badge — personal avatar */}
       {avatar.avatar_type === 'personal' && (
         <div className="absolute top-2 left-2">
-          <Badge variant="purple">Mon avatar</Badge>
+          <Badge variant="purple">{t('ac_my_avatar')}</Badge>
         </div>
       )}
 
       {/* Premium badge */}
       {avatar.premium && (
         <div className="absolute top-2 left-2">
-          <Badge variant="warning">Pro</Badge>
+          <Badge variant="warning">{t('ac_pro')}</Badge>
         </div>
       )}
 
@@ -76,7 +78,7 @@ export function AvatarCard({ avatar, isFavorite, onClick, onFavorite, onUse }: A
           type="button"
           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-full p-1.5"
           onClick={(e) => { e.stopPropagation(); onFavorite() }}
-          aria-label="Ajouter aux favoris"
+          aria-label={t('ac_add_to_favorites')}
         >
           <Heart
             size={12}
@@ -93,7 +95,7 @@ export function AvatarCard({ avatar, isFavorite, onClick, onFavorite, onUse }: A
             size="sm"
             onClick={(e) => { e.stopPropagation(); onUse() }}
           >
-            Utiliser
+            {t('ac_use')}
           </Button>
         </div>
       )}

@@ -16,12 +16,13 @@ import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, Video, Film, Sparkles, Palette, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface ProjectType {
-  title:       string
-  description: string
+  titleKey:    string
+  descKey:     string
   href:        string
   icon:        React.ElementType
   iconColor:   string
@@ -30,32 +31,32 @@ interface ProjectType {
 
 const PROJECT_TYPES: ProjectType[] = [
   {
-    title:       'Faceless Video',
-    description: 'Script → voiceover → visuals → final video',
+    titleKey:    'npd_faceless_title',
+    descKey:     'npd_faceless_desc',
     href:        '/faceless/new',
     icon:        Video,
     iconColor:   'text-blue-400',
     iconBg:      'bg-blue-500/10',
   },
   {
-    title:       'AI Avatar',
-    description: 'Present with your AI clone on screen',
+    titleKey:    'npd_avatar_title',
+    descKey:     'npd_avatar_desc',
     href:        '/studio/new',
     icon:        Film,
     iconColor:   'text-rose-400',
     iconBg:      'bg-rose-500/10',
   },
   {
-    title:       'Motion Design',
-    description: 'Animate images into cinematic clips',
+    titleKey:    'npd_motion_title',
+    descKey:     'npd_motion_desc',
     href:        '/motion/new',
     icon:        Sparkles,
     iconColor:   'text-purple-400',
     iconBg:      'bg-purple-500/10',
   },
   {
-    title:       'Brand Kit',
-    description: 'Logo, palette, typography in one click',
+    titleKey:    'npd_brand_title',
+    descKey:     'npd_brand_desc',
     href:        '/brand',
     icon:        Palette,
     iconColor:   'text-cyan-400',
@@ -66,6 +67,7 @@ const PROJECT_TYPES: ProjectType[] = [
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export function NewProjectDropdown() {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const containerRef    = useRef<HTMLDivElement>(null)
 
@@ -111,7 +113,7 @@ export function NewProjectDropdown() {
         )}
       >
         <Plus size={15} />
-        New
+        {t('npd_new')}
         <ChevronDown
           size={13}
           className={cn('transition-transform duration-200', open && 'rotate-180')}
@@ -129,7 +131,7 @@ export function NewProjectDropdown() {
           )}
         >
           <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
-            Choose a project type
+            {t('npd_choose_type')}
           </p>
 
           <div className="p-1.5 space-y-0.5">
@@ -159,10 +161,10 @@ export function NewProjectDropdown() {
                   {/* Text */}
                   <div className="min-w-0">
                     <p className="font-display text-sm font-semibold text-foreground leading-tight">
-                      {type.title}
+                      {t(type.titleKey)}
                     </p>
                     <p className="font-mono text-xs text-[--text-muted] mt-0.5 truncate">
-                      {type.description}
+                      {t(type.descKey)}
                     </p>
                   </div>
                 </Link>

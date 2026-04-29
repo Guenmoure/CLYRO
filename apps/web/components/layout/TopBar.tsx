@@ -1,6 +1,7 @@
 'use client'
 
 import { Menu } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 import { NotificationPanel } from '@/components/shared/notification-panel'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
@@ -15,6 +16,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ onMobileMenuToggle }: TopBarProps) {
+  const { t } = useLanguage()
   return (
     <header className="h-14 shrink-0 bg-card/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 flex items-center justify-between gap-4 z-20">
       {/* Left: hamburger (mobile only) */}
@@ -23,7 +25,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
           type="button"
           onClick={onMobileMenuToggle}
           className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted text-[--text-muted] hover:text-foreground transition-colors"
-          aria-label="Open menu"
+          aria-label={t('tb_openMenu')}
         >
           <Menu size={18} />
         </button>

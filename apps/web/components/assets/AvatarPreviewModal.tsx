@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import type { StudioAvatar } from '@/lib/api'
 
 interface AvatarPreviewModalProps {
@@ -15,6 +16,7 @@ interface AvatarPreviewModalProps {
 }
 
 export function AvatarPreviewModal({ avatar, isOpen, onClose, onUse }: AvatarPreviewModalProps) {
+  const { t } = useLanguage()
   const [selectedLookId, setSelectedLookId] = useState<string | null>(null)
 
   if (!avatar) return null
@@ -27,11 +29,11 @@ export function AvatarPreviewModal({ avatar, isOpen, onClose, onUse }: AvatarPre
   const imageUrl   = activeLook?.preview_image_url ?? avatar.preview_image_url
 
   const CATEGORY_LABELS: Record<string, string> = {
-    professional: 'Professionnel',
-    lifestyle:    'Lifestyle',
-    ugc:          'UGC',
-    community:    'Communauté',
-    other:        'Autre',
+    professional: t('apm_category_professional'),
+    lifestyle:    t('apm_category_lifestyle'),
+    ugc:          t('apm_category_ugc'),
+    community:    t('apm_category_community'),
+    other:        t('apm_category_other'),
   }
 
   return (
@@ -100,7 +102,7 @@ export function AvatarPreviewModal({ avatar, isOpen, onClose, onUse }: AvatarPre
           {avatar.looks.length > 1 && (
             <div className="mt-6">
               <p className="font-mono text-xs text-[--text-muted] uppercase tracking-widest mb-3">
-                {avatar.looks.length} looks disponibles
+                {avatar.looks.length} {t('apm_looks_available')}
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {avatar.looks.map((look) => {
@@ -144,7 +146,7 @@ export function AvatarPreviewModal({ avatar, isOpen, onClose, onUse }: AvatarPre
               fullWidth
               onClick={() => { onUse?.(avatar); onClose() }}
             >
-              Utiliser dans un projet
+              {t('apm_use_in_project')}
             </Button>
           </div>
         </div>

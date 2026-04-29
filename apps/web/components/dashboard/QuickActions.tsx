@@ -8,13 +8,14 @@
 import { Film, Video, Sparkles, Palette, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 const ACTIONS = [
   {
     id:        'avatar',
     icon:      Film,
-    label:     'Avatar Studio',
-    tag:       'AI AVATAR',
+    labelKey:  'qa_avatar_label',
+    tagKey:    'qa_avatar_tag',
     href:      '/studio/new',
     gradient:  'from-pink-500/10 to-pink-500/3',
     iconBg:    'bg-pink-500/15',
@@ -24,8 +25,8 @@ const ACTIONS = [
   {
     id:        'faceless',
     icon:      Video,
-    label:     'Faceless Videos',
-    tag:       'AI STUDIO',
+    labelKey:  'qa_faceless_label',
+    tagKey:    'qa_faceless_tag',
     href:      '/faceless/new',
     gradient:  'from-blue-500/10 to-blue-500/3',
     iconBg:    'bg-blue-500/15',
@@ -35,8 +36,8 @@ const ACTIONS = [
   {
     id:        'motion',
     icon:      Sparkles,
-    label:     'Motion Design',
-    tag:       'ANIMATION',
+    labelKey:  'qa_motion_label',
+    tagKey:    'qa_motion_tag',
     href:      '/motion/new',
     gradient:  'from-purple-500/10 to-purple-500/3',
     iconBg:    'bg-purple-500/15',
@@ -46,18 +47,19 @@ const ACTIONS = [
   {
     id:        'brand',
     icon:      Palette,
-    label:     'Brand Kit',
-    tag:       'IDENTITY',
+    labelKey:  'qa_brand_label',
+    tagKey:    'qa_brand_tag',
     href:      '/brand',
     gradient:  'from-teal-500/10 to-teal-500/3',
     iconBg:    'bg-teal-500/15',
     iconColor: 'text-teal-500',
     tagColor:  'text-teal-500/60',
   },
-] as const
+]
 
 export function QuickActions() {
   const router = useRouter()
+  const { t } = useLanguage()
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -89,10 +91,10 @@ export function QuickActions() {
 
             {/* Tag + label */}
             <p className={cn('text-[10px] font-mono font-medium uppercase tracking-wider mb-1', a.tagColor)}>
-              {a.tag}
+              {t(a.tagKey)}
             </p>
             <p className="font-display text-sm font-semibold text-foreground">
-              {a.label}
+              {t(a.labelKey)}
             </p>
 
             {/* Arrow on hover */}

@@ -1,6 +1,9 @@
+'use client'
+
 import Link from 'next/link'
 import { Zap, ArrowRight, ShoppingCart } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +28,7 @@ interface CreditsBannerProps {
 }
 
 export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: CreditsBannerProps) {
+  const { t } = useLanguage()
   const creditsTotal = propTotal ?? getPlanTotal(plan)
   const creditsUsed  = Math.max(0, creditsTotal - creditsLeft)
 
@@ -41,10 +45,10 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
   const isStarter = ['free', 'starter'].includes(plan.toLowerCase())
 
   const contextLabel = isEmpty
-    ? 'No credits left — get a top-up to continue'
+    ? t('cb_no_credits')
     : isLow
-    ? `~${canDoStoryboard} storyboard video${canDoStoryboard !== 1 ? 's' : ''} remaining`
-    : `~${canDoFast} Fast 5-min video${canDoFast !== 1 ? 's' : ''} or ~${canDoStoryboard} Storyboard`
+    ? `~${canDoStoryboard} ${t('cb_storyboard')}${canDoStoryboard !== 1 ? 's' : ''} remaining`
+    : `~${canDoFast} ${t('cb_fast_video')}${canDoFast !== 1 ? 's' : ''} or ~${canDoStoryboard} ${t('cb_storyboard')}`
 
   return (
     <div className={cn(
@@ -62,7 +66,7 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-display text-sm font-semibold text-foreground">
-              {creditsLeft} credits
+              {creditsLeft} {t('cb_credits')}
             </span>
             <span className="font-mono text-xs text-[--text-muted]">/ {creditsTotal}</span>
             <span className="font-mono text-[10px] font-medium uppercase px-1.5 py-0.5 rounded bg-muted text-[--text-muted]">
@@ -96,14 +100,14 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
           href="/pricing"
           className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500 text-white hover:bg-blue-400 transition-colors"
         >
-          Upgrade <ArrowRight size={11} />
+          {t('cb_upgrade')} <ArrowRight size={11} />
         </Link>
       ) : (
         <Link
           href="/settings/billing"
           className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-[--text-secondary] hover:bg-muted/80 transition-colors"
         >
-          <ShoppingCart size={11} /> Top-up
+          <ShoppingCart size={11} /> {t('cb_topup')}
         </Link>
       )}
     </div>

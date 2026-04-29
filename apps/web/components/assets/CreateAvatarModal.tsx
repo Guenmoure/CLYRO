@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 type CreateTab = 'instant' | 'photo'
 
@@ -14,15 +15,16 @@ interface CreateAvatarModalProps {
   onClose: () => void
 }
 
-const INSTANT_REQUIREMENTS = [
-  'Durée min 2 min',
-  'Face visible, regard caméra',
-  'Fond neutre, bonne lumière',
-  'Format MP4 ou MOV',
-  'Max 200 MB',
-]
+const INSTANT_REQUIREMENT_KEYS = [
+  'cam_req_duration',
+  'cam_req_face',
+  'cam_req_lighting',
+  'cam_req_format',
+  'cam_req_size',
+] as const
 
 export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
+  const { t } = useLanguage()
   const [activeTab,     setActiveTab]     = useState<CreateTab>('instant')
   const [videoFile,     setVideoFile]     = useState<File | null>(null)
   const [photoFile,     setPhotoFile]     = useState<File | null>(null)
@@ -55,13 +57,13 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Créer mon avatar"
+      title={t('cam_title')}
       size="lg"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="ghost" onClick={onClose}>{t('cam_cancel')}</Button>
           <Button variant="primary" disabled={!uploadedFile} leftIcon={<Sparkles size={14} />}>
-            Créer mon avatar
+            {t('cam_title')}
           </Button>
         </>
       }
@@ -71,8 +73,8 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
         {/* Tabs */}
         <div className="flex gap-1 bg-muted rounded-xl p-1">
           {([
-            { key: 'instant', label: 'Instant Avatar', icon: Video   },
-            { key: 'photo',   label: 'Photo Avatar',   icon: Upload  },
+            { key: 'instant', label: t('cam_tab_instant'), icon: Video   },
+            { key: 'photo',   label: t('cam_tab_photo'),   icon: Upload  },
           ] as const).map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -130,7 +132,7 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
                     size="sm"
                     onClick={() => videoInputRef.current?.click()}
                   >
-                    Changer la vidéo
+                    {t('cam_change_video')}
                   </Button>
                 </div>
               ) : (
@@ -140,10 +142,10 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
                   </div>
                   <div>
                     <p className="font-display text-base text-foreground">
-                      Enregistre 2 minutes de toi en train de parler
+                      {t('cam_instant_headline')}
                     </p>
                     <p className="font-body text-sm text-[--text-secondary] mt-1">
-                      Face à la caméra · Fond neutre · Bonne lumière
+                      {t('cam_instant_hint')}
                     </p>
                   </div>
                   <Button
@@ -151,10 +153,10 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
                     size="sm"
                     onClick={() => videoInputRef.current?.click()}
                   >
-                    Choisir une vidéo
+                    {t('cam_choose_video')}
                   </Button>
                   <p className="font-mono text-xs text-[--text-muted]">
-                    ou glisse et dépose ici
+                    {t('cam_drag_drop')}
                   </p>
                 </div>
               )}
@@ -162,17 +164,17 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
 
             {/* Requirements */}
             <div className="space-y-2">
-              {INSTANT_REQUIREMENTS.map((req) => (
-                <div key={req} className="flex items-center gap-2">
+              {INSTANT_REQUIREMENT_KEYS.map((key) => (
+                <div key={key} className="flex items-center gap-2">
                   <Check size={12} className="text-success shrink-0" />
-                  <p className="font-body text-sm text-[--text-secondary]">{req}</p>
+                  <p className="font-body text-sm text-[--text-secondary]">{t(key)}</p>
                 </div>
               ))}
             </div>
 
             {/* Plan notice */}
             <div className="flex justify-center">
-              <Badge variant="purple" dot>Creator &amp; Studio uniquement</Badge>
+              <Badge variant="purple" dot>{t('cam_plan_notice')}</Badge>
             </div>
           </div>
         ) : (
@@ -214,10 +216,10 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
                   </div>
                   <div>
                     <p className="font-display text-base text-foreground">
-                      Génère un avatar depuis une photo de profil
+                      {t('cam_photo_headline')}
                     </p>
                     <p className="font-body text-sm text-[--text-secondary] mt-1">
-                      Portrait haute résolution recommandé
+                      {t('cam_photo_hint')}
                     </p>
                   </div>
                 </div>
@@ -226,8 +228,7 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
 
             <div className="rounded-xl bg-muted border border-border px-4 py-3">
               <p className="font-body text-xs text-[--text-secondary]">
-                ⚠️ Les résultats photo sont moins naturels qu'un Instant Avatar.
-                Pour une meilleure qualité, enregistre une vidéo de 2 minutes.
+                {t('cam_photo_quality_notice')}
               </p>
             </div>
           </div>

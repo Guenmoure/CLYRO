@@ -135,7 +135,7 @@ function StepBrief({
         disabled={!canContinue}
         className="bg-clyro-purple text-white font-display font-semibold px-6 py-2.5 rounded-xl disabled:opacity-40 hover:opacity-90 transition-opacity text-sm"
       >
-        Suivant →
+        {t('md_next')}
       </button>
     </div>
   )
@@ -221,7 +221,7 @@ function StepBrand({
         {/* Primary color */}
         <div>
           <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2 block">
-            Couleur principale *
+            {t('md_primaryColor')}
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -237,7 +237,7 @@ function StepBrand({
               className="w-32 bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-mono text-sm focus:outline-none focus:border-clyro-purple"
             />
             <span className={`text-xs font-mono px-2 py-1 rounded-lg ${wcagOk ? 'bg-green-900/40 text-green-400' : 'bg-amber-900/40 text-amber-400'}`}>
-              {wcagOk ? `✓ WCAG AA (${contrastRatio.toFixed(1)}:1)` : `⚠ Contraste faible (${contrastRatio.toFixed(1)}:1)`}
+              {wcagOk ? `✓ WCAG AA (${contrastRatio.toFixed(1)}:1)` : `⚠ ${t('md_lowContrast')} (${contrastRatio.toFixed(1)}:1)`}
             </span>
           </div>
         </div>
@@ -245,7 +245,7 @@ function StepBrand({
         {/* Secondary */}
         <div>
           <label className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2 block">
-            Couleur secondaire (optionnel)
+            {t('md_secondaryColor')}
           </label>
           <div className="flex items-center gap-3">
             <input

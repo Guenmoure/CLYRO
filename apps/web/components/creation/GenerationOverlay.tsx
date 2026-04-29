@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { SpinnerAI } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -34,12 +35,13 @@ export function GenerationOverlay({
   completedSteps,
   onCancel,
 }: GenerationOverlayProps) {
+  const { t } = useLanguage()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [cancelling,  setCancelling]  = useState(false)
 
   if (!visible) return null
 
-  const stage = stages[Math.min(currentStage, stages.length - 1)] ?? { main: 'Génération…', sub: '' }
+  const stage = stages[Math.min(currentStage, stages.length - 1)] ?? { main: t('go_generating'), sub: '' }
   const pct = Math.min(100, Math.max(0, Math.round(progress)))
 
   async function handleConfirmCancel() {
@@ -112,7 +114,7 @@ export function GenerationOverlay({
           onClick={() => setConfirmOpen(true)}
           className="mt-4 text-[--text-muted] hover:text-foreground"
         >
-          Annuler la génération
+          {t('go_cancel_btn')}
         </Button>
       </div>
 
@@ -120,20 +122,20 @@ export function GenerationOverlay({
       <Modal
         isOpen={confirmOpen}
         onClose={() => !cancelling && setConfirmOpen(false)}
-        title="Annuler la génération ?"
+        title={t('go_cancel_title')}
         size="sm"
       >
         <Modal.Body>
           <p className="font-body text-sm text-[--text-secondary]">
-            La progression sera perdue. Tu pourras relancer la génération depuis le début.
+            {t('go_cancel_body')}
           </p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={cancelling}>
-            Continuer
+            {t('go_continue')}
           </Button>
           <Button variant="danger" loading={cancelling} onClick={handleConfirmCancel}>
-            Annuler quand même
+            {t('go_cancel_anyway')}
           </Button>
         </Modal.Footer>
       </Modal>

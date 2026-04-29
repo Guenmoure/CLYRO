@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { Code2, Zap, BookOpen, Check, Loader2 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 import { toast } from '@/components/ui/toast'
 
 export function ApiSection() {
   const supabase = createBrowserClient()
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [joined, setJoined] = useState(false)
   const [joining, setJoining] = useState(false)
@@ -28,9 +30,9 @@ export function ApiSection() {
       await new Promise((r) => setTimeout(r, 400))
       localStorage.setItem('clyro_api_waitlist', 'true')
       setJoined(true)
-      toast.success('Tu es sur la liste d\'attente API')
+      toast.success(t('api_waitlist_success'))
     } catch {
-      toast.error('Erreur')
+      toast.error(t('api_error'))
     } finally {
       setJoining(false)
     }
@@ -41,7 +43,7 @@ export function ApiSection() {
       <div>
         <h2 className="font-display text-2xl font-bold text-foreground">API</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Intègre Clyro dans tes propres outils et workflows.
+          {t('api_description')}
         </p>
       </div>
 
@@ -58,21 +60,20 @@ export function ApiSection() {
               <div className="flex items-center gap-2">
                 <h3 className="font-display text-xl font-bold text-foreground">API Clyro</h3>
                 <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-muted border border-border text-[--text-muted]">
-                  Bientôt
+                  {t('api_coming_soon_badge')}
                 </span>
               </div>
               <p className="font-body text-sm text-[--text-secondary] max-w-md">
-                Génère des vidéos Faceless, Motion et Brand programmatiquement.
-                Parfait pour alimenter ton CRM, ton outil no-code ou ton app mobile.
+                {t('api_hero_description')}
               </p>
             </div>
           </div>
 
           {/* Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <Feature icon={Zap}      title="Génération instantanée" body="Endpoint REST pour lancer une vidéo en 1 appel." />
-            <Feature icon={BookOpen} title="Webhooks"                body="Notifié dès qu'une vidéo est prête." />
-            <Feature icon={Code2}    title="SDKs"                    body="Client officiel TypeScript + Python." />
+            <Feature icon={Zap}      title={t('api_feature_instant_title')} body={t('api_feature_instant_body')} />
+            <Feature icon={BookOpen} title={t('api_feature_webhooks_title')} body={t('api_feature_webhooks_body')} />
+            <Feature icon={Code2}    title={t('api_feature_sdks_title')}     body={t('api_feature_sdks_body')} />
           </div>
 
           {/* CTA */}
@@ -87,9 +88,9 @@ export function ApiSection() {
                   : 'bg-gray-900 dark:bg-foreground dark:text-gray-950 text-white hover:opacity-90 disabled:opacity-60'
               }`}
             >
-              {joining ? <><Loader2 size={13} className="animate-spin" /> En cours…</> :
-                joined   ? <><Check size={13} /> Tu es inscrit</> :
-                'Rejoindre la liste d\'attente'}
+              {joining ? <><Loader2 size={13} className="animate-spin" /> {t('api_joining')}</> :
+                joined   ? <><Check size={13} /> {t('api_joined')}</> :
+                t('api_join_waitlist')}
             </button>
             {email && (
               <p className="font-mono text-xs text-[--text-secondary] truncate">
@@ -108,7 +109,7 @@ export function ApiSection() {
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500/60" />
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
           </div>
-          <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">Preview · Bientôt</span>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">{t('api_preview_badge')}</span>
         </div>
         <pre className="px-4 py-4 font-mono text-[11px] leading-relaxed text-white/80 overflow-x-auto">
 {`import { Clyro } from '@clyro/sdk'

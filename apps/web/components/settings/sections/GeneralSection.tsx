@@ -53,9 +53,9 @@ export function GeneralSection() {
       localStorage.setItem('clyro_workspace_name', workspaceName.trim())
       localStorage.setItem('clyro_workspace_desc', workspaceDesc.trim())
       setInitials(workspaceName.charAt(0).toUpperCase() || '?')
-      toast.success('Workspace updated')
+      toast.success(t('gen_workspace_updated'))
     } catch {
-      toast.error('Save error')
+      toast.error(t('gen_save_error'))
     } finally {
       setSaving(false)
     }
@@ -70,13 +70,13 @@ export function GeneralSection() {
       <div>
         <h2 className="font-display text-2xl font-bold text-foreground">{t('generalSettings')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Your workspace identity. Used in emails and shared pages.
+          {t('gen_description')}
         </p>
       </div>
 
       {/* Avatar */}
       <div className="space-y-2">
-        <p className="font-body text-sm font-semibold text-foreground">Workspace logo</p>
+        <p className="font-body text-sm font-semibold text-foreground">{t('gen_workspace_logo')}</p>
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-grad-primary flex items-center justify-center shrink-0 shadow-sm">
             <span className="font-mono text-xl font-bold text-white">{initials}</span>
@@ -88,9 +88,9 @@ export function GeneralSection() {
               title="Coming soon"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-body font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Camera size={13} /> Upload logo
+              <Camera size={13} /> {t('gen_upload_logo')}
             </button>
-            <p className="font-body text-xs text-[--text-muted]">PNG, JPG or SVG · max 4 MB · Coming soon.</p>
+            <p className="font-body text-xs text-[--text-muted]">{t('gen_logo_hint')}</p>
           </div>
         </div>
       </div>
@@ -98,7 +98,7 @@ export function GeneralSection() {
       {/* Name */}
       <div className="space-y-2">
         <label htmlFor="workspace-name" className="font-body text-sm font-semibold text-foreground">
-          Workspace name
+          {t('gen_workspace_name')}
         </label>
         <input
           id="workspace-name"
@@ -107,18 +107,18 @@ export function GeneralSection() {
           value={workspaceName}
           onChange={(e) => setWorkspaceName(e.target.value)}
           className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-          placeholder="Ex. My Studio, Acme, etc."
+          placeholder={t('gen_workspace_name_placeholder')}
           maxLength={60}
         />
         <p className="font-body text-xs text-[--text-muted]">
-          {workspaceName.length}/60 characters.
+          {workspaceName.length}/60 {t('gen_characters')}
         </p>
       </div>
 
       {/* Description */}
       <div className="space-y-2">
         <label htmlFor="workspace-desc" className="font-body text-sm font-semibold text-foreground">
-          Description
+          {t('gen_description_label')}
         </label>
         <textarea
           id="workspace-desc"
@@ -127,10 +127,10 @@ export function GeneralSection() {
           rows={3}
           maxLength={200}
           className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors resize-none"
-          placeholder="A few words to describe your team or project."
+          placeholder={t('gen_description_placeholder')}
         />
         <p className="font-body text-xs text-[--text-muted]">
-          {workspaceDesc.length}/200 characters.
+          {workspaceDesc.length}/200 {t('gen_characters')}
         </p>
       </div>
 
@@ -153,13 +153,13 @@ export function GeneralSection() {
         </div>
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-2">
-            <p className="font-body text-sm font-semibold text-foreground">Invite teammates</p>
+            <p className="font-body text-sm font-semibold text-foreground">{t('gen_invite_teammates')}</p>
             <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-muted border border-border text-[--text-muted]">
-              Coming soon
+              {t('gen_coming_soon_badge')}
             </span>
           </div>
           <p className="font-body text-xs text-[--text-secondary]">
-            Collaborate on brand kits and videos, share templates and cloned voices.
+            {t('gen_invite_desc')}
           </p>
         </div>
       </section>

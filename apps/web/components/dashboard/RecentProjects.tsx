@@ -33,17 +33,17 @@ const MODULE_LABELS: Record<string, string> = {
   brand:    'Brand Kit',
 }
 
-function formatRelativeDate(dateStr: string): string {
+function formatRelativeDate(dateStr: string, t: (key: string) => string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const days  = Math.floor(diff / 86_400_000)
   const hours = Math.floor(diff / 3_600_000)
   const mins  = Math.floor(diff / 60_000)
   if (days > 30)  return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-  if (days > 1)   return `${days} days ago`
-  if (days === 1) return 'Yesterday'
-  if (hours > 0)  return `${hours}h ago`
-  if (mins > 0)   return `${mins}m ago`
-  return 'just now'
+  if (days > 1)   return `${days} ${t('rp_days_ago')}`
+  if (days === 1) return t('rp_yesterday')
+  if (hours > 0)  return `${hours}h ${t('rp_ago')}`
+  if (mins > 0)   return `${mins}m ${t('rp_ago')}`
+  return t('rp_just_now')
 }
 
 const PROCESSING_STATUSES = new Set(['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly'])
@@ -224,7 +224,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="font-display text-sm text-foreground truncate">
-          {project.title ?? 'Untitled project'}
+          {project.title ?? t('rp_untitled')}
         </p>
         <div className="flex items-center gap-2 mt-1">
           <span className={cn('inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded', moduleColor)}>
@@ -233,18 +233,18 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
           </span>
           <span className="text-xs text-[--text-muted]">·</span>
           <span className="text-xs font-body text-[--text-muted]">
-            {formatRelativeDate(project.created_at)}
+            {formatRelativeDate(project.created_at, t)}
           </span>
           {isProcessing && (
             <>
               <span className="text-xs text-[--text-muted]">·</span>
-              <span className="text-xs font-mono text-blue-400">processing…</span>
+              <span className="text-xs font-mono text-blue-400">{t('rp_processing')}</span>
             </>
           )}
           {isError && (
             <>
               <span className="text-xs text-[--text-muted]">·</span>
-              <span className="text-xs font-mono text-error">error</span>
+              <span className="text-xs font-mono text-error">{t('rp_error')}</span>
             </>
           )}
         </div>
@@ -267,7 +267,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
           <button
             type="button"
             onClick={() => onMenuToggle(!menuOpen)}
-            aria-label="Project options"
+            aria-label={t('rp_project_options')}
             className="w-8 h-8 rounded-full flex items-center justify-center text-[--text-muted] hover:bg-border hover:text-foreground transition-colors"
           >
             <MoreHorizontal size={16} />
@@ -282,7 +282,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
                   onClick={() => onMenuToggle(false)}
                   className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors"
                 >
-                  <ExternalLink size={13} /> Open in new tab
+                  <ExternalLink size={13} /> {t('rp_open_new_tab')}
                 </a>
               )}
               {project.output_url && (
@@ -292,7 +292,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
                   onClick={() => onMenuToggle(false)}
                   className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted hover:text-foreground transition-colors"
                 >
-                  <Download size={13} /> Download
+                  <Download size={13} /> {t('rp_download')}
                 </a>
               )}
               <button

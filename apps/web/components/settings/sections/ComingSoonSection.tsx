@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 
 interface ComingSoonSectionProps {
   title: string
@@ -6,6 +7,7 @@ interface ComingSoonSectionProps {
 }
 
 export function ComingSoonSection({ title, description }: ComingSoonSectionProps) {
+  const { t } = useLanguage()
   return (
     <div className="max-w-2xl space-y-8">
       <div>
@@ -20,7 +22,7 @@ export function ComingSoonSection({ title, description }: ComingSoonSectionProps
           </div>
         </div>
         <p className="font-display text-lg font-semibold text-foreground mb-2">
-          Bientôt disponible
+          {t('cs_coming_soon')}
         </p>
         <p className="font-body text-sm text-[--text-secondary] max-w-md">
           {description}

@@ -5,10 +5,12 @@ import { PenLine, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { createBrowserClient } from '@/lib/supabase'
 import { DraftCard, type DbDraftMeta } from './DraftCard'
+import { useLanguage } from '@/lib/i18n'
 
 const PREVIEW_LIMIT = 4
 
 export function DraftsSection() {
+  const { t } = useLanguage()
   const [drafts,     setDrafts]     = useState<DbDraftMeta[]>([])
   const [totalCount, setTotalCount] = useState(0)
 
@@ -54,7 +56,7 @@ export function DraftsSection() {
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <PenLine size={15} className="text-warning" strokeWidth={1.8} />
-        <h2 className="font-display text-base font-semibold text-foreground">Brouillons</h2>
+        <h2 className="font-display text-base font-semibold text-foreground">{t('ds_drafts')}</h2>
         <span className="font-mono text-[11px] font-bold text-warning bg-warning/10 border border-warning/20 rounded-full px-2 py-0.5 leading-none">
           {totalCount}
         </span>
@@ -64,7 +66,7 @@ export function DraftsSection() {
             href="/drafts"
             className="ml-auto flex items-center gap-1 text-xs font-medium text-[--text-muted] hover:text-foreground transition-colors"
           >
-            Voir tous
+            {t('ds_see_all')}
             <ArrowRight size={12} />
           </Link>
         )}
@@ -89,7 +91,7 @@ export function DraftsSection() {
             className="inline-flex items-center gap-1.5 text-xs font-medium text-[--text-muted] border border-border rounded-xl px-4 py-2 hover:bg-muted hover:text-foreground transition-colors"
           >
             <PenLine size={12} />
-            {totalCount - PREVIEW_LIMIT} brouillon{totalCount - PREVIEW_LIMIT > 1 ? 's' : ''} supplémentaire{totalCount - PREVIEW_LIMIT > 1 ? 's' : ''}
+            {totalCount - PREVIEW_LIMIT} {totalCount - PREVIEW_LIMIT > 1 ? t('ds_drafts_plural') : t('ds_draft_singular')} {totalCount - PREVIEW_LIMIT > 1 ? t('ds_additional_plural') : t('ds_additional_singular')}
             <ArrowRight size={12} />
           </Link>
         </div>

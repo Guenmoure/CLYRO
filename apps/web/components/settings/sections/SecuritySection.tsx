@@ -38,23 +38,23 @@ export function SecuritySection() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
     if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters')
+      toast.error(t('sec_password_too_short'))
       return
     }
     if (newPassword !== confirmPass) {
-      toast.error('Passwords do not match')
+      toast.error(t('sec_passwords_mismatch'))
       return
     }
     setSaving(true)
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
-      toast.success('Password changed')
+      toast.success(t('sec_password_changed'))
       setNewPassword('')
       setConfirmPass('')
       setShowForm(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error')
+      toast.error(err instanceof Error ? err.message : t('sec_error'))
     } finally {
       setSaving(false)
     }
@@ -69,10 +69,10 @@ export function SecuritySection() {
       })
       if (error) throw error
       setResetSent(true)
-      toast.success('Email sent')
+      toast.success(t('sec_email_sent'))
       setTimeout(() => setResetSent(false), 10_000)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error')
+      toast.error(err instanceof Error ? err.message : t('sec_error'))
     } finally {
       setResetting(false)
     }
@@ -89,7 +89,7 @@ export function SecuritySection() {
       <div>
         <h2 className="font-display text-2xl font-bold text-foreground">{t('securitySettings')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Password, authentication and active sessions.
+          {t('sec_description')}
         </p>
       </div>
 
@@ -100,9 +100,9 @@ export function SecuritySection() {
             <Shield size={16} className="text-emerald-500" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-display font-semibold text-foreground">Password</p>
+            <p className="font-display font-semibold text-foreground">{t('sec_password')}</p>
             <p className="font-body text-xs text-[--text-secondary]">
-              Account associated with <span className="font-mono">{email}</span>
+              {t('sec_account_associated')} <span className="font-mono">{email}</span>
             </p>
           </div>
         </header>
@@ -115,7 +115,7 @@ export function SecuritySection() {
                 onClick={() => setShowForm(true)}
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-body font-medium text-foreground hover:bg-muted transition-colors"
               >
-                Change password
+                {t('sec_change_password')}
               </button>
               <button
                 type="button"
@@ -128,9 +128,9 @@ export function SecuritySection() {
                     : 'bg-background border-border text-[--text-secondary] hover:text-foreground disabled:opacity-60',
                 )}
               >
-                {resetting ? <><Loader2 size={13} className="animate-spin" /> Sending…</> :
-                  resetSent ? <><Check size={13} /> Email sent</> :
-                  <><Mail size={13} /> Receive link via email</>}
+                {resetting ? <><Loader2 size={13} className="animate-spin" /> {t('sec_sending')}</> :
+                  resetSent ? <><Check size={13} /> {t('sec_email_sent_btn')}</> :
+                  <><Mail size={13} /> {t('sec_receive_link')}</>}
               </button>
             </div>
           ) : (
@@ -146,7 +146,7 @@ export function SecuritySection() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="At least 8 characters"
+                  placeholder={t('sec_at_least_8_chars')}
                   minLength={8}
                   required
                 />
@@ -155,13 +155,13 @@ export function SecuritySection() {
                     <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
                       <div className={cn('h-full rounded-full transition-all', strength.color)} style={{ width: `${strength.percent}%` }} />
                     </div>
-                    <span className={cn('font-mono text-[10px] uppercase', strength.textColor)}>{strength.label}</span>
+                    <span className={cn('font-mono text-[10px] uppercase', strength.textColor)}>{strength.labelKey ? t(strength.labelKey) : ''}</span>
                   </div>
                 )}
               </div>
               <div>
                 <label htmlFor="confirm-pass" className="font-body text-xs font-semibold text-foreground mb-1.5 block">
-                  Confirm
+                  {t('sec_confirm')}
                 </label>
                 <input
                   id="confirm-pass"
@@ -170,7 +170,7 @@ export function SecuritySection() {
                   value={confirmPass}
                   onChange={(e) => setConfirmPass(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Retype the same password"
+                  placeholder={t('sec_retype_password')}
                   required
                 />
               </div>
@@ -203,14 +203,14 @@ export function SecuritySection() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-display font-semibold text-foreground">
-              Two-factor authentication
+              {t('sec_2fa')}
             </p>
             <p className="font-body text-xs text-[--text-secondary]">
-              An extra layer of security via an authentication app.
+              {t('sec_2fa_desc')}
             </p>
           </div>
           <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-muted border border-border text-[--text-muted] shrink-0">
-            Coming soon
+            {t('sec_coming_soon_badge')}
           </span>
         </header>
         <div className="p-5 flex items-center gap-3">
@@ -218,7 +218,7 @@ export function SecuritySection() {
             <div className="w-11 h-6 rounded-full bg-muted border border-border" />
             <div className="absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-background shadow" />
           </div>
-          <p className="font-body text-sm text-[--text-secondary]">2FA will be activatable very soon from this screen.</p>
+          <p className="font-body text-sm text-[--text-secondary]">{t('sec_2fa_soon')}</p>
         </div>
       </section>
 
@@ -226,9 +226,9 @@ export function SecuritySection() {
       <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
         <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
         <div className="space-y-1 min-w-0">
-          <p className="font-body text-sm text-foreground font-medium">Tip</p>
+          <p className="font-body text-sm text-foreground font-medium">{t('sec_tip_title')}</p>
           <p className="font-body text-xs text-[--text-secondary]">
-            Use a unique password + a password manager (1Password, Bitwarden). Never reuse a password from another service.
+            {t('sec_tip_body')}
           </p>
         </div>
       </div>
@@ -237,9 +237,9 @@ export function SecuritySection() {
       <div className="rounded-2xl border border-dashed border-border bg-muted/30 px-5 py-4 flex items-start gap-3">
         <ShieldCheck size={18} className="text-[--text-muted] shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="font-body text-sm text-foreground">Active sessions</p>
+          <p className="font-body text-sm text-foreground">{t('sec_active_sessions')}</p>
           <p className="font-body text-xs text-[--text-secondary] mt-0.5">
-            List of connected devices and remote revocation. Coming soon.
+            {t('sec_sessions_desc')}
           </p>
         </div>
       </div>
@@ -249,8 +249,8 @@ export function SecuritySection() {
 
 // ── Password strength ────────────────────────────────────────────────────
 
-function getPasswordStrength(pass: string): { percent: number; label: string; color: string; textColor: string } {
-  if (!pass) return { percent: 0, label: '', color: '', textColor: '' }
+function getPasswordStrength(pass: string): { percent: number; labelKey: string; color: string; textColor: string } {
+  if (!pass) return { percent: 0, labelKey: '', color: '', textColor: '' }
   let score = 0
   if (pass.length >= 8)   score += 25
   if (pass.length >= 12)  score += 15
@@ -258,7 +258,7 @@ function getPasswordStrength(pass: string): { percent: number; label: string; co
   if (/[0-9]/.test(pass)) score += 20
   if (/[^A-Za-z0-9]/.test(pass)) score += 25
 
-  if (score < 40) return { percent: 25,  label: 'Weak', color: 'bg-error',   textColor: 'text-error'   }
-  if (score < 70) return { percent: 60,  label: 'Fair',  color: 'bg-amber-500', textColor: 'text-amber-500' }
-  return           { percent: 100, label: 'Strong',   color: 'bg-emerald-500', textColor: 'text-emerald-500' }
+  if (score < 40) return { percent: 25,  labelKey: 'sec_strength_weak',   color: 'bg-error',       textColor: 'text-error'       }
+  if (score < 70) return { percent: 60,  labelKey: 'sec_strength_fair',   color: 'bg-amber-500',   textColor: 'text-amber-500'   }
+  return           { percent: 100, labelKey: 'sec_strength_strong', color: 'bg-emerald-500', textColor: 'text-emerald-500' }
 }

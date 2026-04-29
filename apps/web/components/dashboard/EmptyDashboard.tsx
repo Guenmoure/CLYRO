@@ -49,14 +49,14 @@ export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
         {firstName ? `${t('welcomeToClyro')}, ${firstName} 👋` : t('welcomeToClyro')}
       </h3>
       <p className="font-body text-sm text-[--text-secondary] max-w-sm mt-2 leading-relaxed">
-        Paste a script, choose a style, and CLYRO generates your complete video in under 5 minutes.
+        {t('ed_subtitle')}
       </p>
 
       {/* ── Script textarea ── */}
       <div className="mt-6 w-full max-w-md">
         <textarea
           data-empty-script
-          placeholder="Paste your script here to get started..."
+          placeholder={t('ed_textarea_placeholder')}
           rows={3}
           className={cn(
             'w-full px-4 py-3 rounded-xl font-body text-sm resize-none',
@@ -75,7 +75,7 @@ export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
 
         <div className="flex items-center justify-between mt-2">
           <span className="font-mono text-[10px] text-[--text-muted]">
-            ⌘ + Enter to generate
+            {t('ed_shortcut_hint')}
           </span>
           <button
             type="button"
@@ -83,28 +83,28 @@ export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 hover:shadow-lg transition-all"
           >
             <Zap size={12} />
-            Generate my video
+            {t('ed_generate_btn')}
           </button>
         </div>
       </div>
 
       {/* ── Secondary options ── */}
       <p className="font-mono text-xs text-[--text-muted] mt-8">
-        or choose directly:
+        {t('ed_or_choose')}
       </p>
       <div className="flex flex-wrap justify-center gap-2 mt-3">
         {[
-          { label: 'Avatar Studio', href: '/studio/new'  },
-          { label: 'Motion Design', href: '/motion/new'  },
-          { label: 'Brand Kit',     href: '/brand'       },
+          { labelKey: 'ed_avatar_studio', href: '/studio/new'  },
+          { labelKey: 'ed_motion_design', href: '/motion/new'  },
+          { labelKey: 'ed_brand_kit',     href: '/brand'       },
         ].map(opt => (
           <button
-            key={opt.label}
+            key={opt.labelKey}
             type="button"
             onClick={() => router.push(opt.href)}
             className="px-3 py-1.5 rounded-xl text-xs font-body border border-border text-[--text-secondary] hover:border-border/80 hover:text-foreground hover:bg-muted transition-colors"
           >
-            {opt.label}
+            {t(opt.labelKey)}
           </button>
         ))}
       </div>

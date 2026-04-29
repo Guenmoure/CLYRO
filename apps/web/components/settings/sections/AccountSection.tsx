@@ -53,9 +53,9 @@ export function AccountSection() {
         .update({ full_name: full })
         .eq('id', userId)
       if (error) throw error
-      toast.success('Profile updated')
+      toast.success(t('acc_profile_updated'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Save error')
+      toast.error(err instanceof Error ? err.message : t('acc_save_error'))
     } finally {
       setSaving(false)
     }
@@ -70,10 +70,10 @@ export function AccountSection() {
       })
       if (error) throw error
       setResetSent(true)
-      toast.success('Email sent')
+      toast.success(t('acc_email_sent'))
       setTimeout(() => setResetSent(false), 10_000)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error')
+      toast.error(err instanceof Error ? err.message : t('acc_error'))
     } finally {
       setResetting(false)
     }
@@ -88,12 +88,12 @@ export function AccountSection() {
       <div>
         <h2 className="font-display text-2xl font-bold text-foreground">{t('accountSettings')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Manage your personal information and security.
+          {t('acc_description')}
         </p>
       </div>
 
       {/* Avatar */}
-      <Field label="Profile photo">
+      <Field label={t('acc_profile_photo')}>
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-grad-primary flex items-center justify-center shrink-0 shadow-sm">
             <span className="font-mono text-xl font-bold text-white">{initials}</span>
@@ -105,16 +105,16 @@ export function AccountSection() {
               title="Coming soon"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-body font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Camera size={13} /> Upload photo
+              <Camera size={13} /> {t('acc_upload_photo')}
             </button>
-            <p className="font-body text-xs text-[--text-muted]">Max 4 MB · Coming soon.</p>
+            <p className="font-body text-xs text-[--text-muted]">{t('acc_photo_hint')}</p>
           </div>
         </div>
       </Field>
 
       {/* Name */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="First name" htmlFor="account-first-name">
+        <Field label={t('acc_first_name')} htmlFor="account-first-name">
           <input
             id="account-first-name"
             name="first_name"
@@ -122,10 +122,10 @@ export function AccountSection() {
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-            placeholder="Your first name"
+            placeholder={t('acc_first_name_placeholder')}
           />
         </Field>
-        <Field label="Last name" htmlFor="account-last-name">
+        <Field label={t('acc_last_name')} htmlFor="account-last-name">
           <input
             id="account-last-name"
             name="last_name"
@@ -133,7 +133,7 @@ export function AccountSection() {
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
-            placeholder="Your last name"
+            placeholder={t('acc_last_name_placeholder')}
           />
         </Field>
       </div>
@@ -150,7 +150,7 @@ export function AccountSection() {
       </div>
 
       {/* Email */}
-      <Field label="Email">
+      <Field label={t('acc_email')}>
         <p className="font-body text-sm text-foreground mb-2">{email}</p>
         <button
           type="button"
@@ -158,12 +158,12 @@ export function AccountSection() {
           title="Coming soon"
           className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-body font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Change email
+          {t('acc_change_email')}
         </button>
       </Field>
 
       {/* Password */}
-      <Field label="Password">
+      <Field label={t('acc_password')}>
         <button
           type="button"
           onClick={handlePasswordReset}
@@ -175,29 +175,29 @@ export function AccountSection() {
           }`}
         >
           {resetting ? (
-            <><Loader2 size={13} className="animate-spin" /> Sending…</>
+            <><Loader2 size={13} className="animate-spin" /> {t('acc_sending')}</>
           ) : resetSent ? (
-            <><Check size={13} /> Email sent</>
+            <><Check size={13} /> {t('acc_email_sent_btn')}</>
           ) : (
-            'Change password'
+            t('acc_change_password')
           )}
         </button>
         <p className="font-body text-xs text-[--text-muted] mt-2">
-          A secure link will be sent to <span className="font-mono">{email}</span>. Valid for 1 hour.
+          {t('acc_password_reset_hint')} <span className="font-mono">{email}</span>. {t('acc_valid_1h')}
         </p>
       </Field>
 
       {/* 2FA (stub) */}
-      <Field label="Two-factor authentication">
+      <Field label={t('acc_2fa')}>
         <div className="flex items-center gap-3">
           <div className="relative inline-flex items-center">
             <div className="w-10 h-5 rounded-full bg-muted border border-border" />
             <div className="absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-background shadow" />
           </div>
-          <span className="font-body text-sm text-[--text-muted]">Disabled</span>
+          <span className="font-body text-sm text-[--text-muted]">{t('acc_2fa_disabled')}</span>
         </div>
         <p className="font-body text-xs text-[--text-muted] mt-2">
-          2FA is not yet available on your account.
+          {t('acc_2fa_unavailable')}
         </p>
       </Field>
     </div>

@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import type { ClyroVoice } from '@/lib/api'
 
 // ── Waveform bars ──────────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ interface VoicePreviewModalProps {
 }
 
 export function VoicePreviewModal({ voice, isOpen, onClose, onUse }: VoicePreviewModalProps) {
+  const { t } = useLanguage()
   const audioRef    = useRef<HTMLAudioElement | null>(null)
   const [playing,   setPlaying]   = useState(false)
   const [progress,  setProgress]  = useState(0)
@@ -137,16 +139,16 @@ export function VoicePreviewModal({ voice, isOpen, onClose, onUse }: VoicePrevie
           </div>
         ) : (
           <div className="bg-muted rounded-2xl border border-border p-4 text-center">
-            <p className="font-body text-sm text-[--text-muted]">Aucun aperçu audio disponible</p>
+            <p className="font-body text-sm text-[--text-muted]">{t('vpm_no_preview')}</p>
           </div>
         )}
 
         {/* Stats grid */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Catégorie',  value: voice.category  },
-            { label: 'Langue',     value: voice.language ?? '—'  },
-            { label: 'Style',      value: voice.useCase   },
+            { label: t('vpm_category'),  value: voice.category  },
+            { label: t('vpm_language'),  value: voice.language ?? '—'  },
+            { label: t('vpm_style'),     value: voice.useCase   },
           ].map(({ label, value }) => (
             <div key={label} className="bg-muted rounded-xl p-3 text-center">
               <p className="font-mono text-[10px] text-[--text-muted] uppercase tracking-widest">{label}</p>
@@ -163,7 +165,7 @@ export function VoicePreviewModal({ voice, isOpen, onClose, onUse }: VoicePrevie
             fullWidth
             onClick={() => { onUse?.(voice); onClose() }}
           >
-            Utiliser cette voix
+            {t('vpm_use_voice')}
           </Button>
           <Button
             variant="ghost"
@@ -171,7 +173,7 @@ export function VoicePreviewModal({ voice, isOpen, onClose, onUse }: VoicePrevie
             fullWidth
             leftIcon={<Bookmark size={13} />}
           >
-            Ajouter aux favoris
+            {t('vpm_add_to_favorites')}
           </Button>
         </div>
       </div>

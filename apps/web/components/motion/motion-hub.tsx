@@ -143,7 +143,7 @@ function StatusBadge({ status }: { status: string }) {
   }
   const label: Record<string, string> = {
     done: t('mh_ready'), processing: t('mh_inProgress'), storyboard: t('mh_storyboard'),
-    visuals: t('mh_visuals'), audio: 'Audio', assembly: t('mh_assembly'),
+    visuals: t('mh_visuals'), audio: t('mh_audio'), assembly: t('mh_assembly'),
     pending: t('mh_pending'), error: t('mh_error'),
   }
   return (
@@ -344,7 +344,7 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
 
         {isError && (
           <button type="button" onClick={onReset} className="mt-4 text-sm text-blue-500 font-medium hover:underline">
-            Recommencer
+            {t('mh_tryAgain')}
           </button>
         )}
       </div>
@@ -367,7 +367,7 @@ function DoneView({ session, onNew }: { session: VideoSession; onNew: () => void
           <VideoPlayer url={session.output_url} title={session.title ?? undefined} />
         ) : (
           <div className="flex items-center justify-center h-40 rounded-2xl bg-card border border-border text-[--text-muted] text-sm">
-            Vidéo non disponible
+            {t('mh_videoUnavailable')}
           </div>
         )}
       </div>
@@ -494,7 +494,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
         {/* SECTION 2 — Format + Durée + Voix */}
         <div className="flex gap-3 flex-wrap">
           <div className="flex-1 min-w-36">
-            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Format</label>
+            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">{t('mh_format')}</label>
             <div className="flex gap-2">
               {FORMATS.map((f) => (
                 <button key={f.id} type="button" onClick={() => setFormat(f.id)}
@@ -509,7 +509,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
             </div>
           </div>
           <div className="flex-1 min-w-36">
-            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Duration</label>
+            <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">{t('mh_duration')}</label>
             <div className="flex gap-2">
               {DURATIONS.map((d) => (
                 <button key={d.id} type="button" onClick={() => setDuration(d.id)}
@@ -646,7 +646,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 <button type="button" onClick={handleGenerate} disabled={!canSubmit || launching}
                   className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-5 py-2 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity">
                   {launching ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
-                  Générer
+                  {t('mh_generate')}
                 </button>
               </div>
             </div>

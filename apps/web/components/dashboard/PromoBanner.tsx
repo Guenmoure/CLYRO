@@ -10,12 +10,14 @@
 import { useState, useEffect } from 'react'
 import { X, Mic, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/lib/i18n'
 
 const STORAGE_KEY = 'clyro_promo_dismissed_v1'
 
 export function PromoBanner() {
   const [visible, setVisible] = useState(false) // hidden until after mount
   const router = useRouter()
+  const { t } = useLanguage()
 
   useEffect(() => {
     try {
@@ -38,8 +40,8 @@ export function PromoBanner() {
           <Mic size={14} className="text-purple-500 dark:text-purple-400" />
         </div>
         <p className="font-body text-sm text-[--text-secondary] truncate">
-          <span className="font-medium text-foreground">Nouveau :</span>
-          {' '}Clone ta voix en 30 secondes et réutilise-la dans toutes tes vidéos.
+          <span className="font-medium text-foreground">{t('pb_new')} :</span>
+          {' '}{t('pb_promo_body')}
         </p>
       </div>
 
@@ -50,12 +52,12 @@ export function PromoBanner() {
           onClick={() => router.push('/assets')}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-500/15 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 hover:bg-purple-500/25 transition-colors"
         >
-          Essayer <ArrowRight size={11} />
+          {t('pb_try')} <ArrowRight size={11} />
         </button>
         <button
           type="button"
           onClick={dismiss}
-          aria-label="Fermer"
+          aria-label={t('pb_close')}
           className="p-1 rounded-md text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
         >
           <X size={14} />

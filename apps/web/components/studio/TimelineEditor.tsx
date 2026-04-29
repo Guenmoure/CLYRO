@@ -1,6 +1,7 @@
 'use client'
 
 import { Plus } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 import { SceneBlock } from './SceneBlock'
 import type { StudioScene } from '@/lib/studio-types'
 
@@ -18,6 +19,7 @@ export function TimelineEditor({
   scenes, selectedSceneId, onSelectScene, onRegenerateScene, onAddScene,
   projectDuration, musicTrackName,
 }: TimelineEditorProps) {
+  const { t } = useLanguage()
   const SCALE = 8  // pixels per second
 
   return (
@@ -25,7 +27,7 @@ export function TimelineEditor({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border/60">
         <div className="flex items-center gap-3">
-          <p className="font-mono text-xs text-[--text-muted] uppercase tracking-wider font-semibold">Timeline</p>
+          <p className="font-mono text-xs text-[--text-muted] uppercase tracking-wider font-semibold">{t('te_timeline')}</p>
           <span className="font-mono text-xs text-[--text-secondary]">
             {formatDuration(projectDuration)}
           </span>
@@ -35,7 +37,7 @@ export function TimelineEditor({
           onClick={() => onAddScene?.(scenes.length - 1)}
           className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted hover:bg-border px-3 py-1 text-xs font-body text-foreground transition-colors"
         >
-          <Plus size={12} /> Add scene
+          <Plus size={12} /> {t('te_addScene')}
         </button>
       </div>
 
@@ -43,7 +45,7 @@ export function TimelineEditor({
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="min-w-fit h-full">
           {/* Video track */}
-          <Track label="Video">
+          <Track label={t('te_video')}>
             {scenes.map((scene, i) => (
               <div key={scene.id} className="flex items-center gap-1">
                 <SceneBlock
@@ -69,7 +71,7 @@ export function TimelineEditor({
           </Track>
 
           {/* Audio track */}
-          <Track label="Audio">
+          <Track label={t('te_audio')}>
             {scenes.map((scene) => {
               const duration = scene.duration_actual ?? scene.duration_est ?? 10
               const width = Math.max(64, duration * SCALE)
@@ -91,13 +93,13 @@ export function TimelineEditor({
           </Track>
 
           {/* Music track */}
-          <Track label="Music">
+          <Track label={t('te_music')}>
             <div
               className="h-6 rounded-md border border-white/10 shrink-0 bg-purple-900/30 flex items-center px-3"
               style={{ width: `${Math.max(400, projectDuration * SCALE)}px` }}
             >
               <span className="font-mono text-[10px] text-white/70 truncate">
-                {musicTrackName ?? 'No music track'}
+                {musicTrackName ?? t('te_noMusicTrack')}
               </span>
             </div>
           </Track>
