@@ -5,6 +5,7 @@ import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '../lib/supabase'
 import { generateStoryboard } from '../services/claude'
+import { detectLanguage } from '../lib/detect-language'
 import { generateSceneImages, generateSceneVideoAuto, uploadFalUrlToStorage } from '../services/fal'
 import { generateVoiceoverScenesWithTimestamps } from '../services/elevenlabs'
 import { assembleVideo, assembleVideoFromVideoClips, generateKaraokeFromWords, renderKenBurnsFFmpeg } from '../services/ffmpeg'
@@ -137,7 +138,12 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Using pre-generated scenes — skipping storyboard generation')
     } else {
       await updateStatus('storyboard', 10)
-      storyboard = await generateStoryboard(script, style, duration, brandKit)
+      // Detect script language so Claude doesn't silently translate to French
+      // (the prompts are written to be language-agnostic but the detected
+      // language is injected as an unambiguous OUTPUT LANGUAGE header).
+      const language = detectLanguage(script)
+      logger.info({ videoId, language: language.code, scriptLength: script.length }, 'Script language detected')
+      storyboard = await generateStoryboard(script, style, duration, brandKit, language)
       await updateStatus('storyboard', 25, { scenes: storyboard.scenes })
       logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Storyboard generated')
     }

@@ -20,7 +20,11 @@ const createSchema = z.object({
   brand_kit_id: z.string().uuid().optional(),
   format:       formatSchema.default('9:16'),
   duration:     z.number().int().min(15).max(300).default(60),
-  language:     z.string().trim().min(2).max(8).default('fr'),
+  // NOTE: optional. When the autopilot scheduler runs a series it must
+  // call detectLanguage() on the topic — not trust this stored value —
+  // to avoid the silent-translation-to-French bug fixed elsewhere in
+  // the pipeline. Keeping this field for backward compat / UI display only.
+  language:     z.string().trim().min(2).max(8).optional(),
   enabled:      z.boolean().default(true),
 })
 

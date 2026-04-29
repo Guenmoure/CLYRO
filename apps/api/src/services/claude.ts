@@ -1,6 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { logger } from '../lib/logger'
 import type { Scene } from '@clyro/shared'
+import type { DetectedLanguage } from '../lib/detect-language'
+
+// Helper used by every prompt: inject an unambiguous "output language"
+// header at the very top of the user prompt. Empirically, when the rest
+// of the prompt is heavily seeded with French (style guides, examples,
+// system message), Claude was mirroring that language even with explicit
+// "do not translate" instructions. Stating the target language as the
+// FIRST thing in CAPS in the prompt body breaks the bias.
+function languageHeader(lang: DetectedLanguage): string {
+  return `OUTPUT LANGUAGE — STRICT
+All narration text and on-screen copy fields (texte_voix, voiceover, display_text, headline, subtext, label, tagline, cta_text, etc.) MUST be written in ${lang.name} (${lang.code}).
+This is non-negotiable. Do NOT translate to French, English, or any other language regardless of the language used in the rest of these instructions. The visual prompt fields (description_visuelle, animation_prompt) remain in English because downstream image/video models only understand English.
+
+`
+}
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -146,68 +161,70 @@ export async function generateStoryboard(
   script: string,
   style: string,
   targetDuration = '30s',
-  brandKit?: BrandKitContext
+  brandKit?: BrandKitContext,
+  language?: DetectedLanguage,
 ): Promise<StoryboardResult> {
   const sceneCount = SCENE_COUNT_MAP[targetDuration] ?? SCENE_COUNT_MAP.default
   const masterSeed = generateMasterSeed(script)
+  const lang: DetectedLanguage = language ?? { code: 'en', name: 'English', nativeName: 'English' }
 
-  const systemPrompt = `Tu es un expert en production vidéo et en storytelling visuel.
-Tu génères des storyboards précis et professionnels pour des vidéos sans présentateur.
+  const systemPrompt = `You are an expert video producer and visual storyteller.
+You generate precise, professional storyboards for faceless videos (no on-camera presenter).
 
-RÈGLE CRITIQUE — Texte dans l'image :
-Les modèles de diffusion (Flux, Ideogram) ne savent PAS écrire du texte lisible de manière fiable.
-→ Les chiffres précis, stats, titres, quotes et CTA sont TOUJOURS rendus en post-production
-  sous forme d'overlay (drawtext). Tu les mets dans le champ "overlay", JAMAIS dans
-  "description_visuelle".
-→ "description_visuelle" ne décrit QUE l'arrière-plan visuel (décor, personnages, ambiance,
-  formes abstraites). Si la scène exprime une donnée, décris le GRAPHIQUE MUET
-  (ex: "bar chart silhouette, three rising bars") — pas les chiffres.
+CRITICAL RULE — Text inside the image:
+Diffusion models (Flux, Ideogram) cannot reliably render readable text in images.
+→ Specific numbers, stats, titles, quotes and CTAs are ALWAYS rendered in post-production
+  as drawtext overlays. Put them in the "overlay" field, NEVER in "description_visuelle".
+→ "description_visuelle" only describes the visual background (setting, characters, mood,
+  abstract shapes). If a scene expresses data, describe the SILENT chart
+  (e.g. "bar chart silhouette, three rising bars") — not the digits themselves.
 
-Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
+You reply ONLY with valid JSON, no markdown, no comments.`
 
   const styleGuide = STYLE_VISUAL_GUIDE[style] ?? 'professional visual composition'
 
-  // Injection Brand Kit dans le contexte visuel
+  // Brand Kit injection into the visual context.
   const brandContext = brandKit
-    ? `\nBRAND KIT "${brandKit.name}" : utilise la palette de couleurs ${brandKit.primary_color}${brandKit.secondary_color ? ` / ${brandKit.secondary_color}` : ''} dans les descriptions visuelles quand pertinent.`
+    ? `\nBRAND KIT "${brandKit.name}": use the color palette ${brandKit.primary_color}${brandKit.secondary_color ? ` / ${brandKit.secondary_color}` : ''} in the visual descriptions when relevant.`
     : ''
 
-  const userPrompt = `Découpe ce script en exactement ${sceneCount} scènes visuelles pour une vidéo de style "${style}".
+  const userPrompt = `${languageHeader(lang)}Break this script into exactly ${sceneCount} visual scenes for a "${style}" style video.
 
-STYLE VISUEL OBLIGATOIRE pour description_visuelle : ${styleGuide}${brandContext}
+REQUIRED VISUAL STYLE for description_visuelle: ${styleGuide}${brandContext}
 
-Pour chaque scène, génère :
-- "id": identifiant unique ("scene_001", "scene_002", etc.)
-- "index": numéro de scène (commence à 0)
-- "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). DOIT respecter le style visuel ci-dessus. Ne jamais mentionner de personnes identifiables. NE demande JAMAIS de chiffres/stats/titres/quotes lisibles dans l'image — ils vont dans "overlay".
-- "animation_prompt": prompt de mouvement en ANGLAIS pour image-to-video (max 80 chars). Décrit le mouvement de caméra et l'action visible : ex "slow zoom in, character gestures forward, subtle breathing motion", "camera pans left, gentle wind effect, dynamic energy".
-- "texte_voix": OBLIGATOIRE — texte narré DANS LA MÊME LANGUE QUE LE SCRIPT fourni plus bas (FR, EN, ES, DE, IT, PT, NL, etc.). Ne traduis JAMAIS. Toujours rempli, jamais vide. Correspond exactement au contenu du script pour cette partie.
-- "duree_estimee": durée en secondes (nombre entier, entre 3 et 10)
-- "overlay" (OPTIONNEL) : objet { "type": "stat" | "title" | "quote" | "cta", "text": "...", "position": "top-center" | "center" | "bottom-center" | ... }
-  → À renseigner UNIQUEMENT si le texte_voix contient un chiffre précis, une stat marquante,
-    un titre punchy, une citation, ou un CTA de fin. Ex :
-      texte_voix: "87% des PME échouent en 3 ans." → overlay: { type: "stat", text: "87%", position: "center" }
-      texte_voix: "Voici la règle numéro un." → overlay: { type: "title", text: "Règle n°1", position: "top-center" }
-      texte_voix: "Abonne-toi maintenant." → overlay: { type: "cta", text: "Abonne-toi", position: "bottom-center" }
-  → "text" reste dans la LANGUE DU SCRIPT. Max 30 caractères. Absent si la scène n'a pas de point-clé mémorable.
+For each scene, produce:
+- "id": unique identifier ("scene_001", "scene_002", …)
+- "index": scene number (starts at 0)
+- "description_visuelle": visual prompt in ENGLISH optimised for Flux image generation (max 150 chars). MUST follow the visual style above. Never mention identifiable real people. Never request readable numbers/stats/titles/quotes in the image — those go in "overlay".
+- "animation_prompt": motion prompt in ENGLISH for image-to-video (max 80 chars). Describes camera movement and visible action, e.g. "slow zoom in, character gestures forward, subtle breathing motion", "camera pans left, gentle wind effect, dynamic energy".
+- "texte_voix": REQUIRED — narration text written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty. Matches exactly the part of the script this scene covers.
+- "duree_estimee": duration in seconds (integer, between 3 and 10)
+- "overlay" (OPTIONAL): object { "type": "stat" | "title" | "quote" | "cta", "text": "…", "position": "top-center" | "center" | "bottom-center" | … }
+  → Only fill this when texte_voix contains a specific number, a striking stat, a punchy title,
+    a quote, or a closing CTA. Example pattern (the texts below MUST follow ${lang.name}, the
+    examples are illustrative):
+      texte_voix containing "87% of small businesses fail" → overlay: { type: "stat", text: "87%", position: "center" }
+      texte_voix introducing rule #1 → overlay: { type: "title", text: "Rule #1", position: "top-center" }
+      closing CTA → overlay: { type: "cta", text: "Subscribe", position: "bottom-center" }
+  → "text" must stay in ${lang.name}. Max 30 characters. Absent if the scene has no memorable beat.
 
-RÈGLES CRITIQUES :
-1. LANGUE : détecte la langue du script ci-dessous et produis tous les "texte_voix" dans CETTE langue. Ne traduis jamais. Les "description_visuelle" et "animation_prompt" restent en ANGLAIS comme spécifié (c'est Flux/Kling qui les consomme, pas l'utilisateur).
-2. description_visuelle DOIT visuellement correspondre au style "${style}" — applique strictement : ${styleGuide}
-3. animation_prompt DOIT décrire un mouvement concret visible dans la scène (jamais générique)
-4. texte_voix est OBLIGATOIRE sur chaque scène — distribue le script complet sur toutes les scènes, SANS le traduire
-5. La somme des duree_estimee doit être cohérente avec la longueur du script
-6. Chiffres, stats, titres, CTA → champ "overlay" UNIQUEMENT, jamais dans "description_visuelle"
+CRITICAL RULES:
+1. LANGUAGE: every "texte_voix" and every "overlay.text" MUST be written in ${lang.name}. Never translate the script. "description_visuelle" and "animation_prompt" stay in English (Flux/Kling consume them).
+2. description_visuelle MUST visually match the "${style}" style — strictly apply: ${styleGuide}
+3. animation_prompt MUST describe a concrete movement visible in the scene (never generic).
+4. texte_voix is REQUIRED on every scene — distribute the full script across all scenes WITHOUT translating it.
+5. Sum of duree_estimee must be consistent with the script's length.
+6. Numbers, stats, titles, CTAs → "overlay" field ONLY, never inside "description_visuelle".
 
-Script :
+Script (treat as ${lang.name} content — preserve verbatim across texte_voix fields):
 """
 ${script}
 """
 
-Réponds UNIQUEMENT avec ce JSON valide :
+Reply ONLY with this valid JSON:
 {
   "scenes": [...],
-  "total_duration": <somme des durées>
+  "total_duration": <sum of durations>
 }`
 
   let lastError: Error | null = null
@@ -281,6 +298,7 @@ export async function generateMotionStoryboard(
   /** Optional voiceover script. When provided + duration='auto' the scene count
    *  is derived from its word count so the full script is preserved. */
   script?: string,
+  language?: DetectedLanguage,
 ): Promise<StoryboardResult> {
   const isAuto = duration === 'auto'
   let sceneCount = SCENE_COUNT_MAP[duration] ?? 4
@@ -291,53 +309,54 @@ export async function generateMotionStoryboard(
     sceneCount = Math.max(3, Math.min(40, Math.ceil(words / 22)))
   }
   const styleGuide = STYLE_VISUAL_GUIDE[style] ?? 'professional motion design, clean vector art'
+  const lang: DetectedLanguage = language ?? { code: 'en', name: 'English', nativeName: 'English' }
 
-  const systemPrompt = `Tu es un expert en motion design et publicité vidéo animée.
-Tu génères des storyboards de haute qualité pour des spots publicitaires.
-Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
+  const systemPrompt = `You are an expert in motion design and animated video advertising.
+You generate high-quality storyboards for ad spots.
+You reply ONLY with valid JSON, no markdown, no comments.`
 
   const durationLine = isAuto
-    ? `- Durée totale : AUTO — s'adapte à la longueur réelle du script/brief (${estimatedSeconds ? `~${estimatedSeconds}s estimé` : 'calculée naturellement'}). Ne condense PAS, ne tronque PAS.`
-    : `- Durée totale : ${duration} — la somme des duree_estimee doit correspondre à cette cible, jamais la dépasser.`
+    ? `- Total duration: AUTO — adapts to the actual script/brief length (${estimatedSeconds ? `~${estimatedSeconds}s estimated` : 'computed naturally'}). Do NOT condense, do NOT truncate.`
+    : `- Total duration: ${duration} — the sum of duree_estimee must match this target and never exceed it.`
 
-  const userPrompt = `Crée un storyboard publicitaire en ${isAuto ? `environ ${sceneCount}` : `exactement ${sceneCount}`} scènes visuelles.
+  const userPrompt = `${languageHeader(lang)}Build an ad storyboard with ${isAuto ? `about ${sceneCount}` : `exactly ${sceneCount}`} visual scenes.
 
-Brief client :
+Client brief:
 """
 ${brief}
 """
-${script && script.trim() ? `\nSCRIPT VOIX OFF À PRÉSERVER INTÉGRALEMENT :\n"""\n${script.trim()}\n"""\n→ Distribue ce script sur toutes les scènes via texte_voix, sans rien omettre.` : ''}
-Paramètres :
-- Style visuel : ${style} — ${styleGuide}
-- Format : ${format}
+${script && script.trim() ? `\nVOICEOVER SCRIPT TO PRESERVE VERBATIM (treat as ${lang.name} content):\n"""\n${script.trim()}\n"""\n→ Distribute this script across all scenes via texte_voix, omit nothing.` : ''}
+Parameters:
+- Visual style: ${style} — ${styleGuide}
+- Format: ${format}
 ${durationLine}
 
-Pour chaque scène, génère :
-- "id": "scene_001", "scene_002", etc.
-- "index": numéro de scène (commence à 0)
-- "description_visuelle": prompt visuel en ANGLAIS optimisé pour Flux image generation (max 150 chars). Doit respecter STRICTEMENT le style "${style}" : ${styleGuide}. Aucune personne identifiable. VIDE ("") si needs_background est false.
-- "display_text": texte court et percutant DANS LA MÊME LANGUE que le brief/script fourni (max 8 mots). Différent de texte_voix. OBLIGATOIRE sur chaque scène. Ne traduis jamais.
-- "texte_voix": voix off publicitaire DANS LA MÊME LANGUE que le brief/script fourni (peut être vide si scène visuelle sans narration). Ne traduis jamais.
-- "duree_estimee": durée en secondes (entre 2 et 8)
-- "animation_type": type d'animation Remotion — choisir parmi : "slide-in" (texte glisse depuis le bas), "zoom" (zoom dramatique image+texte), "fade" (fondu doux), "particle-burst" (explosion de particules colorées), "typewriter" (texte s'écrit caractère par caractère). Varié, jamais le même 2 fois consécutivement.
-- "scene_type": type de scène Remotion — choisir parmi : "text_hero" (typographie plein écran, pas d'image), "split_text_image" (texte gauche, image droite), "product_showcase" (image produit centrée, logo + CTA), "stats_counter" (chiffre animé, display_text = la valeur ex: "87%"), "cta_end" (UNIQUEMENT sur la DERNIÈRE scène, appel à l'action final), "image_full" (image plein cadre avec texte overlay — style narratif/cinématique)
-- "needs_background": true si la scène nécessite une image générée par IA (scène narrative/visuelle), false si c'est une scène typographique pure (titre, statistique, CTA)
-- "cta_text": texte du bouton call-to-action UNIQUEMENT sur la dernière scène (ex: "Essayez gratuitement"), null pour toutes les autres
+For each scene, produce:
+- "id": "scene_001", "scene_002", …
+- "index": scene number (starts at 0)
+- "description_visuelle": visual prompt in ENGLISH optimised for Flux image generation (max 150 chars). Must STRICTLY follow the "${style}" style: ${styleGuide}. No identifiable real people. EMPTY ("") if needs_background is false.
+- "display_text": short, punchy on-screen text in ${lang.name} (max 8 words). Different from texte_voix. REQUIRED on every scene. NEVER translate.
+- "texte_voix": ad voice-over in ${lang.name} (may be empty if it's a pure visual scene without narration). NEVER translate.
+- "duree_estimee": duration in seconds (between 2 and 8)
+- "animation_type": Remotion animation type — pick from "slide-in" (text slides up from bottom), "zoom" (dramatic zoom on image+text), "fade" (gentle dissolve), "particle-burst" (colourful particle explosion), "typewriter" (character-by-character typing). Vary it; never repeat the same one twice in a row.
+- "scene_type": Remotion scene type — pick from "text_hero" (full-screen typography, no image), "split_text_image" (text left, image right), "product_showcase" (centred product image, logo + CTA), "stats_counter" (animated number, display_text = the value e.g. "87%"), "cta_end" (ONLY on the LAST scene, final call to action), "image_full" (full-frame image with text overlay — narrative/cinematic).
+- "needs_background": true if the scene needs an AI-generated image (narrative/visual scene), false if it's pure typography (title, stat, CTA).
+- "cta_text": call-to-action button text in ${lang.name}, ONLY on the last scene; null on all others.
 
-RÈGLES PUBLICITÉ :
-1. LANGUE : display_text et texte_voix DOIVENT être dans la même langue que le brief/script fourni (FR, EN, ES, DE, IT, PT, NL, etc.). Ne traduis JAMAIS. description_visuelle reste en ANGLAIS (Flux la consomme).
-2. Structure narrative : Accroche → Problème → Solution → Bénéfice → Call to action
-3. Chaque scène doit avoir un impact visuel fort et immédiat
-4. La description_visuelle DOIT coller au style "${style}" — vide si needs_background est false
-5. La DERNIÈRE scène : needs_background: false, animation_type: "slide-in", scene_type: "cta_end", display_text: message CTA fort
-6. Varie les animation_type sur l'ensemble des scènes
-7. display_text = accroche principale visible à l'écran, courte et punchy
-8. RÈGLES scene_type : Première scène → souvent "text_hero" pour accrocher. Scènes narratives → "image_full". Scènes chiffrées → "stats_counter" (display_text = la valeur chiffrée ex: "87%"). Produit mis en avant → "product_showcase". Explication visuelle → "split_text_image". DERNIÈRE scène → toujours "cta_end" avec needs_background: false.
+AD RULES:
+1. LANGUAGE: display_text, texte_voix, and cta_text MUST be in ${lang.name}. NEVER translate. description_visuelle stays in English (Flux consumes it).
+2. Narrative structure: Hook → Problem → Solution → Benefit → Call to action.
+3. Every scene must have a strong, immediate visual impact.
+4. description_visuelle MUST match the "${style}" style — empty if needs_background is false.
+5. LAST scene: needs_background: false, animation_type: "slide-in", scene_type: "cta_end", display_text: a strong CTA message in ${lang.name}.
+6. Vary animation_type across scenes.
+7. display_text = the main on-screen hook, short and punchy, in ${lang.name}.
+8. scene_type RULES: first scene → often "text_hero" to hook. Narrative scenes → "image_full". Number-driven scenes → "stats_counter" (display_text = the figure e.g. "87%"). Featured product → "product_showcase". Visual explanation → "split_text_image". LAST scene → always "cta_end" with needs_background: false.
 
-Réponds UNIQUEMENT avec ce JSON valide :
+Reply ONLY with this valid JSON:
 {
   "scenes": [...],
-  "total_duration": <somme des durées>
+  "total_duration": <sum of durations>
 }`
 
   let lastError: Error | null = null
@@ -403,70 +422,72 @@ export async function generateMotionDesignScenes(
   format: string,
   duration: string,
   brandConfig: { primary_color: string; secondary_color?: string; logo_url?: string },
+  language?: DetectedLanguage,
 ): Promise<MotionDesignResult> {
   const FPS = 30
 
-  // Nombre de scènes cible selon durée
+  // Target scene count by duration.
   const durationMap: Record<string, number> = {
     '6s': 2, '15s': 3, '30s': 5, '60s': 8, '90s': 10, '120s': 12, '180s': 16, '300s': 22, 'auto': 6,
   }
   const sceneCount = durationMap[duration] ?? 6
+  const lang: DetectedLanguage = language ?? { code: 'en', name: 'English', nativeName: 'English' }
 
-  const systemPrompt = `Tu es Motion Design Director chez une agence de haut niveau (Pentagram, Buck, ManvsMachine).
-Tu génères des scripts de vidéos en Motion Design de qualité agency pour des marques premium.
-Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
+  const systemPrompt = `You are Motion Design Director at a top-tier agency (Pentagram, Buck, ManvsMachine).
+You generate agency-quality motion design video scripts for premium brands.
+You reply ONLY with valid JSON, no markdown, no comments.`
 
   const color = brandConfig.primary_color
   const logoUrl = brandConfig.logo_url ?? null
 
-  const userPrompt = `Crée une séquence F2 Motion Design de ${sceneCount} scènes pour ce brief :
+  const userPrompt = `${languageHeader(lang)}Create an F2 Motion Design sequence of ${sceneCount} scenes for this brief:
 
 """
 ${brief}
 """
 
-Format vidéo : ${format}
-Durée cible : ${duration}
-Couleur de marque : ${color}
-${logoUrl ? `Logo disponible : ${logoUrl}` : ''}
+Video format: ${format}
+Target duration: ${duration}
+Brand color: ${color}
+${logoUrl ? `Logo available: ${logoUrl}` : ''}
 
-Chaque scène est un objet JSON avec ces champs :
-- "id": string unique ("scene_001", "scene_002", …)
-- "type": l'un des types de scène ci-dessous
-- "duration": durée en frames (30 fps) — entre 60 (2s) et 210 (7s)
-- "props": objet de props selon le type (voir types ci-dessous)
-- "voiceover": texte narré DANS LA MÊME LANGUE que le brief fourni, ne traduis jamais (peut être "" pour les scènes sans narration)
+Each scene is a JSON object with these fields:
+- "id": unique string ("scene_001", "scene_002", …)
+- "type": one of the scene types below
+- "duration": duration in frames (30 fps) — between 60 (2s) and 210 (7s)
+- "props": props object matching the type (see types below)
+- "voiceover": narration text in ${lang.name} (NEVER translate; may be "" on scenes without narration)
 
-TYPES DE SCÈNES DISPONIBLES :
+AVAILABLE SCENE TYPES:
 
-1. hero_typo — Typographie plein écran cinématique
+1. hero_typo — full-screen cinematic typography
    props: { type: "hero_typo", text: string, subtext?: string, mode: "dark"|"light", animation: "word_by_word"|"line_by_line"|"scale_bounce"|"split_reveal"|"3d_rotate", color: "${color}", fontSize?: number }
 
-2. 3d_cards — Grille de cartes sociales 3D flottantes
+2. 3d_cards — floating 3D social cards grid
    props: { type: "3d_cards", cards: [{name: string, content: string, metrics?: {likes?: number, comments?: number}, platform?: "instagram"|"linkedin"|"tiktok"|"twitter"}], headline: string, mode: "dark"|"light", layout?: "scatter"|"v_shape"|"tunnel"|"orbit" }
 
-3. stats_counter — Compteurs animés de statistiques
+3. stats_counter — animated stat counters
    props: { type: "stats_counter", stats: [{value: number, unit: string, label: string, color: "${color}"}], headline?: string, mode: "dark"|"light" }
 
-4. floating_icons — Icônes flottantes en cercle avec avatar central
+4. floating_icons — floating icons in a circle around a central avatar
    props: { type: "floating_icons", icons: [{emoji: string, label: string, color: string}], headline: string, mode: "dark"|"light" }
 
-5. dark_light_switch — Transition dramatique dark/light
+5. dark_light_switch — dramatic dark/light transition
    props: { type: "dark_light_switch", direction: "dark_to_light"|"light_to_dark", style?: "flash"|"wipe"|"circle_reveal" }
 
-6. logo_reveal — Reveal cinématique du logo
+6. logo_reveal — cinematic logo reveal
    props: { type: "logo_reveal", logoUrl: "${logoUrl ?? color}", tagline?: string, brandColor: "${color}", style?: "assemble"|"scale_bounce"|"particles_in", mode: "dark"|"light" }
 
-RÈGLES :
-1. LANGUE : tous les champs text/subtext/headline/label/tagline/voiceover DOIVENT être dans la même langue que le brief ci-dessus (FR, EN, ES, DE, IT, PT, NL, etc.). Ne traduis JAMAIS le brief.
-2. Commence toujours par hero_typo (accroche forte)
-3. Termine toujours par logo_reveal ou hero_typo (CTA)
-4. Varie les types — jamais deux hero_typo consécutifs
-5. mode "dark" pour scènes dramatiques/premium, "light" pour scènes claires/produit
-6. Les stats_counter doivent avoir des chiffres réels et pertinents pour le brief
-7. voiceover distribue la narration sur les scènes clés (peut être vide sur dark_light_switch)
+RULES:
+1. LANGUAGE: every text / subtext / headline / label / tagline / voiceover field MUST be in ${lang.name}. NEVER translate the brief.
+2. Always start with hero_typo (strong hook).
+3. Always end with logo_reveal or hero_typo (CTA).
+4. Vary the types — never two hero_typo in a row.
+5. mode "dark" for dramatic / premium scenes, "light" for product / bright scenes.
+6. stats_counter must use real numbers relevant to the brief.
+7. voiceover distributes narration across the key scenes (may be empty on dark_light_switch).
 
-Réponds UNIQUEMENT avec ce JSON valide :
+Reply ONLY with this valid JSON:
 {
   "scenes": [
     { "id": "scene_001", "type": "hero_typo", "duration": 90, "props": {...}, "voiceover": "..." },

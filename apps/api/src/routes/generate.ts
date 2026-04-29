@@ -15,6 +15,7 @@ import {
   type UrlToScriptLength,
 } from '../prompts'
 import { generateMotionStoryboard } from '../services/claude'
+import { detectLanguage } from '../lib/detect-language'
 import { sendBrandKitReadyEmail } from '../services/resend'
 import { extractArticleFromUrl, UrlExtractError } from '../services/urlExtract'
 
@@ -189,12 +190,16 @@ generateRouter.post('/generate/motion-storyboard', authMiddleware, async (req, r
       return
     }
 
+    // Detect language from the user's actual content (script if provided,
+    // otherwise the combined brief) so Claude doesn't translate to French.
+    const language = detectLanguage(script?.trim() || combinedBrief)
     const storyboard = await generateMotionStoryboard(
       combinedBrief,
       'dynamique',
       format ?? '9:16',
       duration ?? 'auto',
       script,
+      language,
     )
 
     // Map new BrandScene format → MotionScene (UI backward compat + forward fields)

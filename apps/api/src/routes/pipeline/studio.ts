@@ -21,6 +21,7 @@ import { authMiddleware } from '../../middleware/auth'
 import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
 import { memoizeTTL } from '../../lib/memoize-ttl'
+import { detectLanguage, type DetectedLanguage } from '../../lib/detect-language'
 import {
   F5_SCRIPT_DIRECTOR_SYSTEM,
   F5_YOUTUBE_IMPROVER_SYSTEM,
@@ -83,12 +84,32 @@ function extractJson(raw: string): string {
   throw new Error('No JSON object found in Claude response')
 }
 
-async function callClaude<T>(system: string, user: string, label: string): Promise<T> {
+/**
+ * Wrap any user prompt with an unambiguous output-language directive so
+ * Claude doesn't translate to French (the F5 prompts are written in
+ * French and that strongly biases Claude unless we explicitly counter it).
+ * Inject the detected language at the TOP of the user message — Claude
+ * weighs the most recent / first user-facing content most heavily.
+ */
+function withLanguageHeader(user: string, lang: DetectedLanguage): string {
+  return `OUTPUT LANGUAGE — STRICT
+All script text and on-screen copy fields (script, suggested_title, hook, cta, new_script, improved_script, infographic_data.title, etc.) MUST be written in ${lang.name} (${lang.code}). Do NOT translate to French or any other language regardless of the language used in the system prompt. The broll_query field is the ONLY exception — keep it in English (Pexels is English-only).
+
+${user}`
+}
+
+async function callClaude<T>(
+  system: string,
+  user: string,
+  label: string,
+  lang?: DetectedLanguage,
+): Promise<T> {
+  const userWithLang = lang ? withLanguageHeader(user, lang) : user
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 8192,  // 4096 was too low — long scripts with 8+ scenes hit the limit
     system,
-    messages: [{ role: 'user', content: user }],
+    messages: [{ role: 'user', content: userWithLang }],
   })
 
   // Detect truncation: if finish_reason is 'max_tokens' the response is cut off
@@ -211,21 +232,30 @@ studioRouter.post('/analyze', authMiddleware, async (req, res) => {
       const transcript = await transcribeYouTube(parsed.value)
       originalScript = transcript.transcript
 
-      // Stage 2: Claude improves the raw transcript
+      // Stage 2: Claude improves the raw transcript — use the language of
+      // the actual transcript content, not the user-supplied default.
+      const ytLang = detectLanguage(originalScript)
       const improved = await callClaude<YoutubeImproverResponse>(
         F5_YOUTUBE_IMPROVER_SYSTEM,
-        `Transcription brute :\n\n${originalScript}`,
+        `Raw transcript:\n\n${originalScript}`,
         'youtube_improver',
+        ytLang,
       )
       improvedScript = improved.improved_script
     }
 
     // 2. Claude Script Director splits into typed scenes
     const scriptToDirect = improvedScript ?? originalScript
+    // Detect from the actual content; falls back to 'en' if undecidable.
+    // This overrides the request's `language` field, which used to default
+    // to 'fr' and silently translate non-French scripts.
+    const detectedLang = detectLanguage(scriptToDirect)
+    logger.info({ language: detectedLang.code, requestLanguage: parsed.language }, 'Studio language detected')
     const directed = await callClaude<ScriptDirectorResponse>(
       F5_SCRIPT_DIRECTOR_SYSTEM,
-      `Script :\n\n${scriptToDirect}`,
+      `Script:\n\n${scriptToDirect}`,
       'script_director',
+      detectedLang,
     )
 
     // 3. Create project + scenes in Supabase
@@ -582,10 +612,14 @@ studioRouter.post('/regenerate-scene', authMiddleware, async (req, res) => {
 
     let scriptToUse = newScript ?? scene.script
     if (feedback && !newScript) {
+      // Detect from the existing scene script so the rewrite stays in
+      // the same language as the surrounding video.
+      const sceneLang = detectLanguage(scene.script)
       const rewritten = await callClaude<SceneRewriterResponse>(
         F5_SCENE_REWRITER_SYSTEM,
-        `Scène actuelle (type "${scene.type}") :\n"${scene.script}"\n\nFeedback utilisateur :\n${feedback}`,
+        `Current scene (type "${scene.type}"):\n"${scene.script}"\n\nUser feedback:\n${feedback}`,
         'scene_rewriter',
+        sceneLang,
       )
       scriptToUse = rewritten.new_script
     }

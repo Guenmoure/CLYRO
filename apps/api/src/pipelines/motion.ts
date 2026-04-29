@@ -5,6 +5,7 @@ import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '../lib/supabase'
 import { generateMotionStoryboard } from '../services/claude'
+import { detectLanguage } from '../lib/detect-language'
 import { generateSceneImage, uploadFalUrlToStorage, type BrandColors } from '../services/fal'
 import { generateVoiceoverScenesWithTimestamps } from '../services/elevenlabs'
 import { renderMotionVideo } from '../services/remotion'
@@ -53,7 +54,11 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
     // Pass both brief and script so 'auto' duration mode can size the
     // storyboard from the script's true word count instead of a fixed target.
     const scriptForClaude = script && script.trim().length > 0 ? script : brief
-    const storyboard = await generateMotionStoryboard(brief, style, params.format, params.duration, scriptForClaude)
+    // Detect language from the source the user actually wrote in (script if
+    // provided, otherwise the brief). Prevents Claude from defaulting to French.
+    const language = detectLanguage(scriptForClaude)
+    logger.info({ videoId, language: language.code }, 'Brief/script language detected')
+    const storyboard = await generateMotionStoryboard(brief, style, params.format, params.duration, scriptForClaude, language)
     await updateStatus('storyboard', 20, { scenes: storyboard.scenes })
     logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Motion storyboard generated')
 

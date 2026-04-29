@@ -5,6 +5,7 @@
 import * as Sentry from '@sentry/node'
 import { supabaseAdmin } from '../lib/supabase'
 import { generateMotionDesignScenes } from '../services/claude'
+import { detectLanguage } from '../lib/detect-language'
 import { generateVoiceoverWithTimestamps } from '../services/elevenlabs'
 import { renderMotionDesignVideo } from '../services/remotion'
 import { sendVideoReadyEmail } from '../services/resend'
@@ -41,8 +42,10 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
   try {
     // ÉTAPE 1 — Claude génère les MotionScene[]
     await updateStatus('storyboard', 10)
+    const language = detectLanguage(brief)
+    logger.info({ videoId, language: language.code }, 'Brief language detected')
     const { scenes, voiceoverScript, totalFrames } = await generateMotionDesignScenes(
-      brief, format, duration, brandConfig,
+      brief, format, duration, brandConfig, language,
     )
     await updateStatus('storyboard', 25, { scenes })
     logger.info({ videoId, sceneCount: scenes.length, totalFrames }, 'MotionDesign scenes generated')
