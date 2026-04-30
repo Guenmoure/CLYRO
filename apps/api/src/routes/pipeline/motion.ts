@@ -1,7 +1,8 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { authMiddleware } from '../../middleware/auth'
-import { quotaMiddleware, deductCredit } from '../../middleware/quota'
+import { quotaMiddleware } from '../../middleware/quota'
+import { deductCredits, refundCredits, creditCostForVideo, InsufficientCreditsError } from '../../services/credits'
 import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
 import { renderQueue, isRedisReady } from '../../queues/renderQueue'
@@ -10,6 +11,17 @@ import { runMotionDesignPipeline } from '../../pipelines/motion-design'
 import { getMusicTrackUrl } from '../../lib/music'
 import { uploadFalUrlToStorage } from '../../services/fal'
 import { generateVoiceoverWithTimestamps } from '../../services/elevenlabs'
+
+// Motion uses Remotion (no Kling) for animation, so we charge the
+// "fast" tier rate. This avoids overcharging users for video work
+// that doesn't actually pay the Kling-Pro premium.
+const MOTION_DEFAULT_MODE = 'fast' as const
+
+function parseDurationToSeconds(duration: string): number {
+  if (duration === 'auto') return 60
+  const m = duration.match(/^(\d+)s$/)
+  return m ? Number(m[1]) : 30
+}
 
 export const pipelineMotionRouter = Router()
 
@@ -51,7 +63,9 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
   const { title, brief, script, format, duration, style, brand_config, voice_id, music_track_id } = parsed.data
 
   try {
-    const profile = req.userProfile!
+    // userProfile is set by quotaMiddleware (currently unused beyond the
+    // pre-flight balance check; per-video cost is computed below).
+    void req.userProfile
 
     const { data: video, error: dbError } = await supabaseAdmin
       .from('videos')
@@ -72,6 +86,9 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
       return
     }
 
+    const durationSeconds = parseDurationToSeconds(duration)
+    const creditCost = creditCostForVideo(durationSeconds, MOTION_DEFAULT_MODE)
+
     const jobData = {
       type: 'motion' as const,
       videoId:       video.id,
@@ -86,6 +103,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
       brandConfig:   { ...brand_config, style },
       voiceId:       voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
       musicTrackUrl: music_track_id ? getMusicTrackUrl(music_track_id) : undefined,
+      creditCost,
     }
 
     // Enqueue si Redis est dispo ET qu'un worker consomme la queue.
@@ -158,10 +176,33 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
       })
     }
 
-    // Décrémenter les crédits après enqueue réussi (sauf plan studio)
-    await deductCredit(req.userId, profile)
+    // Atomic deduction (cost computed above when building jobData).
+    try {
+      await deductCredits(req.userId, creditCost, `video:${video.id}`, {
+        mode: MOTION_DEFAULT_MODE,
+        duration,
+        durationSeconds,
+        kind: 'motion',
+      })
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        await supabaseAdmin.from('videos').update({
+          status: 'error',
+          metadata: { error_message: 'Insufficient credits', error_at: new Date().toISOString() },
+        }).eq('id', video.id).then(() => null, () => null)
+        res.status(402).json({
+          error: 'Insufficient credits',
+          code:  'INSUFFICIENT_CREDITS',
+          required: err.required,
+          available: err.available,
+          video_id: video.id,
+        })
+        return
+      }
+      throw err
+    }
 
-    res.status(202).json({ video_id: video.id, status: 'pending' })
+    res.status(202).json({ video_id: video.id, status: 'pending', credits_deducted: creditCost })
   } catch (err) {
     logger.error({ err, userId: req.userId }, 'pipeline.motion error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
@@ -380,7 +421,9 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
   const { title, brief, format, duration, brand_config, voice_id, music_url } = parsed.data
 
   try {
-    const profile = req.userProfile!
+    // userProfile is set by quotaMiddleware (currently unused beyond the
+    // pre-flight balance check; per-video cost is computed below).
+    void req.userProfile
 
     const { data: video, error: dbError } = await supabaseAdmin
       .from('videos')
@@ -401,6 +444,9 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
       return
     }
 
+    const durationSeconds = parseDurationToSeconds(duration)
+    const creditCost = creditCostForVideo(durationSeconds, MOTION_DEFAULT_MODE)
+
     const jobData = {
       type: 'motion_design' as const,
       videoId:    video.id,
@@ -413,6 +459,7 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
       brandConfig: brand_config,
       voiceId:    voice_id,
       musicUrl:   music_url,
+      creditCost,
     }
 
     const allowInlineFallback = process.env.ALLOW_INLINE_FALLBACK === 'true'
@@ -449,9 +496,32 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
       })
     }
 
-    await deductCredit(req.userId, profile)
+    try {
+      await deductCredits(req.userId, creditCost, `video:${video.id}`, {
+        mode: MOTION_DEFAULT_MODE,
+        duration,
+        durationSeconds,
+        kind: 'motion_design',
+      })
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        await supabaseAdmin.from('videos').update({
+          status: 'error',
+          metadata: { error_message: 'Insufficient credits', error_at: new Date().toISOString() },
+        }).eq('id', video.id).then(() => null, () => null)
+        res.status(402).json({
+          error: 'Insufficient credits',
+          code:  'INSUFFICIENT_CREDITS',
+          required: err.required,
+          available: err.available,
+          video_id: video.id,
+        })
+        return
+      }
+      throw err
+    }
 
-    res.status(202).json({ video_id: video.id, status: 'pending' })
+    res.status(202).json({ video_id: video.id, status: 'pending', credits_deducted: creditCost })
   } catch (err) {
     logger.error({ err, userId: req.userId }, 'pipeline.motion.design error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })

@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/node'
 import { supabaseAdmin } from '../lib/supabase'
 import { generateMotionDesignScenes } from '../services/claude'
 import { detectLanguage } from '../lib/detect-language'
+import { refundCredits } from '../services/credits'
 import { generateVoiceoverWithTimestamps } from '../services/elevenlabs'
 import { renderMotionDesignVideo } from '../services/remotion'
 import { sendVideoReadyEmail } from '../services/resend'
@@ -26,10 +27,12 @@ export interface MotionDesignPipelineParams {
   }
   voiceId?:    string
   musicUrl?:   string
+  /** Number of credits the route already deducted; refunded on error. */
+  creditCost?: number
 }
 
 export async function runMotionDesignPipeline(params: MotionDesignPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, brief, format, duration, brandConfig, voiceId, musicUrl } = params
+  const { videoId, userId, userEmail, title, brief, format, duration, brandConfig, voiceId, musicUrl, creditCost } = params
 
   const updateStatus = async (status: string, progress: number, extra?: object) => {
     await supabaseAdmin
@@ -162,6 +165,11 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
       .eq('id', videoId)
       .then(() => null, () => null)
 
-    await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
+    if (creditCost && creditCost > 0) {
+      await refundCredits(userId, creditCost, `video:${videoId}`, { reason: 'pipeline_error' })
+        .catch((refErr) => logger.warn({ err: refErr, userId, videoId }, 'MotionDesign refund failed (non-blocking)'))
+    } else {
+      await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
+    }
   }
 }

@@ -21,6 +21,7 @@ import { autopilotRouter } from './routes/autopilot'
 import { mixAudioRouter } from './routes/mix-audio'
 import { generatePdfRouter } from './routes/generate-pdf'
 import { generateRouter } from './routes/generate'
+import { creditsRouter } from './routes/credits'
 import { stripeWebhookRouter } from './routes/webhooks/stripe'
 import { monerooWebhookRouter } from './routes/webhooks/moneroo'
 import { heygenWebhookRouter } from './routes/webhooks/heygen'
@@ -187,6 +188,7 @@ app.use('/api/v1', autopilotRouter)
 app.use('/api/v1', mixAudioRouter)
 app.use('/api/v1', generatePdfRouter)
 app.use('/api/v1', generateRouter)
+app.use('/api/v1', creditsRouter)
 
 // ── Global error handler ───────────────────────────────────────────────────
 app.use(

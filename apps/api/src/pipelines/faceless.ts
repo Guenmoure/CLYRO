@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '../lib/supabase'
 import { generateStoryboard } from '../services/claude'
 import { detectLanguage } from '../lib/detect-language'
+import { refundCredits } from '../services/credits'
 import { generateSceneImages, generateSceneVideoAuto, uploadFalUrlToStorage } from '../services/fal'
 import { generateVoiceoverScenesWithTimestamps } from '../services/elevenlabs'
 import { assembleVideo, assembleVideoFromVideoClips, generateKaraokeFromWords, renderKenBurnsFFmpeg } from '../services/ffmpeg'
@@ -66,6 +67,9 @@ export interface FacelessPipelineParams {
   dialogueMode?: boolean   // true = auto-detect & enable multi-character voices
   speakerVoices?: Record<string, string> // map speaker name → voice_id (optional override)
   animationMode?: AnimationMode // global animation strategy; 'storyboard' bypasses Kling entirely
+  /** Number of credits the route already deducted for this run.
+   *  Used to refund the exact amount on watchdog timeout / pipeline error. */
+  creditCost?: number
 }
 
 // Timeout global du pipeline : 45 min — au-delà, on considère qu'il est bloqué.
@@ -74,7 +78,25 @@ export interface FacelessPipelineParams {
 const PIPELINE_TIMEOUT_MS = Number(process.env.PIPELINE_TIMEOUT_MS ?? 45 * 60 * 1000)
 
 export async function runFacelessPipeline(params: FacelessPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, style, duration, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices, animationMode } = params
+  const { videoId, userId, userEmail, title, style, duration, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices, animationMode, creditCost } = params
+
+  /**
+   * Refund the credits the route deducted upfront, idempotent per video.
+   * Used by both the watchdog (timeout path) and the catch (error path).
+   * No-op when creditCost is missing (older callers pre-refund).
+   */
+  const refundCreditsForFailure = async (reason: string): Promise<void> => {
+    if (!creditCost || creditCost <= 0) {
+      // Legacy fallback for older callers — refund 1 credit via the
+      // initial-schema RPC so we keep behaviour parity until callers update.
+      await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 })
+        .then(() => null, () => null)
+      return
+    }
+    await refundCredits(userId, creditCost, `video:${videoId}`, { reason }).catch((err) =>
+      logger.warn({ err, userId, videoId, creditCost }, 'Refund failed (non-blocking)')
+    )
+  }
 
   // Resolve effective animation mode: explicit override > style default > 'fast' fallback
   const effectiveAnimationMode: AnimationMode =
@@ -98,7 +120,7 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
           },
         })
         .eq('id', videoId)
-      await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
+      await refundCreditsForFailure('watchdog_timeout')
     } catch (dbErr) {
       logger.error({ dbErr, videoId }, 'Watchdog DB update failed')
     }
@@ -638,7 +660,7 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       .eq('id', videoId)
       .then(() => null, () => null)
 
-    await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
+    await refundCreditsForFailure('pipeline_error')
   } finally {
     // Cleanup Ken Burns temp dir (non-blocking)
     const { join: _pathJoin } = await import('path')

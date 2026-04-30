@@ -2,21 +2,23 @@
 
 import Link from 'next/link'
 import { Zap, ArrowRight, ShoppingCart } from 'lucide-react'
+import { PLAN_MONTHLY_CREDITS, type PlanId, CREDIT_COST_PER_MIN } from '@clyro/shared'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
+const KNOWN_PLANS = new Set<PlanId>(['free', 'starter', 'pro', 'creator', 'studio'])
+
 /**
- * Derive a plan's "total credits" so we can show a progress bar.
- * The DB only stores credits remaining; we reconstruct the total from plan.
+ * Derive a plan's monthly quota from the shared constants — single
+ * source of truth aligned with /pricing and the DB column.
+ * Falls back to Free quota for unknown / legacy plan strings so the
+ * progress bar still renders meaningfully.
  */
 export function getPlanTotal(plan: string): number {
-  switch (plan.toLowerCase()) {
-    case 'pro':    return 2000
-    case 'studio': return 10000
-    default:       return 250   // free / starter
-  }
+  const normalized = plan.toLowerCase() as PlanId
+  return KNOWN_PLANS.has(normalized) ? PLAN_MONTHLY_CREDITS[normalized] : PLAN_MONTHLY_CREDITS.free
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -32,9 +34,12 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
   const creditsTotal = propTotal ?? getPlanTotal(plan)
   const creditsUsed  = Math.max(0, creditsTotal - creditsLeft)
 
-  // Contextual label — makes the abstract credit number feel tangible
-  const canDoFast       = Math.floor(creditsLeft / 120)
-  const canDoStoryboard = Math.floor(creditsLeft / 25)
+  // Contextual label — makes the abstract credit number feel tangible.
+  // Numbers reflect "how many ~1-minute videos can I still make in this
+  // mode", computed from the shared per-minute cost map (storyboard=5,
+  // fast=25, pro=80).
+  const canDoFast       = Math.floor(creditsLeft / CREDIT_COST_PER_MIN.fast)
+  const canDoStoryboard = Math.floor(creditsLeft / CREDIT_COST_PER_MIN.storyboard)
 
   const isEmpty = creditsLeft <= 0
   const isLow   = !isEmpty && creditsLeft < 50

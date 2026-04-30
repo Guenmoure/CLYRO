@@ -1,8 +1,18 @@
 import Stripe from 'stripe'
+import {
+  type PlanId,
+  PLAN_MONTHLY_CREDITS,
+  getStripePriceMap,
+  planFromStripePriceId,
+} from '@clyro/shared'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
+import { setPlan, grantCredits } from './credits'
 
-// Lazy init — évite le crash au démarrage si STRIPE_SECRET_KEY n'est pas encore configurée
+// ── Lazy Stripe client ──────────────────────────────────────────────────
+// Avoid crashing at module-load when STRIPE_SECRET_KEY isn't set
+// (e.g. local dev without billing).
+
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
   if (!_stripe) {
@@ -13,39 +23,31 @@ function getStripe(): Stripe {
   return _stripe
 }
 
-// Configure these in your Stripe dashboard and update here
-const PRICE_IDS: Record<string, string> = {
-  starter: process.env.STRIPE_PRICE_STARTER ?? 'price_TODO_starter',
-  studio:  process.env.STRIPE_PRICE_STUDIO  ?? 'price_TODO_studio',
-}
-
-const PLAN_CREDITS: Record<string, number> = {
-  starter: 30,
-  studio:  -1, // -1 = illimité (studio plan)
-}
+// Plans we can checkout into (Free has no Stripe product).
+type PaidPlan = Exclude<PlanId, 'free'>
 
 interface CreateCheckoutParams {
   userId: string
-  email: string
-  plan: 'starter' | 'studio'
+  email:  string
+  plan:   PaidPlan
 }
 
 interface CheckoutSession {
-  id: string
+  id:  string
   url: string | null
 }
 
-/**
- * Crée une session de checkout Stripe (abonnement mensuel)
- * RÈGLE R1 : STRIPE_SECRET_KEY chargée depuis process.env uniquement
- */
 export async function createCheckoutSession(params: CreateCheckoutParams): Promise<CheckoutSession> {
   const { userId, email, plan } = params
+  const priceId = getStripePriceMap()[plan]
+  if (!priceId) {
+    throw new Error(`No Stripe price configured for plan "${plan}". Set STRIPE_PRICE_${plan.toUpperCase()}.`)
+  }
 
   const session = await getStripe().checkout.sessions.create({
     customer_email: email,
     mode: 'subscription',
-    line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+    line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${process.env.FRONTEND_URL}/settings/billing?success=true`,
     cancel_url:  `${process.env.FRONTEND_URL}/settings/billing?canceled=true`,
     metadata: { userId, plan },
@@ -56,10 +58,6 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
   return { id: session.id, url: session.url }
 }
 
-/**
- * Gère les événements webhook Stripe
- * RÈGLE R4 : signature vérifiée AVANT tout traitement
- */
 export async function handleStripeWebhook(rawBody: Buffer, signature: string): Promise<void> {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
   if (!webhookSecret) throw new Error('Missing STRIPE_WEBHOOK_SECRET')
@@ -78,6 +76,12 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string): P
     case 'checkout.session.completed':
       await activateSubscription(event.data.object as Stripe.Checkout.Session)
       break
+    case 'invoice.paid':
+      // Recurring monthly invoice = grant the next month's credits.
+      // Note: the renewal cron is the primary mechanism; this branch
+      // is a defensive backup in case the cron is down.
+      await handleInvoicePaid(event.data.object as Stripe.Invoice)
+      break
     case 'customer.subscription.deleted':
     case 'customer.subscription.paused':
       await cancelSubscription(event.data.object as Stripe.Subscription)
@@ -89,14 +93,36 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string): P
 
 async function activateSubscription(session: Stripe.Checkout.Session): Promise<void> {
   const userId = session.metadata?.userId
-  const plan   = session.metadata?.plan as 'starter' | 'studio' | undefined
+  const planFromMetadata = session.metadata?.plan as PlanId | undefined
 
-  if (!userId || !plan) {
-    logger.error({ sessionId: session.id }, 'Stripe: missing userId or plan in session metadata')
+  if (!userId) {
+    logger.error({ sessionId: session.id }, 'Stripe: missing userId in session metadata')
     return
   }
 
-  // Idempotency: skip if already processed
+  // Resolve plan: trust metadata first, fall back to looking up the price.
+  let plan: PaidPlan | null = null
+  if (planFromMetadata && planFromMetadata !== 'free') {
+    plan = planFromMetadata as PaidPlan
+  } else {
+    // Fallback for sessions created outside our codepath (e.g. direct
+    // payment links) — read the line item to find the price.
+    try {
+      const items = await getStripe().checkout.sessions.listLineItems(session.id, { limit: 1 })
+      const priceId = items.data[0]?.price?.id
+      const resolved = priceId ? planFromStripePriceId(priceId) : null
+      if (resolved && resolved !== 'free') plan = resolved
+    } catch (err) {
+      logger.warn({ err, sessionId: session.id }, 'Stripe: line items lookup failed')
+    }
+  }
+
+  if (!plan) {
+    logger.error({ sessionId: session.id }, 'Stripe: could not resolve plan from session')
+    return
+  }
+
+  // Idempotency: skip if we've already processed this session.
   const { data: existing } = await supabaseAdmin
     .from('payments')
     .select('id')
@@ -110,18 +136,19 @@ async function activateSubscription(session: Stripe.Checkout.Session): Promise<v
     return
   }
 
-  const credits = PLAN_CREDITS[plan] === -1 ? 999999 : PLAN_CREDITS[plan]
+  // 1. Set the plan + monthly_credits on the profile.
+  await setPlan(userId, plan)
 
-  const { error } = await supabaseAdmin
-    .from('profiles')
-    .update({ plan, credits })
-    .eq('id', userId)
+  // 2. Grant the first month's credits via the ledger so it's audited.
+  const firstMonth = PLAN_MONTHLY_CREDITS[plan]
+  await grantCredits(userId, firstMonth, 'subscription', `stripe:${session.id}`, {
+    plan,
+    stripe_session_id: session.id,
+    stripe_subscription_id: session.subscription,
+    reason: 'checkout_completed',
+  })
 
-  if (error) {
-    logger.error({ error, userId, plan }, 'Stripe: failed to update profile after checkout')
-    throw new Error('Failed to activate subscription in database')
-  }
-
+  // 3. Record the payment for accounting.
   await supabaseAdmin.from('payments').insert({
     user_id:  userId,
     provider: 'stripe',
@@ -131,21 +158,66 @@ async function activateSubscription(session: Stripe.Checkout.Session): Promise<v
     metadata: { session_id: session.id, plan, subscription_id: session.subscription },
   })
 
-  logger.info({ userId, plan }, 'Stripe: subscription activated')
+  logger.info({ userId, plan, credits: firstMonth }, 'Stripe: subscription activated')
+}
+
+async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+  // Only act on subscription renewals — not the first invoice
+  // (which is already covered by checkout.session.completed).
+  if (invoice.billing_reason !== 'subscription_cycle') return
+
+  const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : null
+  if (!subscriptionId) return
+
+  // Fetch the subscription to get our metadata.
+  const sub = await getStripe().subscriptions.retrieve(subscriptionId)
+  const userId = sub.metadata?.userId
+  const plan   = sub.metadata?.plan as PlanId | undefined
+  if (!userId || !plan || plan === 'free') return
+
+  // Idempotency on the invoice id.
+  const { data: existing } = await supabaseAdmin
+    .from('payments')
+    .select('id')
+    .eq('provider', 'stripe')
+    .eq('status', 'success')
+    .filter('metadata->>invoice_id', 'eq', invoice.id)
+    .maybeSingle()
+  if (existing) return
+
+  await grantCredits(userId, PLAN_MONTHLY_CREDITS[plan], 'subscription', `stripe:${invoice.id}`, {
+    plan,
+    stripe_invoice_id: invoice.id,
+    stripe_subscription_id: subscriptionId,
+    reason: 'recurring_invoice',
+  })
+
+  await supabaseAdmin
+    .from('profiles')
+    .update({ subscription_renewed_at: new Date().toISOString() })
+    .eq('id', userId)
+
+  await supabaseAdmin.from('payments').insert({
+    user_id:  userId,
+    provider: 'stripe',
+    amount:   invoice.amount_paid / 100,
+    currency: (invoice.currency ?? 'eur').toUpperCase(),
+    status:   'success',
+    metadata: { invoice_id: invoice.id, plan, subscription_id: subscriptionId },
+  })
+
+  logger.info({ userId, plan, invoiceId: invoice.id }, 'Stripe: recurring invoice processed')
 }
 
 async function cancelSubscription(subscription: Stripe.Subscription): Promise<void> {
   const userId = subscription.metadata?.userId
-
   if (!userId) {
     logger.warn({ subscriptionId: subscription.id }, 'Stripe: missing userId in subscription metadata')
     return
   }
 
-  await supabaseAdmin
-    .from('profiles')
-    .update({ plan: 'free', credits: 3 })
-    .eq('id', userId)
+  // Revert to Free. Existing balance is preserved (roll-over rule).
+  await setPlan(userId, 'free')
 
-  logger.info({ userId, subscriptionId: subscription.id }, 'Stripe: subscription cancelled — reverted to free')
+  logger.info({ userId, subscriptionId: subscription.id }, 'Stripe: subscription cancelled — reverted to free (balance kept)')
 }

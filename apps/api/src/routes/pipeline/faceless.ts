@@ -1,7 +1,22 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { authMiddleware } from '../../middleware/auth'
-import { quotaMiddleware, deductCredit } from '../../middleware/quota'
+import { quotaMiddleware } from '../../middleware/quota'
+import { deductCredits, refundCredits, creditCostForVideo, InsufficientCreditsError } from '../../services/credits'
+import type { AnimationMode } from '@clyro/shared'
+
+/**
+ * Convert a "15s"/"30s"/.../"auto" duration string to a number of
+ * seconds for credit-cost computation. 'auto' falls back to 60s since
+ * we don't yet know the script's natural length at deduction time —
+ * the pipeline computes the real duration later, and we settle the
+ * difference via refund/extra-deduct if it diverges significantly.
+ */
+function parseDurationToSeconds(duration: string): number {
+  if (duration === 'auto') return 60
+  const m = duration.match(/^(\d+)s$/)
+  return m ? Number(m[1]) : 30
+}
 import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
 import { renderQueue, isRedisReady } from '../../queues/renderQueue'
@@ -117,7 +132,9 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
   const wpmMeta: { condensed?: boolean } = {}
 
   try {
-    const profile = req.userProfile!
+    // userProfile is set by quotaMiddleware (currently unused beyond the
+    // pre-flight balance check; per-video cost is computed below).
+    void req.userProfile
 
     // Charger le brand kit si fourni
     let brandKit: { primary_color: string; secondary_color: string | null; font_family: string | null; logo_url: string | null; name: string } | null = null
@@ -177,6 +194,11 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
       return
     }
 
+    // Cost in credits for this generation, computed from duration + animation mode.
+    // Stored on jobData so the pipeline knows what to refund on error / timeout.
+    const durationSeconds = parseDurationToSeconds(duration)
+    const creditCost = creditCostForVideo(durationSeconds, resolvedAnimationMode as AnimationMode)
+
     const jobData = {
       type: 'faceless' as const,
       videoId:   video.id,
@@ -196,6 +218,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
       animationMode:  animation_mode,
       musicPreset:    music_preset ?? 'none',
       subtitlesEnabled: !!subtitles_enabled,
+      creditCost,
     }
 
     // Enqueue si Redis est dispo ET qu'un worker consomme la queue.
@@ -274,13 +297,39 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
       })
     }
 
-    // Décrémenter les crédits après enqueue réussi (sauf plan studio)
-    await deductCredit(req.userId, profile)
+    // Atomically deduct creditCost (computed above when building jobData).
+    // After enqueue but before returning so concurrent requests can't
+    // oversubscribe a tight balance.
+    try {
+      await deductCredits(req.userId, creditCost, `video:${video.id}`, {
+        mode: resolvedAnimationMode,
+        duration,
+        durationSeconds,
+      })
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        // Mark the just-created row as error so the user's library reflects reality.
+        await supabaseAdmin.from('videos').update({
+          status: 'error',
+          metadata: { error_message: 'Insufficient credits', error_at: new Date().toISOString() },
+        }).eq('id', video.id).then(() => null, () => null)
+        res.status(402).json({
+          error:    'Insufficient credits',
+          code:     'INSUFFICIENT_CREDITS',
+          required: err.required,
+          available: err.available,
+          video_id: video.id,
+        })
+        return
+      }
+      throw err
+    }
 
-    // Retourner immédiatement
+    // Retourner immédiatement (avec le coût débité pour information UI)
     res.status(202).json({
       video_id: video.id,
       status: 'pending',
+      credits_deducted: creditCost,
       ...(wpmMeta.condensed !== undefined && { script_condensed: wpmMeta }),
     })
   } catch (err) {

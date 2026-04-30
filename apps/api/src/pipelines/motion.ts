@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '../lib/supabase'
 import { generateMotionStoryboard } from '../services/claude'
 import { detectLanguage } from '../lib/detect-language'
+import { refundCredits } from '../services/credits'
 import { generateSceneImage, uploadFalUrlToStorage, type BrandColors } from '../services/fal'
 import { generateVoiceoverScenesWithTimestamps } from '../services/elevenlabs'
 import { renderMotionVideo } from '../services/remotion'
@@ -35,10 +36,13 @@ export interface MotionPipelineParams {
   brandConfig: { primary_color: string; secondary_color?: string; font_family?: string; logo_url?: string }
   voiceId: string
   musicTrackUrl?: string
+  /** Number of credits the route already deducted for this run.
+   *  Used to refund the exact amount on pipeline error. */
+  creditCost?: number
 }
 
 export async function runMotionPipeline(params: MotionPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, brief, script, style, voiceId, musicTrackUrl } = params
+  const { videoId, userId, userEmail, title, brief, script, style, voiceId, musicTrackUrl, creditCost } = params
 
   const updateStatus = async (status: string, progress: number, extra?: object) => {
     await supabaseAdmin
@@ -302,6 +306,12 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
       .eq('id', videoId)
       .then(() => null, () => null)
 
-    await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
+    if (creditCost && creditCost > 0) {
+      await refundCredits(userId, creditCost, `video:${videoId}`, { reason: 'pipeline_error' })
+        .catch((refErr) => logger.warn({ err: refErr, userId, videoId }, 'Motion refund failed (non-blocking)'))
+    } else {
+      // Legacy 1-credit fallback
+      await supabaseAdmin.rpc('increment_credits', { user_id: userId, amount: 1 }).then(() => null, () => null)
+    }
   }
 }
