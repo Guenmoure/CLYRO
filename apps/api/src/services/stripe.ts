@@ -1,7 +1,9 @@
 import Stripe from 'stripe'
 import {
   type PlanId,
+  type TopupPackId,
   PLAN_MONTHLY_CREDITS,
+  getTopupPack,
   getStripePriceMap,
   planFromStripePriceId,
 } from '@clyro/shared'
@@ -58,6 +60,61 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
   return { id: session.id, url: session.url }
 }
 
+// ── Top-up Checkout (one-shot purchase) ─────────────────────────────────────
+//
+// Unlike subscriptions, top-up packs (Boost / Pro Boost / Power / Studio)
+// are sold as one-off purchases. We use Stripe Checkout in `mode: 'payment'`
+// with a price_data inline object, so we don't need to pre-create a Stripe
+// Price for every pack — the pack catalog stays in @clyro/shared and the
+// amount is set per session from there.
+//
+// On payment success, the webhook (checkout.session.completed branch with
+// mode='payment') reads the metadata and calls grantCredits(...,'topup',...)
+// — same code path as the HMAC /credits/topup admin endpoint.
+
+interface CreateTopupCheckoutParams {
+  userId: string
+  email:  string
+  packId: TopupPackId
+}
+
+export async function createTopupCheckoutSession(params: CreateTopupCheckoutParams): Promise<CheckoutSession> {
+  const { userId, email, packId } = params
+  const pack = getTopupPack(packId)
+  if (!pack) {
+    throw new Error(`Unknown topup pack: ${packId}`)
+  }
+
+  const session = await getStripe().checkout.sessions.create({
+    customer_email: email,
+    mode: 'payment',
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: 'eur',
+        // Stripe expects amounts in the smallest currency unit (cents).
+        unit_amount: Math.round(pack.priceEur * 100),
+        product_data: {
+          name: `CLYRO ${pack.name} — ${pack.credits.toLocaleString('en-US')} credits`,
+          description: 'Credit pack — added to your CLYRO balance immediately after payment.',
+          metadata: { pack_id: pack.id, credits: String(pack.credits) },
+        },
+      },
+    }],
+    success_url: `${process.env.FRONTEND_URL}/settings/billing?topup=success&pack=${pack.id}`,
+    cancel_url:  `${process.env.FRONTEND_URL}/settings/billing?topup=canceled`,
+    metadata: {
+      userId,
+      kind: 'topup',
+      pack_id: pack.id,
+      credits: String(pack.credits),
+    },
+  })
+
+  logger.info({ userId, packId: pack.id, sessionId: session.id }, 'Stripe topup checkout session created')
+  return { id: session.id, url: session.url }
+}
+
 export async function handleStripeWebhook(rawBody: Buffer, signature: string): Promise<void> {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
   if (!webhookSecret) throw new Error('Missing STRIPE_WEBHOOK_SECRET')
@@ -73,9 +130,18 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string): P
   logger.info({ eventType: event.type, eventId: event.id }, 'Stripe webhook received')
 
   switch (event.type) {
-    case 'checkout.session.completed':
-      await activateSubscription(event.data.object as Stripe.Checkout.Session)
+    case 'checkout.session.completed': {
+      const session = event.data.object as Stripe.Checkout.Session
+      // Route subscription vs. one-shot top-up by metadata.kind.
+      // Older sessions without `kind` default to 'subscription' (legacy).
+      const kind = (session.metadata?.kind as string | undefined) ?? 'subscription'
+      if (kind === 'topup') {
+        await fulfillTopup(session)
+      } else {
+        await activateSubscription(session)
+      }
       break
+    }
     case 'invoice.paid':
       // Recurring monthly invoice = grant the next month's credits.
       // Note: the renewal cron is the primary mechanism; this branch
@@ -159,6 +225,62 @@ async function activateSubscription(session: Stripe.Checkout.Session): Promise<v
   })
 
   logger.info({ userId, plan, credits: firstMonth }, 'Stripe: subscription activated')
+}
+
+async function fulfillTopup(session: Stripe.Checkout.Session): Promise<void> {
+  const userId  = session.metadata?.userId
+  const packId  = session.metadata?.pack_id as TopupPackId | undefined
+
+  if (!userId || !packId) {
+    logger.error({ sessionId: session.id }, 'Stripe topup: missing userId / pack_id in metadata')
+    return
+  }
+
+  const pack = getTopupPack(packId)
+  if (!pack) {
+    logger.error({ sessionId: session.id, packId }, 'Stripe topup: unknown pack id')
+    return
+  }
+
+  // Idempotency on the session id — Stripe retries webhooks on transient
+  // errors, we must not double-credit if a retry races with the original.
+  const { data: existing } = await supabaseAdmin
+    .from('payments')
+    .select('id')
+    .eq('provider', 'stripe')
+    .eq('status', 'success')
+    .filter('metadata->>session_id', 'eq', session.id)
+    .maybeSingle()
+
+  if (existing) {
+    logger.info({ sessionId: session.id }, 'Stripe topup: webhook already processed — skipping')
+    return
+  }
+
+  await grantCredits(userId, pack.credits, 'topup', `stripe:${session.id}`, {
+    pack_id:           pack.id,
+    pack_name:         pack.name,
+    price_eur:         pack.priceEur,
+    stripe_session_id: session.id,
+    payment_intent:    session.payment_intent,
+  })
+
+  await supabaseAdmin.from('payments').insert({
+    user_id:  userId,
+    provider: 'stripe',
+    amount:   session.amount_total ? session.amount_total / 100 : pack.priceEur,
+    currency: (session.currency ?? 'eur').toUpperCase(),
+    status:   'success',
+    metadata: {
+      kind: 'topup',
+      pack_id: pack.id,
+      credits_granted: pack.credits,
+      session_id: session.id,
+      payment_intent: session.payment_intent,
+    },
+  })
+
+  logger.info({ userId, packId: pack.id, credits: pack.credits }, 'Stripe topup: pack credited')
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {

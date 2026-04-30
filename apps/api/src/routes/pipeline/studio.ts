@@ -23,6 +23,50 @@ import { logger } from '../../lib/logger'
 import { memoizeTTL } from '../../lib/memoize-ttl'
 import { detectLanguage, type DetectedLanguage } from '../../lib/detect-language'
 import {
+  creditCostForVideo,
+  deductCredits,
+  refundCredits,
+  InsufficientCreditsError,
+} from '../../services/credits'
+
+// ── Studio cost model ────────────────────────────────────────────────────
+//
+// Studio combines several renderers per video. Each scene type lands at
+// a different cost tier from the shared per-minute rate map:
+//
+//   avatar / split       → 'pro'        (HeyGen avatar = premium)
+//   infographic / demo   → 'fast'       (Remotion render, mid-cost)
+//   typography           → 'fast'
+//   broll                → 'storyboard' (Pexels stock = cheapest)
+//
+// The total Studio cost is the sum of per-scene costs computed from each
+// scene's estimated duration. Falls back to 'fast' when the type is
+// unknown (defensive — no scene type should be missing from the map).
+const STUDIO_SCENE_TIERS: Record<string, 'pro' | 'fast' | 'storyboard'> = {
+  avatar:      'pro',
+  split:       'pro',
+  infographic: 'fast',
+  demo:        'fast',
+  typography:  'fast',
+  broll:       'storyboard',
+}
+
+interface StudioSceneRow {
+  id:           string
+  type:         string
+  duration_est: number | null
+}
+
+function studioBatchCost(scenes: StudioSceneRow[]): number {
+  let total = 0
+  for (const s of scenes) {
+    const tier = STUDIO_SCENE_TIERS[s.type] ?? 'fast'
+    const seconds = Math.max(3, s.duration_est ?? 8)
+    total += creditCostForVideo(seconds, tier)
+  }
+  return total
+}
+import {
   F5_SCRIPT_DIRECTOR_SYSTEM,
   F5_YOUTUBE_IMPROVER_SYSTEM,
   F5_SCENE_REWRITER_SYSTEM,
@@ -339,6 +383,43 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
       .from('studio_scenes').select('*')
       .eq('project_id', projectId).order('index', { ascending: true })
 
+    // ── Credit deduction (atomic) ─────────────────────────────────────
+    // Compute the total cost from each scene's type + estimated duration
+    // BEFORE flipping the project to "generating". If the user can't
+    // afford the batch we surface 402 and don't burn any state.
+    //
+    // Keep the row type wide here (the IIFE below reads many extra
+    // columns: script, remotion_params, index, …); studioBatchCost only
+    // touches the three fields it needs.
+    const sceneList = scenes ?? []
+    const creditCost = studioBatchCost(sceneList as StudioSceneRow[])
+    if (creditCost > 0) {
+      try {
+        await deductCredits(req.userId!, creditCost, `studio_project:${projectId}`, {
+          projectId,
+          sceneCount: sceneList.length,
+          breakdown: sceneList.map((s) => ({
+            id: s.id,
+            type: s.type,
+            duration: s.duration_est,
+            tier: STUDIO_SCENE_TIERS[s.type] ?? 'fast',
+          })),
+        })
+      } catch (err) {
+        if (err instanceof InsufficientCreditsError) {
+          res.status(402).json({
+            error: 'Insufficient credits',
+            code:  'INSUFFICIENT_CREDITS',
+            required:  err.required,
+            available: err.available,
+            projectId,
+          })
+          return
+        }
+        throw err
+      }
+    }
+
     await supabaseAdmin.from('studio_projects').update({ status: 'generating' }).eq('id', projectId)
 
     // Fire-and-forget scene generation. Each type has its own pipeline.
@@ -350,7 +431,8 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
     const effectiveVoiceId = project.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? ELEVENLABS_FALLBACK_VOICE_ID
 
     ;(async () => {
-      const sceneList = scenes ?? []
+      // sceneList is declared in the outer scope (used by the cost-refund
+      // logic below); just bail early if empty.
       if (sceneList.length === 0) return
 
       // Flip every scene to 'generating' up-front so the UI shows progress
@@ -579,9 +661,32 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
         { projectId, failed: sceneErrors.size, total: sceneList.length },
         'generate-all: all scene pipelines complete',
       )
-    })().catch((err) => logger.error({ err, projectId }, 'generate-all background task failed'))
 
-    res.status(202).json({ projectId, status: 'generating' })
+      // Partial refund: if every single scene failed, refund the
+      // entire deducted amount. We don't pro-rate per-scene refunds
+      // here — partial successes still cost (the renderer ran).
+      if (sceneErrors.size === sceneList.length && creditCost > 0) {
+        await refundCredits(req.userId!, creditCost, `studio_project:${projectId}`, {
+          reason: 'all_scenes_failed',
+          projectId,
+        }).catch((refErr) =>
+          logger.warn({ err: refErr, projectId }, 'Studio full refund failed (non-blocking)')
+        )
+      }
+    })().catch(async (err) => {
+      logger.error({ err, projectId }, 'generate-all background task failed')
+      // Background task crashed before any scene could complete — refund.
+      if (creditCost > 0) {
+        await refundCredits(req.userId!, creditCost, `studio_project:${projectId}`, {
+          reason: 'background_task_crash',
+          projectId,
+        }).catch((refErr) =>
+          logger.warn({ err: refErr, projectId }, 'Studio crash-refund failed (non-blocking)')
+        )
+      }
+    })
+
+    res.status(202).json({ projectId, status: 'generating', credits_deducted: creditCost })
   } catch (err) {
     logger.error({ err }, 'studio.generate-all failed')
     res.status(500).json({ error: 'Failed', code: 'INTERNAL_ERROR' })
