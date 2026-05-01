@@ -6,6 +6,7 @@ import {
   SlidersHorizontal, Globe, MessageCircle, BookOpen,
   Users, Video, GraduationCap, TrendingUp, ChevronRight,
 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
 import {
   getPublicVoices,
   getVoiceFilters,
@@ -337,7 +338,7 @@ function TrendingSection({ voices, onToggleFavorite }: {
         <h2 className="font-body text-base font-semibold text-foreground">{t('trendingVoices')}</h2>
         <ChevronRight size={16} className="text-[--text-muted]" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {trending.map((v) => (
           <VoiceCard key={v.id} voice={v} compact onToggleFavorite={onToggleFavorite} />
         ))}
@@ -432,8 +433,8 @@ export default function VoicesPage() {
   ]
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background px-6 py-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto space-y-8">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -558,7 +559,7 @@ export default function VoicesPage() {
                   <Star size={14} className="text-yellow-400" fill="currentColor" />
                   <h2 className="font-body text-base font-semibold text-foreground">{t('favorites')}</h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {favoriteVoices.map((v) => (
                     <VoiceCard key={v.id} voice={v} onToggleFavorite={handleToggleFavorite} />
                   ))}
@@ -574,18 +575,20 @@ export default function VoicesPage() {
                 </h2>
               )}
               {loadingPublic ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="h-24 rounded-xl border border-border bg-card animate-pulse" />
                   ))}
                 </div>
               ) : displayVoices.length === 0 ? (
-                <div className="rounded-xl border border-border bg-card p-10 text-center">
-                  <Mic2 size={24} className="text-[--text-muted] mx-auto mb-2" />
-                  <p className="text-[--text-muted] font-body text-sm">{t('noVoicesMatch')}</p>
-                </div>
+                <EmptyState
+                  icon={Mic2}
+                  title={t('noVoicesMatch')}
+                  accent="neutral"
+                  size="md"
+                />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {displayVoices.map((v) => (
                     <VoiceCard key={v.id} voice={v} onToggleFavorite={handleToggleFavorite} />
                   ))}
@@ -603,20 +606,22 @@ export default function VoicesPage() {
                 <div key={i} className="h-16 rounded-xl border border-border bg-card animate-pulse" />
               ))
             ) : personalVoices.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 px-8 text-center rounded-2xl border border-dashed border-border bg-muted/30">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/15 to-blue-500/15 border border-border flex items-center justify-center mb-5">
-                  <Mic2 size={28} className="text-emerald-500" />
-                </div>
-                <p className="font-body text-lg font-bold text-foreground mb-2">{t('noClonedVoices')}</p>
-                <p className="font-body text-sm text-[--text-muted] mb-5 max-w-sm">
-                  {t('noClonedVoicesYet')}
-                </p>
-                <button type="button" onClick={() => setShowCloneModal(true)}
-                  className="inline-flex items-center gap-2 bg-blue-500 text-white font-body font-medium px-5 py-2.5 rounded-xl hover:bg-blue-600 text-sm transition-colors"
-                >
-                  <Plus size={14} /> {t('createVoice')}
-                </button>
-              </div>
+              <EmptyState
+                icon={Mic2}
+                title={t('noClonedVoices')}
+                description={t('noClonedVoicesYet')}
+                accent="emerald"
+                size="lg"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => setShowCloneModal(true)}
+                    className="inline-flex items-center gap-2 bg-blue-500 text-white font-body font-medium px-5 py-2.5 rounded-xl hover:bg-blue-600 text-sm transition-colors"
+                  >
+                    <Plus size={14} /> {t('createVoice')}
+                  </button>
+                }
+              />
             ) : (
               personalVoices.map((v) => (
                 <PersonalVoiceCard

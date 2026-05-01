@@ -140,7 +140,7 @@ export function GeneralSection() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-foreground dark:text-gray-950 text-white px-5 py-2.5 text-sm font-display font-semibold hover:opacity-90 disabled:opacity-60 transition-all"
+          className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-display font-semibold hover:opacity-90 disabled:opacity-60 transition-all"
         >
           {saving ? <><Loader2 size={13} className="animate-spin" /> {t('saving')}</> : t('save')}
         </button>

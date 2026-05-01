@@ -57,30 +57,30 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-8 py-8">
-      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-3xl mx-auto">
+      <div className="space-y-6 animate-fade-in">
 
         <div className="flex items-center gap-3">
-          <Link href="/settings" className="w-8 h-8 rounded-lg glass glass-hover flex items-center justify-center text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
+          <Link href="/settings" className="w-8 h-8 rounded-lg glass glass-hover flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors duration-200">
             <ArrowLeft size={15} />
           </Link>
           <div>
-            <p className="font-mono text-xs text-gray-400 dark:text-white/40 uppercase tracking-widest">Settings</p>
-            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">Billing</h1>
+            <p className="font-mono text-xs text-[--text-muted] uppercase tracking-widest">Settings</p>
+            <h1 className="font-display text-2xl font-bold text-foreground">Billing</h1>
           </div>
         </div>
 
         {/* Current plan */}
         <div className="glass glass-heavy rounded-2xl p-6">
-          <h2 className="font-display font-semibold text-gray-900 dark:text-white mb-4">Plan actuel</h2>
+          <h2 className="font-display font-semibold text-foreground mb-4">Plan actuel</h2>
           {loading ? (
-            <div className="h-8 bg-gray-100 dark:bg-white/5 rounded animate-pulse w-1/3" />
+            <div className="h-8 bg-muted rounded animate-pulse w-1/3" />
           ) : (
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs uppercase tracking-widest text-clyro-primary bg-clyro-primary/10 border border-clyro-primary/20 px-3 py-1.5 rounded-full">
                 {plan}
               </span>
-              <span className="font-body text-gray-500 dark:text-white/50 text-sm">
+              <span className="font-body text-[--text-secondary] text-sm">
                 {plan === 'studio' ? 'Vidéos illimitées' : `${credits} crédit${credits > 1 ? 's' : ''} restant${credits > 1 ? 's' : ''}`}
               </span>
             </div>
@@ -99,15 +99,15 @@ export default function BillingPage() {
                   </span>
                 )}
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="font-display text-3xl font-bold text-gray-900 dark:text-white">{p.price}</span>
-                  <span className="text-gray-400 dark:text-white/40 font-body text-sm">{p.period}</span>
+                  <span className="font-display text-3xl font-bold text-foreground">{p.price}</span>
+                  <span className="text-[--text-muted] font-body text-sm">{p.period}</span>
                 </div>
-                <p className="font-display font-semibold text-lg text-gray-900 dark:text-white mb-1">{p.name}</p>
+                <p className="font-display font-semibold text-lg text-foreground mb-1">{p.name}</p>
                 <p className={cn('font-mono text-xs mb-4', p.accent)}>{p.credits}</p>
 
                 <ul className="space-y-2 mb-6">
                   {p.features.map((f) => (
-                    <li key={f} className="text-sm font-body text-gray-600 dark:text-white/60 flex items-center gap-2">
+                    <li key={f} className="text-sm font-body text-[--text-secondary] flex items-center gap-2">
                       <Check size={14} className="text-clyro-primary shrink-0" /> {f}
                     </li>
                   ))}
@@ -120,7 +120,7 @@ export default function BillingPage() {
                       {loadingPlan === `stripe-${p.id}` ? 'Redirection…' : 'Payer par carte'}
                     </button>
                     <button onClick={() => setShowMobileMoneyModal(p.id)} disabled={!!loadingPlan}
-                      className="w-full glass glass-hover text-gray-600 dark:text-white/70 font-display font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                      className="w-full glass glass-hover text-[--text-secondary] font-display font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2">
                       <Smartphone size={14} /> Mobile Money (Afrique)
                     </button>
                   </div>
@@ -135,8 +135,8 @@ export default function BillingPage() {
       {showMobileMoneyModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="glass glass-heavy rounded-2xl p-6 w-full max-w-md shadow-glow-primary">
-            <h3 className="font-display text-lg font-semibold text-gray-900 dark:text-white mb-1">Payer avec Mobile Money</h3>
-            <p className="text-gray-500 dark:text-white/50 text-sm font-body mb-4">Orange Money, Wave, MTN, Moov — format international.</p>
+            <h3 className="font-display text-lg font-semibold text-foreground mb-1">Payer avec Mobile Money</h3>
+            <p className="text-[--text-secondary] text-sm font-body mb-4">Orange Money, Wave, MTN, Moov — format international.</p>
             <label htmlFor="moneroo-phone" className="sr-only">Numéro Mobile Money</label>
             <input
               id="moneroo-phone"
@@ -147,11 +147,11 @@ export default function BillingPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+225 07 00 00 00 00"
-              className="w-full glass rounded-xl px-4 py-3 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all mb-4"
+              className="w-full glass rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-clyro-primary/50 transition-all mb-4"
             />
             <div className="flex gap-3">
               <button onClick={() => setShowMobileMoneyModal(null)}
-                className="flex-1 glass glass-hover text-gray-500 dark:text-white/60 font-display font-semibold py-2.5 rounded-xl text-sm transition-all">
+                className="flex-1 glass glass-hover text-[--text-secondary] font-display font-semibold py-2.5 rounded-xl text-sm transition-all">
                 Annuler
               </button>
               <button onClick={() => handleMonerooCheckout(showMobileMoneyModal)} disabled={!!loadingPlan}

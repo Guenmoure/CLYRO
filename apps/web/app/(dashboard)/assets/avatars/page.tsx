@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { UserPlus, Video, ChevronDown, ChevronUp, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
 import { AvatarFilters, type AvatarFilter } from '@/components/assets/AvatarFilters'
 import { AvatarPreviewModal } from '@/components/assets/AvatarPreviewModal'
 import { CreateAvatarModal } from '@/components/assets/CreateAvatarModal'
@@ -17,26 +18,6 @@ type AvatarTab = 'public' | 'my'
 
 function AvatarSkeleton() {
   return <div className="aspect-[3/4] rounded-2xl bg-muted animate-pulse" />
-}
-
-// ── Empty personal avatar state ────────────────────────────────────────────────
-
-function NoPersonalAvatar({ onCreate }: { onCreate: () => void }) {
-  const { t } = useLanguage()
-  return (
-    <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-20 h-20 rounded-full bg-muted border border-border flex items-center justify-center mb-4">
-        <UserPlus size={30} className="text-[--text-muted]" />
-      </div>
-      <h3 className="font-body text-lg font-semibold text-foreground">{t('createFirstAvatar')}</h3>
-      <p className="font-body text-sm text-[--text-muted] mt-2 max-w-sm">
-        {t('createAvatarDesc')}
-      </p>
-      <Button variant="primary" className="mt-6" leftIcon={<Video size={14} />} onClick={onCreate}>
-        {t('createMyAvatar')}
-      </Button>
-    </div>
-  )
 }
 
 // ── Avatar Group Card (grouped by name, expandable looks) ──────────────────────
@@ -249,23 +230,33 @@ export default function AvatarsPage() {
       />
 
       {/* Grid — grouped by name */}
-      <div className="px-6 py-6">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array.from({ length: 12 }).map((_, i) => <AvatarSkeleton key={i} />)}
           </div>
         ) : activeTab === 'my' && personalAvatars.length === 0 ? (
-          <div className="grid">
-            <NoPersonalAvatar onCreate={() => setCreateOpen(true)} />
-          </div>
+          <EmptyState
+            icon={UserPlus}
+            title={t('createFirstAvatar')}
+            description={t('createAvatarDesc')}
+            accent="blue"
+            size="lg"
+            action={
+              <Button variant="primary" leftIcon={<Video size={14} />} onClick={() => setCreateOpen(true)}>
+                {t('createMyAvatar')}
+              </Button>
+            }
+          />
         ) : groups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="font-body text-sm text-[--text-muted]">
-              {t('noAvatarsMatch')}
-            </p>
-          </div>
+          <EmptyState
+            icon={UserPlus}
+            title={t('noAvatarsMatch')}
+            accent="neutral"
+            size="md"
+          />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {groups.map((group) => (
               <AvatarGroupCard
                 key={group.baseName}

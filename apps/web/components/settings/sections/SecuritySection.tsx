@@ -9,6 +9,7 @@ import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
+import { Card } from '@/components/ui/card'
 
 export function SecuritySection() {
   const supabase = createBrowserClient()
@@ -94,7 +95,7 @@ export function SecuritySection() {
       </div>
 
       {/* Password */}
-      <section className="rounded-2xl border border-border bg-card overflow-hidden">
+      <Card padding="none" className="overflow-hidden">
         <header className="flex items-center gap-3 px-5 py-4 border-b border-border">
           <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
             <Shield size={16} className="text-emerald-500" />
@@ -178,7 +179,7 @@ export function SecuritySection() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-foreground dark:text-gray-950 text-white px-4 py-2 text-sm font-display font-semibold hover:opacity-90 disabled:opacity-60 transition-all"
+                  className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-4 py-2 text-sm font-display font-semibold hover:opacity-90 disabled:opacity-60 transition-all"
                 >
                   {saving ? <><Loader2 size={13} className="animate-spin" /> {t('saving')}</> : t('save')}
                 </button>
@@ -193,10 +194,10 @@ export function SecuritySection() {
             </form>
           )}
         </div>
-      </section>
+      </Card>
 
       {/* 2FA */}
-      <section className="rounded-2xl border border-border bg-card overflow-hidden">
+      <Card padding="none" className="overflow-hidden">
         <header className="flex items-center gap-3 px-5 py-4 border-b border-border">
           <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
             <Smartphone size={16} className="text-blue-500" />
@@ -220,7 +221,7 @@ export function SecuritySection() {
           </div>
           <p className="font-body text-sm text-[--text-secondary]">{t('sec_2fa_soon')}</p>
         </div>
-      </section>
+      </Card>
 
       {/* Tip banner */}
       <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">

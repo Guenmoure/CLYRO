@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { Plus, ChevronRight, TrendingUp, Sparkles, Mic2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
 import { VoiceCard } from '@/components/assets/VoiceCard'
 import { VoiceFilters } from '@/components/assets/VoiceFilters'
 import { VoicePreviewModal } from '@/components/assets/VoicePreviewModal'
@@ -239,7 +240,7 @@ export default function VoicesAssetsPage() {
       />
 
       {/* Content */}
-      <div className="px-6 py-6 space-y-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
         {/* Trending voices — only on Explore tab */}
         {activeTab === 'explore' && !loading && trendingVoices.length > 0 && !search && !category && (
@@ -249,7 +250,7 @@ export default function VoicesAssetsPage() {
               <h2 className="font-body text-base font-semibold text-foreground">{t('trendingVoices')}</h2>
               <ChevronRight size={14} className="text-[--text-muted]" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {trendingVoices.map((voice) => (
                 <VoiceCard
                   key={voice.id}
@@ -301,14 +302,12 @@ export default function VoicesAssetsPage() {
               {Array.from({ length: 8 }).map((_, i) => <VoiceSkeleton key={i} />)}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Mic2 size={24} className="text-[--text-muted] mb-2" />
-              <p className="font-body text-sm text-[--text-muted]">
-                {activeTab === 'my_voices'
-                  ? t('noClonedVoices')
-                  : t('noVoicesMatch')}
-              </p>
-            </div>
+            <EmptyState
+              icon={Mic2}
+              title={activeTab === 'my_voices' ? t('noClonedVoices') : t('noVoicesMatch')}
+              accent={activeTab === 'my_voices' ? 'emerald' : 'neutral'}
+              size="lg"
+            />
           ) : (
             <div className="space-y-2">
               {filtered.map((voice) => (

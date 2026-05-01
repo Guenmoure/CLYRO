@@ -119,7 +119,7 @@ export function PlanBillingSection() {
       {/* See full pricing */}
       <Link
         href="/pricing"
-        className="inline-flex items-center gap-2 font-body text-sm text-blue-500 hover:text-blue-600 transition-colors"
+        className="inline-flex items-center gap-2 font-body text-sm text-[--primary] hover:text-foreground transition-colors"
       >
         {t('plb_see_all_plans')}
         <ArrowRight size={13} />

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { Activity, Film, Clock, CheckCircle2, XCircle, Sparkles, TrendingUp } from 'lucide-react'
 import type { Database } from '@/lib/database.types'
 import { Card } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { AnalyticsTimeline } from '@/components/analytics/AnalyticsTimeline'
 import { StyleBreakdown } from '@/components/analytics/StyleBreakdown'
 
@@ -132,7 +133,7 @@ function formatDelta(current: number, previous: number): { text: string; positiv
 export default async function AnalyticsPage() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return (
-      <div className="px-4 sm:px-6 py-16 max-w-2xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-8 py-16 max-w-2xl mx-auto">
         <div className="bg-muted border border-border rounded-2xl p-6">
           <p className="font-display text-sm text-foreground mb-1">Missing configuration</p>
           <p className="font-body text-xs text-[--text-muted]">Supabase environment variables are not set.</p>
@@ -161,35 +162,35 @@ export default async function AnalyticsPage() {
 
   if (videos.length === 0) {
     return (
-      <div className="px-4 sm:px-6 py-10 max-w-5xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto">
         <header className="mb-8">
           <h1 className="font-display text-2xl font-semibold text-foreground">Analytics</h1>
           <p className="font-body text-sm text-[--text-muted] mt-1">
             Track how your videos are performing — renders, styles, success rate.
           </p>
         </header>
-        <Card variant="default" padding="lg" className="text-center">
-          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-            <Activity size={20} className="text-[--text-muted]" aria-hidden="true" />
-          </div>
-          <h2 className="font-display text-base font-semibold text-foreground">Nothing to chart yet</h2>
-          <p className="font-body text-sm text-[--text-muted] mt-1 max-w-sm mx-auto">
-            Render your first video and this page lights up — counts, top styles, a 30-day timeline.
-          </p>
-          <Link
-            href="/faceless/new"
-            className="inline-flex items-center gap-2 mt-5 bg-blue-500 text-white font-body font-medium px-4 py-2 rounded-xl text-sm hover:bg-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <Sparkles size={14} aria-hidden="true" />
-            Create your first video
-          </Link>
-        </Card>
+        <EmptyState
+          icon={Activity}
+          title="Nothing to chart yet"
+          description="Render your first video and this page lights up — counts, top styles, a 30-day timeline."
+          accent="blue"
+          size="lg"
+          action={
+            <Link
+              href="/faceless/new"
+              className="inline-flex items-center gap-2 bg-blue-500 text-white font-body font-medium px-4 py-2 rounded-xl text-sm hover:bg-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Sparkles size={14} aria-hidden="true" />
+              Create your first video
+            </Link>
+          }
+        />
       </div>
     )
   }
 
   return (
-    <div className="px-4 sm:px-6 py-10 max-w-6xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto">
       <header className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-semibold text-foreground">Analytics</h1>

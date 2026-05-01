@@ -58,7 +58,7 @@ export function PlansSection() {
               onClick={() => setYearly((v) => !v)}
               className={cn(
                 'relative w-12 h-6 rounded-full transition-colors',
-                yearly ? 'bg-blue-500' : 'bg-muted border border-border',
+                yearly ? 'bg-[--primary]' : 'bg-muted border border-border',
               )}
               role="switch"
               aria-checked={yearly}

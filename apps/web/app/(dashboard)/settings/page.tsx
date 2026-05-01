@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { ProfileForm } from '@/components/settings/profile-form'
+import { Card } from '@/components/ui/card'
 import { Shield, CreditCard, ChevronRight, User, Bell, Loader2, Check, Palette } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
@@ -38,8 +39,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background px-6 py-8">
-      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-3xl mx-auto">
+      <div className="space-y-6 animate-fade-in">
 
         {/* Page header */}
         <div>
@@ -51,7 +52,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Profile */}
-        <section className="rounded-2xl border border-border bg-card overflow-hidden">
+        <Card padding="none" className="overflow-hidden">
           <header className="flex items-center gap-3 px-6 py-4 border-b border-border">
             <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
               <User size={16} className="text-blue-500" />
@@ -64,7 +65,7 @@ export default function SettingsPage() {
           <div className="p-6">
             <ProfileForm />
           </div>
-        </section>
+        </Card>
 
         {/* Billing — clickable card with interactive hover */}
         <Link
@@ -107,7 +108,7 @@ export default function SettingsPage() {
         </Link>
 
         {/* Security */}
-        <section className="rounded-2xl border border-border bg-card overflow-hidden">
+        <Card padding="none" className="overflow-hidden">
           <header className="flex items-center gap-3 px-6 py-4 border-b border-border">
             <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
               <Shield size={16} className="text-emerald-500" />
@@ -140,7 +141,7 @@ export default function SettingsPage() {
               )}
             </button>
           </div>
-        </section>
+        </Card>
 
         {/* Notifications (placeholder — could become a full section later) */}
         <section className="rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-4 flex items-center gap-3">

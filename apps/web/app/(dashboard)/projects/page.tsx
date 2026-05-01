@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
+import { EmptyState } from '@/components/ui/empty-state'
 
 const PAGE_SIZE = 12
 
@@ -289,7 +290,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto">
 
         {/* ── Brouillons ───────────────────────────────────────── */}
         <DraftsSection />
@@ -404,7 +405,7 @@ export default function ProjectsPage() {
                   onClick={() => setFilterMenuOpen(v => !v)}
                   className={cn(
                     'glass rounded-xl w-11 h-11 flex items-center justify-center text-foreground transition-colors',
-                    'hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
+                    'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
                     activeFiltersCount > 0 && 'ring-2 ring-blue-500/40',
                   )}
                 >
@@ -609,20 +610,14 @@ export default function ProjectsPage() {
               ))}
             </div>
           ) : !filtered.length ? (
-            <div className="flex flex-col items-center justify-center py-20 px-8 text-center bg-muted/50 border border-dashed border-border rounded-2xl">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-border flex items-center justify-center mb-4">
-                <FolderOpen size={28} className="text-blue-500" />
-              </div>
-              <p className="font-display text-lg font-semibold text-foreground mb-2">
-                {search ? t('proj_noResults').replace('{q}', search) : t('proj_libraryEmpty')}
-              </p>
-              <p className="text-sm text-[--text-muted] max-w-sm">
-                {search
-                  ? t('proj_tryDifferent')
-                  : t('proj_createFirst')}
-              </p>
-              {!search && (
-                <div className="flex items-center gap-3 mt-5">
+            <EmptyState
+              icon={FolderOpen}
+              title={search ? t('proj_noResults').replace('{q}', search) : t('proj_libraryEmpty')}
+              description={search ? t('proj_tryDifferent') : t('proj_createFirst')}
+              accent="blue"
+              size="lg"
+              action={!search ? (
+                <div className="flex items-center gap-3">
                   <a
                     href="/faceless/new"
                     className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-4 py-2 font-display text-sm font-semibold text-white hover:opacity-90 transition-opacity"
@@ -636,8 +631,8 @@ export default function ProjectsPage() {
                     {t('proj_motionDesign')}
                   </a>
                 </div>
-              )}
-            </div>
+              ) : undefined}
+            />
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

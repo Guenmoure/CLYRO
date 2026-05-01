@@ -56,14 +56,14 @@ export default function MotionIndexPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-background px-6 py-8 flex items-center justify-center">
+      <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
         <Loader2 size={24} className="animate-spin text-[--text-muted]" />
       </div>
     )
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background px-6 py-8">
+    <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-6xl mx-auto space-y-8">
 
         {/* Header */}

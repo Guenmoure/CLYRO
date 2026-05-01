@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { PenLine, Video, Sparkles, Clock, Trash2, Palette, Clapperboard, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { EmptyState } from '@/components/ui/empty-state'
 import { createBrowserClient } from '@/lib/supabase'
 import { DraftCard, type DbDraftMeta } from '@/components/dashboard/DraftCard'
 import { useLanguage } from '@/lib/i18n'
@@ -22,23 +23,6 @@ const FILTER_DEFS: { value: Filter; tKey: string; icon: React.ReactNode }[] = [
   { value: 'brand',    tKey: 'brandKit',        icon: <Palette      size={13} /> },
   { value: 'studio',   tKey: 'bh_studioTab',    icon: <Clapperboard size={13} /> },
 ]
-
-// ── Empty state ────────────────────────────────────────────────────────────────
-
-function EmptyState() {
-  const { t } = useLanguage()
-  return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center mb-4">
-        <PenLine size={24} className="text-[--text-muted]" strokeWidth={1.4} />
-      </div>
-      <h3 className="font-display text-base text-foreground mb-1">{t('dr_noTitle')}</h3>
-      <p className="font-body text-sm text-[--text-muted] max-w-xs">
-        {t('dr_noTitleDesc')}
-      </p>
-    </div>
-  )
-}
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
@@ -133,7 +117,7 @@ export default function DraftsPage() {
   const filtered = filter === 'all' ? drafts : drafts.filter(d => d.module === filter)
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -208,7 +192,13 @@ export default function DraftsPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState />
+        <EmptyState
+          icon={PenLine}
+          title={t('dr_noTitle')}
+          description={t('dr_noTitleDesc')}
+          accent="amber"
+          size="lg"
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

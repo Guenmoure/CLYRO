@@ -98,7 +98,7 @@ export default async function DashboardPage() {
   const hasProjects = videos.length > 0
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-6xl mx-auto space-y-5">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto space-y-5">
 
       {/* ── 1. Promo banner (dismissable, ~48px) ────────────── */}
       <PromoBanner />
