@@ -1,24 +1,12 @@
 // ── CLYRO — Centralized Claude prompts ────────────────────────────────────────
 // Single source of truth for all AI prompts. Edit here to version/A-B test them.
 
-// ── Shared style guides ────────────────────────────────────────────────────────
-
-export const STYLE_VISUAL_GUIDE: Record<string, string> = {
-  'cinematique':     'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain — movie still quality, NO illustration',
-  'stock-vo':        'National Geographic style, natural light, realistic textures, real-world documentary scene — fully photorealistic, no illustration',
-  'whiteboard':      'hand-drawn sketch on whiteboard, black marker on plain white — NO color fills, rough strokes only, RSA Animate educational style',
-  'stickman':        'black stick figures on white background, RSA animate bonhommes style — NO fills, bold expressive line drawing',
-  'flat-design':     'flat vector illustration, bold solid colors, no shadows, no gradients, Dribbble-quality SVG aesthetic',
-  'infographie':     'flat icon infographic, data visualization chart, color-coded sections, isometric perspective — B2B professional',
-  '3d-pixar':        'Pixar-style 3D CGI render, claymation texture, rounded characters, soft studio lighting — Disney Pixar quality',
-  'motion-graphics': 'flat design motion graphics, geometric shapes, vibrant vector colors, bold typography, kinetic composition',
-  'animation-2d':    'flat vector 2D cartoon illustration, bold outlines, vibrant saturated colors — absolutely NO photorealism',
-  'minimaliste':     'simple black line art on white background, minimalist stickman — NO fills, ultra clean linework',
-  'corporate':       'clean corporate illustration, navy blue / white palette, minimal geometric shapes — professional B2B',
-  'dynamique':       'high-energy composition, motion blur, neon accents on dark background, diagonal lines — sports action',
-  'luxe':            'luxury brand photography, gold and black palette, bokeh, marble surfaces — high-fashion editorial',
-  'fun':             'playful cartoon, candy-colored palette, bubbly rounded shapes, confetti — kawaii cheerful style',
-}
+// STYLE_VISUAL_GUIDE is now imported from @clyro/shared so all storyboard
+// generators (this one, services/claude.ts, and apps/web/.../generate-storyboard)
+// stay in sync. Two thinner copies in this file and in the Next.js route used
+// to drift, causing the "image quality regression" reported in prod.
+import { STYLE_VISUAL_GUIDE, detectLanguage, type DetectedLanguage } from '@clyro/shared'
+export { STYLE_VISUAL_GUIDE }
 
 export const SCENE_COUNT: Record<string, number> = {
   '6s':   2,
@@ -68,52 +56,61 @@ export function buildStoryboardPrompts(p: StoryboardPromptParams): { system: str
   const scriptLines = p.script.split('\n')
   const hasDialogue = scriptLines.some((l) => /^—|^–/.test(l.trim()) || /^[A-ZÀ-Ü][a-zà-ü]+\s*:/.test(l.trim()) || /["«].*["»]/.test(l.trim()))
 
-  const system = `Tu es un expert en production vidéo et en storytelling visuel.\nTu génères des storyboards précis et professionnels pour des vidéos sans présentateur.\nTu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
+  // Detect the script's language so the narration is preserved verbatim
+  // (was hardcoded to French → silently translated non-French scripts).
+  const lang: DetectedLanguage = detectLanguage(p.script)
+
+  const system = `You are an expert video producer and visual storyteller.
+You generate precise, professional storyboards for faceless videos (no on-camera presenter).
+You reply ONLY with valid JSON, no markdown, no comments.`
 
   // Rule 4/5 change shape in auto-mode: the script drives the duration,
   // not a fixed target. We still give Claude a soft scene-count hint so it
   // knows roughly how many scenes to produce for a script of this length.
   const durationInstruction = isAuto
-    ? `4. La durée totale doit refléter FIDÈLEMENT la longueur réelle du script (~150 mots/minute à voix haute). Ne condense PAS, ne raccourcis PAS — chaque phrase du script est narrée en entier.
-5. La somme des duree_estimee doit être cohérente avec la longueur du script (~${auto.estimatedSeconds}s estimé). Ajuste naturellement scène par scène.`
-    : `4. La durée totale doit refléter FIDÈLEMENT la longueur réelle du script (~150 mots/minute à voix haute). Ne condense PAS — chaque phrase est narrée en entier.
-5. La somme des duree_estimee doit être cohérente avec la longueur du script (~${auto.estimatedSeconds}s estimé). Ajuste naturellement scène par scène.`
+    ? `4. The total duration must FAITHFULLY reflect the script length (~150 wpm spoken). Do NOT condense, do NOT shorten — every sentence is narrated in full.
+5. Sum of duree_estimee must be consistent with the script length (~${auto.estimatedSeconds}s estimated). Adjust naturally per scene.`
+    : `4. The total duration must FAITHFULLY reflect the script length (~150 wpm spoken). Do NOT condense — every sentence is narrated in full.
+5. Sum of duree_estimee must be consistent with the script length (~${auto.estimatedSeconds}s estimated). Adjust naturally per scene.`
 
-  const user = `Découpe ce script en environ ${sceneCount} scènes visuelles pour une vidéo de style "${p.style}".${p.title ? `\nTitre : "${p.title}"` : ''}
-${p.description ? `\nCONTEXTE VISUEL (personnages, décor, ambiance) :\n${p.description}\n→ Intègre ces éléments dans description_visuelle lorsque pertinent (couleur de peau, style vestimentaire, décor).` : ''}
+  const user = `OUTPUT LANGUAGE — STRICT
+All narration text and on-screen copy fields (texte_voix, etc.) MUST be written in ${lang.name} (${lang.code}). Do NOT translate to French, English, or any other language regardless of the language used elsewhere in these instructions. The visual prompt fields (description_visuelle, animation_prompt) remain in English because downstream image/video models only understand English.
 
-${hasDialogue ? `\nMODE DIALOGUE DÉTECTÉ : Le script contient des dialogues entre plusieurs personnages.
-INSTRUCTIONS SPÉCIALES :
-- Détecte chaque personnage / locuteur dans le script (format: "Nom:" ou "— Nom" ou guillemets)
-- Chaque réplique / tour de parole DOIT inclure un champ "speaker" avec le nom du personnage
-- Si dialogues alternés → crée des scènes séparées par locuteur pour permettre différentes voix
-- Lorsqu'une scène montre une interaction, décris EXPLICITEMENT les personnages (position, expression, relation) dans description_visuelle
-- La description_visuelle DOIT inclure TOUS les personnages visibles dans la scène` : ''}
+Break this script into roughly ${sceneCount} visual scenes for a "${p.style}" style video.${p.title ? `\nTitle: "${p.title}"` : ''}
+${p.description ? `\nVISUAL CONTEXT (characters, setting, mood):\n${p.description}\n→ Integrate these into description_visuelle when relevant (skin tone, clothing, setting).` : ''}
+${hasDialogue ? `\nDIALOGUE MODE DETECTED: the script contains dialogue between multiple speakers.
+SPECIAL RULES:
+- Detect each speaker (format: "Name:" or "— Name" or quoted)
+- Every line MUST include a "speaker" field with the character's name
+- Alternating dialogues → create separate scenes per speaker to enable different voices
+- description_visuelle MUST include ALL visible characters in the scene` : ''}
 
-Pour chaque scène, génère :
-- "index": numéro de scène (commence à 0)
-- "description_visuelle": prompt visuel en ANGLAIS pour Flux (max 120 chars). RÈGLE CRITIQUE : décris UNIQUEMENT le contenu visuel UNIQUE de cette scène — QUI est visible, QUOI se passe, OÙ. NE PAS inclure de mots de style (lighting, film grain, cinematic, etc.) — le style est appliqué automatiquement. Chaque scène doit être visuellement distincte des autres.
-- "animation_prompt": prompt de mouvement en ANGLAIS pour image-to-video (max 80 chars). Décrit le mouvement de caméra et l'action concrète.
-- "texte_voix": OBLIGATOIRE — texte narré en français pendant cette scène. Jamais vide.
-- "duree_estimee": durée en secondes (entier, entre 3 et 12)
-${hasDialogue ? `- "speaker": NOM du personnage parlant (ex: "Alice", "Bob"). Optionnel pour narration, OBLIGATOIRE pour dialogues.` : ''}
+REQUIRED VISUAL STYLE for description_visuelle: ${styleGuide}
 
-RÈGLES :
-1. description_visuelle : contenu visuel unique par scène (sujet + action + lieu). Pas de mots de style répétitifs. Exemples bons : "scientist examining glowing DNA strand in dark lab", "crowd celebrating in sunlit city square", "child reading book under tree at sunset". Mauvais : "cinematic shot of person, dramatic lighting, film grain".
-2. animation_prompt DOIT décrire un mouvement CONCRET (jamais "smooth animation" seul)
-3. texte_voix est OBLIGATOIRE — distribue le script complet sur toutes les scènes${isAuto ? ' sans rien omettre' : ''}
+For each scene, produce:
+- "index": scene number (starts at 0)
+- "description_visuelle": visual prompt in ENGLISH for Flux (max 150 chars). MUST follow the visual style above. Describe ONLY the unique visual content of this scene — WHO is visible, WHAT happens, WHERE. Each scene must be visually distinct.
+- "animation_prompt": camera/motion prompt in ENGLISH for image-to-video (max 80 chars). Describes a concrete visible movement.
+- "texte_voix": REQUIRED — narration written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty.
+- "duree_estimee": duration in seconds (integer, between 3 and 12)
+${hasDialogue ? `- "speaker": NAME of the speaking character. Optional for narration, REQUIRED for dialogue.` : ''}
+
+RULES:
+1. description_visuelle = unique visual content per scene (subject + action + setting). MUST follow the visual style. Good examples: "scientist examining glowing DNA strand in dark lab", "crowd celebrating in sunlit city square". Bad: generic shots with no specifics.
+2. animation_prompt MUST describe a CONCRETE motion (never "smooth animation" alone)
+3. texte_voix is REQUIRED — distribute the full script across all scenes in ${lang.name}${isAuto ? ', omitting nothing' : ''}
 ${durationInstruction}
-${hasDialogue ? `6. DIALOGUES : si deux personnages parlent successivement, favorise des scènes séparées pour chaque réplique (permet voix différentes)` : ''}
+${hasDialogue ? `6. DIALOGUES: when two characters speak in succession, prefer separate scenes per line (enables different voices)` : ''}
 
-Script :
+Script (treat as ${lang.name} content — preserve verbatim across texte_voix fields):
 """
 ${p.script}
 """
 
-Réponds UNIQUEMENT avec ce JSON :
+Reply ONLY with this JSON:
 {
   "scenes": [...],
-  "total_duration": <somme des durées>
+  "total_duration": <sum of durations>
 }`
 
   return { system, user }

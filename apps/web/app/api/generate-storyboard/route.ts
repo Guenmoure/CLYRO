@@ -2,49 +2,56 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
+import {
+  detectLanguage,
+  getStyleVisualGuide,
+  type DetectedLanguage,
+} from '@clyro/shared'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-// ── Style guides (must match apps/api/src/prompts/index.ts) ──────────────────
-const STYLE_VISUAL_GUIDE: Record<string, string> = {
-  'cinematique':     'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain',
-  'stock-vo':        'realistic photograph, natural light, documentary style, Canon 5D',
-  'whiteboard':      'hand-drawn whiteboard sketch, black marker on white background, educational illustration',
-  'stickman':        'RSA Animate whiteboard illustration, black marker stick figures and simple geometric shapes on plain white background, expressive line drawing, no fills, no color',
-  'flat-design':     'flat vector illustration, bold solid colors, geometric shapes, material design style',
-  'infographie':     'flat infographic illustration, data visualization icons, bold colors',
-  '3d-pixar':        '3D Pixar animation style, subsurface scattering, warm lighting, expressive characters',
-  'minimaliste':     'minimalist design, clean white background, geometric shapes, Bauhaus style',
-  'motion-graphics': 'motion graphics design, abstract geometric shapes, gradient colors, After Effects style',
-  'animation-2d':    'cartoon 2D flat animation, vibrant colors, expressive characters, anime-influenced',
-  'corporate':       'clean corporate illustration, professional, navy blue, business context',
-  'dynamique':       'high-energy composition, neon accents, dark background, sports action',
-  'luxe':            'luxury brand photography, gold and black palette, bokeh, marble surfaces',
-  'fun':             'playful cartoon, candy-colored palette, bubbly rounded shapes, confetti',
-}
-
-const WPM_FR = 150
+// ── Scene-count heuristic ────────────────────────────────────────────────
 // 22 words/scene ≈ 8-9s narration at 150 wpm.
-// Token budget: haiku outputs 8192 tokens max. Each scene ≈ 80 tokens (concise descriptions).
-// Safe ceiling: 8192 / 80 ≈ 100 scenes. We cap at 60 to leave headroom for structure overhead.
+// Token budget: model outputs 8192 tokens. Each scene ≈ 80 tokens (concise
+// descriptions). Safe ceiling ≈ 100; we cap at 60 for structural overhead.
+const WPM = 150
 const WORDS_PER_SCENE = 22
 const MAX_SCENES = 60
 
 function computeAutoSceneCount(script: string): { sceneCount: number; estimatedSeconds: number } {
   const words = script.trim().split(/\s+/).filter(Boolean).length
-  const estimatedSeconds = Math.max(6, Math.round((words / WPM_FR) * 60))
+  const estimatedSeconds = Math.max(6, Math.round((words / WPM) * 60))
   const sceneCount = Math.max(3, Math.min(MAX_SCENES, Math.ceil(words / WORDS_PER_SCENE)))
   return { sceneCount, estimatedSeconds }
 }
 
+// ── Language header — same shape as apps/api/src/services/claude.ts ──────
+// Stating the target language as the FIRST thing in CAPS in the prompt
+// body breaks Claude's tendency to mirror the prompt's own language
+// (which used to default to French and silently translate scripts).
+function languageHeader(lang: DetectedLanguage): string {
+  return `OUTPUT LANGUAGE — STRICT
+All narration text and on-screen copy fields (texte_voix, display_text, etc.) MUST be written in ${lang.name} (${lang.code}).
+This is non-negotiable. Do NOT translate to French, English, or any other language regardless of the language used elsewhere in these instructions. The visual prompt fields (description_visuelle, animation_prompt) remain in English because downstream image/video models only understand English.
+
+`
+}
+
 function buildStoryboardPrompts(p: {
-  script: string; style: string; duration: string; title?: string; description?: string
+  script:      string
+  style:       string
+  duration:    string
+  title?:      string
+  description?: string
+  language:    DetectedLanguage
 }): { system: string; user: string } {
   const isAuto = p.duration === 'auto'
   const auto = computeAutoSceneCount(p.script)
   const sceneCount = auto.sceneCount
-  const styleGuide = STYLE_VISUAL_GUIDE[p.style] ?? 'professional visual composition'
+  const styleGuide = getStyleVisualGuide(p.style)
+  const lang = p.language
+
   const scriptLines = p.script.split('\n')
   const hasDialogue = scriptLines.some((l) =>
     /^—|^–/.test(l.trim()) ||
@@ -52,48 +59,64 @@ function buildStoryboardPrompts(p: {
     /["«].*["»]/.test(l.trim())
   )
 
-  const system = `Tu es un expert en production vidéo et en storytelling visuel.\nTu génères des storyboards précis et professionnels pour des vidéos sans présentateur.\nTu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
+  const system = `You are an expert video producer and visual storyteller.
+You generate precise, professional storyboards for faceless videos (no on-camera presenter).
+
+CRITICAL RULE — Text inside the image:
+Diffusion models (Flux, Ideogram) cannot reliably render readable text.
+→ Specific numbers, stats, titles, quotes and CTAs are rendered later as drawtext overlays.
+→ "description_visuelle" only describes the visual scene (subject + action + setting).
+  Each scene must be visually distinct from the others.
+
+You reply ONLY with valid JSON, no markdown, no comments.`
 
   const durationInstruction = isAuto
-    ? `4. La durée totale doit refléter FIDÈLEMENT la longueur réelle du script (~150 mots/minute à voix haute). Ne condense PAS, ne raccourcis PAS — chaque phrase du script est narrée en entier.\n5. La somme des duree_estimee doit être cohérente avec la longueur du script (~${auto.estimatedSeconds}s estimé). Ajuste naturellement scène par scène.`
-    : `4. La durée totale doit refléter FIDÈLEMENT la longueur réelle du script (~150 mots/minute à voix haute). Ne condense PAS — chaque phrase est narrée en entier.\n5. La somme des duree_estimee doit être cohérente avec la longueur du script (~${auto.estimatedSeconds}s estimé). Ajuste naturellement scène par scène.`
+    ? `4. The total duration must FAITHFULLY reflect the script length (~${WPM} wpm spoken). Do NOT condense, do NOT shorten — every sentence is narrated in full.\n5. Sum of duree_estimee should be coherent with the script length (~${auto.estimatedSeconds}s estimated). Adjust naturally per scene.`
+    : `4. The total duration must FAITHFULLY reflect the script length (~${WPM} wpm spoken). Do NOT condense — every sentence is narrated in full.\n5. Sum of duree_estimee should be coherent with the script length (~${auto.estimatedSeconds}s estimated). Adjust naturally per scene.`
 
-  const user = `Découpe ce script en environ ${sceneCount} scènes visuelles pour une vidéo de style "${p.style}".${p.title ? `\nTitre : "${p.title}"` : ''}
-${p.description ? `\nCONTEXTE VISUEL (personnages, décor, ambiance) :\n${p.description}\n→ Intègre ces éléments dans description_visuelle lorsque pertinent (couleur de peau, style vestimentaire, décor).` : ''}
-${hasDialogue ? `\nMODE DIALOGUE DÉTECTÉ : Le script contient des dialogues entre plusieurs personnages.\nINSTRUCTIONS SPÉCIALES :\n- Détecte chaque personnage / locuteur dans le script\n- Chaque réplique DOIT inclure un champ "speaker" avec le nom du personnage\n- Si dialogues alternés → crée des scènes séparées par locuteur\n- La description_visuelle DOIT inclure TOUS les personnages visibles dans la scène` : ''}
+  const user = `${languageHeader(lang)}Break this script into roughly ${sceneCount} visual scenes for a "${p.style}" style video.${p.title ? `\nTitle: "${p.title}"` : ''}
+${p.description ? `\nVISUAL CONTEXT (characters, setting, mood):\n${p.description}\n→ Integrate these elements into description_visuelle when relevant (skin tone, clothing, setting).` : ''}
+${hasDialogue ? `\nDIALOGUE MODE DETECTED: the script contains dialogue between multiple characters.\nSPECIAL RULES:\n- Detect each speaker in the script\n- Every line MUST include a "speaker" field with the character's name\n- Alternating dialogues → create separate scenes per speaker\n- description_visuelle MUST include all visible characters in the scene` : ''}
 
-Pour chaque scène, génère :
-- "index": numéro de scène (commence à 0)
-- "description_visuelle": prompt visuel en ANGLAIS pour Flux (max 120 chars). RÈGLE CRITIQUE : décris UNIQUEMENT le contenu visuel UNIQUE de cette scène — QUI est visible, QUOI se passe, OÙ. NE PAS inclure de mots de style (lighting, film grain, cinematic, etc.) — le style est appliqué automatiquement. Chaque scène doit être visuellement distincte.
-- "animation_prompt": prompt de mouvement en ANGLAIS pour image-to-video (max 80 chars). Décrit le mouvement de caméra et l'action concrète.
-- "texte_voix": OBLIGATOIRE — texte narré en français pendant cette scène. Jamais vide.
-- "duree_estimee": durée en secondes (entier, entre 3 et 12)
-${hasDialogue ? `- "speaker": NOM du personnage parlant. Optionnel pour narration, OBLIGATOIRE pour dialogues.` : ''}
+REQUIRED VISUAL STYLE for description_visuelle: ${styleGuide}
 
-RÈGLES :
-1. description_visuelle : contenu visuel unique par scène (sujet + action + lieu). Pas de mots de style répétitifs. Exemples bons : "scientist examining glowing DNA strand in dark lab", "crowd celebrating in sunlit city square". Mauvais : "cinematic shot of person, dramatic lighting, film grain".
-2. animation_prompt DOIT décrire un mouvement CONCRET (jamais "smooth animation" seul)
-3. texte_voix est OBLIGATOIRE — distribue le script complet sur toutes les scènes sans rien omettre
+For each scene, produce:
+- "index": scene number (starts at 0)
+- "description_visuelle": visual prompt in ENGLISH for Flux (max 150 chars). MUST follow the visual style above. Describe ONLY the unique visual content of this scene — WHO is visible, WHAT happens, WHERE. Each scene must be visually distinct. Never include identifiable real people.
+- "animation_prompt": camera/motion prompt in ENGLISH for image-to-video (max 80 chars). Describes a concrete visible movement, e.g. "slow zoom in, character gestures forward, subtle breathing motion".
+- "texte_voix": REQUIRED — narration written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty. Matches the corresponding portion of the script verbatim.
+- "duree_estimee": duration in seconds (integer, between 3 and 12)
+${hasDialogue ? `- "speaker": NAME of the speaking character. Optional for narration, REQUIRED for dialogue lines.` : ''}
+
+RULES:
+1. description_visuelle = unique visual content per scene (subject + action + setting). MUST follow the visual style. Good examples: "scientist examining glowing DNA strand in dark lab", "crowd celebrating in sunlit city square". Bad: "smooth animation" or generic shots.
+2. animation_prompt MUST describe a CONCRETE motion (never just "smooth animation").
+3. texte_voix is REQUIRED — distribute the full script across all scenes, in ${lang.name}, omitting nothing.
 ${durationInstruction}
-${hasDialogue ? `6. DIALOGUES : si deux personnages parlent successivement, favorise des scènes séparées pour chaque réplique (permet voix différentes)` : ''}
+${hasDialogue ? `6. DIALOGUES: when two characters speak in succession, prefer separate scenes per line (lets the renderer use different voices)` : ''}
 
-Style visuel de référence pour description_visuelle si besoin d'inspiration : ${styleGuide}
-
-Script :
+Script (treat as ${lang.name} content — preserve verbatim across texte_voix fields):
 """
 ${p.script}
 """
 
-Réponds UNIQUEMENT avec ce JSON :
+Reply ONLY with this JSON:
 {
   "scenes": [...],
-  "total_duration": <somme des durées>
+  "total_duration": <sum of durations>
 }`
 
   return { system, user }
 }
 
-type SceneObject = { index: number; description_visuelle: string; animation_prompt: string; texte_voix: string; duree_estimee: number; speaker?: string }
+type SceneObject = {
+  index:               number
+  description_visuelle: string
+  animation_prompt:     string
+  texte_voix:           string
+  duree_estimee:        number
+  speaker?:             string
+}
 
 function extractJson(raw: string): { scenes: SceneObject[]; total_duration: number } {
   const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
@@ -109,7 +132,6 @@ function extractJson(raw: string): { scenes: SceneObject[]; total_duration: numb
 
   // 2. JSON was truncated — extract every complete scene object individually
   const scenes: SceneObject[] = []
-  // Match each complete {...} object within the scenes array
   const re = /\{[^{}]*"index"\s*:\s*(\d+)[^{}]*\}/g
   let m: RegExpExecArray | null
   while ((m = re.exec(partial)) !== null) {
@@ -145,11 +167,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'script and style are required' }, { status: 400 })
     }
 
-    const { system, user } = buildStoryboardPrompts({ script, style, duration, title, description })
+    // Detect script language so the storyboard's texte_voix preserves it
+    // instead of silently translating to French (regression seen in prod).
+    const language = detectLanguage(script)
 
+    const { system, user } = buildStoryboardPrompts({
+      script, style, duration, title, description, language,
+    })
+
+    // Use sonnet-4-6 for quality (haiku-4-5 was producing thinner prompts
+    // and worse image generation results — observed regression).
     const anthropic = new Anthropic({ apiKey })
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-sonnet-4-6',
       max_tokens: 8192,
       system,
       messages: [{ role: 'user', content: user }],
@@ -160,7 +190,11 @@ export async function POST(request: NextRequest) {
 
     if (!Array.isArray(parsed.scenes)) throw new Error('Invalid storyboard: missing scenes array')
 
-    return NextResponse.json({ scenes: parsed.scenes, total_duration: parsed.total_duration })
+    return NextResponse.json({
+      scenes:         parsed.scenes,
+      total_duration: parsed.total_duration,
+      language:       language.code,
+    })
   } catch (err) {
     console.error('[generate-storyboard]', err)
     return NextResponse.json(

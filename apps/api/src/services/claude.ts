@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { logger } from '../lib/logger'
-import type { Scene } from '@clyro/shared'
+import { type Scene, STYLE_VISUAL_GUIDE } from '@clyro/shared'
 import type { DetectedLanguage } from '../lib/detect-language'
 
 // Helper used by every prompt: inject an unambiguous "output language"
@@ -38,37 +38,11 @@ const SCENE_COUNT_MAP: Record<string, number> = {
   default: 4,
 }
 
-// Instructions visuelles par style — transmises à Claude pour générer description_visuelle cohérente avec fal.ai
-//
-// Règle d'or : styles routés sur flux/schnell (cinematique, stock-vo, 3d-pixar,
-// animation-2d, flat-design, stickman, corporate, luxe, fun, dynamique) ne DOIVENT
-// JAMAIS demander de texte/chiffres/labels lisibles — schnell les rend illisibles.
-// Seuls infographie / motion-graphics / whiteboard routent sur Ideogram v2 qui
-// sait réellement écrire du texte, donc ces trois styles peuvent inclure des labels.
-const STYLE_VISUAL_GUIDE: Record<string, string> = {
-  // Faceless — Catégorie 1 : Narratif & Immersif  (schnell)
-  'cinematique':      'cinematic lighting, 8k hyper-realistic, anamorphic wide shot, dramatic chiaroscuro, 35mm film grain — movie still quality, NO illustration, NO visible text or letters in frame',
-  'stock-vo':         'National Geographic style, natural light, realistic textures, real-world documentary scene — fully photorealistic, no illustration, no cartoon, NO signs or readable text in frame',
-  // Faceless — Catégorie 2 : Explicatif & Didactique
-  // whiteboard → Ideogram v2 (text-heavy): can include handwritten annotations, arrows, callouts
-  'whiteboard':       'hand-drawn sketch on whiteboard, black marker on plain white — NO color fills, NO shading, rough strokes only, RSA Animate educational style — handwritten single-word labels and arrows are OK (rendered via Ideogram)',
-  // stickman / minimaliste / flat-design → schnell: NO text
-  'stickman':         'black stick figures and geometric shapes on white background, RSA animate bonhommes style — NO fills, NO gradients, NO text, bold expressive line drawing, symbolic minimal storytelling',
-  'minimaliste':      'simple black line art on white background, minimalist stickman/stick-figure illustration — NO fills, NO gradients, NO text or labels, ultra clean linework only',
-  'flat-design':      'flat vector illustration, bold solid colors, no shadows, no gradients, Dribbble-quality SVG aesthetic — modern digital design, geometric shapes, vibrant palette, NO visible text or readable labels',
-  // infographie → Ideogram v2: can include readable percentages, labels, axis text
-  'infographie':      'flat icon infographic, data visualization chart with simple bar/donut/line graph, color-coded sections, isometric perspective — professional B2B editorial design, readable axis labels and short percentage callouts are OK (rendered via Ideogram)',
-  // 3d-pixar, animation-2d → schnell: NO text
-  '3d-pixar':         'Pixar-style 3D CGI render, claymation texture, rounded adorable characters, soft studio lighting, rich vibrant colors — Disney Pixar movie quality, no photorealism, NO visible text in frame',
-  'animation-2d':     'flat vector 2D cartoon illustration, bold outlines, vibrant saturated colors — absolutely NO photorealism, no 3D, NO readable text, traditional animation frame',
-  // motion-graphics → Ideogram v2: can include bold animated typography
-  'motion-graphics':  'flat design motion graphics, geometric shapes, vibrant vector colors, kinetic composition — tech brand, high-end ad quality, bold typographic headline (1-3 words max, rendered via Ideogram)',
-  // Motion styles — all schnell
-  'corporate':        'clean corporate business illustration, navy blue / white palette, minimal geometric shapes — professional B2B, NO visible text in frame',
-  'dynamique':        'high-energy composition, motion blur, neon accents on dark background, diagonal lines — sports / action, NO readable text',
-  'luxe':             'luxury brand photography, gold and black palette, bokeh, marble surfaces — high-fashion editorial, NO visible text or typography',
-  'fun':              'playful cartoon, candy-colored palette, bubbly rounded shapes, confetti — kawaii cheerful style, NO visible text',
-}
+// STYLE_VISUAL_GUIDE moved to @clyro/shared/style-guides so the
+// Next.js Hub flow (apps/web/app/api/generate-storyboard/route.ts)
+// uses the EXACT same descriptions. Keeping two copies in sync was
+// the root cause of the "image quality regression" reported in prod
+// — the web copy was a thinner, older version of this map.
 
 interface StoryboardResult {
   scenes: Scene[]
