@@ -67,6 +67,9 @@ export interface FacelessPipelineParams {
   dialogueMode?: boolean   // true = auto-detect & enable multi-character voices
   speakerVoices?: Record<string, string> // map speaker name → voice_id (optional override)
   animationMode?: AnimationMode // global animation strategy; 'storyboard' bypasses Kling entirely
+  /** Burn karaoke subtitles into the final MP4. Defaults to OFF — users
+   *  who want subs must opt in explicitly via the wizard's subtitles toggle. */
+  subtitlesEnabled?: boolean
   /** Number of credits the route already deducted for this run.
    *  Used to refund the exact amount on watchdog timeout / pipeline error. */
   creditCost?: number
@@ -78,7 +81,7 @@ export interface FacelessPipelineParams {
 const PIPELINE_TIMEOUT_MS = Number(process.env.PIPELINE_TIMEOUT_MS ?? 45 * 60 * 1000)
 
 export async function runFacelessPipeline(params: FacelessPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, style, duration, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices, animationMode, creditCost } = params
+  const { videoId, userId, userEmail, title, style, duration, script, voiceId, brandKit, musicTrackUrl, preGeneratedScenes, dialogueMode, speakerVoices, animationMode, subtitlesEnabled, creditCost } = params
 
   /**
    * Refund the credits the route deducted upfront, idempotent per video.
@@ -518,9 +521,13 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
     // ÉTAPE 4 : Assemblage FFmpeg
     await updateStatus('assembly', 80)
 
-    // Construire le SRT karaoke avec offsets audio cumulatifs
+    // Construire le SRT karaoke avec offsets audio cumulatifs.
+    // Gated on the user-controlled `subtitlesEnabled` flag — defaults to OFF.
+    // Skipping the SRT generation also skips the FFmpeg `subtitles=` filter
+    // downstream, since assembleVideoFromVideoClips() only burns when
+    // karaokeSubsContent is truthy.
     let karaokeSubsContent: string | undefined
-    if (audioResults.length > 0) {
+    if (subtitlesEnabled && audioResults.length > 0) {
       let audioOffset = 0
       const sceneWordData = audioResults.map((r) => {
         const entry = { words: r.words, audioOffset }
@@ -529,6 +536,9 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
         return entry
       })
       karaokeSubsContent = generateKaraokeFromWords(sceneWordData)
+      logger.info({ videoId, audioResults: audioResults.length }, 'Karaoke subtitles ON — burning into MP4')
+    } else if (audioResults.length > 0) {
+      logger.info({ videoId }, 'Karaoke subtitles OFF — skipping subtitle burn')
     }
 
     // Télécharger la musique de fond si fournie

@@ -112,14 +112,35 @@ const FORMAT_DIMS_KB = {
   '1:1':  { width: 1080, height: 1080 },
 }
 
-// Presets : zoom+pan variés par index de scène (6 variantes)
+// Ken Burns presets — 6 variants rotated by scene index.
+//
+// IMPORTANT: zoom is computed from the normalised frame index `on/d`
+// so the motion travels the FULL range across the clip's actual
+// duration. The previous formula (`min(zoom+0.0015,1.20)`) only
+// advanced ~0.003 over a 5-second clip at 30 fps — visually static,
+// hence the user-reported "jerky / not smooth" zoom.
+//
+// Travel range = 0.10 (1.00 → 1.10) — enough to feel like a slow
+// dolly-in without going so wide that the crop shows soft edges.
+// `direction` field: 1 = zoom-in (start at 1.00, end at 1.10),
+//                   -1 = zoom-out (start at 1.10, end at 1.00).
+//
+// `x` / `y` use `zoom` (the current value) so the pan tracks the
+// scaled frame correctly throughout the motion.
+const KB_TRAVEL = 0.10
 const KB_FFMPEG_PRESETS = [
-  { z: "min(zoom+0.0015,1.20)", x: "iw/2-(iw/zoom/2)", y: "ih/2-(ih/zoom/2)" }, // center zoom-in
-  { z: "min(zoom+0.0015,1.20)", x: "0",                y: "0"                }, // top-left
-  { z: "min(zoom+0.0015,1.20)", x: "iw-iw/zoom",       y: "ih/2-(ih/zoom/2)" }, // right pan
-  { z: "min(zoom+0.0015,1.20)", x: "iw/2-(iw/zoom/2)", y: "0"                }, // top pan
-  { z: "if(eq(on,1),1.20,max(pzoom-0.0015,1.0))", x: "iw/2-(iw/zoom/2)", y: "ih/2-(ih/zoom/2)" }, // zoom-out
-  { z: "min(zoom+0.0015,1.20)", x: "iw-iw/zoom",       y: "ih-ih/zoom"       }, // diagonal
+  // 0 — slow center zoom-in
+  { z: `1+${KB_TRAVEL}*on/(d-1)`,         x: 'iw/2-(iw/zoom/2)', y: 'ih/2-(ih/zoom/2)' },
+  // 1 — top-left push (Ken Burns classic)
+  { z: `1+${KB_TRAVEL}*on/(d-1)`,         x: '0',                y: '0' },
+  // 2 — right-pan zoom
+  { z: `1+${KB_TRAVEL}*on/(d-1)`,         x: 'iw-iw/zoom',       y: 'ih/2-(ih/zoom/2)' },
+  // 3 — top-pan zoom
+  { z: `1+${KB_TRAVEL}*on/(d-1)`,         x: 'iw/2-(iw/zoom/2)', y: '0' },
+  // 4 — slow zoom-OUT (start zoomed, end full frame)
+  { z: `1+${KB_TRAVEL}-${KB_TRAVEL}*on/(d-1)`, x: 'iw/2-(iw/zoom/2)', y: 'ih/2-(ih/zoom/2)' },
+  // 5 — diagonal pan + zoom
+  { z: `1+${KB_TRAVEL}*on/(d-1)`,         x: 'iw-iw/zoom',       y: 'ih-ih/zoom' },
 ]
 
 // Default font for drawtext overlays. `fonts-liberation` is installed in the

@@ -80,8 +80,9 @@ const createFacelessSchema = z.object({
   animation_overrides: z.record(z.string(), z.enum(['storyboard', 'fast', 'pro'])).optional(),
   // F1-012: optional background music preset selected in the wizard
   music_preset: z.enum(['none', 'soft', 'upbeat', 'cinematic', 'corporate']).optional(),
-  // F1-013: whether to burn word-level subtitles into the final render
-  subtitles_enabled: z.boolean().optional(),
+  // F1-013: whether to burn word-level subtitles into the final render.
+  // Defaults to FALSE — users explicitly opt in via the wizard's toggle.
+  subtitles_enabled: z.boolean().optional().default(false),
 })
 
 const regenerateSceneSchema = z.object({
