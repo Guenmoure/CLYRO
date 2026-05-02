@@ -247,9 +247,8 @@ function StepScript({
                 .replace('{n}', String(wordCount))
                 .replace('{m}', String(Math.round(wordCount / 130)))}
             </p>
-            {wordCount > 600 && (
-              <Badge variant="warning">{t('fn_long_script_badge')}</Badge>
-            )}
+            {/* Long-script warning badge removed: scripts are intentionally
+                unlimited — no need to discourage long narratives. */}
           </div>
         </>
       )}

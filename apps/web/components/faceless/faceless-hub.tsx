@@ -710,7 +710,10 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                   }
                 }}
                 placeholder={t('fh_scriptPlaceholder')}
-                maxLength={8000}
+                // No maxLength: scripts are intentionally unlimited so users
+                // can paste full transcripts / long-form articles. The backend
+                // Express body limit (10 MB, see apps/api/src/index.ts) is the
+                // only practical cap.
                 rows={6}
                 className="w-full bg-transparent px-4 pb-3 text-foreground font-body text-sm placeholder:text-[--text-secondary] focus:outline-none resize-none"
               />

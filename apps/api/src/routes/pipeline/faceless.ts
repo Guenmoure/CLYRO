@@ -68,7 +68,10 @@ const createFacelessSchema = z.object({
   input_type:   z.enum(['script', 'audio']),
   format:       z.enum(VIDEO_FORMATS).default('16:9'),
   duration:     z.enum(VIDEO_DURATIONS).default('30s'),
-  script:       z.string().max(100000).optional(),
+  // No max(): scripts are intentionally unlimited at the application layer.
+  // The Express JSON body limit (10 MB, see apps/api/src/index.ts) is the
+  // only practical cap, and that's a payload protection not a content rule.
+  script:       z.string().optional(),
   audio_url:    z.string().url().optional(),
   voice_id:       z.string().optional(),
   brand_kit_id:   z.string().uuid().optional(),
