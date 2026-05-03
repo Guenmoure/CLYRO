@@ -214,6 +214,13 @@ export interface OverlayOptions {
   text: string
   position?: OverlayPosition
   emphasis?: OverlayEmphasis
+  /** When set, the overlay only renders during [startTimeSec, endTimeSec]
+   *  of the underlying clip. Used by the PR2 word-sync engine to make
+   *  overlays appear at the exact moment the trigger word is spoken,
+   *  rather than for the entire scene. Both omitted ⇒ overlay shows
+   *  for the full clip duration (legacy behaviour). */
+  startTimeSec?: number
+  endTimeSec?: number
 }
 
 /**
@@ -311,7 +318,7 @@ function buildOverlayFilter(
     : position.startsWith('bottom-') ? `h-text_h-${marginY}`
     : '(h-text_h)/2'
 
-  return [
+  const parts = [
     `drawtext=fontfile='${fontPath}'`,
     `text='${escapeDrawtext(text)}'`,
     `fontsize=${fontSize}`,
@@ -322,7 +329,26 @@ function buildOverlayFilter(
     `x=${xExpr}`,
     `y=${yExpr}`,
     `line_spacing=6`,
-  ].join(':')
+  ]
+
+  // Word-sync window (PR2): only render the overlay between
+  // `startTimeSec` and `endTimeSec` of this clip. drawtext's `enable`
+  // option takes a boolean expression evaluated per frame; `between(t,
+  // X, Y)` is true when the current time `t` is in [X, Y]. When either
+  // bound is missing or invalid we fall back to the legacy "always on"
+  // behaviour by skipping the option entirely.
+  if (
+    typeof overlay.startTimeSec === 'number'
+    && typeof overlay.endTimeSec === 'number'
+    && overlay.endTimeSec > overlay.startTimeSec
+    && overlay.startTimeSec >= 0
+  ) {
+    const start = overlay.startTimeSec.toFixed(2)
+    const end   = overlay.endTimeSec.toFixed(2)
+    parts.push(`enable='between(t,${start},${end})'`)
+  }
+
+  return parts.join(':')
 }
 
 /**

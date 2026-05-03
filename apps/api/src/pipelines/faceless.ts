@@ -338,9 +338,72 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       text: string
       position?: 'top-center' | 'top-left' | 'top-right' | 'center' | 'bottom-center' | 'bottom-left' | 'bottom-right'
       emphasis?: 'stat' | 'headline' | 'title' | 'key_phrase' | 'quote' | 'comparison' | 'list_item' | 'source' | 'cta' | 'default'
+      /** PR2 word-sync: when set, overlay only renders during this window
+       *  of the scene clip (in seconds, t=0 = start of scene). */
+      startTimeSec?: number
+      endTimeSec?: number
     }
     const overlayTextBySceneId = new Map<string, string>()
     const overlayOptsBySceneId = new Map<string, OverlayOpts>()
+
+    // PR2 — word-sync engine.
+    //
+    // Each storyboard scene's overlay can specify a `trigger_word` (a word
+    // from the scene's narration) and a `duration_seconds`. We use the
+    // ElevenLabs word-level timestamps to find when that word is spoken,
+    // and clamp the overlay's [startTimeSec, endTimeSec] to that window.
+    //
+    // Matching is case-insensitive, punctuation-stripped. The trigger_word
+    // can be 1-3 words long — we accept the FIRST match in the scene.
+    // If no word in the trigger phrase matches, we fall back to "show for
+    // the entire scene" (legacy behaviour, no enable= clause emitted).
+    const wordsBySceneId = new Map<string, Array<{ word: string; start: number; end: number }>>()
+    for (const r of audioResults) {
+      wordsBySceneId.set(r.sceneId, r.words)
+    }
+
+    const normalize = (s: string): string =>
+      s.toLowerCase().replace(/[\p{P}\p{S}]/gu, '').trim()
+
+    function findTriggerWindow(
+      sceneId: string,
+      triggerWord: string | undefined,
+      durationSec: number,
+      sceneDurationSec: number,
+    ): { startTimeSec: number; endTimeSec: number } | null {
+      if (!triggerWord || !triggerWord.trim()) return null
+      const words = wordsBySceneId.get(sceneId)
+      if (!words || words.length === 0) return null
+
+      const wantedTokens = normalize(triggerWord).split(/\s+/).filter(Boolean)
+      if (wantedTokens.length === 0) return null
+
+      // Sliding match: find the first index where the next N words equal wantedTokens.
+      for (let i = 0; i + wantedTokens.length <= words.length; i++) {
+        let ok = true
+        for (let j = 0; j < wantedTokens.length; j++) {
+          if (normalize(words[i + j].word) !== wantedTokens[j]) { ok = false; break }
+        }
+        if (ok) {
+          const startTimeSec = words[i].start
+          const endTimeSec   = Math.min(sceneDurationSec, startTimeSec + durationSec)
+          return { startTimeSec, endTimeSec }
+        }
+      }
+
+      // Loose fallback: try matching just the first significant word
+      // (helps when Claude's trigger has slight punctuation drift vs the
+      // exact ElevenLabs alignment).
+      const firstWord = wantedTokens[0]
+      const hit = words.find((w) => normalize(w.word) === firstWord)
+      if (hit) {
+        const startTimeSec = hit.start
+        const endTimeSec   = Math.min(sceneDurationSec, startTimeSec + durationSec)
+        return { startTimeSec, endTimeSec }
+      }
+      return null
+    }
+
     if (preGeneratedScenes) {
       for (const s of preGeneratedScenes) {
         if (s.overlay_text && s.overlay_text.trim().length > 0) {
@@ -352,10 +415,27 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       if (overlayTextBySceneId.has(s.id)) continue
       const ov = s.overlay
       if (ov && ov.text && ov.text.trim().length > 0) {
+        const sceneWords = wordsBySceneId.get(s.id) ?? []
+        const sceneDurSec = sceneWords.length > 0 ? sceneWords[sceneWords.length - 1].end : (s.duree_estimee || 5)
+        const requestedDur = typeof ov.duration_seconds === 'number' && ov.duration_seconds > 0
+          ? Math.min(8, ov.duration_seconds) // cap at 8s — keeps a single overlay from hogging the scene
+          : 3
+        const window = findTriggerWindow(s.id, ov.trigger_word, requestedDur, sceneDurSec)
+        if (window) {
+          logger.info({
+            videoId, sceneId: s.id, trigger: ov.trigger_word,
+            startTimeSec: window.startTimeSec, endTimeSec: window.endTimeSec,
+          }, 'Overlay word-sync resolved')
+        } else if (ov.trigger_word) {
+          logger.warn({ videoId, sceneId: s.id, trigger: ov.trigger_word },
+            'Overlay trigger_word not found in narration — overlay will show full scene')
+        }
         overlayOptsBySceneId.set(s.id, {
           text: ov.text.trim(),
           position: ov.position,
           emphasis: ov.type,
+          startTimeSec: window?.startTimeSec,
+          endTimeSec:   window?.endTimeSec,
         })
       }
     }
