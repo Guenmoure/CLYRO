@@ -1,4 +1,5 @@
 import { createFalClient } from '@fal-ai/client'
+import { getStyleLockSuffix } from '@clyro/shared'
 import { logger } from '../lib/logger'
 import { supabaseAdmin } from '../lib/supabase'
 import { selectFalModelForF1Style } from '../config/fal-models'
@@ -190,9 +191,13 @@ export async function generateSceneImage(
   // Scene description LEADS — Flux weights the beginning of the prompt most heavily.
   // Style prefix + suffix are appended AFTER so the aesthetic decorates the scene
   // instead of overriding its composition.
+  // The StyleLock consistency suffix locks the palette + temperature so all
+  // scenes of the same video share one tonal identity (PR3). It tails the
+  // prompt so it acts as a global colour grade rather than a content directive.
   const stylePrefix = styleConfig.prompt_prefix.replace(/,\s*$/, '')
   const styleSuffix = styleConfig.prompt_suffix.replace(/^\s*,/, '').trim()
-  const fullPrompt = `${prompt}, ${stylePrefix}, ${styleSuffix}${brandSuffix}`
+  const lockSuffix  = getStyleLockSuffix(style)
+  const fullPrompt  = `${prompt}, ${stylePrefix}, ${styleSuffix}${brandSuffix}, ${lockSuffix}`
 
   const useAspectRatio = ASPECT_RATIO_MODELS.has(model)
   const isIdeogram    = model.startsWith('fal-ai/ideogram/')
@@ -527,22 +532,61 @@ export async function generateSceneVideo(
  * - PAS de fallback Standard→Pro : si Standard échoue, on laisse le pipeline
  *   utiliser l'image statique (assembleVideo fallback) plutôt que payer Pro.
  */
+// ── PR3 — animation-complexity heuristic ───────────────────────────────
+//
+// "Complex" motion verbs are camera moves or transformations that
+// benefit from the higher-quality Kling Pro model (orbit, crane,
+// reveal, transform, dolly, parallax, …). Simple motions (fade, drift,
+// gentle, subtle, slow zoom) are cheap to render well in Kling
+// Standard.
+//
+// We ALSO use this as a "skip animation entirely" gate when the prompt
+// is essentially static — that path returns null so the pipeline falls
+// back to Ken Burns (free, smooth, no Kling cost).
+const COMPLEX_MOTION_VERBS = new Set([
+  'orbit', 'crane', 'reveal', 'transform', 'morph', 'parallax',
+  'dolly', 'tracking', 'rotate', 'rotation', 'spin', 'zoom-out',
+  'pull-back', 'pullback', 'push-in', 'push', 'fly-through', 'flyover',
+  'unfold', 'explode', 'shatter', 'swirl', 'whirl', 'unzoom',
+])
+
+export type AnimationComplexity = 'static' | 'simple' | 'complex'
+
+export function classifyAnimationComplexity(animationPrompt: string): AnimationComplexity {
+  const normalized = (animationPrompt ?? '').toLowerCase()
+  const tokens = normalized.split(/[\s,]+/).filter(Boolean)
+  if (tokens.length <= 2) return 'static' // empty / 1-2 word prompts ⇒ Ken Burns
+  let complexHits = 0
+  for (const t of tokens) {
+    if (COMPLEX_MOTION_VERBS.has(t)) complexHits++
+  }
+  if (complexHits >= 2) return 'complex'
+  if (complexHits >= 1 && tokens.length >= 12) return 'complex'
+  return 'simple'
+}
+
 export async function generateSceneVideoAuto(
   imageUrl: string,
   animationPrompt: string,
   duration: '5' | '10' = '5',
   style?: string
 ): Promise<{ videoUrl: string; model: string }> {
-  const usePro = HIGH_QUALITY_VIDEO_STYLES.has(style ?? '')
+  const styleAllowsPro = HIGH_QUALITY_VIDEO_STYLES.has(style ?? '')
+  const complexity = classifyAnimationComplexity(animationPrompt)
+
+  // Pro route: premium-style content with at least a "simple" motion,
+  // OR any style with a "complex" motion (the prompt itself justifies
+  // the cost — orbits/transforms look cheap on Standard).
+  const usePro = (styleAllowsPro && complexity !== 'static') || complexity === 'complex'
 
   if (usePro) {
-    logger.info({ style, duration }, 'Kling router → v2.5-turbo Pro (premium style)')
+    logger.info({ style, duration, complexity }, 'Kling router → v2.5-turbo Pro')
     const result = await generateSceneVideoKlingPro(imageUrl, animationPrompt, duration)
     return { ...result, model: 'kling-v2.5-turbo-pro' }
   }
 
   // Standard uniquement — pas de fallback Pro (économie de crédits)
-  logger.info({ style, duration }, 'Kling router → v2.5-turbo Standard (default)')
+  logger.info({ style, duration, complexity }, 'Kling router → v2.5-turbo Standard')
   const result = await generateSceneVideoKlingStandard(imageUrl, animationPrompt, duration)
   return { ...result, model: 'kling-v2.5-turbo-standard' }
 }
