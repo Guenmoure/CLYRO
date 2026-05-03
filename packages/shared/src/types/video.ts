@@ -118,6 +118,24 @@ export interface SceneOverlay {
   duration_seconds?: number
 }
 
+/**
+ * Faceless scene subtype — drives the per-scene image-prompt template.
+ * Distinct from Motion Design's `scene_type` (which routes Remotion
+ * components). Claude classifies each faceless scene into one of:
+ *   - broll       — atmospheric stock-style footage, rich detail, no
+ *                   negative space needed (text lives in karaoke bottom)
+ *   - infographic — chart / data viz / silhouette with negative space
+ *                   in the center for a stat overlay
+ *   - typography  — minimal background, the text overlay IS the content
+ *                   (full-frame negative space)
+ *   - demo        — interface / app screen / product mockup with focused
+ *                   subject and clean composition
+ *
+ * Defaults to 'broll' in the pipeline when omitted (safest fallback —
+ * a rich atmospheric image works for any narration).
+ */
+export type FacelessSceneType = 'broll' | 'infographic' | 'typography' | 'demo'
+
 export interface Scene {
   id: string
   index: number
@@ -131,6 +149,8 @@ export interface Scene {
   voice_id?: string               // voice_id ElevenLabs pour ce personnage (si dialogue_mode actif)
   // Programmatic overlay — chiffres, titres, quotes rendus via drawtext en post
   overlay?: SceneOverlay
+  // Faceless scene subtype — drives the per-scene image-prompt template (PR4).
+  faceless_scene_type?: FacelessSceneType
   // Motion Design fields (optionnel — ignoré par le pipeline Faceless)
   display_text?: string           // texte affiché à l'écran (peut différer de la narration)
   animation_type?: AnimationType  // type d'animation Remotion pour cette scène

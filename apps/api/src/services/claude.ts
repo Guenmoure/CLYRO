@@ -173,6 +173,12 @@ For each scene, produce:
 - "animation_prompt": motion prompt in ENGLISH for image-to-video (max 80 chars). Describes ONE primary subject motion + ONE camera move, ending with "smooth cinematic motion". Examples: "slow zoom in, character gestures forward, smooth cinematic motion", "camera pans left, gentle wind effect, smooth cinematic motion".
 - "texte_voix": REQUIRED — narration text written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty. Matches exactly the part of the script this scene covers.
 - "duree_estimee": duration in seconds (integer, between 3 and 10)
+- "faceless_scene_type": one of "broll" | "infographic" | "typography" | "demo". Pick the template that fits this scene's PURPOSE:
+    • "broll"       — atmospheric narrative scene (no overlay, or just a key_phrase / source). Rich detailed image, full frame.
+    • "infographic" — scene illustrating a number / stat / comparison. Backdrop is a SILENT chart or data viz with negative space in the CENTER for the overlay.
+    • "typography"  — scene where the headline / key_phrase IS the content. Backdrop is minimal / abstract with full-frame negative space.
+    • "demo"        — scene about an interface, app, product or workflow. Image is a clean mockup with focused subject.
+  Picking the wrong template makes the image fight the overlay — be precise.
 - "overlay" (OPTIONAL): object { "type": "stat"|"headline"|"key_phrase"|"comparison"|"list_item"|"source"|"cta", "text": "…", "position": "top-center"|"center"|"bottom-center"|… , "trigger_word": "…", "duration_seconds": 2-5 }
   Pick AT MOST ONE overlay type per scene. Use them like this:
     • "stat"       — every time the narration mentions a specific number ("$250,000", "87%"). text = the number only, max 12 chars. position default "center".
@@ -194,8 +200,12 @@ For each scene, produce:
   4. TECHNICAL   — camera/lens/finish ("shot on Canon R5, 85mm, shallow DoF, 8K, photorealistic")
 Always end with "8K" or "8K resolution".
 NEVER mention identifiable real people — use hands, silhouettes, objects, landscapes, abstract shapes.
-If the scene has a stat / headline / key_phrase overlay, INCLUDE the phrase
-"with negative space in the [center|upper third|lower third] for text overlay" in the ENVIRONMENT layer so the text doesn't fight the image.
+
+Adapt the SUBJECT + ENVIRONMENT layers to faceless_scene_type:
+  • broll       → rich narrative scene, no negative-space request
+  • infographic → object/icon related to the data + "wide negative space in the CENTER for text overlay" in ENVIRONMENT
+  • typography  → minimal abstract surface (smoke, gradient, light beam, single object) + "full-frame negative space for centered text" in ENVIRONMENT
+  • demo        → clean device or interface mockup, focused subject, soft ambient light
 ═══════════════════════════════════════════════════════════════════════
 
 CRITICAL RULES:
