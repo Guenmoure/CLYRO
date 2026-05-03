@@ -46,7 +46,7 @@ export function AvatarPreviewModal({ avatar, isOpen, onClose, onUse }: AvatarPre
       <div className="flex flex-col md:flex-row min-h-[480px]">
 
         {/* Left — visual preview */}
-        <div className="md:w-[44%] aspect-[3/4] md:aspect-auto bg-navy-950 flex-shrink-0 overflow-hidden rounded-t-2xl md:rounded-t-none md:rounded-l-2xl">
+        <div className="md:w-[44%] aspect-[3/4] md:aspect-auto bg-background flex-shrink-0 overflow-hidden rounded-t-2xl md:rounded-t-none md:rounded-l-2xl">
           {previewUrl ? (
             <video
               key={previewUrl}

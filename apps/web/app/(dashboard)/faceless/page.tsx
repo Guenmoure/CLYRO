@@ -83,8 +83,7 @@ export default function FacelessIndexPage() {
           </div>
 
           <Link href="/faceless/hub" className="group relative">
-            <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-600 to-cyan-600 text-white font-body text-sm font-semibold shadow-lg">
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-grad-cta text-white font-body text-sm font-semibold shadow-lg">
               <Plus size={16} className="group-hover:rotate-90 transition-transform duration-200" />
               {t('fl_newProject')}
             </div>
@@ -95,8 +94,8 @@ export default function FacelessIndexPage() {
         {videos.length === 0 ? (
           <Card variant="elevated" padding="xl" className="flex flex-col items-center text-center gap-5 py-20">
             <div className="relative">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 blur-2xl" />
-              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/15 to-cyan-500/15 border border-border flex items-center justify-center">
+              <div className="absolute inset-0 rounded-3xl bg-primary/10 blur-2xl" />
+              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/15 to-blue-500/10 border border-border flex items-center justify-center">
                 <Video size={32} className="text-blue-500" />
               </div>
             </div>
@@ -107,8 +106,7 @@ export default function FacelessIndexPage() {
               </p>
             </div>
             <Link href="/faceless/hub" className="group relative mt-2">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 opacity-60 blur-md group-hover:opacity-90 transition-opacity duration-300" />
-              <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-600 to-cyan-600 text-white font-body text-base font-semibold shadow-xl">
+              <div className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-grad-cta text-white font-body text-base font-semibold shadow-xl">
                 <Clapperboard size={18} />
                 {t('fl_createFirst')}
                 <Sparkles size={14} className="opacity-80" />
@@ -139,13 +137,13 @@ export default function FacelessIndexPage() {
 function NewProjectCard({ newProjectLabel, fromScriptLabel, badgeLabel }: { newProjectLabel: string; fromScriptLabel: string; badgeLabel: string }) {
   return (
     <Link href="/faceless/hub" className="group relative block rounded-2xl overflow-hidden aspect-[4/3]">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-cyan-600 opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-primary opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute inset-[1.5px] rounded-2xl bg-card group-hover:bg-card/90 transition-colors duration-300" />
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-indigo-500/8 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-cyan-500 blur-lg opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
-          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 via-indigo-600 to-cyan-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <div className="absolute inset-0 rounded-full bg-primary blur-lg opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
+          <div className="relative w-14 h-14 rounded-full bg-grad-cta flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
             <Plus size={24} className="text-white group-hover:rotate-90 transition-transform duration-300" />
           </div>
         </div>
@@ -157,9 +155,9 @@ function NewProjectCard({ newProjectLabel, fromScriptLabel, badgeLabel }: { newP
             {fromScriptLabel}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/15 to-cyan-500/15 border border-blue-500/20 group-hover:from-blue-500/25 group-hover:to-cyan-500/25 transition-all duration-200">
-          <Sparkles size={10} className="text-blue-400" />
-          <span className="font-mono text-[10px] text-blue-400 tracking-wider uppercase">{badgeLabel}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 group-hover:bg-blue-500/25 transition-all duration-200">
+          <Sparkles size={10} className="text-blue-500" />
+          <span className="font-mono text-[10px] text-blue-500 tracking-wider uppercase">{badgeLabel}</span>
         </div>
       </div>
     </Link>
@@ -189,7 +187,7 @@ function FacelessVideoCard({
       rel={video.output_url ? 'noopener noreferrer' : undefined}
       className="card-interactive rounded-2xl border border-border bg-card overflow-hidden block"
     >
-      <div className="aspect-video relative bg-gradient-to-br from-blue-500/20 via-indigo-500/10 to-cyan-500/20 flex items-center justify-center">
+      <div className="aspect-video relative bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center">
         <div className="absolute inset-0 grid-bg opacity-[0.04]" />
         {video.output_url ? (
           <video src={video.output_url} className="absolute inset-0 w-full h-full object-cover" muted />

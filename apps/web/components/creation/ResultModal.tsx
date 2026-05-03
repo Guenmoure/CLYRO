@@ -53,7 +53,7 @@ function VideoResult({ videoUrl, thumbnailUrl, title }: { videoUrl: string; thum
 function AssetIcon({ type }: { type: BrandAsset['type'] }) {
   if (type === 'image' || type === 'svg') return <ImageIcon size={20} className="text-blue-400" />
   if (type === 'pdf') return <FileText size={20} className="text-purple-400" />
-  return <Palette size={20} className="text-cyan-400" />
+  return <Palette size={20} className="text-teal-500" />
 }
 
 function BrandResult({ assets }: { assets: BrandAsset[] }) {

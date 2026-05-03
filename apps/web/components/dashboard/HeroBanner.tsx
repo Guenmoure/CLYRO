@@ -39,7 +39,7 @@ const SLIDES: Slide[] = [
     title: (
       <>
         From script to video.{' '}
-        <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+        <span className="gradient-text">
           In 5 steps.
         </span>
       </>
@@ -47,8 +47,8 @@ const SLIDES: Slide[] = [
     description: 'Script → Storyboard → Images → Clips → Final video. Everything automated, you stay in control.',
     ctaLabel: 'Create a Faceless video',
     ctaHref: '/faceless/new',
-    gradient: 'from-cyan-500/20 via-blue-500/15 to-transparent',
-    glow: 'bg-gradient-to-br from-cyan-500/30 to-blue-600/30',
+    gradient: 'from-primary/20 via-secondary/15 to-transparent',
+    glow: 'bg-gradient-to-br from-primary/30 to-secondary/30',
     icon: Video,
   },
   {
@@ -111,7 +111,7 @@ export function HeroBanner() {
           <div className="flex-1 min-w-0 space-y-4">
             {slide.badge && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1 text-[11px] font-mono uppercase tracking-widest text-white">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                 {slide.badge}
               </span>
             )}
@@ -139,7 +139,7 @@ export function HeroBanner() {
           <div className="hidden md:flex items-center justify-center shrink-0">
             <div className="relative">
               <div className={cn('absolute inset-0 rounded-3xl blur-2xl', slide.glow)} />
-              <div className="relative h-28 w-28 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center animate-glow-pulse">
+              <div className="relative h-28 w-28 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center">
                 <Icon size={44} className="text-white" />
               </div>
             </div>

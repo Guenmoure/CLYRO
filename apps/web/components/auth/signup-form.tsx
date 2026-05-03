@@ -127,7 +127,7 @@ export function SignupForm() {
       <button
         onClick={handleGoogleSignup}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-3 glass glass-hover text-white/80 font-body font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50"
+        className="w-full flex items-center justify-center gap-3 bg-muted hover:bg-muted/80 border border-border text-foreground font-body font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50"
       >
         <GoogleIcon />
         {t('continueWithGoogle')}

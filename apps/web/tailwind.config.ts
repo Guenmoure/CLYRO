@@ -8,44 +8,36 @@ const config: Config = {
     './components/**/*.{ts,tsx}',
   ],
 
-  // Classes générées dynamiquement (composants de génération, spinners, etc.)
-  safelist: ['animate-shimmer', 'animate-glow-pulse', 'animate-fade-up'],
+  safelist: ['animate-shimmer', 'animate-fade-up'],
 
   theme: {
     extend: {
-      // ── Couleurs CLYRO ────────────────────────────────────────────────────
+      // ── Colors — HeyGen 2026 inspired, light-first ──────────────────────
       colors: {
-        // Backgrounds dark-first (inspiré HeyGen)
-        navy: {
-          950: '#060810',   // fond principal — le plus sombre
-          900: '#0A0D1A',   // cards, panels, sidebar
-          800: '#0F1427',   // inputs, éléments interactifs
-          700: '#151C38',   // hover states, borders
-          600: '#1E2A4A',   // dividers, séparateurs
+        // Brand CLYRO — gradient signature
+        brand: {
+          DEFAULT: '#667EEA',
+          hover:   '#5A6FD6',
+          soft:    '#EDE9FE',
+          50:      '#F5F3FF',
         },
 
-        // Accents IA — signature CLYRO
-        blue: {
-          300: '#7BB8F8',   // états disabled, accents légers
-          400: '#5BA3F5',   // hover boutons primaires
-          500: '#3B8EF0',   // accent principal — boutons CTA, liens actifs
-        },
-        purple: {
-          400: '#AB74F8',   // hover purple
-          500: '#9B5CF6',   // accent secondaire — badges, tags, gradients
-        },
-        cyan: {
-          300: '#6AEDFF',   // glow effects, active states
-          400: '#38E8FF',   // accent tertiaire — highlights, progress bars
+        // Feature accent colors
+        feature: {
+          faceless:  '#3B82F6',
+          avatar:    '#EC4899',
+          motion:    '#8B5CF6',
+          brand:     '#14B8A6',
+          autopilot: '#F59E0B',
         },
 
-        // Sémantiques
-        success: '#22C55E',
+        // Semantic status
+        success: '#10B981',
         warning: '#F59E0B',
         error:   '#EF4444',
-        info:    '#3B8EF0',
+        info:    '#3B82F6',
 
-        // ── Tokens shadcn/ui (CSS vars hex — no hsl() wrapper) ───────────
+        // ── shadcn/ui tokens (CSS custom properties) ──────────────────────
         background: 'var(--background)',
         foreground: 'var(--foreground)',
         card: {
@@ -81,99 +73,65 @@ const config: Config = {
         ring:   'var(--ring)',
       },
 
-      // ── Typographie ───────────────────────────────────────────────────────
+      // ── Typography — Inter as primary ───────────────────────────────────
       fontFamily: {
-        display: ['var(--font-syne)', 'sans-serif'],
-        body:    ['var(--font-dm-sans)', 'sans-serif'],
+        display: ['var(--font-inter)', 'sans-serif'],
+        body:    ['var(--font-inter)', 'sans-serif'],
         mono:    ['var(--font-jetbrains-mono)', 'monospace'],
       },
 
       fontSize: {
-        'xs':   ['0.75rem',  { lineHeight: '1rem' }],
-        'sm':   ['0.875rem', { lineHeight: '1.25rem' }],
-        'base': ['1rem',     { lineHeight: '1.6' }],
-        'lg':   ['1.125rem', { lineHeight: '1.6' }],
-        'xl':   ['1.25rem',  { lineHeight: '1.4' }],
-        '2xl':  ['1.5rem',   { lineHeight: '1.3' }],
-        '3xl':  ['1.875rem', { lineHeight: '1.25' }],
-        '4xl':  ['2.25rem',  { lineHeight: '1.2' }],
-        '5xl':  ['3rem',     { lineHeight: '1.1' }],
-        '6xl':  ['3.75rem',  { lineHeight: '1.05' }],
-        '7xl':  ['4.5rem',   { lineHeight: '1' }],
+        'xs':   ['0.75rem',   { lineHeight: '1rem' }],
+        'sm':   ['0.8125rem', { lineHeight: '1.25rem' }],   // 13px
+        'base': ['0.875rem',  { lineHeight: '1.5' }],       // 14px
+        'md':   ['0.9375rem', { lineHeight: '1.5' }],       // 15px
+        'lg':   ['1.125rem',  { lineHeight: '1.4' }],       // 18px
+        'xl':   ['1.375rem',  { lineHeight: '1.3' }],       // 22px
+        '2xl':  ['1.75rem',   { lineHeight: '1.25' }],      // 28px
+        '3xl':  ['2.25rem',   { lineHeight: '1.2' }],       // 36px
+        '4xl':  ['2.5rem',    { lineHeight: '1.15' }],
+        '5xl':  ['3rem',      { lineHeight: '1.1' }],
       },
 
       lineHeight: {
-        body:    '1.6',
-        heading: '1.2',
-        tight:   '1.1',
-        relaxed: '1.75',
+        tight:   '1.25',
+        normal:  '1.5',
+        relaxed: '1.65',
       },
 
-      fontWeight: {
-        light:     '300',
-        regular:   '400',
-        medium:    '500',
-        semibold:  '600',
-        bold:      '700',
-        extrabold: '800',
-      },
-
-      // ── Dégradés ──────────────────────────────────────────────────────────
+      // ── Gradients ───────────────────────────────────────────────────────
       backgroundImage: {
-        // Boutons CTA principaux, hero sections
-        'grad-primary':      'linear-gradient(135deg, #3B8EF0, #9B5CF6)',
-        // Éléments premium, feature highlights
-        'grad-electric':     'linear-gradient(135deg, #38E8FF, #3B8EF0, #9B5CF6)',
-        // Backgrounds de sections
-        'grad-dark':         'linear-gradient(180deg, #0A0D1A, #060810)',
-        // Cards avec effet depth
-        'grad-card':         'linear-gradient(135deg, #0F1427, #151C38)',
-        // Glow derrière les CTA
-        'grad-glow-blue':    'radial-gradient(circle at center, rgba(59,142,240,0.13), transparent 70%)',
-        // Glow derrière les sections features
-        'grad-glow-purple':  'radial-gradient(circle at center, rgba(155,92,246,0.13), transparent 70%)',
-        // Héritage
-        'grad-cta':          'linear-gradient(135deg, #3B8EF0 0%, #9B5CF6 100%)',
-        'grad-success':      'linear-gradient(135deg, #22C55E, #16A34A)',
-        'grad-warning':      'linear-gradient(135deg, #F59E0B, #D97706)',
-        'grad-error':        'linear-gradient(135deg, #EF4444, #DC2626)',
+        'grad-primary':  'linear-gradient(135deg, #667EEA 0%, #8B5CF6 50%, #A855F7 100%)',
+        'grad-cta':      'linear-gradient(135deg, #667EEA 0%, #8B5CF6 100%)',
+        'grad-dark':     'linear-gradient(180deg, #0F1117, #1A1D27)',
+        'grad-success':  'linear-gradient(135deg, #10B981, #059669)',
+        'grad-warning':  'linear-gradient(135deg, #F59E0B, #D97706)',
+        'grad-error':    'linear-gradient(135deg, #EF4444, #DC2626)',
       },
 
-      // ── Rayons ────────────────────────────────────────────────────────────
+      // ── Border radius — rounder like HeyGen ────────────────────────────
       borderRadius: {
         '2xl': '20px',
-        lg:    'var(--radius)',
-        md:    'calc(var(--radius) - 2px)',
-        sm:    'calc(var(--radius) - 4px)',
+        xl:    '14px',
+        lg:    '10px',
+        md:    '8px',
+        sm:    '6px',
       },
 
-      // ── Ombres & Glows ────────────────────────────────────────────────────
+      // ── Shadows — subtle, light-mode optimized ─────────────────────────
       boxShadow: {
-        'glow-blue':   '0 0 20px rgba(59, 142, 240, 0.35)',
-        'glow-purple': '0 0 20px rgba(155, 92, 246, 0.35)',
-        'glow-cyan':   '0 0 20px rgba(56, 232, 255, 0.35)',
-        'card':        '0 4px 24px rgba(0, 0, 0, 0.4)',
-        'card-hover':  '0 8px 40px rgba(0, 0, 0, 0.6)',
-        'inner-dark':  'inset 0 1px 0 rgba(255,255,255,0.05)',
-        // Héritage
-        'glow-success': '0 0 24px rgba(34, 197, 94, 0.30)',
-        'glow-warning': '0 0 24px rgba(245, 158, 11, 0.30)',
-        'glow-error':   '0 0 24px rgba(239, 68, 68, 0.30)',
+        'sm':         '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)',
+        'card':       '0 1px 3px rgba(0,0,0,0.04)',
+        'card-hover': '0 4px 12px rgba(0,0,0,0.08)',
+        'md':         '0 4px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03)',
+        'lg':         '0 10px 25px rgba(0,0,0,0.07), 0 4px 10px rgba(0,0,0,0.04)',
+        'xl':         '0 20px 40px rgba(0,0,0,0.08)',
+        'dropdown':   '0 10px 30px rgba(0,0,0,0.12)',
+        'glow-brand': '0 4px 12px rgba(102,126,234,0.3)',
       },
 
-      // ── Blur ──────────────────────────────────────────────────────────────
-      backdropBlur: {
-        xs: '2px',
-      },
-
-      // ── Border color par défaut ───────────────────────────────────────────
-      borderColor: {
-        DEFAULT: '#151C38',   // navy-700
-      },
-
-      // ── Animations ────────────────────────────────────────────────────────
+      // ── Animations — fast and subtle ───────────────────────────────────
       keyframes: {
-        // shadcn/ui — accordéon (requis)
         'accordion-down': {
           from: { height: '0' },
           to:   { height: 'var(--radix-accordion-content-height)' },
@@ -182,44 +140,22 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to:   { height: '0' },
         },
-        // Loading skeletons
         shimmer: {
           '0%':   { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
-        // Glow pulsé sur CTA
-        'glow-pulse': {
-          '0%, 100%': { opacity: '0.6' },
-          '50%':      { opacity: '1' },
-        },
-        // Flottement hero elements
-        float: {
-          '0%, 100%': { transform: 'translateY(0) rotate(12deg)' },
-          '50%':      { transform: 'translateY(-8px) rotate(12deg)' },
-        },
-        'float-delayed': {
-          '0%, 100%': { transform: 'translateY(0) rotate(-6deg)' },
-          '50%':      { transform: 'translateY(-6px) rotate(-6deg)' },
-        },
-        'float-slow': {
-          '0%, 100%': { transform: 'translateY(0) rotate(3deg)' },
-          '50%':      { transform: 'translateY(-10px) rotate(3deg)' },
-        },
-        // Entrée depuis le bas
         'fade-up': {
-          '0%':   { opacity: '0', transform: 'translateY(16px)' },
+          '0%':   { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        // Héritage
         'fade-in': {
-          '0%':   { opacity: '0', transform: 'translateY(10px)' },
+          '0%':   { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'slide-up': {
+          '0%':   { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        'slide-in-right': {
-          '0%':   { opacity: '0', transform: 'translateX(20px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' },
-        },
-        // AnimationModeSelector — indicateurs visuels mini-preview
         'ken-burns': {
           '0%':   { transform: 'scale(1) translate(0, 0)' },
           '100%': { transform: 'scale(1.12) translate(-2%, -1%)' },
@@ -232,7 +168,6 @@ const config: Config = {
           '0%':   { transform: 'scale(1.02) translateX(0)' },
           '100%': { transform: 'scale(1.08) translateX(-2%)' },
         },
-        // Waveform bars for voice/audio playback indicator
         waveform: {
           '0%, 100%': { height: '4px' },
           '50%':      { height: '20px' },
@@ -240,20 +175,16 @@ const config: Config = {
       },
 
       animation: {
-        'accordion-down':  'accordion-down 0.2s ease-out',
-        'accordion-up':    'accordion-up 0.2s ease-out',
-        shimmer:           'shimmer 2s linear infinite',
-        'glow-pulse':      'glow-pulse 2.5s ease-in-out infinite',
-        float:             'float 3s ease-in-out infinite',
-        'float-delayed':   'float-delayed 3s ease-in-out infinite 0.5s',
-        'float-slow':      'float-slow 4s ease-in-out infinite 1s',
-        'fade-up':         'fade-up 0.4s ease-out forwards',
-        'fade-in':         'fade-in 0.3s ease-out',
-        'slide-in-right':  'slide-in-right 0.3s ease-out',
-        'ken-burns':       'ken-burns 3s ease-in-out infinite alternate',
-        'pulse-fast':      'pulse-fast 1.2s ease-in-out infinite',
-        'pulse-slow':      'pulse-slow 2.5s ease-in-out infinite alternate',
-        waveform:          'waveform 0.8s ease-in-out infinite',
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up':   'accordion-up 0.2s ease-out',
+        shimmer:          'shimmer 1.5s linear infinite',
+        'fade-up':        'fade-up 0.2s ease-out forwards',
+        'fade-in':        'fade-in 0.2s ease-out',
+        'slide-up':       'slide-up 0.2s ease-out',
+        'ken-burns':      'ken-burns 3s ease-in-out infinite alternate',
+        'pulse-fast':     'pulse-fast 1.2s ease-in-out infinite',
+        'pulse-slow':     'pulse-slow 2.5s ease-in-out infinite alternate',
+        waveform:         'waveform 0.8s ease-in-out infinite',
       },
     },
   },

@@ -61,7 +61,7 @@ export default function BillingPage() {
       <div className="space-y-6 animate-fade-in">
 
         <div className="flex items-center gap-3">
-          <Link href="/settings" className="w-8 h-8 rounded-lg glass glass-hover flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors duration-200">
+          <Link href="/settings" className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors duration-200">
             <ArrowLeft size={15} />
           </Link>
           <div>
@@ -71,7 +71,7 @@ export default function BillingPage() {
         </div>
 
         {/* Current plan */}
-        <div className="glass glass-heavy rounded-2xl p-6">
+        <div className="bg-card border border-border rounded-2xl p-6">
           <h2 className="font-display font-semibold text-foreground mb-4">Plan actuel</h2>
           {loading ? (
             <div className="h-8 bg-muted rounded animate-pulse w-1/3" />
@@ -92,7 +92,7 @@ export default function BillingPage() {
           {PLANS.map((p) => {
             const isCurrent = plan === p.id
             return (
-              <div key={p.id} className={cn('glass glass-heavy border rounded-2xl p-6 transition-all', p.color, isCurrent && 'ring-2 ring-clyro-primary/25')}>
+              <div key={p.id} className={cn('bg-card border border-border rounded-2xl p-6 transition-all', p.color, isCurrent && 'ring-2 ring-clyro-primary/25')}>
                 {isCurrent && (
                   <span className="font-mono text-xs text-clyro-primary uppercase tracking-widest bg-clyro-primary/10 border border-clyro-primary/20 px-2 py-1 rounded-full mb-4 inline-block">
                     Plan actuel
@@ -120,7 +120,7 @@ export default function BillingPage() {
                       {loadingPlan === `stripe-${p.id}` ? 'Redirection…' : 'Payer par carte'}
                     </button>
                     <button onClick={() => setShowMobileMoneyModal(p.id)} disabled={!!loadingPlan}
-                      className="w-full glass glass-hover text-[--text-secondary] font-display font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                      className="w-full bg-muted hover:bg-muted/80 border border-border text-[--text-secondary] font-display font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2">
                       <Smartphone size={14} /> Mobile Money (Afrique)
                     </button>
                   </div>
@@ -134,7 +134,7 @@ export default function BillingPage() {
       {/* Mobile Money modal */}
       {showMobileMoneyModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass glass-heavy rounded-2xl p-6 w-full max-w-md shadow-glow-primary">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-glow-brand">
             <h3 className="font-display text-lg font-semibold text-foreground mb-1">Payer avec Mobile Money</h3>
             <p className="text-[--text-secondary] text-sm font-body mb-4">Orange Money, Wave, MTN, Moov — format international.</p>
             <label htmlFor="moneroo-phone" className="sr-only">Numéro Mobile Money</label>
@@ -151,7 +151,7 @@ export default function BillingPage() {
             />
             <div className="flex gap-3">
               <button onClick={() => setShowMobileMoneyModal(null)}
-                className="flex-1 glass glass-hover text-[--text-secondary] font-display font-semibold py-2.5 rounded-xl text-sm transition-all">
+                className="flex-1 bg-muted hover:bg-muted/80 border border-border text-[--text-secondary] font-display font-semibold py-2.5 rounded-xl text-sm transition-all">
                 Annuler
               </button>
               <button onClick={() => handleMonerooCheckout(showMobileMoneyModal)} disabled={!!loadingPlan}

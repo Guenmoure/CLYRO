@@ -28,7 +28,7 @@ export function RightSidebar() {
   return (
     <aside className="hidden lg:flex flex-col shrink-0 w-56 m-3 ml-0 rounded-2xl glass overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-4 glass-border-b">
+      <div className="px-4 py-4 border-b border-border">
         <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
           Workspace
         </p>

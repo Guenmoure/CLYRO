@@ -18,7 +18,7 @@ export function Navbar() {
   return (
     <header
       className={`nav-slide-in fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
-        scrolled ? 'glass-heavy glass-border-b' : ''
+        scrolled ? 'bg-background/80 backdrop-blur-md border-b border-border' : ''
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -27,7 +27,7 @@ export function Navbar() {
               the competitive audit. Using the shared gradient Logo ensures
               "CLYRO" reads as a single brand mark instead of "[C] LYRO". */}
           <Logo variant="full" size="sm" href={false} />
-          <span className="font-mono text-[11px] uppercase tracking-wider glass-blue px-1.5 py-0.5 rounded-full text-clyro-blue">
+          <span className="font-mono text-[11px] uppercase tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">
             Beta
           </span>
         </Link>

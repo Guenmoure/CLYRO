@@ -115,7 +115,7 @@ export function VoicePreviewModal({ voice, isOpen, onClose, onUse }: VoicePrevie
                 className={cn(
                   'w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all',
                   playing
-                    ? 'bg-blue-500 text-white shadow-glow-blue'
+                    ? 'bg-blue-500 text-white shadow-glow-brand'
                     : 'bg-border text-foreground hover:bg-muted',
                 )}
               >

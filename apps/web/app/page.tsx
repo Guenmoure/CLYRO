@@ -111,7 +111,7 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex items-center pt-16 overflow-hidden noise-overlay"
+      className="relative min-h-screen flex items-center pt-16 overflow-hidden"
     >
       {/* Glow blobs */}
       <div className="pointer-events-none absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full bg-[var(--primary)]/10 blur-[80px]" />
@@ -599,8 +599,7 @@ function FaqSection() {
 function CtaSection() {
   return (
     <section className="bg-background py-24 px-4 sm:px-6 relative overflow-hidden reveal">
-      <div className="pointer-events-none absolute inset-0 bg-grad-glow-blue opacity-60" />
-      <div className="pointer-events-none absolute inset-0 bg-grad-glow-purple opacity-40" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" />
 
       <div className="relative z-10 max-w-3xl mx-auto text-center">
         <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">

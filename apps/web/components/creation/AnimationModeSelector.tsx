@@ -78,7 +78,7 @@ export default function AnimationModeSelector({
               'relative rounded-2xl border text-left transition-all duration-200',
               compact ? 'p-3' : 'p-5',
               active && !locked
-                ? 'border-blue-500 bg-blue-500/10 shadow-glow-blue'
+                ? 'border-blue-500 bg-blue-500/10 shadow-glow-brand'
                 : 'border-border bg-muted hover:border-blue-500/30',
               locked && 'opacity-50 cursor-not-allowed',
             )}

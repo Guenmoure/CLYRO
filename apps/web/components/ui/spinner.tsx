@@ -89,7 +89,7 @@ function SpinnerAI({
             className="spin-ai-middle"
           />
         )}
-        {/* Arc interne — cyan-400, 0.5s */}
+        {/* Arc interne — teal-400, 0.5s */}
         {r.inner > 1 && (
           <circle
             cx={cx} cy={cx} r={r.inner}

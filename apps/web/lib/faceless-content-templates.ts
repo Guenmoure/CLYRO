@@ -311,7 +311,7 @@ export const FACELESS_STYLES_META: Record<ContentTemplateStyle, FacelessStyleMet
     description_fr: 'Slot infographie historique — redirigé vers Motion Design.',
     prompt_style: 'modern infographic, animated charts, flat icons, blue/cyan palette, data visualization',
     badge_color: '#60a5fa',
-    gradient: 'from-blue-500/30 via-cyan-500/20 to-sky-400/20',
+    gradient: 'from-blue-500/30 via-primary/20 to-sky-400/20',
     best_for_en: ['legacy content'],
     best_for_fr: ['contenu legacy'],
     fal_model: null,

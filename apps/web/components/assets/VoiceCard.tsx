@@ -109,7 +109,7 @@ export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }
         className={cn(
           'w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-150',
           playing
-            ? 'bg-blue-500 text-white shadow-glow-blue'
+            ? 'bg-blue-500 text-white shadow-glow-brand'
             : 'bg-muted text-[--text-secondary] hover:bg-border',
         )}
         onClick={togglePlay}

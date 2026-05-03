@@ -43,7 +43,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
 
   if (kits.length === 0) {
     return (
-      <div className={cn('flex items-center gap-2 text-sm font-body text-gray-400 dark:text-white/30', className)}>
+      <div className={cn('flex items-center gap-2 text-sm font-body text-[--text-muted]', className)}>
         <Palette size={14} />
         No brand kits —{' '}
         <Link href="/settings/brand" className="text-clyro-primary hover:underline">
@@ -63,7 +63,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
           'px-3 py-2 rounded-xl border text-xs font-mono transition-all',
           !value
             ? 'bg-gray-100 dark:bg-white/[0.08] border-gray-300 dark:border-white/20 text-gray-700 dark:text-white/70'
-            : 'glass glass-hover border-transparent text-gray-400 dark:text-white/30'
+            : 'bg-muted hover:bg-muted/80 border border-border text-[--text-muted]'
         )}
       >
         None
@@ -78,7 +78,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
             'flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-body transition-all',
             value === kit.id
               ? 'ring-2 ring-clyro-primary/40 border-clyro-primary/30 bg-clyro-primary/5 text-gray-800 dark:text-white/80'
-              : 'glass glass-hover border-transparent text-gray-600 dark:text-white/50'
+              : 'bg-muted hover:bg-muted/80 border border-border text-[--text-secondary]'
           )}
         >
           <span
@@ -100,7 +100,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
 
       <Link
         href="/settings/brand"
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass glass-hover text-xs font-body text-gray-400 dark:text-white/30 hover:text-gray-700 dark:hover:text-white/60 transition-all border border-dashed border-gray-200 dark:border-white/[0.06]"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 border border-border text-xs font-body text-[--text-muted] hover:text-foreground transition-all border-dashed"
       >
         <Plus size={11} />
         New

@@ -124,7 +124,7 @@ function BrandKitForm({
       <div className="flex items-center gap-3">
         {logoPreview && <img src={logoPreview} alt="Logo" className="w-10 h-10 object-contain rounded-lg glass" />}
         <button type="button" onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-2 glass glass-hover rounded-xl px-3 py-2 text-xs font-body text-gray-500 dark:text-white/50 transition-all">
+          className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-3 py-2 text-xs font-body text-[--text-secondary] transition-all">
           <Upload size={12} /> {logoPreview ? t('bh_changeLogo') : t('bh_importLogo')}
         </button>
         <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
@@ -203,7 +203,7 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
               className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-body transition-all border',
                 platform === p.id
                   ? 'bg-clyro-primary/10 border-clyro-primary/30 text-clyro-primary'
-                  : 'glass glass-hover border-transparent text-gray-500 dark:text-white/40'
+                  : 'bg-muted hover:bg-muted/80 border border-border text-[--text-secondary]'
               )}>
               <span>{p.emoji}</span> {p.label}
               <span className="font-mono text-[11px] text-gray-400 dark:text-white/25">{p.ratio}</span>
@@ -342,11 +342,11 @@ function KitPanel({ kit, onUpdate, onDelete }: {
         </div>
         <div className="flex gap-1">
           <button type="button" onClick={() => setEditing((v) => !v)}
-            className="w-8 h-8 rounded-lg glass glass-hover flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-gray-700 dark:hover:text-white/70 transition-colors font-mono text-sm">
+            className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors font-mono text-sm">
             ✎
           </button>
           <button type="button" onClick={handleDeleteKit}
-            className="w-8 h-8 rounded-lg glass glass-hover flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-red-400 transition-colors">
+            className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-red-400 transition-colors">
             <Trash2 size={13} />
           </button>
         </div>
@@ -428,15 +428,15 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* Sidebar */}
-      <aside className="glass glass-border-r w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
-        <div className="p-4 glass-border-b">
+      <aside className="bg-card border-r border-border w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
+        <div className="p-4 border-b border-border">
           <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-0.5">{t('bh_moduleLabel')}</p>
           <h1 className="font-display text-sm font-bold text-foreground">{t('bh_moduleTitle')}</h1>
         </div>
 
         {/* Tab switcher */}
-        <div className="p-2 glass-border-b">
-          <div className="flex gap-1 p-1 rounded-xl bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10">
+        <div className="p-2 border-b border-border">
+          <div className="flex gap-1 p-1 rounded-xl bg-muted border border-border">
             <button
               type="button"
               onClick={() => { setSidebarTab('kits'); setShowCreate(false) }}
@@ -466,9 +466,9 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
 
         {sidebarTab === 'kits' && (
           <>
-            <div className="p-3 glass-border-b">
+            <div className="p-3 border-b border-border">
               <button type="button" onClick={() => { setActiveId(null); setShowCreate(true) }}
-                className="flex items-center gap-2 w-full bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-cyan-500/10 hover:border-cyan-500/40 transition-all">
+                className="flex items-center gap-2 w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-teal-500/10 hover:border-teal-500/40 transition-all">
                 <Plus size={15} className="text-clyro-accent" />
                 {t('bh_newBrandKit')}
               </button>
@@ -485,7 +485,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                 <button key={kit.id} type="button" onClick={() => { setActiveId(kit.id); setShowCreate(false) }}
                   className={cn(
                     'w-full text-left px-3 py-2.5 rounded-xl transition-all group',
-                    activeId === kit.id ? 'bg-cyan-500/15 border border-cyan-500/30' : 'hover:bg-white/40 dark:hover:bg-white/5'
+                    activeId === kit.id ? 'bg-teal-500/15 border border-teal-500/30' : 'hover:bg-muted/80'
                   )}>
                   <div className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-md shrink-0" style={{ background: kit.primary_color }} />
@@ -553,8 +553,8 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
               <div className="flex flex-col items-center justify-center h-full gap-6 text-center px-8 py-12 max-w-lg mx-auto">
                 {/* Decorative icon cluster */}
                 <div className="relative">
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/20 via-blue-500/15 to-purple-500/20 blur-2xl" />
-                  <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400/15 via-blue-500/10 to-purple-500/15 border border-border flex items-center justify-center shadow-lg">
+                  <div className="absolute inset-0 rounded-3xl bg-primary/10 blur-2xl" />
+                  <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-teal-500/15 to-teal-500/10 border border-border flex items-center justify-center shadow-lg">
                     <Palette size={40} className="text-clyro-accent" />
                   </div>
                   {/* Tiny decorative chips */}
@@ -593,7 +593,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                     <Plus size={15} /> {t('bh_createFirstKit')}
                   </button>
                   <button type="button" onClick={() => setSidebarTab('studio')}
-                    className="glass glass-hover text-foreground font-display font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                    className="bg-muted hover:bg-muted/80 border border-border text-foreground font-display font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
                     <Sparkles size={15} /> {t('bh_identityStudioBtn')}
                   </button>
                 </div>

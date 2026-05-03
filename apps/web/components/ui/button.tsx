@@ -43,7 +43,7 @@ const buttonVariants = cva(
         /** CTA principal — gradient bleu→violet, glow bleu */
         primary: [
           'bg-grad-primary text-white font-display font-semibold',
-          'shadow-glow-blue hover:brightness-110 hover:shadow-[0_0_28px_rgba(59,142,240,0.5)]',
+          'shadow-glow-brand hover:brightness-110 hover:shadow-[0_0_28px_rgba(102,126,234,0.5)]',
         ].join(' '),
         /** Surface sombre, bordure subtile */
         secondary: [

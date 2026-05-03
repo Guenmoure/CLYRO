@@ -174,7 +174,7 @@ export function NotificationPanel() {
         type="button"
         aria-label="Notifications"
         onClick={() => setOpen(v => !v)}
-        className="relative w-9 h-9 rounded-xl glass glass-hover flex items-center justify-center text-[--text-secondary] hover:text-foreground transition-colors duration-200"
+        className="relative w-9 h-9 rounded-xl bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-secondary] hover:text-foreground transition-colors duration-200"
       >
         <Bell size={15} strokeWidth={1.6} />
         {unread > 0 && (

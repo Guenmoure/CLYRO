@@ -401,7 +401,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
     : 0
   return (
     <div
-      className="glass glass-border-b relative flex items-center gap-1 px-6 py-3 shrink-0 z-20 rounded-b-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+      className="bg-card border-b border-border relative flex items-center gap-1 px-6 py-3 shrink-0 z-20 rounded-b-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
       role="progressbar"
       aria-valuenow={progressPct}
       aria-valuemin={0}
@@ -410,7 +410,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
     >
       {/* Barre de progression linéaire sous les steps */}
       <div
-        className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 transition-all duration-500 ease-out"
+        className="absolute bottom-0 left-0 h-0.5 bg-grad-cta transition-all duration-500 ease-out"
         style={{ width: `${progressPct}%` }}
         aria-hidden="true"
       />
@@ -3285,13 +3285,13 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside className="glass glass-border-r w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
-        <div className="p-4 glass-border-b flex items-center justify-between">
+      <aside className="bg-card border-r border-border w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
+        <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold text-foreground">Faceless Video</h2>
           <Wand2 size={14} className="text-[--text-muted]" />
         </div>
 
-        <div className="p-3 glass-border-b">
+        <div className="p-3 border-b border-border">
           <button type="button" onClick={() => setViewId(null)}
             className="flex items-center gap-2 w-full bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-blue-500/10 hover:border-blue-500/40 transition-all">
             <Plus size={15} className="text-blue-500" />

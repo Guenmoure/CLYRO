@@ -181,13 +181,13 @@ function NavLink({
   const className = cn(
     'flex items-center gap-3 w-full px-2 py-2 rounded-lg text-sm font-body transition-colors',
     active
-      ? 'bg-blue-500/15 text-foreground'
+      ? 'bg-accent text-accent-foreground'
       : 'text-[--text-secondary] hover:bg-muted hover:text-foreground',
   )
 
   const content = (
     <>
-      <Icon size={15} className={active ? 'text-blue-400' : 'text-[--text-muted]'} />
+      <Icon size={15} className={active ? 'text-accent-foreground' : 'text-[--text-muted]'} />
       {label}
     </>
   )

@@ -147,7 +147,7 @@ function LandingPlanCard({ plan, annual }: { plan: Plan; annual: boolean }) {
               'font-display text-2xl font-bold',
               isPro
                 ? 'bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent'
-                : 'bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent',
+                : 'gradient-text',
             )}
           >
             {formatNumber(plan.credits)}

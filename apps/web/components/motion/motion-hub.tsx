@@ -703,13 +703,13 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* Sidebar */}
-      <aside className="glass glass-border-r w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
-        <div className="p-4 glass-border-b">
+      <aside className="bg-card border-r border-border w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
+        <div className="p-4 border-b border-border">
           <h2 className="font-display text-sm font-semibold text-foreground">{t('motionDesign')}</h2>
         </div>
-        <div className="p-3 glass-border-b space-y-2">
+        <div className="p-3 border-b border-border space-y-2">
           <button type="button" onClick={handleReset}
-            className="flex items-center gap-2 w-full bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-purple-500/10 hover:border-purple-500/40 transition-all">
+            className="flex items-center gap-2 w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-purple-500/10 hover:border-purple-500/40 transition-all">
             <Plus size={16} className="text-purple-500" />
             {t('mh_newVideo')}
           </button>

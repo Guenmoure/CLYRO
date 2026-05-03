@@ -39,7 +39,7 @@ const iconButtonVariants = cva(
         ].join(' '),
         /** Accentué — action primaire icon-only */
         primary: [
-          'bg-grad-primary text-white shadow-glow-blue',
+          'bg-grad-primary text-white shadow-glow-brand',
           'hover:brightness-110',
         ].join(' '),
       },

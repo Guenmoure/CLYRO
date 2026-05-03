@@ -99,7 +99,7 @@ function BrandKitForm({
   }
 
   return (
-    <div className="glass glass-heavy rounded-2xl p-6 space-y-5">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
       <h3 className="font-display font-semibold text-gray-900 dark:text-white">
         {initial?.id ? 'Edit brand kit' : 'New brand kit'}
       </h3>
@@ -134,7 +134,7 @@ function BrandKitForm({
               onChange={(e) => setPrimaryColor(e.target.value)}
               className="w-10 h-10 rounded-lg border-0 cursor-pointer bg-transparent"
             />
-            <span className="font-mono text-sm text-gray-600 dark:text-white/60">{primaryColor.toUpperCase()}</span>
+            <span className="font-mono text-sm text-[--text-secondary]">{primaryColor.toUpperCase()}</span>
           </div>
         </div>
         <div className="flex-1 min-w-36">
@@ -150,11 +150,11 @@ function BrandKitForm({
               onChange={(e) => setSecondaryColor(e.target.value)}
               className="w-10 h-10 rounded-lg border-0 cursor-pointer bg-transparent"
             />
-            <span className="font-mono text-sm text-gray-600 dark:text-white/60">
+            <span className="font-mono text-sm text-[--text-secondary]">
               {secondaryColor ? secondaryColor.toUpperCase() : '—'}
             </span>
             {secondaryColor && (
-              <button type="button" onClick={() => setSecondaryColor('')} className="text-xs text-gray-400 dark:text-white/30 hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => setSecondaryColor('')} className="text-xs text-[--text-muted] hover:text-red-400 transition-colors">
                 ✕
               </button>
             )}
@@ -188,7 +188,7 @@ function BrandKitForm({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-2 glass glass-hover rounded-xl px-4 py-2.5 text-sm font-body text-gray-600 dark:text-white/60 transition-all"
+            className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2.5 text-sm font-body text-[--text-secondary] transition-all"
           >
             <Upload size={14} />
             {logoPreview ? 'Change' : 'Upload logo'}
@@ -211,7 +211,7 @@ function BrandKitForm({
           onChange={(e) => setIsDefault(e.target.checked)}
           className="w-4 h-4 rounded accent-clyro-primary"
         />
-        <span className="font-body text-sm text-gray-600 dark:text-white/60">Use by default</span>
+        <span className="font-body text-sm text-[--text-secondary]">Use by default</span>
       </label>
 
       {/* Actions */}
@@ -228,7 +228,7 @@ function BrandKitForm({
         <button
           type="button"
           onClick={onCancel}
-          className="font-body text-sm text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70 transition-colors"
+          className="font-body text-sm text-[--text-muted] hover:text-foreground transition-colors"
         >
           Cancel
         </button>
@@ -252,7 +252,7 @@ function BrandKitCard({
 }) {
   return (
     <div className={cn(
-      'glass glass-heavy rounded-2xl p-5 transition-all',
+      'bg-card border border-border rounded-2xl p-5 transition-all',
       kit.is_default && 'ring-2 ring-clyro-primary/30'
     )}>
       <div className="flex items-start justify-between gap-3 mb-4">
@@ -277,7 +277,7 @@ function BrandKitCard({
               type="button"
               title="Set as default"
               onClick={() => onSetDefault(kit.id)}
-              className="w-7 h-7 rounded-lg glass glass-hover flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-yellow-500 transition-colors"
+              className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-yellow-500 transition-colors"
             >
               <Star size={13} />
             </button>
@@ -286,7 +286,7 @@ function BrandKitCard({
             type="button"
             title="Edit"
             onClick={() => onEdit(kit)}
-            className="w-7 h-7 rounded-lg glass glass-hover flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-gray-700 dark:hover:text-white/70 transition-colors font-mono text-xs"
+            className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors font-mono text-xs"
           >
             ✎
           </button>
@@ -294,7 +294,7 @@ function BrandKitCard({
             type="button"
             title="Delete"
             onClick={() => onDelete(kit.id)}
-            className="w-7 h-7 rounded-lg glass glass-hover flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-red-400 transition-colors"
+            className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-red-400 transition-colors"
           >
             <Trash2 size={12} />
           </button>
@@ -316,7 +316,7 @@ function BrandKitCard({
           />
         )}
         {kit.font_family && (
-          <span className="font-mono text-[11px] text-gray-400 dark:text-white/30 ml-1">{kit.font_family}</span>
+          <span className="font-mono text-[11px] text-[--text-muted] ml-1">{kit.font_family}</span>
         )}
       </div>
     </div>
@@ -416,7 +416,7 @@ export function BrandKitManager() {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="w-full flex items-center justify-center gap-2 glass glass-hover rounded-2xl py-4 text-sm font-body text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70 border-2 border-dashed border-gray-200 dark:border-white/[0.06] transition-all"
+          className="w-full flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-2xl py-4 text-sm font-body text-[--text-muted] hover:text-foreground border-2 border-dashed border-border transition-all"
         >
           <Plus size={15} />
           New brand kit

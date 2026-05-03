@@ -25,7 +25,7 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
 const MODULE_COLORS: Record<string, string> = {
   faceless: 'text-blue-400 bg-blue-500/10',
   motion:   'text-purple-400 bg-purple-500/10',
-  brand:    'text-cyan-400 bg-cyan-400/10',
+  brand:    'text-teal-500 bg-teal-500/10',
 }
 const MODULE_LABELS: Record<string, string> = {
   faceless: 'Faceless',

@@ -868,11 +868,11 @@ export function MotionStudio({
     <div className="flex flex-1 h-full overflow-hidden">
 
       {/* ── Sidebar ── */}
-      <aside className="glass glass-border-r w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
-        <div className="p-4 glass-border-b">
+      <aside className="bg-card border-r border-border w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
+        <div className="p-4 border-b border-border">
           <h2 className="font-display text-sm font-semibold text-foreground">Motion Design</h2>
         </div>
-        <div className="p-3 glass-border-b">
+        <div className="p-3 border-b border-border">
           <button
             type="button"
             onClick={handleReset}

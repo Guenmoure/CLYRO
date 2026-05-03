@@ -59,8 +59,8 @@ const PROJECT_TYPES: ProjectType[] = [
     descKey:     'npd_brand_desc',
     href:        '/brand',
     icon:        Palette,
-    iconColor:   'text-cyan-400',
-    iconBg:      'bg-cyan-400/10',
+    iconColor:   'text-teal-500',
+    iconBg:      'bg-teal-500/10',
   },
 ]
 

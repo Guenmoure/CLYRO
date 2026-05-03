@@ -56,9 +56,9 @@ const FEATURES: Feature[] = [
     description: 'Logo, color palette, typography, guidelines. Build your brand identity in a few clicks.',
     href: '/brand',
     icon: Palette,
-    iconColor: 'text-cyan-400',
-    iconBg: 'bg-cyan-400/10',
-    iconRing: 'ring-cyan-400/30',
+    iconColor: 'text-teal-500',
+    iconBg: 'bg-teal-500/10',
+    iconRing: 'ring-teal-500/30',
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(56,232,255,0.3)]',
   },
   {

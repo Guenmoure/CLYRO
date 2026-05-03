@@ -60,7 +60,7 @@ function StyleCard({
       className={cn(
         'relative overflow-hidden rounded-2xl border-2 transition-all duration-200 shrink-0 w-56 snap-center text-left',
         selected
-          ? 'border-blue-500 shadow-glow-blue'
+          ? 'border-blue-500 shadow-glow-brand'
           : 'border-border hover:border-border',
       )}
     >

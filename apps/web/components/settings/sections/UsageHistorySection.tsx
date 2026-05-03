@@ -23,7 +23,7 @@ type View = 'table' | 'graph'
 const MODULE_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   faceless: { label: 'Faceless', icon: Video,     color: 'text-blue-500'   },
   motion:   { label: 'Motion',   icon: Sparkles,  color: 'text-purple-500' },
-  brand:    { label: 'Brand',    icon: Palette,   color: 'text-cyan-500'   },
+  brand:    { label: 'Brand',    icon: Palette,   color: 'text-teal-500'   },
 }
 
 export function UsageHistorySection() {

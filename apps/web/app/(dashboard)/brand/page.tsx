@@ -61,7 +61,7 @@ export default function BrandIndexPage() {
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Palette size={14} className="text-cyan-500" />
+              <Palette size={14} className="text-teal-500" />
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('bl_moduleLabel')}</p>
             </div>
             <h1 className="font-display text-3xl font-bold text-foreground">{t('bl_heading')}</h1>
@@ -71,8 +71,7 @@ export default function BrandIndexPage() {
           </div>
 
           <Link href="/brand/hub" className="group relative">
-            <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-teal-600 to-emerald-600 text-white font-body text-sm font-semibold shadow-lg">
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-grad-cta text-white font-body text-sm font-semibold shadow-lg">
               <Plus size={16} className="group-hover:rotate-90 transition-transform duration-200" />
               {t('bl_newProject')}
             </div>
@@ -83,9 +82,9 @@ export default function BrandIndexPage() {
         {kits.length === 0 ? (
           <Card variant="elevated" padding="xl" className="flex flex-col items-center text-center gap-5 py-20">
             <div className="relative">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 blur-2xl" />
-              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500/15 to-emerald-500/15 border border-border flex items-center justify-center">
-                <Palette size={32} className="text-cyan-500" />
+              <div className="absolute inset-0 rounded-3xl bg-primary/10 blur-2xl" />
+              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-teal-500/15 to-teal-500/10 border border-border flex items-center justify-center">
+                <Palette size={32} className="text-teal-500" />
               </div>
             </div>
             <div className="space-y-1">
@@ -95,8 +94,7 @@ export default function BrandIndexPage() {
               </p>
             </div>
             <Link href="/brand/hub" className="group relative mt-2">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 opacity-60 blur-md group-hover:opacity-90 transition-opacity duration-300" />
-              <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 via-teal-600 to-emerald-600 text-white font-body text-base font-semibold shadow-xl">
+              <div className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-grad-cta text-white font-body text-base font-semibold shadow-xl">
                 <Clapperboard size={18} />
                 {t('bl_createFirst')}
                 <Sparkles size={14} className="opacity-80" />
@@ -137,13 +135,13 @@ function NewKitCard({
 }) {
   return (
     <Link href="/brand/hub" className="group relative block rounded-2xl overflow-hidden aspect-[4/3]">
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-teal-600 to-emerald-600 opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-primary opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute inset-[1.5px] rounded-2xl bg-card group-hover:bg-card/90 transition-colors duration-300" />
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-teal-500/8 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-500 via-teal-500 to-emerald-500 blur-lg opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
-          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 via-teal-600 to-emerald-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <div className="absolute inset-0 rounded-full bg-primary blur-lg opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
+          <div className="relative w-14 h-14 rounded-full bg-grad-cta flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
             <Plus size={24} className="text-white group-hover:rotate-90 transition-transform duration-300" />
           </div>
         </div>
@@ -155,9 +153,9 @@ function NewKitCard({
             {colorsLogoVoiceLabel}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-cyan-500/15 to-emerald-500/15 border border-cyan-500/20 group-hover:from-cyan-500/25 group-hover:to-emerald-500/25 transition-all duration-200">
-          <Sparkles size={10} className="text-cyan-400" />
-          <span className="font-mono text-[10px] text-cyan-400 tracking-wider uppercase">{badgeLabel}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 group-hover:bg-teal-500/25 transition-all duration-200">
+          <Sparkles size={10} className="text-teal-500" />
+          <span className="font-mono text-[10px] text-teal-500 tracking-wider uppercase">{badgeLabel}</span>
         </div>
       </div>
     </Link>

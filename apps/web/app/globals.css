@@ -2,416 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Progress bar — width driven by --progress-width CSS variable (set via JS) */
-.progress-bar { width: var(--progress-width, 0%); }
-
-/* ── SpinnerAI — arcs SVG concentriques ────────────────────────────────────── */
-/* Évite les inline styles interdits par le linter */
-.spin-ai-outer  { transform-origin: center; animation: spin 1s    linear infinite; }
-.spin-ai-middle { transform-origin: center; animation: spin 0.75s  linear infinite reverse; }
-.spin-ai-inner  { transform-origin: center; animation: spin 0.5s   linear infinite; }
-
 /* ============================================================
-   CLYRO Animations & Transitions
-   ============================================================ */
-
-/* ── Gradient text animé (background-position shift) ─────── */
-@keyframes gradient-x {
-  0%, 100% { background-position: 0% 50%; }
-  50%       { background-position: 100% 50%; }
-}
-.text-gradient-animated {
-  background: linear-gradient(270deg, #4D9FFF, #8A57EA, #6D39D1, #8A57EA, #4D9FFF);
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradient-x 7s ease infinite;
-}
-
-/* ── Shimmer sweep (boutons CTA, cartes highlight) ─────────── */
-@keyframes shimmer-sweep {
-  0%   { transform: translateX(-120%); }
-  100% { transform: translateX(220%); }
-}
-.shimmer {
-  position: relative;
-  overflow: hidden;
-}
-.shimmer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  width: 45%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
-  animation: shimmer-sweep 3.5s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* ── Float lent (blobs de fond) — translateY only = GPU composite ── */
-@keyframes float-slow {
-  0%, 100% { translate: 0 0; }
-  50%       { translate: 0 -22px; }
-}
-@keyframes float-slow-2 {
-  0%, 100% { translate: 0 0; }
-  50%       { translate: 0 18px; }
-}
-.animate-float      { will-change: translate; animation: float-slow   9s ease-in-out infinite; }
-.animate-float-2    { will-change: translate; animation: float-slow-2 11s ease-in-out infinite; }
-.animate-float-rev  { will-change: translate; animation: float-slow   12s ease-in-out infinite reverse; }
-
-/* ── Glow pulsé — opacity sur pseudo-element = GPU composite ── */
-.animate-glow-cta {
-  position: relative;
-}
-.animate-glow-cta::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(138,87,234,0.5), rgba(77,159,255,0.4));
-  filter: blur(12px);
-  opacity: 0.5;
-  animation: glow-pulse-opacity 3s ease-in-out infinite;
-  pointer-events: none;
-  z-index: -1;
-}
-@keyframes glow-pulse-opacity {
-  0%, 100% { opacity: 0.3; }
-  50%       { opacity: 0.8; }
-}
-
-/* ── Border gradient animé ─────────────────────────────────── */
-@keyframes border-spin {
-  to { --border-angle: 360deg; }
-}
-
-/* ── Reveal on scroll (Intersection Observer) ──────────────── */
-.reveal {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1),
-              transform 0.65s cubic-bezier(0.16,1,0.3,1);
-  transition-delay: var(--reveal-delay, 0ms);
-}
-.reveal.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ── Stagger reveal — s'applique sur le parent ─────────────── */
-.stagger > * {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.55s cubic-bezier(0.16,1,0.3,1),
-              transform 0.55s cubic-bezier(0.16,1,0.3,1);
-}
-.stagger.is-visible > *:nth-child(1) { opacity:1; transform:none; transition-delay:  0ms; }
-.stagger.is-visible > *:nth-child(2) { opacity:1; transform:none; transition-delay: 80ms; }
-.stagger.is-visible > *:nth-child(3) { opacity:1; transform:none; transition-delay:160ms; }
-.stagger.is-visible > *:nth-child(4) { opacity:1; transform:none; transition-delay:240ms; }
-.stagger.is-visible > *:nth-child(5) { opacity:1; transform:none; transition-delay:320ms; }
-.stagger.is-visible > *:nth-child(6) { opacity:1; transform:none; transition-delay:400ms; }
-
-/* Accessibilité — désactiver toutes les animations si demandé */
-@media (prefers-reduced-motion: reduce) {
-  .reveal, .stagger > * {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-  }
-  .shimmer::after, .animate-float, .animate-float-2, .animate-float-rev,
-  .animate-glow-cta, .text-gradient-animated {
-    animation: none !important;
-  }
-}
-
-/* ── Entrée navbar — slide depuis le haut ───────────────────── */
-@keyframes nav-slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(-100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.nav-slide-in {
-  animation: nav-slide-in 0.55s cubic-bezier(0.16,1,0.3,1) both;
-}
-
-/* ── Entrée latérale (dashboard header) ─────────────────────── */
-@keyframes header-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.animate-header-in {
-  animation: header-fade-in 0.45s cubic-bezier(0.16,1,0.3,1) both;
-}
-
-/* ── Reveal delay utilities ─────────────────────────────────── */
-.reveal-delay-200 { --reveal-delay: 200ms; }
-.reveal-delay-400 { --reveal-delay: 400ms; }
-
-/* ── HeroBanner progress bar — scaleX is GPU-compositable (no Layout/Paint) ── */
-@keyframes banner-progress {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-}
-.banner-progress {
-  transform-origin: left;
-  will-change: transform;
-  animation: banner-progress 6s linear forwards;
-}
-
-/* ── Hover lift (cartes interactives) ──────────────────────── */
-.card-hover {
-  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
-              box-shadow 0.2s ease,
-              border-color 0.2s ease;
-}
-.card-hover:hover {
-  transform: translateY(-4px);
-}
-
-/* ============================================================
-   CLYRO Liquid Glass — iOS 26 style
-   Thème adaptatif : dark (défaut) / light
-   ============================================================ */
-
-/* ── Dark mode glass (défaut) ───────────────────────────────── */
-.glass {
-  background:
-    linear-gradient(150deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.01) 40%, transparent 65%),
-    rgba(255, 255, 255, 0.04);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.13),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
-    0 4px 32px rgba(0, 0, 0, 0.22);
-}
-
-.glass-heavy {
-  background:
-    linear-gradient(150deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 40%, transparent 65%),
-    rgba(6, 8, 16, 0.55);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  backdrop-filter: blur(40px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    0 0 0 0.5px rgba(255, 255, 255, 0.04);
-}
-
-/* ── Light mode glass overrides ─────────────────────────────── */
-:root:not(.dark) .glass {
-  background:
-    linear-gradient(150deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.60) 40%, rgba(255,255,255,0.40) 100%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 4px 24px rgba(0, 0, 0, 0.06);
-}
-
-:root:not(.dark) .glass-heavy {
-  background: rgba(255, 255, 255, 0.88);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  backdrop-filter: blur(40px) saturate(200%);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    0 2px 16px rgba(0, 0, 0, 0.06);
-}
-
-/* ── Tinted glass — charte CLYRO officielle ─────────────────── */
-
-/* glass-blue = Accent #4D9FFF */
-.glass-blue {
-  background:
-    linear-gradient(150deg, rgba(77,159,255,0.18) 0%, rgba(77,159,255,0.05) 45%, transparent 70%),
-    rgba(77, 159, 255, 0.07);
-  border-color: rgba(77, 159, 255, 0.20);
-  box-shadow:
-    inset 0 1px 0 rgba(77, 159, 255, 0.28),
-    0 4px 32px rgba(77, 159, 255, 0.08);
-}
-
-:root:not(.dark) .glass-blue {
-  background:
-    linear-gradient(150deg, rgba(77,159,255,0.10) 0%, rgba(77,159,255,0.03) 45%, transparent 70%),
-    rgba(77, 159, 255, 0.05);
-  border-color: rgba(77, 159, 255, 0.16);
-  box-shadow: 0 4px 24px rgba(77, 159, 255, 0.10);
-}
-
-/* glass-purple = Primary #8A57EA */
-.glass-purple {
-  background:
-    linear-gradient(150deg, rgba(138,87,234,0.20) 0%, rgba(138,87,234,0.05) 45%, transparent 70%),
-    rgba(138, 87, 234, 0.08);
-  border-color: rgba(138, 87, 234, 0.22);
-  box-shadow:
-    inset 0 1px 0 rgba(138, 87, 234, 0.30),
-    0 4px 32px rgba(138, 87, 234, 0.10);
-}
-
-:root:not(.dark) .glass-purple {
-  background:
-    linear-gradient(150deg, rgba(138,87,234,0.10) 0%, rgba(138,87,234,0.03) 45%, transparent 70%),
-    rgba(138, 87, 234, 0.05);
-  border-color: rgba(138, 87, 234, 0.18);
-  box-shadow: 0 4px 24px rgba(138, 87, 234, 0.10);
-}
-
-/* glass-cyan — conservé pour accents électriques */
-.glass-cyan {
-  background:
-    linear-gradient(150deg, rgba(56,232,255,0.16) 0%, rgba(56,232,255,0.04) 45%, transparent 70%),
-    rgba(56, 232, 255, 0.06);
-  border-color: rgba(56, 232, 255, 0.18);
-  box-shadow:
-    inset 0 1px 0 rgba(56, 232, 255, 0.25),
-    0 4px 32px rgba(56, 232, 255, 0.07);
-}
-
-/* ── Glass pill — nav active, badges ─────────────────────────── */
-.glass-pill {
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 50%, transparent 100%),
-    rgba(255, 255, 255, 0.06);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-}
-
-:root:not(.dark) .glass-pill {
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: none;
-}
-
-/* ── Glass structural borders ───────────────────────────────── */
-.glass-border-r  { border-right:  1px solid rgba(255,255,255,0.06); }
-.glass-border-b  { border-bottom: 1px solid rgba(255,255,255,0.06); }
-.glass-border-t  { border-top:    1px solid rgba(255,255,255,0.06); }
-
-:root:not(.dark) .glass-border-r  { border-right:  1px solid rgba(0,0,0,0.07); }
-:root:not(.dark) .glass-border-b  { border-bottom: 1px solid rgba(0,0,0,0.07); }
-:root:not(.dark) .glass-border-t  { border-top:    1px solid rgba(0,0,0,0.07); }
-
-/* ── Glass on hover ─────────────────────────────────────────── */
-.glass-hover {
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.glass-hover:hover {
-  background:
-    linear-gradient(150deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 40%, transparent 65%),
-    rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-:root:not(.dark) .glass-hover:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.10);
-}
-
-/* ── Grid background — adaptatif ───────────────────────────── */
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-  background-size: 60px 60px;
-}
-
-:root:not(.dark) .grid-bg {
-  background-image:
-    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
-  background-size: 60px 60px;
-}
-
-/* ============================================================
-   CLYRO Design System — CSS Variables
-   Dark-first · Inspiré HeyGen AI · Glassmorphism léger
+   CLYRO Design System — HeyGen 2026 Inspired
+   Light-first · Clean · Subtle shadows · Blue-violet accents
    ============================================================ */
 
 @layer base {
-  /* ── LIGHT MODE (défaut — .dark absent) ─────────────────────── */
+  /* ── LIGHT MODE (default) ─────────────────────────────────── */
   :root {
-    /* Surfaces — hiérarchie visible : background > card > muted > border */
     --background:             #FFFFFF;
-    --foreground:             #0F1427;
-    --card:                   #F0F4FF;   /* +distinguishable from white */
-    --card-foreground:        #0F1427;
+    --foreground:             #0F172A;
+    --card:                   #FFFFFF;
+    --card-foreground:        #0F172A;
     --popover:                #FFFFFF;
-    --popover-foreground:     #0F1427;
+    --popover-foreground:     #0F172A;
 
-    /* Accents */
-    --primary:                #3B8EF0;
+    --primary:                #667EEA;
     --primary-foreground:     #FFFFFF;
-    --secondary:              #9B5CF6;
+    --secondary:              #8B5CF6;
     --secondary-foreground:   #FFFFFF;
-    --muted:                  #E2E9FF;   /* visible medium layer */
-    --muted-foreground:       #475569;
-    --accent:                 #38E8FF;
-    --accent-foreground:      #0F1427;
+    --muted:                  #F8F9FB;
+    --muted-foreground:       #64748B;
+    --accent:                 #EDE9FE;
+    --accent-foreground:      #667EEA;
 
-    /* Sémantiques */
     --destructive:            #EF4444;
     --destructive-foreground: #FFFFFF;
 
-    /* Structurel */
-    --border:                 #B8C8E0;   /* darker — visible as bg-border */
-    --input:                  #F0F4FF;
-    --ring:                   #3B8EF0;
-    --radius:                 0.75rem;
+    --border:                 #E2E8F0;
+    --input:                  #F8F9FB;
+    --ring:                   #667EEA;
+    --radius:                 10px;
 
-    /* Textes — contraste WCAG AA garanti sur fond blanc */
-    --text-primary:           #0F1427;   /* 18:1 ✓ */
-    --text-secondary:         #374151;   /* 10.7:1 ✓ */
-    --text-muted:             #64748B;   /* 5.7:1 ✓  (était #94A3B8 = 2.8:1 ✗) */
-    --text-disabled:          #94A3B8;   /* 2.8:1 — disabled only */
+    --text-primary:           #0F172A;
+    --text-secondary:         #475569;
+    --text-muted:             #94A3B8;
+    --text-disabled:          #CBD5E1;
+
+    --bg-secondary:           #F8F9FB;
+    --bg-tertiary:            #F1F3F6;
+    --border-hover:           #CBD5E1;
+    --border-subtle:          #F1F5F9;
   }
 
-  /* ── DARK MODE — darkMode: 'class' de Tailwind (.dark sur <html>) ── */
+  /* ── DARK MODE ────────────────────────────────────────────── */
   .dark {
-    --background:             #060810;
-    --foreground:             #F1F5FF;
-    --card:                   #0A0D1A;
-    --card-foreground:        #F1F5FF;
-    --popover:                #0F1427;
-    --popover-foreground:     #F1F5FF;
-    --primary:                #3B8EF0;
-    --primary-foreground:     #F1F5FF;
-    --secondary:              #9B5CF6;
-    --secondary-foreground:   #F1F5FF;
-    --muted:                  #0F1427;
+    --background:             #0F1117;
+    --foreground:             #F1F5F9;
+    --card:                   #1A1D27;
+    --card-foreground:        #F1F5F9;
+    --popover:                #1E2130;
+    --popover-foreground:     #F1F5F9;
+
+    --primary:                #667EEA;
+    --primary-foreground:     #FFFFFF;
+    --secondary:              #8B5CF6;
+    --secondary-foreground:   #FFFFFF;
+    --muted:                  #1A1D27;
     --muted-foreground:       #94A3B8;
-    --accent:                 #38E8FF;
-    --accent-foreground:      #060810;
+    --accent:                 #2D2640;
+    --accent-foreground:      #A78BFA;
+
     --destructive:            #EF4444;
-    --destructive-foreground: #F1F5FF;
-    --border:                 #151C38;
-    --input:                  #0F1427;
-    --ring:                   #3B8EF0;
-    --radius:                 0.75rem;
-    --text-primary:           #F1F5FF;   /* 18:1 ✓ */
-    --text-secondary:         #CBD5E1;   /* 10.8:1 ✓ — was #94A3B8 = collision w/ muted */
-    --text-muted:             #A8B4C8;   /* 5.9:1 on #060810 ✓, 5.1:1 on #0F1427 ✓ — was #94A3B8 = 4.1:1 FAIL on card */
-    --text-disabled:          #64748B;   /* 2.7:1 — disabled only */
+    --destructive-foreground: #FFFFFF;
+
+    --border:                 #2D3348;
+    --input:                  #1A1D27;
+    --ring:                   #667EEA;
+    --radius:                 10px;
+
+    --text-primary:           #F1F5F9;
+    --text-secondary:         #94A3B8;
+    --text-muted:             #64748B;
+    --text-disabled:          #475569;
+
+    --bg-secondary:           #1A1D27;
+    --bg-tertiary:            #1E2130;
+    --border-hover:           #3D4460;
+    --border-subtle:          #252836;
   }
 }
 
@@ -422,47 +90,43 @@
 
   body {
     @apply bg-background text-foreground font-body text-base;
-    line-height: 1.6;                          /* lisibilité optimale */
+    line-height: 1.5;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Titres — Syne (charte v3) */
+  /* Headings — Inter (all weights) */
   h1 {
-    @apply font-display font-extrabold text-5xl;
-    line-height: 1.1;
+    @apply font-display font-bold text-2xl;
+    line-height: 1.25;
     letter-spacing: -0.02em;
   }
   h2 {
-    @apply font-display font-bold text-3xl;
-    line-height: 1.25;
-    letter-spacing: -0.015em;
-  }
-  h3 {
-    @apply font-display font-bold text-2xl;
+    @apply font-display font-bold text-xl;
     line-height: 1.3;
     letter-spacing: -0.01em;
+  }
+  h3 {
+    @apply font-display font-semibold text-lg;
+    line-height: 1.4;
   }
   h4, h5, h6 {
     @apply font-display font-semibold;
     line-height: 1.4;
   }
 
-  /* Code inline & blocs — JetBrains Mono */
   code, kbd, pre, samp {
     @apply font-mono text-sm;
-    font-feature-settings: 'liga' 1, 'calt' 1; /* ligatures de code */
+    font-feature-settings: 'liga' 1, 'calt' 1;
   }
 
-  /* ── Focus-visible global (a11y) — fallback pour éléments natifs ─────────
-     Le composant <Button> définit son propre focus ring avec offset, mais
-     les <a>, <input>, <select>, <textarea> et <button> natifs qui ne l'utilisent
-     pas tombent sur cette règle. Couleur : token --ring (charte CLYRO). */
+  /* Focus ring — brand color */
   :where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
     border-radius: 4px;
   }
-  /* Supprime l'outline si l'élément a déjà une ring Tailwind (évite le doublon) */
   .ring-2:focus-visible,
   .focus-visible\:ring-2:focus-visible {
     outline: none;
@@ -470,95 +134,24 @@
 }
 
 /* ============================================================
-   CLYRO Noise Texture Overlay
+   Skeleton / Shimmer Loading
    ============================================================ */
-.noise-overlay {
-  position: relative;
-}
-
-.noise-overlay::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4'/%3E%3C/svg%3E");
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* .grid-bg is defined above in the glass section (theme-adaptive) */
-
-/* ============================================================
-   CLYRO Glow Effects
-   ============================================================ */
-.glow-blue {
-  box-shadow: 0 0 40px rgba(59, 142, 240, 0.3);
-}
-
-.glow-purple {
-  box-shadow: 0 0 40px rgba(155, 92, 246, 0.3);
-}
-
-.glow-cyan {
-  box-shadow: 0 0 40px rgba(56, 232, 255, 0.3);
-}
-
-.glow-radial-blue {
-  background: radial-gradient(ellipse 80% 40% at 50% 0%, rgba(59, 142, 240, 0.15), transparent);
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--muted) 25%, var(--border) 50%, var(--muted) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
 }
 
 /* ============================================================
-   CLYRO Mono Labels
-   ============================================================ */
-.label-mono {
-  @apply font-mono text-xs uppercase tracking-widest;
-  color: rgba(59, 142, 240, 0.8);
-}
-
-.label-mono::after {
-  content: '';
-  display: block;
-  width: 2rem;
-  height: 1px;
-  background: linear-gradient(90deg, #3B8EF0, transparent);
-  margin-top: 4px;
-}
-
-/* ============================================================
-   Gradient Text
-   ============================================================ */
-/* grad-primary CLYRO — blue → purple */
-.text-gradient-primary,
-.gradient-text {
-  background: linear-gradient(135deg, #3B8EF0, #9B5CF6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.text-gradient-electric {
-  background: linear-gradient(135deg, #38E8FF, #3B8EF0, #9B5CF6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ============================================================
-   Card interactivity — standardized hover for all clickable cards
-   Use .card-interactive on any clickable card/button that shouldn't
-   opt into the full Card component. Ensures visual consistency with
-   <Card variant="interactive" />
+   Card Interactivity
    ============================================================ */
 .card-interactive {
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 .card-interactive:hover {
-  transform: translateY(-2px);
-  border-color: var(--border);
-  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-:root.dark .card-interactive:hover {
-  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 .card-interactive:active {
   transform: translateY(0);
@@ -566,22 +159,169 @@
 }
 
 /* ============================================================
-   Scrollbar Custom — dark CLYRO style
+   Card Hover (legacy compat)
+   ============================================================ */
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+   Gradient Text
+   ============================================================ */
+.text-gradient-primary,
+.gradient-text {
+  background: linear-gradient(135deg, #667EEA, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-animated {
+  background: linear-gradient(270deg, #667EEA, #8B5CF6, #A855F7, #8B5CF6, #667EEA);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-x 7s ease infinite;
+}
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+/* ============================================================
+   Mono Labels
+   ============================================================ */
+.label-mono {
+  @apply font-mono text-xs uppercase tracking-widest;
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+/* ============================================================
+   Progress Bar
+   ============================================================ */
+.progress-bar { width: var(--progress-width, 0%); }
+
+/* ============================================================
+   Scrollbar — subtle
    ============================================================ */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 10px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* ============================================================
+   Reveal on scroll
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.4s cubic-bezier(0.16,1,0.3,1),
+              transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stagger > * {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.35s cubic-bezier(0.16,1,0.3,1),
+              transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.stagger.is-visible > *:nth-child(1) { opacity:1; transform:none; transition-delay:  0ms; }
+.stagger.is-visible > *:nth-child(2) { opacity:1; transform:none; transition-delay: 60ms; }
+.stagger.is-visible > *:nth-child(3) { opacity:1; transform:none; transition-delay:120ms; }
+.stagger.is-visible > *:nth-child(4) { opacity:1; transform:none; transition-delay:180ms; }
+.stagger.is-visible > *:nth-child(5) { opacity:1; transform:none; transition-delay:240ms; }
+.stagger.is-visible > *:nth-child(6) { opacity:1; transform:none; transition-delay:300ms; }
+
+.reveal-delay-200 { --reveal-delay: 200ms; }
+.reveal-delay-400 { --reveal-delay: 400ms; }
+
+/* Accessibility — disable animations when requested */
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .text-gradient-animated, .animate-shimmer {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   SpinnerAI arcs
+   ============================================================ */
+.spin-ai-outer  { transform-origin: center; animation: spin 1s    linear infinite; }
+.spin-ai-middle { transform-origin: center; animation: spin 0.75s linear infinite reverse; }
+.spin-ai-inner  { transform-origin: center; animation: spin 0.5s  linear infinite; }
+
+/* ============================================================
+   Glass (dark mode sections / hero only)
+   ============================================================ */
+.glass {
+  background: rgba(255,255,255,0.04);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 4px 32px rgba(0,0,0,0.22);
+}
+
+.glass-heavy {
+  background: rgba(15,17,23,0.55);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+/* Light mode: glass is a subtle white card */
+:root:not(.dark) .glass {
+  background: rgba(255,255,255,0.85);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+:root:not(.dark) .glass-heavy {
+  background: rgba(255,255,255,0.92);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
+
+/* ============================================================
+   No-scrollbar utility
+   ============================================================ */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ============================================================
+   Grid background (for hero/dark sections)
+   ============================================================ */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
 }

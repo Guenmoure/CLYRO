@@ -173,7 +173,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={() => router.push('/dashboard')}
-          className="hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+          className="hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded"
           aria-label="Go to dashboard"
         >
           {collapsed && !mobileOpen
@@ -226,9 +226,9 @@ export function Sidebar({
           aria-label={(collapsed && !mobileOpen) ? 'New — create a video' : undefined}
           className={cn(
             'w-full flex items-center gap-2 rounded-xl font-display text-sm font-medium',
-            'text-white bg-gradient-to-r from-blue-500 to-purple-500',
-            'hover:from-blue-500/90 hover:to-purple-500/90',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+            'text-white bg-grad-cta',
+            'hover:brightness-105',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card',
             'shadow-sm transition-all duration-150',
             // Touch target min 44×44 (WCAG 2.5.5) — h-11 w-11 = 44 px, py-2.5 + 14 px line-height = ~44 px
             collapsed && !mobileOpen ? 'justify-center h-11 w-11 mx-auto px-0' : 'justify-center px-3 py-2.5',
@@ -356,7 +356,7 @@ export function Sidebar({
           )}
         >
           {/* Avatar */}
-          <div className="w-8 h-8 rounded-full shrink-0 bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-medium font-display">
+          <div className="w-8 h-8 rounded-full shrink-0 bg-grad-cta flex items-center justify-center text-white text-xs font-medium font-display">
             {user.initials}
           </div>
 
@@ -368,7 +368,7 @@ export function Sidebar({
                 </p>
                 <p className="font-mono text-[11px] text-[--text-muted] leading-tight">
                   {user.plan}
-                  <span className="text-blue-400 ml-1">· {user.creditsLeft} cr</span>
+                  <span className="text-primary ml-1">· {user.creditsLeft} cr</span>
                 </p>
               </div>
               <ChevronUp size={13} className={cn(
@@ -488,21 +488,18 @@ function NavItem({
         onClick={onClick}
         className={cn(
           'w-full flex items-center gap-3 rounded-xl transition-all duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
           collapsed ? 'justify-center h-10 px-0' : 'px-3 h-10',
           active
-            ? cn(
-                'bg-blue-500/10 text-blue-500 dark:text-blue-400',
-                !collapsed && 'border-l-2 border-blue-500 rounded-l-none pl-[10px]',
-              )
-            : 'text-[--text-secondary] hover:bg-muted hover:text-foreground border-l-2 border-transparent',
+            ? 'bg-accent text-accent-foreground font-medium'
+            : 'text-[--text-secondary] hover:bg-muted hover:text-foreground',
         )}
       >
         <Icon
           size={18}
           className={cn(
             'shrink-0 transition-colors',
-            active ? 'text-blue-500 dark:text-blue-400' : 'text-[--text-muted] group-hover:text-foreground',
+            active ? 'text-accent-foreground' : 'text-[--text-muted] group-hover:text-foreground',
           )}
         />
         {!collapsed && (
@@ -553,7 +550,7 @@ function NavItem({
           'absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full',
           'text-[8px] font-mono font-bold text-white',
           'flex items-center justify-center',
-          countColor === 'amber' ? 'bg-amber-500' : 'bg-blue-500',
+          countColor === 'amber' ? 'bg-amber-500' : 'bg-primary',
         )}>
           {count > 99 ? '99+' : count}
         </span>
@@ -599,7 +596,7 @@ function UserMenuItem({
       <Icon size={14} className="shrink-0 opacity-60" />
       <span className="flex-1">{label}</span>
       {badge && (
-        <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400">
+        <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">
           {badge}
         </span>
       )}

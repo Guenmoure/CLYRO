@@ -41,7 +41,7 @@ export function MobileMenu() {
           {/* Panel */}
           <div className={cn(
             'relative ml-auto w-72 h-full bg-card border-l border-border/50',
-            'flex flex-col p-6 gap-6 animate-slide-in-right'
+            'flex flex-col p-6 gap-6 animate-fade-up'
           )}>
             <div className="flex items-center justify-between">
               <span className="font-display text-lg">

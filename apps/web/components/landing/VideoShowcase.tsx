@@ -58,7 +58,7 @@ const SHOWCASE_VIDEOS: ShowcaseVideo[] = [
     feature:             'Faceless Video',
     duration:            '3:45',
     generationTime:      'Generated in 6 min',
-    placeholderGradient: 'from-blue-500/40 via-cyan-500/20 to-teal-500/10',
+    placeholderGradient: 'from-primary/40 via-secondary/20 to-teal-500/10',
   },
   {
     title:               'Startup pitch — Avatar Studio',

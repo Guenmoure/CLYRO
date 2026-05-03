@@ -36,9 +36,9 @@ export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
 
       {/* ── Floating shapes illustration ── */}
       <div className="relative w-32 h-32 mb-6">
-        <div className="absolute w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 top-0 left-4 animate-float" />
-        <div className="absolute w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 bottom-2 right-2 animate-float-delayed" />
-        <div className="absolute w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/20 bottom-0 left-0 animate-float-slow" />
+        <div className="absolute w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 top-0 left-4" />
+        <div className="absolute w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 bottom-2 right-2" />
+        <div className="absolute w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/20 bottom-0 left-0" />
         <div className="absolute inset-0 flex items-center justify-center">
           <Video size={28} className="text-[--text-muted]" />
         </div>
