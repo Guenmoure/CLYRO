@@ -331,7 +331,14 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
     // Index overlays par scene.id (partagé entre Ken Burns et Kling) :
     //   1. preGeneratedScenes[].overlay_text (Motion Design front)  → string legacy
     //   2. storyboard.scenes[].overlay (Claude storyboard)          → typed, position/emphasis
-    type OverlayOpts = { text: string; position?: 'top-center' | 'top-left' | 'top-right' | 'center' | 'bottom-center' | 'bottom-left' | 'bottom-right'; emphasis?: 'stat' | 'title' | 'quote' | 'cta' | 'default' }
+    // Use the structural shape that matches BOTH ffmpeg's OverlayOptions
+    // and the shared SceneOverlay (the 6+aliases union from PR1). Anything
+    // ffmpeg's buildOverlayFilter understands is valid here.
+    type OverlayOpts = {
+      text: string
+      position?: 'top-center' | 'top-left' | 'top-right' | 'center' | 'bottom-center' | 'bottom-left' | 'bottom-right'
+      emphasis?: 'stat' | 'headline' | 'title' | 'key_phrase' | 'quote' | 'comparison' | 'list_item' | 'source' | 'cta' | 'default'
+    }
     const overlayTextBySceneId = new Map<string, string>()
     const overlayOptsBySceneId = new Map<string, OverlayOpts>()
     if (preGeneratedScenes) {

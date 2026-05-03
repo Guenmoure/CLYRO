@@ -89,11 +89,24 @@ REQUIRED VISUAL STYLE for description_visuelle: ${styleGuide}
 
 For each scene, produce:
 - "index": scene number (starts at 0)
-- "description_visuelle": visual prompt in ENGLISH for Flux (max 150 chars). MUST follow the visual style above. Describe ONLY the unique visual content of this scene — WHO is visible, WHAT happens, WHERE. Each scene must be visually distinct.
-- "animation_prompt": camera/motion prompt in ENGLISH for image-to-video (max 80 chars). Describes a concrete visible movement.
+- "description_visuelle": visual prompt in ENGLISH for Flux (40–80 words sweet spot, hard cap 150 chars). MUST follow the 4-LAYER STRUCTURE below and the visual style above. Describe ONLY the unique visual content of this scene — WHO is visible, WHAT happens, WHERE. Each scene must be visually distinct.
+- "animation_prompt": camera/motion prompt in ENGLISH for image-to-video (max 80 chars). Describes ONE primary subject motion + ONE camera move, ending with "smooth cinematic motion".
 - "texte_voix": REQUIRED — narration written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty.
 - "duree_estimee": duration in seconds (integer, between 3 and 12)
+- "overlay" (OPTIONAL): one object { type, text, position?, trigger_word?, duration_seconds? } with type ∈ stat | headline | key_phrase | comparison | list_item | source | cta. Use stat for any number, headline for section starts, key_phrase for the most quotable line, comparison for "A | B" contrasts, list_item for "#3 — TOPIC" lists, source for citations, cta for closing call-to-action. text stays in ${lang.name}. trigger_word = the word in texte_voix that triggers it.
 ${hasDialogue ? `- "speaker": NAME of the speaking character. Optional for narration, REQUIRED for dialogue.` : ''}
+
+═══════════════════════════════════════════════════════════════════════
+4-LAYER STRUCTURE for description_visuelle (mandatory order):
+  1. SUBJECT     — main visual element with specific attributes
+  2. ENVIRONMENT — background, secondary elements, spatial context
+  3. LIGHTING    — direction, temperature, atmosphere (e.g. "warm directional light, dramatic shadows")
+  4. TECHNICAL   — camera/lens/finish (e.g. "shot on Canon R5, 85mm, shallow DoF, 8K, photorealistic")
+NEVER mention identifiable real people — use hands, silhouettes, objects, abstract shapes.
+If the scene has a stat / headline / key_phrase overlay, INCLUDE the phrase
+"with negative space in [center|upper third|lower third] for text overlay" in the ENVIRONMENT layer.
+End every prompt with "8K".
+═══════════════════════════════════════════════════════════════════════
 
 RULES:
 1. description_visuelle = unique visual content per scene (subject + action + setting). MUST follow the visual style. Good examples: "scientist examining glowing DNA strand in dark lab", "crowd celebrating in sunlit city square". Bad: generic shots with no specifics.

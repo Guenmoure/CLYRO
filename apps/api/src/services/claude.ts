@@ -169,18 +169,34 @@ REQUIRED VISUAL STYLE for description_visuelle: ${styleGuide}${brandContext}
 For each scene, produce:
 - "id": unique identifier ("scene_001", "scene_002", …)
 - "index": scene number (starts at 0)
-- "description_visuelle": visual prompt in ENGLISH optimised for Flux image generation (max 150 chars). MUST follow the visual style above. Never mention identifiable real people. Never request readable numbers/stats/titles/quotes in the image — those go in "overlay".
-- "animation_prompt": motion prompt in ENGLISH for image-to-video (max 80 chars). Describes camera movement and visible action, e.g. "slow zoom in, character gestures forward, subtle breathing motion", "camera pans left, gentle wind effect, dynamic energy".
+- "description_visuelle": visual prompt in ENGLISH optimised for Flux image generation (40–80 words is the sweet spot, hard cap 150 chars). MUST follow the 4-LAYER STRUCTURE below and the visual style above. Never mention identifiable real people. Never request readable numbers/stats/titles/quotes in the image — those go in "overlay".
+- "animation_prompt": motion prompt in ENGLISH for image-to-video (max 80 chars). Describes ONE primary subject motion + ONE camera move, ending with "smooth cinematic motion". Examples: "slow zoom in, character gestures forward, smooth cinematic motion", "camera pans left, gentle wind effect, smooth cinematic motion".
 - "texte_voix": REQUIRED — narration text written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty. Matches exactly the part of the script this scene covers.
 - "duree_estimee": duration in seconds (integer, between 3 and 10)
-- "overlay" (OPTIONAL): object { "type": "stat" | "title" | "quote" | "cta", "text": "…", "position": "top-center" | "center" | "bottom-center" | … }
-  → Only fill this when texte_voix contains a specific number, a striking stat, a punchy title,
-    a quote, or a closing CTA. Example pattern (the texts below MUST follow ${lang.name}, the
-    examples are illustrative):
-      texte_voix containing "87% of small businesses fail" → overlay: { type: "stat", text: "87%", position: "center" }
-      texte_voix introducing rule #1 → overlay: { type: "title", text: "Rule #1", position: "top-center" }
-      closing CTA → overlay: { type: "cta", text: "Subscribe", position: "bottom-center" }
-  → "text" must stay in ${lang.name}. Max 30 characters. Absent if the scene has no memorable beat.
+- "overlay" (OPTIONAL): object { "type": "stat"|"headline"|"key_phrase"|"comparison"|"list_item"|"source"|"cta", "text": "…", "position": "top-center"|"center"|"bottom-center"|… , "trigger_word": "…", "duration_seconds": 2-5 }
+  Pick AT MOST ONE overlay type per scene. Use them like this:
+    • "stat"       — every time the narration mentions a specific number ("$250,000", "87%"). text = the number only, max 12 chars. position default "center".
+    • "headline"   — at the start of a new numbered section ("MISTAKE #3", "RULE 1"). max 20 chars. position default "top-center".
+    • "key_phrase" — the most quotable line of the scene ("YOU'RE NOT LAZY"). max 30 chars. position default "center".
+    • "comparison" — contrast two ideas, formatted "BEFORE | AFTER" or "POOR | RICH". max 30 chars total. position "center".
+    • "list_item"  — numbered list entry ("#3 — LIFESTYLE INFLATION"). max 30 chars. position "center".
+    • "source"     — citation ("Harvard Study, 2018"). max 60 chars. position default "bottom-center".
+    • "cta"        — call-to-action ("Subscribe", "Try free"). max 18 chars. position default "bottom-center".
+  → "trigger_word" = the exact word from texte_voix that should make the overlay appear (must match a word that's in this scene's narration verbatim).
+  → "duration_seconds" = how long the overlay stays on screen (2–5s). Defaults to 3 if omitted.
+  → "text" must stay in ${lang.name}. Omit the overlay entirely if the scene has no memorable beat.
+
+═══════════════════════════════════════════════════════════════════════
+4-LAYER STRUCTURE for description_visuelle (mandatory order):
+  1. SUBJECT     — the main visual element with specific attributes (object, action, pose)
+  2. ENVIRONMENT — background, secondary elements, spatial context
+  3. LIGHTING    — direction, temperature, atmosphere ("warm directional light from upper left, dramatic shadows")
+  4. TECHNICAL   — camera/lens/finish ("shot on Canon R5, 85mm, shallow DoF, 8K, photorealistic")
+Always end with "8K" or "8K resolution".
+NEVER mention identifiable real people — use hands, silhouettes, objects, landscapes, abstract shapes.
+If the scene has a stat / headline / key_phrase overlay, INCLUDE the phrase
+"with negative space in the [center|upper third|lower third] for text overlay" in the ENVIRONMENT layer so the text doesn't fight the image.
+═══════════════════════════════════════════════════════════════════════
 
 CRITICAL RULES:
 1. LANGUAGE: every "texte_voix" and every "overlay.text" MUST be written in ${lang.name}. Never translate the script. "description_visuelle" and "animation_prompt" stay in English (Flux/Kling consume them).
@@ -189,6 +205,7 @@ CRITICAL RULES:
 4. texte_voix is REQUIRED on every scene — distribute the full script across all scenes WITHOUT translating it.
 5. Sum of duree_estimee must be consistent with the script's length.
 6. Numbers, stats, titles, CTAs → "overlay" field ONLY, never inside "description_visuelle".
+7. trigger_word MUST be a word that actually appears in this scene's texte_voix — pipeline uses it for word-level sync.
 
 Script (treat as ${lang.name} content — preserve verbatim across texte_voix fields):
 """

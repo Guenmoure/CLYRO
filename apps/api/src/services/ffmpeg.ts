@@ -184,7 +184,31 @@ export type OverlayPosition =
   | 'center'
   | 'bottom-center' | 'bottom-left' | 'bottom-right'
 
-export type OverlayEmphasis = 'stat' | 'title' | 'quote' | 'cta' | 'default'
+/**
+ * Overlay emphasis presets — drives font size + box colour + line spacing.
+ * Aligned with the 6 spec types (CLYRO_TEXT_AND_PROMPTS):
+ *   - stat       — big number callout (~14% of height, dramatic box)
+ *   - headline   — section title at the top (~10% of height, solid box)
+ *   - title      — alias of headline; kept for back-compat with existing prompts
+ *   - key_phrase — narration highlight (~7.5% of height, soft box)
+ *   - quote      — alias of key_phrase; back-compat
+ *   - comparison — split A/B layout (rendered as a single line "A | B")
+ *   - list_item  — numbered list entry (~9%, slightly punchier box)
+ *   - source     — citation badge at the bottom (~3.5%, subtle box)
+ *   - cta        — call-to-action (small-medium, brand-accent box)
+ *   - default    — legacy bottom-caption fallback
+ */
+export type OverlayEmphasis =
+  | 'stat'
+  | 'headline'
+  | 'title'
+  | 'key_phrase'
+  | 'quote'
+  | 'comparison'
+  | 'list_item'
+  | 'source'
+  | 'cta'
+  | 'default'
 
 export interface OverlayOptions {
   text: string
@@ -227,23 +251,50 @@ function buildOverlayFilter(
   if (!text) return null
 
   const emphasis = overlay.emphasis ?? 'default'
-  const position = overlay.position ?? (emphasis === 'cta' ? 'bottom-center' : 'center')
+
+  // Default position by emphasis: source → bottom (citation badge),
+  // cta → bottom (call-to-action), headline → top (section title),
+  // everything else → center.
+  const defaultPosition: OverlayPosition =
+      emphasis === 'source'   ? 'bottom-center'
+    : emphasis === 'cta'      ? 'bottom-center'
+    : emphasis === 'headline' ? 'top-center'
+    : 'center'
+  const position = overlay.position ?? defaultPosition
 
   // Base font size as a percentage of output height.
+  // Numbers below match the spec font-size targets (1080p reference):
+  //   stat       ~140px → 0.13
+  //   headline    ~96px → 0.09
+  //   list_item   ~96px → 0.09 (numéro géant)
+  //   key_phrase  ~64px → 0.06
+  //   comparison  ~36px → 0.034
+  //   source      ~16px → 0.018 (small citation)
   const baseRatio =
-      emphasis === 'stat'   ? 0.14
-    : emphasis === 'title'  ? 0.075
-    : emphasis === 'quote'  ? 0.055
-    : emphasis === 'cta'    ? 0.055
+      emphasis === 'stat'       ? 0.13
+    : emphasis === 'headline'   ? 0.09
+    : emphasis === 'title'      ? 0.075
+    : emphasis === 'list_item'  ? 0.09
+    : emphasis === 'key_phrase' ? 0.06
+    : emphasis === 'quote'      ? 0.055
+    : emphasis === 'comparison' ? 0.034
+    : emphasis === 'cta'        ? 0.055
+    : emphasis === 'source'     ? 0.018
     : 0.045
-  const fontSize = Math.max(24, Math.round(height * baseRatio))
-  const boxBorder = Math.max(10, Math.round(fontSize * 0.35))
+  const fontSize = Math.max(20, Math.round(height * baseRatio))
+  const boxBorder = Math.max(8, Math.round(fontSize * 0.35))
 
-  // Box styling — stat is punchier (thicker border, darker box); others softer.
+  // Box styling — stat / headline get a punchy dark box; source is a
+  // subtle backdrop; comparison stays minimal; others use the legacy soft box.
   const boxColor =
-      emphasis === 'stat'  ? 'black@0.70'
-    : emphasis === 'cta'   ? 'black@0.75'
-    : emphasis === 'title' ? 'black@0.65'
+      emphasis === 'stat'       ? 'black@0.70'
+    : emphasis === 'headline'   ? 'black@0.70'
+    : emphasis === 'list_item'  ? 'black@0.70'
+    : emphasis === 'cta'        ? 'black@0.75'
+    : emphasis === 'title'      ? 'black@0.65'
+    : emphasis === 'key_phrase' ? 'black@0.55'
+    : emphasis === 'comparison' ? 'black@0.55'
+    : emphasis === 'source'     ? 'black@0.45'
     : 'black@0.55'
 
   // X position — left / center / right with an 8% safe-area margin.

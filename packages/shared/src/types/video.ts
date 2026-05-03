@@ -80,9 +80,24 @@ export type AnimationType = 'slide-in' | 'zoom' | 'fade' | 'particle-burst' | 't
 export type SceneType = 'text_hero' | 'split_text_image' | 'product_showcase' | 'stats_counter' | 'cta_end' | 'image_full'
 
 // Programmatic text overlay burned onto the scene's background image.
-// Used for stats, titles, quotes — anything that must render pixel-perfect
-// and that diffusion models (Flux, Ideogram) cannot reliably draw.
-export type SceneOverlayType = 'stat' | 'title' | 'quote' | 'cta'
+// Used for stats, titles, key phrases, comparisons, list items, sources,
+// and CTAs — anything that must render pixel-perfect and that diffusion
+// models (Flux, Ideogram) cannot reliably draw.
+//
+// Aligned with the 6+1 spec types from CLYRO_TEXT_AND_PROMPTS:
+//   stat | headline | key_phrase | comparison | list_item | source | cta
+//   plus the legacy aliases title (= headline) and quote (= key_phrase)
+//   so existing prompts/data keep working.
+export type SceneOverlayType =
+  | 'stat'
+  | 'headline'
+  | 'title'        // alias of headline (back-compat)
+  | 'key_phrase'
+  | 'quote'        // alias of key_phrase (back-compat)
+  | 'comparison'
+  | 'list_item'
+  | 'source'
+  | 'cta'
 export type SceneOverlayPosition =
   | 'top-center'    | 'top-left'    | 'top-right'
   | 'center'
@@ -91,7 +106,16 @@ export type SceneOverlayPosition =
 export interface SceneOverlay {
   type: SceneOverlayType
   text: string                          // "87%", "1M€ en 30 jours", "Think different"
-  position?: SceneOverlayPosition       // default: 'center' for stat/title, 'bottom-center' for cta
+  position?: SceneOverlayPosition       // default: depends on type (see buildOverlayFilter)
+  /** Word from the scene's narration (texte_voix) that triggers the overlay's
+   *  appearance. The pipeline maps this to a startFrame using ElevenLabs
+   *  word-level timestamps. Optional — when absent, the overlay falls back
+   *  to "show for the entire scene" (legacy behaviour, ignored by the
+   *  scheduler in PR2). */
+  trigger_word?: string
+  /** How long the overlay stays visible after triggering, in seconds.
+   *  Defaults to 3s in the pipeline. */
+  duration_seconds?: number
 }
 
 export interface Scene {
