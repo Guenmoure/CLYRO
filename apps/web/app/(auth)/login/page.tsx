@@ -18,7 +18,7 @@ export default function LoginPage() {
       </div>
 
       {/* Card */}
-      <div className="glass glass-heavy rounded-2xl p-8">
+      <div className="bg-card border border-border rounded-2xl p-8">
         <div className="mb-6">
           <h2 className="font-display text-xl font-semibold text-foreground">Sign in</h2>
           <p className="text-[--text-secondary] text-sm mt-1 font-body">

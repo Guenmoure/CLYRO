@@ -93,9 +93,9 @@ export function LoginForm() {
 
       {/* Divider */}
       <div className="flex items-center gap-4">
-        <div className="flex-1 h-px bg-white/10" />
-        <span className="font-mono text-xs text-white/30 uppercase tracking-widest">or</span>
-        <div className="flex-1 h-px bg-white/10" />
+        <div className="flex-1 h-px bg-border" />
+        <span className="font-mono text-xs text-[--text-muted] uppercase tracking-widest">or</span>
+        <div className="flex-1 h-px bg-border" />
       </div>
 
       {/* Email/Password form */}
@@ -110,11 +110,16 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
             required
-            className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:ring-2 focus:ring-ring/50 transition-all duration-200"
           />
         </div>
         <div>
-          <label htmlFor="login-password" className="label-mono block mb-2">{t('password')}</label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="login-password" className="label-mono">{t('password')}</label>
+            <a href="/forgot-password" className="text-xs font-body text-primary hover:text-primary/80 transition-colors">
+              Forgot password?
+            </a>
+          </div>
           <input
             id="login-password"
             name="password"
@@ -123,7 +128,7 @@ export function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:ring-2 focus:ring-ring/50 transition-all duration-200"
           />
         </div>
 

@@ -112,9 +112,9 @@ export function SignupForm() {
         <div className="w-16 h-16 bg-success/10 border border-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-success text-2xl">✓</span>
         </div>
-        <h3 className="font-display font-semibold text-white mb-2">{t('checkYourEmail')}</h3>
-        <p className="text-white/50 text-sm font-body">
-          {t('confirmationSent')} <strong className="text-white">{email}</strong>.
+        <h3 className="font-display font-semibold text-foreground mb-2">{t('checkYourEmail')}</h3>
+        <p className="text-[--text-secondary] text-sm font-body">
+          {t('confirmationSent')} <strong className="text-foreground">{email}</strong>.
           {t('clickToActivate')}
         </p>
       </div>
@@ -135,9 +135,9 @@ export function SignupForm() {
 
       {/* Divider */}
       <div className="flex items-center gap-4">
-        <div className="flex-1 h-px bg-white/10" />
-        <span className="font-mono text-xs text-white/30 uppercase tracking-widest">{t('or')}</span>
-        <div className="flex-1 h-px bg-white/10" />
+        <div className="flex-1 h-px bg-border" />
+        <span className="font-mono text-xs text-[--text-muted] uppercase tracking-widest">{t('or')}</span>
+        <div className="flex-1 h-px bg-border" />
       </div>
 
       {/* Signup form */}
@@ -152,7 +152,7 @@ export function SignupForm() {
             onChange={(e) => setFullName(e.target.value)}
             placeholder="John Doe"
             required
-            className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:ring-2 focus:ring-ring/50 transition-all duration-200"
           />
         </div>
         <div>
@@ -165,7 +165,7 @@ export function SignupForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
             required
-            className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:ring-2 focus:ring-ring/50 transition-all duration-200"
           />
         </div>
         <div>
@@ -179,7 +179,7 @@ export function SignupForm() {
             placeholder={t('minChars')}
             required
             minLength={8}
-            className="w-full glass rounded-xl px-4 py-3 text-white/80 font-body text-sm placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all duration-200"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:ring-2 focus:ring-ring/50 transition-all duration-200"
           />
         </div>
 

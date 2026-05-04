@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
 import { LanguageProvider } from '@/lib/i18n'
+import { CommandPalette } from '@/components/shared/command-palette'
 import { cn } from '@/lib/utils'
 
 const STORAGE_KEY = 'clyro_sidebar_collapsed'
@@ -92,6 +93,8 @@ export function DashboardShell({
             {children}
           </main>
         </div>
+
+        <CommandPalette />
       </div>
     </LanguageProvider>
   )

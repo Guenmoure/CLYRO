@@ -25,7 +25,7 @@ import { Logo } from '@/components/ui/Logo'
 import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 import {
-  Film, Video, Sparkles, Palette,
+  Film, Video, Sparkles, Palette, LayoutGrid,
   FolderOpen, Package, BarChart3, Rocket,
   ChevronLeft, ChevronRight, ChevronUp,
   Settings, HelpCircle, Bell, LogOut,
@@ -45,9 +45,10 @@ const CREATE_ITEMS = [
 ]
 
 const WORKSPACE_ITEMS = [
-  { id: 'projects',  icon: FolderOpen, label: 'Projects',  href: '/projects' },
-  { id: 'assets',    icon: Package,    label: 'Assets',    href: '/assets' },
-  { id: 'analytics', icon: BarChart3,  label: 'Analytics', href: '/analytics' },
+  { id: 'projects',  icon: FolderOpen,  label: 'Projects',  href: '/projects' },
+  { id: 'templates', icon: LayoutGrid,  label: 'Templates', href: '/templates' },
+  { id: 'assets',    icon: Package,     label: 'Assets',    href: '/assets' },
+  { id: 'analytics', icon: BarChart3,   label: 'Analytics', href: '/analytics' },
 ]
 
 // ── Props ──────────────────────────────────────────────────────────────────────
