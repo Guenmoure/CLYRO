@@ -597,6 +597,33 @@ export async function loopImageToClip(
 }
 
 /**
+ * Probe a media file's duration in seconds via ffprobe.
+ * Returns 0 on failure (so callers can short-circuit).
+ *
+ * Used to align audio/video durations precisely in the final mix pass —
+ * without this we'd rely on -shortest which truncates whichever stream
+ * is shorter (typically: the audio gets cut because xfade overlap shrinks
+ * the video duration by (N-1) × transitionDuration seconds).
+ */
+async function probeMediaDuration(filePath: string): Promise<number> {
+  return new Promise((resolve) => {
+    const proc = spawn('ffprobe', [
+      '-v', 'error',
+      '-show_entries', 'format=duration',
+      '-of', 'default=noprint_wrappers=1:nokey=1',
+      filePath,
+    ], { stdio: ['ignore', 'pipe', 'pipe'] })
+    let out = ''
+    proc.stdout?.on('data', (d: Buffer) => { out += d.toString() })
+    proc.on('close', (code) => {
+      if (code === 0) resolve(parseFloat(out.trim()) || 0)
+      else resolve(0)
+    })
+    proc.on('error', () => resolve(0))
+  })
+}
+
+/**
  * Concatène une liste de clips vidéo en une seule vidéo
  */
 export async function concatenateClips(
@@ -641,6 +668,21 @@ export async function mixAudio(
   try {
     await writeFile(tempAudioPath, voiceoverBuffer)
 
+    // Probe both durations so we can extend video if audio is longer.
+    // Without this, `-shortest` would cut the LAST WORDS of narration when
+    // xfade transitions or rounding made the video stream shorter.
+    const [voiceDur, videoDur] = await Promise.all([
+      probeMediaDuration(tempAudioPath),
+      probeMediaDuration(videoPath),
+    ])
+    const targetDur = Math.max(voiceDur, videoDur) + 0.3
+    const videoOverhang = Math.max(0, targetDur - videoDur)
+    const videoBaseFilter = videoOverhang > 0.05
+      ? `[0:v]tpad=stop_mode=clone:stop_duration=${videoOverhang.toFixed(2)}[vbase]`
+      : null
+    const videoMap = videoBaseFilter ? '[vbase]' : '0:v'
+    const videoCodec = videoBaseFilter ? ['libx264', '-preset', 'veryfast', '-crf', '28', '-pix_fmt', 'yuv420p'] : ['copy']
+
     if (backgroundMusicPath) {
       // Normalize voiceover in the filter chain (single-pass loudnorm within the complex filter)
       // Smart ducking: music ducks when voice is detected, fills during silence
@@ -649,6 +691,7 @@ export async function mixAudio(
         '[2:a]volume=0.35,aloop=loop=-1:size=2147483647[music_loop]',
         '[music_loop][voice1]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[music_ducked]',
         '[voice2][music_ducked]amix=inputs=2:duration=first:dropout_transition=0[aout]',
+        ...(videoBaseFilter ? [videoBaseFilter] : []),
       ].join(';')
 
       await runFFmpeg([
@@ -656,16 +699,30 @@ export async function mixAudio(
         '-i', tempAudioPath,
         '-i', backgroundMusicPath,
         '-filter_complex', duckFilter,
-        '-map', '0:v',
+        '-map', videoMap,
         '-map', '[aout]',
-        '-c:v', 'copy',
+        '-c:v', ...videoCodec,
         '-c:a', 'aac',
         '-b:a', '192k',
-        '-shortest',
+        '-t', targetDur.toFixed(2),
+        outputPath,
+      ])
+    } else if (videoBaseFilter) {
+      // Voice only + tpad → use filter_complex to stitch tpad into the video stream
+      await runFFmpeg([
+        '-i', videoPath,
+        '-i', tempAudioPath,
+        '-filter_complex', videoBaseFilter,
+        '-map', '[vbase]',
+        '-map', '1:a',
+        '-c:v', ...videoCodec,
+        '-c:a', 'aac',
+        '-b:a', '192k',
+        '-t', targetDur.toFixed(2),
         outputPath,
       ])
     } else {
-      // Seulement la voix off
+      // Voice only, no padding needed → fast stream-copy of the video
       await runFFmpeg([
         '-i', videoPath,
         '-i', tempAudioPath,
@@ -674,7 +731,7 @@ export async function mixAudio(
         '-c:v', 'copy',
         '-c:a', 'aac',
         '-b:a', '192k',
-        '-shortest',
+        '-t', targetDur.toFixed(2),
         outputPath,
       ])
     }
@@ -1103,6 +1160,28 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
         tempFiles.push(srtPath)
       }
 
+      // ── Audio/video duration sync ─────────────────────────────────────
+      // Probe BOTH durations to know how to align them. Without this, the
+      // xfade transitions in concatenateClipsWithTransitions shrink the
+      // total video by (N-1) × transitionDuration seconds, while the audio
+      // is concatenated without overlap → audio ends up LONGER than video.
+      // With `-shortest` (the previous behavior), the LAST WORDS of the
+      // narration would get truncated. Now we:
+      //   1. tpad the video by cloning the last frame to absorb the
+      //      audio overhang (+ a 0.3s safety tail for natural decay)
+      //   2. use explicit `-t targetDur` instead of `-shortest` so the
+      //      output length is exactly the longer of (audio, video).
+      const [voiceDur, videoDur] = await Promise.all([
+        probeMediaDuration(voicePath),
+        probeMediaDuration(concatPath),
+      ])
+      const targetDur = Math.max(voiceDur, videoDur) + 0.3
+      const videoOverhang = Math.max(0, targetDur - videoDur)
+      logger.info(
+        { voiceDur: voiceDur.toFixed(2), videoDur: videoDur.toFixed(2), videoOverhang: videoOverhang.toFixed(2) },
+        'FFmpeg: audio/video duration sync — extending video to cover the full voiceover'
+      )
+
       // Build filter_complex: loudnorm (single-pass inline) + ducking + optional subtitles
       // Single-pass loudnorm is slightly less accurate than 2-pass but 2× faster.
       const loudnormFilter = 'loudnorm=I=-16:TP=-1.5:LRA=11'
@@ -1138,6 +1217,22 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
       let videoMap: string
       let audioMap: string
 
+      // Video chain: tpad to extend video duration when needed, then optional
+      // subtitle burn-in. The downstream subtitle filter consumes [vbase]
+      // (post-tpad) instead of [0:v] so subtitles render across the full
+      // padded video, including the cloned-frame tail.
+      const videoBaseFilter = videoOverhang > 0.05
+        ? `[0:v]tpad=stop_mode=clone:stop_duration=${videoOverhang.toFixed(2)}[vbase]`
+        : null
+      const videoInputLabel = videoBaseFilter ? '[vbase]' : '[0:v]'
+      const subtitleFilter = srtPath
+        ? `${videoInputLabel}subtitles=${srtPath}:force_style=${forceStyle}[vout]`
+        : null
+
+      const videoChainParts: string[] = []
+      if (videoBaseFilter) videoChainParts.push(videoBaseFilter)
+      if (subtitleFilter) videoChainParts.push(subtitleFilter)
+
       if (backgroundMusicPath) {
         // [normv] split into [normv1] (sidechain) + [normv2] (amix input)
         // to avoid "pad already connected" error — each named pad can only be consumed once
@@ -1146,16 +1241,16 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
           `[${musicIdx}:a]volume=0.35,aloop=loop=-1:size=2147483647[mloop]`,
           '[mloop][normv1]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[mduck]',
           '[normv2][mduck]amix=inputs=2:duration=first:dropout_transition=0[aout]',
-          ...(srtPath ? [`[0:v]subtitles=${srtPath}:force_style=${forceStyle}[vout]`] : []),
+          ...videoChainParts,
         ].join(';')
-        videoMap = srtPath ? '[vout]' : '0:v'
+        videoMap = srtPath ? '[vout]' : (videoBaseFilter ? '[vbase]' : '0:v')
         audioMap = '[aout]'
       } else {
         filterComplex = [
           `[1:a]${loudnormFilter}[aout]`,
-          ...(srtPath ? [`[0:v]subtitles=${srtPath}:force_style=${forceStyle}[vout]`] : []),
+          ...videoChainParts,
         ].join(';')
-        videoMap = srtPath ? '[vout]' : '0:v'
+        videoMap = srtPath ? '[vout]' : (videoBaseFilter ? '[vbase]' : '0:v')
         audioMap = '[aout]'
       }
 
@@ -1165,6 +1260,12 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
         // we can afford a tighter encode. veryfast+crf28 is ~40-50% smaller
         // at 720p with quasi-identical perceived quality, keeping us well
         // below the Supabase bucket per-file cap (default 50 MiB on Free).
+        //
+        // `-t targetDur` replaces the old `-shortest`. -shortest cut the
+        // output to the shorter of (audio, video) — but xfade made video
+        // shorter than audio, so it truncated the LAST WORDS of narration.
+        // With explicit -t we control output length precisely, and the
+        // tpad above ensures video reaches that length too.
         await runFFmpeg([
           ...inputs,
           '-filter_complex', filterComplex,
@@ -1177,30 +1278,39 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
           '-c:a', 'aac',
           '-b:a', '128k',
           '-movflags', '+faststart',
-          '-shortest',
+          '-t', targetDur.toFixed(2),
           finalPath,
         ])
-        logger.info({ subs: !!srtPath, music: !!backgroundMusicPath }, 'FFmpeg: final pass done (single encode)')
+        logger.info({ subs: !!srtPath, music: !!backgroundMusicPath, targetDur: targetDur.toFixed(2) }, 'FFmpeg: final pass done (single encode)')
       } catch (finalErr) {
         // Fallback: skip subtitles if the subtitle filter failed (font not found etc.)
+        // Re-encode video here too (instead of `-c copy`) because we need the
+        // tpad filter applied to fix the audio-cut issue.
         logger.warn({ finalErr }, 'FFmpeg: final pass with subtitles failed — retrying without subtitles')
+        const fallbackVideoChain = videoBaseFilter ? [videoBaseFilter] : []
+        const fallbackVideoMap = videoBaseFilter ? '[vbase]' : '0:v'
         const filterSimple = backgroundMusicPath
           ? [
               `[1:a]${loudnormFilter},asplit=2[normv1][normv2]`,
               `[${musicIdx}:a]volume=0.35,aloop=loop=-1:size=2147483647[mloop]`,
               '[mloop][normv1]sidechaincompress=threshold=0.015:ratio=8:attack=5:release=500[mduck]',
               '[normv2][mduck]amix=inputs=2:duration=first:dropout_transition=0[aout]',
+              ...fallbackVideoChain,
             ].join(';')
-          : `[1:a]${loudnormFilter}[aout]`
+          : [
+              `[1:a]${loudnormFilter}[aout]`,
+              ...fallbackVideoChain,
+            ].join(';')
         await runFFmpeg([
           ...inputs,
           '-filter_complex', filterSimple,
-          '-map', '0:v',
+          '-map', fallbackVideoMap,
           '-map', '[aout]',
-          '-c:v', 'copy',
+          '-c:v', videoBaseFilter ? 'libx264' : 'copy',
+          ...(videoBaseFilter ? ['-preset', 'veryfast', '-crf', '28', '-pix_fmt', 'yuv420p'] : []),
           '-c:a', 'aac',
           '-b:a', '128k',
-          '-shortest',
+          '-t', targetDur.toFixed(2),
           finalPath,
         ])
       }
