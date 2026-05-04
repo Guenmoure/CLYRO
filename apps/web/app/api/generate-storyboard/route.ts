@@ -5,31 +5,29 @@ import Anthropic from '@anthropic-ai/sdk'
 import {
   detectLanguage,
   getStyleVisualGuide,
+  planSceneCount,
+  splitScriptForChunks,
+  validateScriptCoverage,
+  countWords,
+  STORYBOARD_WPM,
+  STORYBOARD_SANITY_LIMIT,
   type DetectedLanguage,
 } from '@clyro/shared'
 
 export const dynamic = 'force-dynamic'
+// Long scripts → multiple Claude calls in parallel. 5 min covers ~12000-word
+// scripts (≈ 80 min of video) at typical Sonnet 4.6 latency (~25 s/chunk).
 export const maxDuration = 300
 
-// ── Scene-count heuristic ────────────────────────────────────────────────
-// 22 words/scene ≈ 8-9s narration at 150 wpm.
-// Token budget: model outputs 8192 tokens. Each scene ≈ 80 tokens (concise
-// descriptions). Safe ceiling ≈ 100; we cap at 60 for structural overhead.
-const WPM = 150
-const WORDS_PER_SCENE = 22
-const MAX_SCENES = 60
-
-function computeAutoSceneCount(script: string): { sceneCount: number; estimatedSeconds: number } {
-  const words = script.trim().split(/\s+/).filter(Boolean).length
-  const estimatedSeconds = Math.max(6, Math.round((words / WPM) * 60))
-  const sceneCount = Math.max(3, Math.min(MAX_SCENES, Math.ceil(words / WORDS_PER_SCENE)))
-  return { sceneCount, estimatedSeconds }
-}
+// ── Anthropic output budget ────────────────────────────────────────────────
+// Sonnet 4.6 supports up to 64 000 output tokens. We cap each call at 16 000
+// for latency / cost balance and rely on chunked generation for very long
+// scripts (see STORYBOARD_MAX_SCENES_PER_CALL in shared/script-planning.ts).
+const MAX_OUTPUT_TOKENS = 16_000
 
 // ── Language header — same shape as apps/api/src/services/claude.ts ──────
 // Stating the target language as the FIRST thing in CAPS in the prompt
-// body breaks Claude's tendency to mirror the prompt's own language
-// (which used to default to French and silently translate scripts).
+// body breaks Claude's tendency to mirror the prompt's own language.
 function languageHeader(lang: DetectedLanguage): string {
   return `OUTPUT LANGUAGE — STRICT
 All narration text and on-screen copy fields (texte_voix, display_text, etc.) MUST be written in ${lang.name} (${lang.code}).
@@ -38,17 +36,21 @@ This is non-negotiable. Do NOT translate to French, English, or any other langua
 `
 }
 
-function buildStoryboardPrompts(p: {
-  script:      string
-  style:       string
-  duration:    string
-  title?:      string
-  description?: string
-  language:    DetectedLanguage
-}): { system: string; user: string } {
-  const isAuto = p.duration === 'auto'
-  const auto = computeAutoSceneCount(p.script)
-  const sceneCount = auto.sceneCount
+interface BuildPromptParams {
+  script:        string
+  style:         string
+  duration:      string
+  title?:        string
+  description?:  string
+  language:      DetectedLanguage
+  sceneCount:    number     // # de scènes pour CE chunk précisément
+  estimatedSeconds: number  // durée totale du chunk (pas du script entier)
+  startIndex:    number     // index global de départ pour ce chunk
+  isChunked:     boolean    // true si le script est découpé en plusieurs chunks
+  chunkPosition?: { current: number; total: number } // position du chunk dans le script
+}
+
+function buildStoryboardPrompts(p: BuildPromptParams): { system: string; user: string } {
   const styleGuide = getStyleVisualGuide(p.style)
   const lang = p.language
 
@@ -68,24 +70,31 @@ Diffusion models (Flux, Ideogram) cannot reliably render readable text.
 → "description_visuelle" only describes the visual scene (subject + action + setting).
   Each scene must be visually distinct from the others.
 
+CRITICAL RULE — Script preservation (NON-NEGOTIABLE):
+The user's script MUST be preserved VERBATIM across the texte_voix fields.
+→ Do NOT condense, do NOT summarize, do NOT skip any sentence.
+→ The concatenation of all texte_voix fields, in order, MUST reconstruct the original script exactly (modulo whitespace).
+→ The video's duration is determined ENTIRELY by the script's length. There is no upper limit.
+→ If the script is long, produce many scenes. If it's short, produce few. Always full coverage.
+
 You reply ONLY with valid JSON, no markdown, no comments.`
 
-  const durationInstruction = isAuto
-    ? `4. The total duration must FAITHFULLY reflect the script length (~${WPM} wpm spoken). Do NOT condense, do NOT shorten — every sentence is narrated in full.\n5. Sum of duree_estimee should be coherent with the script length (~${auto.estimatedSeconds}s estimated). Adjust naturally per scene.`
-    : `4. The total duration must FAITHFULLY reflect the script length (~${WPM} wpm spoken). Do NOT condense — every sentence is narrated in full.\n5. Sum of duree_estimee should be coherent with the script length (~${auto.estimatedSeconds}s estimated). Adjust naturally per scene.`
+  const chunkContext = p.isChunked && p.chunkPosition
+    ? `\nCHUNK ${p.chunkPosition.current}/${p.chunkPosition.total}: this is part of a longer script. Generate ONLY the scenes for the script excerpt below — the rest is handled by parallel calls. Scene indices in this chunk start at ${p.startIndex}.`
+    : ''
 
-  const user = `${languageHeader(lang)}Break this script into roughly ${sceneCount} visual scenes for a "${p.style}" style video.${p.title ? `\nTitle: "${p.title}"` : ''}
+  const user = `${languageHeader(lang)}Break this script into approximately ${p.sceneCount} visual scenes for a "${p.style}" style video.${p.title ? `\nTitle: "${p.title}"` : ''}${chunkContext}
 ${p.description ? `\nVISUAL CONTEXT (characters, setting, mood):\n${p.description}\n→ Integrate these elements into description_visuelle when relevant (skin tone, clothing, setting).` : ''}
 ${hasDialogue ? `\nDIALOGUE MODE DETECTED: the script contains dialogue between multiple characters.\nSPECIAL RULES:\n- Detect each speaker in the script\n- Every line MUST include a "speaker" field with the character's name\n- Alternating dialogues → create separate scenes per speaker\n- description_visuelle MUST include all visible characters in the scene` : ''}
 
 REQUIRED VISUAL STYLE for description_visuelle: ${styleGuide}
 
 For each scene, produce:
-- "index": scene number (starts at 0)
+- "index": scene number (starts at ${p.startIndex})
 - "description_visuelle": visual prompt in ENGLISH for Flux (40–80 words sweet spot, hard cap 150 chars). MUST follow the 4-LAYER STRUCTURE below and the visual style above. Describe ONLY the unique visual content of this scene — WHO is visible, WHAT happens, WHERE. Each scene must be visually distinct. Never include identifiable real people.
 - "animation_prompt": camera/motion prompt in ENGLISH for image-to-video (max 80 chars). Describes ONE primary subject motion + ONE camera move, ending with "smooth cinematic motion".
-- "texte_voix": REQUIRED — narration written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty. Matches the corresponding portion of the script verbatim.
-- "duree_estimee": duration in seconds (integer, between 3 and 12)
+- "texte_voix": REQUIRED — narration written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty. Matches the corresponding portion of the script VERBATIM. Cumulatively across all scenes, every word of the script MUST appear.
+- "duree_estimee": duration in seconds (integer, between 3 and 12). Sum across all scenes ≈ ${p.estimatedSeconds}s (~${STORYBOARD_WPM} wpm narration of the script). Adjust naturally per scene based on the length of its texte_voix.
 - "faceless_scene_type": one of "broll" | "infographic" | "typography" | "demo". Pick the template that fits this scene's purpose:
     • "broll"       — narrative atmospheric scene (no overlay, or a key_phrase / source). Rich detailed image, full frame.
     • "infographic" — scene illustrating a number / stat / comparison. Backdrop is a SILENT chart with negative space in the CENTER for the overlay.
@@ -113,8 +122,9 @@ Adapt SUBJECT + ENVIRONMENT to faceless_scene_type:
 RULES:
 1. description_visuelle = unique visual content per scene (subject + action + setting). MUST follow the visual style. Good examples: "scientist examining glowing DNA strand in dark lab", "crowd celebrating in sunlit city square". Bad: "smooth animation" or generic shots.
 2. animation_prompt MUST describe a CONCRETE motion (never just "smooth animation").
-3. texte_voix is REQUIRED — distribute the full script across all scenes, in ${lang.name}, omitting nothing.
-${durationInstruction}
+3. texte_voix is REQUIRED — distribute the full script across ALL scenes verbatim, in ${lang.name}, omitting NOTHING. Every sentence of the script must appear in some scene.
+4. The total duration must FAITHFULLY reflect the script length (~${STORYBOARD_WPM} wpm spoken). Do NOT condense, do NOT shorten — every sentence is narrated in full.
+5. The number of scenes adapts to the script length. ${p.sceneCount} is a target, not a hard limit — adjust ±20% if needed to keep each texte_voix natural (one full thought per scene).
 ${hasDialogue ? `6. DIALOGUES: when two characters speak in succession, prefer separate scenes per line (lets the renderer use different voices)` : ''}
 
 Script (treat as ${lang.name} content — preserve verbatim across texte_voix fields):
@@ -138,9 +148,16 @@ type SceneObject = {
   texte_voix:           string
   duree_estimee:        number
   speaker?:             string
+  faceless_scene_type?: string
+  overlay?:             unknown
 }
 
-function extractJson(raw: string): { scenes: SceneObject[]; total_duration: number } {
+interface ParsedStoryboard {
+  scenes: SceneObject[]
+  total_duration: number
+}
+
+function extractJson(raw: string): ParsedStoryboard {
   const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
   const match = cleaned.match(/\{[\s\S]*/)
   if (!match) throw new Error('No JSON found in Claude response')
@@ -149,7 +166,7 @@ function extractJson(raw: string): { scenes: SceneObject[]; total_duration: numb
   // 1. Try clean parse first
   try {
     const full = partial.match(/\{[\s\S]*\}/)
-    if (full) return JSON.parse(full[0])
+    if (full) return JSON.parse(full[0]) as ParsedStoryboard
   } catch { /* fall through to recovery */ }
 
   // 2. JSON was truncated — extract every complete scene object individually
@@ -165,6 +182,25 @@ function extractJson(raw: string): { scenes: SceneObject[]; total_duration: numb
   if (scenes.length === 0) throw new Error('Could not recover any scenes from truncated response')
   const total_duration = scenes.reduce((s, sc) => s + (sc.duree_estimee || 5), 0)
   return { scenes, total_duration }
+}
+
+/**
+ * Génère un storyboard pour UN chunk de script. Appelée en parallèle
+ * pour chaque chunk quand le script est long.
+ */
+async function generateChunkStoryboard(
+  anthropic: Anthropic,
+  params: BuildPromptParams,
+): Promise<ParsedStoryboard> {
+  const { system, user } = buildStoryboardPrompts(params)
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: MAX_OUTPUT_TOKENS,
+    system,
+    messages: [{ role: 'user', content: user }],
+  })
+  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+  return extractJson(raw)
 }
 
 export async function POST(request: NextRequest) {
@@ -189,33 +225,120 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'script and style are required' }, { status: 400 })
     }
 
-    // Detect script language so the storyboard's texte_voix preserves it
-    // instead of silently translating to French (regression seen in prod).
+    // ── Plan: word count → scene count → chunk count (no caps) ──────────
+    // Le script ne doit JAMAIS être raccourci. La durée de la vidéo est
+    // entièrement déterminée par le nombre de mots du script.
     const language = detectLanguage(script)
+    const plan = planSceneCount(script, duration)
 
-    const { system, user } = buildStoryboardPrompts({
-      script, style, duration, title, description, language,
-    })
+    if (plan.sceneCount > STORYBOARD_SANITY_LIMIT) {
+      console.warn(
+        `[generate-storyboard] very long script: ${plan.wordCount} words → ${plan.sceneCount} scenes (over sanity limit ${STORYBOARD_SANITY_LIMIT}) — generating anyway as user requested no script truncation`,
+      )
+    }
 
-    // Use sonnet-4-6 for quality (haiku-4-5 was producing thinner prompts
-    // and worse image generation results — observed regression).
     const anthropic = new Anthropic({ apiKey })
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8192,
-      system,
-      messages: [{ role: 'user', content: user }],
+
+    // ── Single-call path (short scripts) ─────────────────────────────
+    if (plan.chunkCount === 1) {
+      const parsed = await generateChunkStoryboard(anthropic, {
+        script,
+        style,
+        duration,
+        title,
+        description,
+        language,
+        sceneCount:        plan.sceneCount,
+        estimatedSeconds:  plan.estimatedSeconds,
+        startIndex:        0,
+        isChunked:         false,
+      })
+
+      if (!Array.isArray(parsed.scenes)) throw new Error('Invalid storyboard: missing scenes array')
+
+      const coverage = validateScriptCoverage(script, parsed.scenes)
+      if (!coverage.ok) {
+        console.warn(
+          `[generate-storyboard] script coverage low: ${coverage.storyboardWords}/${coverage.originalWords} words (${coverage.lossPercent}% loss) — Claude may have compressed the script`,
+        )
+      }
+
+      return NextResponse.json({
+        scenes:         parsed.scenes,
+        total_duration: parsed.total_duration,
+        language:       language.code,
+        coverage,
+      })
+    }
+
+    // ── Multi-chunk path (long scripts) ──────────────────────────────
+    // Découpe le script en plusieurs morceaux, génère un storyboard par
+    // morceau en parallèle, puis ré-indexe et concatène.
+    const scriptChunks = splitScriptForChunks(script, plan.chunkCount)
+    const actualChunkCount = scriptChunks.length
+
+    // Précompute startIndex + sceneCount per chunk (proportionnel au nb de mots)
+    const chunkPlans = scriptChunks.map((chunk, i) => {
+      const chunkPlan = planSceneCount(chunk, 'auto')
+      return {
+        chunk,
+        sceneCount:       chunkPlan.sceneCount,
+        estimatedSeconds: chunkPlan.estimatedSeconds,
+        position:         i,
+      }
+    })
+    let runningIndex = 0
+    const startIndices = chunkPlans.map((cp) => {
+      const start = runningIndex
+      runningIndex += cp.sceneCount
+      return start
     })
 
-    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-    const parsed = extractJson(raw)
+    const chunkResults = await Promise.all(
+      chunkPlans.map((cp, i) => generateChunkStoryboard(anthropic, {
+        script:           cp.chunk,
+        style,
+        duration,
+        title,
+        description,
+        language,
+        sceneCount:       cp.sceneCount,
+        estimatedSeconds: cp.estimatedSeconds,
+        startIndex:       startIndices[i],
+        isChunked:        true,
+        chunkPosition:    { current: i + 1, total: actualChunkCount },
+      })),
+    )
 
-    if (!Array.isArray(parsed.scenes)) throw new Error('Invalid storyboard: missing scenes array')
+    // Merge: re-number indices to be globally sequential and contiguous
+    let globalIndex = 0
+    const mergedScenes: SceneObject[] = []
+    for (const result of chunkResults) {
+      for (const scene of (result.scenes ?? []).sort((a, b) => a.index - b.index)) {
+        mergedScenes.push({ ...scene, index: globalIndex })
+        globalIndex += 1
+      }
+    }
+    const totalDuration = mergedScenes.reduce((s, sc) => s + (sc.duree_estimee || 5), 0)
+
+    const coverage = validateScriptCoverage(script, mergedScenes)
+    if (!coverage.ok) {
+      console.warn(
+        `[generate-storyboard] chunked coverage low: ${coverage.storyboardWords}/${coverage.originalWords} words (${coverage.lossPercent}% loss across ${actualChunkCount} chunks)`,
+      )
+    }
+
+    console.info(
+      `[generate-storyboard] chunked OK: ${plan.wordCount} words → ${mergedScenes.length} scenes across ${actualChunkCount} parallel calls (${countWords(script)} → ${coverage.storyboardWords} words preserved)`,
+    )
 
     return NextResponse.json({
-      scenes:         parsed.scenes,
-      total_duration: parsed.total_duration,
+      scenes:         mergedScenes,
+      total_duration: totalDuration,
       language:       language.code,
+      coverage,
+      chunked:        true,
+      chunk_count:    actualChunkCount,
     })
   } catch (err) {
     console.error('[generate-storyboard]', err)

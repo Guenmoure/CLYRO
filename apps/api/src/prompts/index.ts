@@ -5,7 +5,13 @@
 // generators (this one, services/claude.ts, and apps/web/.../generate-storyboard)
 // stay in sync. Two thinner copies in this file and in the Next.js route used
 // to drift, causing the "image quality regression" reported in prod.
-import { STYLE_VISUAL_GUIDE, detectLanguage, type DetectedLanguage } from '@clyro/shared'
+import {
+  STYLE_VISUAL_GUIDE,
+  detectLanguage,
+  planSceneCount,
+  STORYBOARD_WPM,
+  type DetectedLanguage,
+} from '@clyro/shared'
 export { STYLE_VISUAL_GUIDE }
 
 export const SCENE_COUNT: Record<string, number> = {
@@ -21,19 +27,16 @@ export const SCENE_COUNT: Record<string, number> = {
   'auto': 0,
 }
 
-/** Natural French voiceover speed (words per minute) — used to estimate
- *  duration from a script when duration is 'auto'. */
-const WPM_FR = 150
-/** Target words per scene when in auto mode — gives scenes of ~6-10s at 150 wpm. */
-const WORDS_PER_SCENE_AUTO = 22
-
-/** Estimates the scene count + target duration from a script's word count.
- *  Produces at least 3 scenes and at most 60 (token-safe ceiling for haiku). */
+/**
+ * Estime le nombre de scènes + durée à partir de la longueur du script.
+ * Délègue à `planSceneCount` (shared) qui n'applique AUCUN plafond — la
+ * durée vidéo est entièrement déterminée par la longueur du script.
+ *
+ * Garde la signature historique pour ne pas casser les callers existants.
+ */
 export function computeAutoSceneCount(script: string): { sceneCount: number; estimatedSeconds: number } {
-  const words = script.trim().split(/\s+/).filter(Boolean).length
-  const estimatedSeconds = Math.max(6, Math.round((words / WPM_FR) * 60))
-  const sceneCount = Math.max(3, Math.min(60, Math.ceil(words / WORDS_PER_SCENE_AUTO)))
-  return { sceneCount, estimatedSeconds }
+  const plan = planSceneCount(script, 'auto')
+  return { sceneCount: plan.sceneCount, estimatedSeconds: plan.estimatedSeconds }
 }
 
 // ── Storyboard ─────────────────────────────────────────────────────────────────
@@ -62,15 +65,22 @@ export function buildStoryboardPrompts(p: StoryboardPromptParams): { system: str
 
   const system = `You are an expert video producer and visual storyteller.
 You generate precise, professional storyboards for faceless videos (no on-camera presenter).
+
+CRITICAL RULE — Script preservation (NON-NEGOTIABLE):
+The user's script MUST be preserved VERBATIM across the texte_voix fields.
+→ Do NOT condense, do NOT summarize, do NOT skip any sentence.
+→ The concatenation of all texte_voix fields, in order, MUST reconstruct the original script.
+→ The video's duration is determined ENTIRELY by the script's length. There is no upper limit.
+→ If the script is long, produce many scenes. If it's short, produce few. Always full coverage.
+
 You reply ONLY with valid JSON, no markdown, no comments.`
 
-  // Rule 4/5 change shape in auto-mode: the script drives the duration,
-  // not a fixed target. We still give Claude a soft scene-count hint so it
-  // knows roughly how many scenes to produce for a script of this length.
+  // Both modes now enforce the same rule: the script drives duration.
+  // Auto vs fixed duration only changes the soft scene-count target.
   const durationInstruction = isAuto
-    ? `4. The total duration must FAITHFULLY reflect the script length (~150 wpm spoken). Do NOT condense, do NOT shorten — every sentence is narrated in full.
+    ? `4. The total duration must FAITHFULLY reflect the script length (~${STORYBOARD_WPM} wpm spoken). Do NOT condense, do NOT shorten — every sentence is narrated in full.
 5. Sum of duree_estimee must be consistent with the script length (~${auto.estimatedSeconds}s estimated). Adjust naturally per scene.`
-    : `4. The total duration must FAITHFULLY reflect the script length (~150 wpm spoken). Do NOT condense — every sentence is narrated in full.
+    : `4. The total duration must FAITHFULLY reflect the script length (~${STORYBOARD_WPM} wpm spoken). Do NOT condense — every sentence is narrated in full.
 5. Sum of duree_estimee must be consistent with the script length (~${auto.estimatedSeconds}s estimated). Adjust naturally per scene.`
 
   const user = `OUTPUT LANGUAGE — STRICT

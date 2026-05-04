@@ -1,6 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { logger } from '../lib/logger'
-import { type Scene, STYLE_VISUAL_GUIDE } from '@clyro/shared'
+import {
+  type Scene,
+  STYLE_VISUAL_GUIDE,
+  planSceneCount,
+  splitScriptForChunks,
+  validateScriptCoverage,
+  STORYBOARD_WPM,
+  STORYBOARD_SANITY_LIMIT,
+} from '@clyro/shared'
 import type { DetectedLanguage } from '../lib/detect-language'
 
 // Helper used by every prompt: inject an unambiguous "output language"
@@ -25,7 +33,11 @@ const MODEL = 'claude-sonnet-4-6'
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
 
-// Nombre de scènes selon la durée cible
+// Nombre de scènes par durée cible — utilisé UNIQUEMENT quand l'utilisateur
+// fixe une durée explicite. En mode 'auto' (défaut), le nombre de scènes
+// est dérivé directement du nombre de mots du script via planSceneCount(),
+// SANS plafond. Règle de fer : la longueur de la vidéo est entièrement
+// déterminée par la longueur du script — JAMAIS de compression.
 const SCENE_COUNT_MAP: Record<string, number> = {
   '6s':   2,
   '15s':  3,
@@ -34,9 +46,12 @@ const SCENE_COUNT_MAP: Record<string, number> = {
   '120s': 10,
   '180s': 14,
   '300s': 20,
-  'auto': 8,
   default: 4,
 }
+
+// Sonnet 4.6 supporte jusqu'à 64 000 tokens d'output. On cap chaque appel
+// à 16 000 (latence/coût équilibrés) et on chunke pour les scripts longs.
+const MAX_OUTPUT_TOKENS = 16_000
 
 // STYLE_VISUAL_GUIDE moved to @clyro/shared/style-guides so the
 // Next.js Hub flow (apps/web/app/api/generate-storyboard/route.ts)
@@ -131,18 +146,20 @@ export interface BrandKitContext {
   font_family?: string | null
 }
 
-export async function generateStoryboard(
-  script: string,
-  style: string,
-  targetDuration = '30s',
-  brandKit?: BrandKitContext,
-  language?: DetectedLanguage,
-): Promise<StoryboardResult> {
-  const sceneCount = SCENE_COUNT_MAP[targetDuration] ?? SCENE_COUNT_MAP.default
-  const masterSeed = generateMasterSeed(script)
-  const lang: DetectedLanguage = language ?? { code: 'en', name: 'English', nativeName: 'English' }
+interface ChunkPromptParams {
+  script:           string
+  style:            string
+  brandKit?:        BrandKitContext
+  language:         DetectedLanguage
+  sceneCount:       number
+  estimatedSeconds: number
+  startIndex:       number
+  isChunked:        boolean
+  chunkPosition?:   { current: number; total: number }
+}
 
-  const systemPrompt = `You are an expert video producer and visual storyteller.
+function buildStoryboardSystemPrompt(): string {
+  return `You are an expert video producer and visual storyteller.
 You generate precise, professional storyboards for faceless videos (no on-camera presenter).
 
 CRITICAL RULE — Text inside the image:
@@ -153,26 +170,37 @@ Diffusion models (Flux, Ideogram) cannot reliably render readable text in images
   abstract shapes). If a scene expresses data, describe the SILENT chart
   (e.g. "bar chart silhouette, three rising bars") — not the digits themselves.
 
+CRITICAL RULE — Script preservation (NON-NEGOTIABLE):
+The user's script MUST be preserved VERBATIM across the texte_voix fields.
+→ Do NOT condense, do NOT summarize, do NOT skip any sentence.
+→ The concatenation of all texte_voix fields, in order, MUST reconstruct the original script (modulo whitespace).
+→ The video's duration is determined ENTIRELY by the script's length. There is no upper limit.
+→ If the script is long, produce many scenes. If it's short, produce few. Always full coverage.
+
 You reply ONLY with valid JSON, no markdown, no comments.`
+}
 
-  const styleGuide = STYLE_VISUAL_GUIDE[style] ?? 'professional visual composition'
-
-  // Brand Kit injection into the visual context.
-  const brandContext = brandKit
-    ? `\nBRAND KIT "${brandKit.name}": use the color palette ${brandKit.primary_color}${brandKit.secondary_color ? ` / ${brandKit.secondary_color}` : ''} in the visual descriptions when relevant.`
+function buildStoryboardUserPrompt(p: ChunkPromptParams): string {
+  const styleGuide = STYLE_VISUAL_GUIDE[p.style] ?? 'professional visual composition'
+  const brandContext = p.brandKit
+    ? `\nBRAND KIT "${p.brandKit.name}": use the color palette ${p.brandKit.primary_color}${p.brandKit.secondary_color ? ` / ${p.brandKit.secondary_color}` : ''} in the visual descriptions when relevant.`
     : ''
+  const chunkContext = p.isChunked && p.chunkPosition
+    ? `\nCHUNK ${p.chunkPosition.current}/${p.chunkPosition.total}: this is part of a longer script. Generate ONLY the scenes for the script excerpt below — the rest is handled by parallel calls. Scene indices in this chunk start at ${p.startIndex}.`
+    : ''
+  const lang = p.language
 
-  const userPrompt = `${languageHeader(lang)}Break this script into exactly ${sceneCount} visual scenes for a "${style}" style video.
+  return `${languageHeader(lang)}Break this script into approximately ${p.sceneCount} visual scenes for a "${p.style}" style video.${chunkContext}
 
 REQUIRED VISUAL STYLE for description_visuelle: ${styleGuide}${brandContext}
 
 For each scene, produce:
-- "id": unique identifier ("scene_001", "scene_002", …)
-- "index": scene number (starts at 0)
+- "id": unique identifier ("scene_${String(p.startIndex + 1).padStart(3, '0')}", "scene_${String(p.startIndex + 2).padStart(3, '0')}", …)
+- "index": scene number (starts at ${p.startIndex})
 - "description_visuelle": visual prompt in ENGLISH optimised for Flux image generation (40–80 words is the sweet spot, hard cap 150 chars). MUST follow the 4-LAYER STRUCTURE below and the visual style above. Never mention identifiable real people. Never request readable numbers/stats/titles/quotes in the image — those go in "overlay".
 - "animation_prompt": motion prompt in ENGLISH for image-to-video (max 80 chars). Describes ONE primary subject motion + ONE camera move, ending with "smooth cinematic motion". Examples: "slow zoom in, character gestures forward, smooth cinematic motion", "camera pans left, gentle wind effect, smooth cinematic motion".
-- "texte_voix": REQUIRED — narration text written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty. Matches exactly the part of the script this scene covers.
-- "duree_estimee": duration in seconds (integer, between 3 and 10)
+- "texte_voix": REQUIRED — narration text written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty. Matches the corresponding portion of the script VERBATIM. Cumulatively across all scenes, every word of the script MUST appear.
+- "duree_estimee": duration in seconds (integer, between 3 and 12). Sum across all scenes ≈ ${p.estimatedSeconds}s (~${STORYBOARD_WPM} wpm narration of the script). Adjust naturally per scene based on the length of its texte_voix.
 - "faceless_scene_type": one of "broll" | "infographic" | "typography" | "demo". Pick the template that fits this scene's PURPOSE:
     • "broll"       — atmospheric narrative scene (no overlay, or just a key_phrase / source). Rich detailed image, full frame.
     • "infographic" — scene illustrating a number / stat / comparison. Backdrop is a SILENT chart or data viz with negative space in the CENTER for the overlay.
@@ -210,16 +238,17 @@ Adapt the SUBJECT + ENVIRONMENT layers to faceless_scene_type:
 
 CRITICAL RULES:
 1. LANGUAGE: every "texte_voix" and every "overlay.text" MUST be written in ${lang.name}. Never translate the script. "description_visuelle" and "animation_prompt" stay in English (Flux/Kling consume them).
-2. description_visuelle MUST visually match the "${style}" style — strictly apply: ${styleGuide}
+2. description_visuelle MUST visually match the "${p.style}" style — strictly apply: ${styleGuide}
 3. animation_prompt MUST describe a concrete movement visible in the scene (never generic).
-4. texte_voix is REQUIRED on every scene — distribute the full script across all scenes WITHOUT translating it.
-5. Sum of duree_estimee must be consistent with the script's length.
+4. texte_voix is REQUIRED on every scene — distribute the full script across ALL scenes verbatim, in ${lang.name}, omitting NOTHING.
+5. The total duration must FAITHFULLY reflect the script length (~${STORYBOARD_WPM} wpm spoken). Do NOT condense, do NOT shorten — every sentence is narrated in full.
 6. Numbers, stats, titles, CTAs → "overlay" field ONLY, never inside "description_visuelle".
 7. trigger_word MUST be a word that actually appears in this scene's texte_voix — pipeline uses it for word-level sync.
+8. The number of scenes adapts to the script length. ${p.sceneCount} is a target — adjust ±20% if needed to keep each texte_voix natural (one full thought per scene).
 
 Script (treat as ${lang.name} content — preserve verbatim across texte_voix fields):
 """
-${script}
+${p.script}
 """
 
 Reply ONLY with this valid JSON:
@@ -227,35 +256,38 @@ Reply ONLY with this valid JSON:
   "scenes": [...],
   "total_duration": <sum of durations>
 }`
+}
 
+async function callClaudeForStoryboardChunk(p: ChunkPromptParams): Promise<StoryboardResult> {
+  const systemPrompt = buildStoryboardSystemPrompt()
+  const userPrompt = buildStoryboardUserPrompt(p)
   let lastError: Error | null = null
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const startTime = Date.now()
-
       const message = await client.messages.create({
         model: MODEL,
-        max_tokens: 4096,
+        max_tokens: MAX_OUTPUT_TOKENS,
         messages: [{ role: 'user', content: userPrompt }],
         system: systemPrompt,
       })
 
-      const duration = Date.now() - startTime
-      const inputTokens = message.usage.input_tokens
-      const outputTokens = message.usage.output_tokens
-
       logger.info(
-        { model: MODEL, inputTokens, outputTokens, duration, attempt },
-        'Claude storyboard generated'
+        {
+          model:        MODEL,
+          inputTokens:  message.usage.input_tokens,
+          outputTokens: message.usage.output_tokens,
+          durationMs:   Date.now() - startTime,
+          attempt,
+          chunk:        p.chunkPosition,
+        },
+        'Claude storyboard chunk generated'
       )
 
       const content = message.content[0]
-      if (content.type !== 'text') {
-        throw new Error('Unexpected response type from Claude')
-      }
+      if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
 
-      // Parser le JSON — nettoyer les éventuels backticks markdown
       const jsonText = content.text
         .replace(/^```json\s*/m, '')
         .replace(/^```\s*/m, '')
@@ -263,28 +295,127 @@ Reply ONLY with this valid JSON:
         .trim()
 
       const result = JSON.parse(jsonText) as StoryboardResult
-
       if (!result.scenes || !Array.isArray(result.scenes)) {
         throw new Error('Invalid storyboard response: missing scenes array')
       }
-
-      result.master_seed = masterSeed
       return result
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
       logger.warn(
-        { attempt, maxRetries: MAX_RETRIES, error: lastError.message },
-        'Claude storyboard attempt failed, retrying'
+        { attempt, maxRetries: MAX_RETRIES, error: lastError.message, chunk: p.chunkPosition },
+        'Claude storyboard chunk attempt failed, retrying'
       )
-
-      if (attempt < MAX_RETRIES) {
-        await sleep(RETRY_DELAY_MS * attempt)
-      }
+      if (attempt < MAX_RETRIES) await sleep(RETRY_DELAY_MS * attempt)
     }
   }
 
-  logger.error({ error: lastError }, 'Claude storyboard generation failed after all retries')
-  throw new Error(`Storyboard generation failed: ${lastError?.message ?? 'Unknown error'}`)
+  throw new Error(`Storyboard chunk generation failed: ${lastError?.message ?? 'Unknown error'}`)
+}
+
+export async function generateStoryboard(
+  script: string,
+  style: string,
+  targetDuration = '30s',
+  brandKit?: BrandKitContext,
+  language?: DetectedLanguage,
+): Promise<StoryboardResult> {
+  const masterSeed = generateMasterSeed(script)
+  const lang: DetectedLanguage = language ?? { code: 'en', name: 'English', nativeName: 'English' }
+
+  // Plan: word count → scene count → chunk count. NO CAP — la durée vidéo
+  // est entièrement déterminée par le script, jamais raccourci.
+  const plan = planSceneCount(script, targetDuration, SCENE_COUNT_MAP)
+
+  if (plan.sceneCount > STORYBOARD_SANITY_LIMIT) {
+    logger.warn(
+      { wordCount: plan.wordCount, sceneCount: plan.sceneCount, sanityLimit: STORYBOARD_SANITY_LIMIT },
+      'Very long script — generating without truncation as user requested'
+    )
+  }
+
+  // Single-call path
+  if (plan.chunkCount === 1) {
+    const result = await callClaudeForStoryboardChunk({
+      script,
+      style,
+      brandKit,
+      language:         lang,
+      sceneCount:       plan.sceneCount,
+      estimatedSeconds: plan.estimatedSeconds,
+      startIndex:       0,
+      isChunked:        false,
+    })
+
+    const coverage = validateScriptCoverage(script, result.scenes as Array<{ texte_voix?: string }>)
+    if (!coverage.ok) {
+      logger.warn({ coverage }, 'Storyboard coverage low — Claude may have compressed the script')
+    }
+    result.master_seed = masterSeed
+    return result
+  }
+
+  // Multi-chunk path: split + parallel generate + merge with re-numbered indices
+  const scriptChunks = splitScriptForChunks(script, plan.chunkCount)
+  const chunkPlans = scriptChunks.map((chunk) => planSceneCount(chunk, 'auto'))
+  let runningIndex = 0
+  const startIndices = chunkPlans.map((cp) => {
+    const start = runningIndex
+    runningIndex += cp.sceneCount
+    return start
+  })
+
+  const chunkResults = await Promise.all(
+    scriptChunks.map((chunk, i) => callClaudeForStoryboardChunk({
+      script:           chunk,
+      style,
+      brandKit,
+      language:         lang,
+      sceneCount:       chunkPlans[i].sceneCount,
+      estimatedSeconds: chunkPlans[i].estimatedSeconds,
+      startIndex:       startIndices[i],
+      isChunked:        true,
+      chunkPosition:    { current: i + 1, total: scriptChunks.length },
+    })),
+  )
+
+  // Merge: re-number indices to be globally sequential and contiguous
+  let globalIndex = 0
+  const mergedScenes: Scene[] = []
+  for (const result of chunkResults) {
+    const sortedScenes = [...result.scenes].sort((a, b) => a.index - b.index)
+    for (const scene of sortedScenes) {
+      mergedScenes.push({
+        ...scene,
+        index: globalIndex,
+        id:    `scene_${String(globalIndex + 1).padStart(3, '0')}`,
+      })
+      globalIndex += 1
+    }
+  }
+  const totalDuration = mergedScenes.reduce((s, sc) => s + (sc.duree_estimee || 5), 0)
+
+  const coverage = validateScriptCoverage(script, mergedScenes as Array<{ texte_voix?: string }>)
+  if (!coverage.ok) {
+    logger.warn(
+      { coverage, chunkCount: scriptChunks.length },
+      'Chunked storyboard coverage low across chunks'
+    )
+  }
+  logger.info(
+    {
+      wordCount:        plan.wordCount,
+      sceneCount:       mergedScenes.length,
+      chunkCount:       scriptChunks.length,
+      coveragePreserved: `${coverage.storyboardWords}/${coverage.originalWords}`,
+    },
+    'Chunked storyboard merged'
+  )
+
+  return {
+    scenes:         mergedScenes,
+    total_duration: totalDuration,
+    master_seed:    masterSeed,
+  }
 }
 
 /**
