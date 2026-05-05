@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { UserPlus, Video, ChevronDown, ChevronUp, Check, X } from 'lucide-react'
+import { UserPlus, Video } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AvatarFilters, type AvatarFilter } from '@/components/assets/AvatarFilters'
@@ -20,115 +20,67 @@ function AvatarSkeleton() {
   return <div className="aspect-[3/4] rounded-2xl bg-muted animate-pulse" />
 }
 
-// ── Avatar Group Card (grouped by name, expandable looks) ──────────────────────
+// ── Avatar Group Card (one card per persona name) ──────────────────────────────
 
 function AvatarGroupCard({
   group,
-  isExpanded,
-  onToggle,
-  onSelectAvatar,
+  onClick,
 }: {
   group: AvatarGroup
-  isExpanded: boolean
-  onToggle: () => void
-  onSelectAvatar: (av: StudioAvatar) => void
+  onClick: () => void
 }) {
   const { t } = useLanguage()
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden transition-all hover:border-blue-500/30">
-      {/* Main card — click to expand */}
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={isExpanded}
-        aria-label={`${group.baseName}, ${group.totalLooks} looks`}
-        className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        <div className="relative aspect-[3/4] bg-muted overflow-hidden group">
-          {group.mainPreview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={group.mainPreview}
-              alt={group.baseName}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-              <span className="font-body text-4xl text-foreground/40">
-                {group.baseName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-          )}
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-
-          {/* Info overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-3">
-            <p className="font-body text-sm text-white font-semibold leading-tight truncate">
-              {group.baseName}
-            </p>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="font-body text-xs text-white/60">
-                {group.totalLooks !== 1 ? t('av_looksAvailable_plural').replace('{n}', String(group.totalLooks)) : t('av_looksAvailable').replace('{n}', '1')}
-              </span>
-              {isExpanded
-                ? <ChevronUp size={12} className="text-white/60" />
-                : <ChevronDown size={12} className="text-white/60" />
-              }
-            </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-2xl border border-border bg-card overflow-hidden transition-all hover:border-blue-500/30 hover:shadow-md text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background group"
+      aria-label={`${group.baseName}, ${group.totalLooks} looks`}
+    >
+      <div className="relative aspect-[3/4] bg-muted overflow-hidden">
+        {group.mainPreview ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={group.mainPreview}
+            alt={group.baseName}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+            <span className="font-body text-4xl text-foreground/40">
+              {group.baseName.charAt(0).toUpperCase()}
+            </span>
           </div>
-        </div>
-      </button>
+        )}
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
-      {/* Expanded looks grid */}
-      {isExpanded && (
-        <div className="p-3 border-t border-border bg-muted/30">
-          <p className="font-body text-xs font-medium text-[--text-muted] mb-2">
-            {group.totalLooks !== 1 ? t('av_looksAvailable_plural').replace('{n}', String(group.totalLooks)) : t('av_looksAvailable').replace('{n}', '1')}
+        {/* Looks count badge — top right */}
+        {group.totalLooks > 1 && (
+          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5">
+            <span className="font-mono text-[10px] text-white/90">
+              {group.totalLooks} looks
+            </span>
+          </div>
+        )}
+
+        {/* Info overlay — bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <p className="font-body text-sm text-white font-semibold leading-tight truncate">
+            {group.baseName}
           </p>
-          <div className="grid grid-cols-3 gap-2">
-            {group.avatars.map((av) => {
-              // If avatar has individual looks, show them
-              if (av.looks.length > 0) {
-                return av.looks.map((look) => (
-                  <button
-                    key={look.look_id}
-                    type="button"
-                    onClick={() => onSelectAvatar(av)}
-                    className="relative rounded-xl overflow-hidden border border-border hover:border-blue-500 transition-all group/look focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  >
-                    <div
-                      className="aspect-[3/4] bg-cover bg-center bg-muted"
-                      style={{ backgroundImage: `url(${look.preview_image_url})` }}
-                    />
-                    <p className="font-body text-[11px] text-foreground px-1.5 py-1 truncate bg-card text-center">
-                      {look.name || av.avatar_name}
-                    </p>
-                  </button>
-                ))
-              }
-              // Otherwise show the avatar itself as a look
-              return (
-                <button
-                  key={av.avatar_id}
-                  type="button"
-                  onClick={() => onSelectAvatar(av)}
-                  className="relative rounded-xl overflow-hidden border border-border hover:border-blue-500 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                >
-                  <div
-                    className="aspect-[3/4] bg-cover bg-center bg-muted"
-                    style={{ backgroundImage: `url(${av.preview_image_url})` }}
-                  />
-                  <p className="font-body text-[11px] text-foreground px-1.5 py-1 truncate bg-card text-center">
-                    {av.avatar_name}
-                  </p>
-                </button>
-              )
-            })}
-          </div>
+          {group.totalLooks > 1 && (
+            <p className="font-body text-xs text-white/60 mt-0.5">
+              {group.totalLooks !== 1
+                ? t('av_looksAvailable_plural').replace('{n}', String(group.totalLooks))
+                : t('av_looksAvailable').replace('{n}', '1')}
+            </p>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </button>
   )
 }
 
@@ -141,9 +93,8 @@ export default function AvatarsPage() {
   const [activeTab, setActiveTab]       = useState<AvatarTab>('public')
   const [search, setSearch]             = useState('')
   const [activeFilter, setActiveFilter] = useState<AvatarFilter>('all')
-  const [selected, setSelected]         = useState<StudioAvatar | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<AvatarGroup | null>(null)
   const [createOpen, setCreateOpen]     = useState(false)
-  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
 
   useEffect(() => {
     getStudioAvatars()
@@ -229,7 +180,7 @@ export default function AvatarsPage() {
         onFilter={setActiveFilter}
       />
 
-      {/* Grid — grouped by name */}
+      {/* Grid — one card per persona name */}
       <div className="px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -261,11 +212,7 @@ export default function AvatarsPage() {
               <AvatarGroupCard
                 key={group.baseName}
                 group={group}
-                isExpanded={expandedGroup === group.baseName}
-                onToggle={() => setExpandedGroup(
-                  expandedGroup === group.baseName ? null : group.baseName
-                )}
-                onSelectAvatar={setSelected}
+                onClick={() => setSelectedGroup(group)}
               />
             ))}
           </div>
@@ -282,11 +229,11 @@ export default function AvatarsPage() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modal — shows all looks for selected persona */}
       <AvatarPreviewModal
-        avatar={selected}
-        isOpen={!!selected}
-        onClose={() => setSelected(null)}
+        group={selectedGroup}
+        isOpen={!!selectedGroup}
+        onClose={() => setSelectedGroup(null)}
       />
       <CreateAvatarModal
         isOpen={createOpen}
