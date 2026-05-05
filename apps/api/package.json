@@ -8,7 +8,12 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "start:worker": "node dist/workers/renderWorker.js",
-    "test": "jest"
+    "test": "jest",
+    "lambda:setup": "bash ../../scripts/setup-lambda.sh",
+    "lambda:redeploy-site": "bash ../../scripts/setup-lambda.sh --redeploy-site-only",
+    "lambda:policies": "npx remotion lambda policies validate",
+    "lambda:functions": "npx remotion lambda functions ls",
+    "lambda:sites": "npx remotion lambda sites ls"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
