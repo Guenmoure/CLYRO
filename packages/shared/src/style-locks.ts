@@ -18,14 +18,15 @@
  */
 
 export type StyleLockId =
-  | 'cinematic-ai'   // warm gold + cool blue shadows, anamorphic, film grain
-  | 'documentary'    // neutral, journalistic, sharp focus, no grading
-  | 'dark-narrative' // cold desaturated, deep shadows, noir tension
-  | 'minimalist'     // soft warm pastels, negative space, zen
-  | 'illustrated'    // warm watercolor, hand-drawn, editorial book
-  | 'motion-design'  // cool tech blue on dark, geometric, glowing accents
-  | '3d-render'      // bright neutral, soft ambient occlusion, Pixar
-  | 'webcomic'       // vivid, comic art, bold outlines, manga-cel
+  | 'cinematic-ai'    // warm gold + cool blue shadows, anamorphic, film grain
+  | 'documentary'     // neutral, journalistic, sharp focus, no grading
+  | 'dark-narrative'  // cold desaturated, deep shadows, noir tension
+  | 'minimalist'      // soft warm pastels, negative space, zen
+  | 'illustrated'     // warm watercolor, hand-drawn, editorial book
+  | 'motion-design'   // cool tech blue on dark, geometric, glowing accents
+  | '3d-render'       // bright neutral, soft ambient occlusion, Pixar
+  | 'webcomic'        // vivid, comic art, bold outlines, manga-cel
+  | 'character-story'  // dark bg, warm rim light, violet tech glow, cel-shaded
 
 export interface StyleLock {
   id:               StyleLockId
@@ -114,6 +115,16 @@ export const STYLE_LOCKS: Record<StyleLockId, StyleLock> = {
       + 'expressions, flat color fills with cel shading, dramatic panel '
       + 'composition, webtoon aesthetic, high contrast',
   },
+  'character-story': {
+    id: 'character-story',
+    palette: ['#1A1F2E', '#F5A623', '#7C5CFC'],
+    temperature: 'warm-cool contrast',
+    consistencySuffix:
+      'digital character illustration, smooth cel-shaded rendering, '
+      + 'dark navy background (#1A1F2E), warm golden rim lighting (#F5A623), '
+      + 'violet tech accent glow (#7C5CFC), stylized semi-realistic cartoon, '
+      + 'Artstation quality, cinematic single-subject composition, 8K',
+  },
 }
 
 /**
@@ -133,6 +144,8 @@ const LOCK_BY_STYLE_ID: Record<string, StyleLockId> = {
   '3d-pixar':         '3d-render',
   'animation-2d':     'illustrated',
   'motion-graphics':  'motion-design',
+  // Character story
+  'character-story':  'character-story',
   // Motion styles
   'corporate':        'documentary',
   'dynamique':        'dark-narrative',

@@ -36,6 +36,7 @@ const STEP_IDS = ['script', 'styleVoice', 'animation', 'format', 'options', 'rev
 const FACELESS_STYLE_IDS: { id: FacelessStyle; pro: boolean }[] = [
   { id: 'cinematique',     pro: false },
   { id: 'stock-vo',        pro: false },
+  { id: 'character-story', pro: false },
   { id: 'whiteboard',      pro: false },
   { id: 'stickman',        pro: false },
   { id: 'flat-design',     pro: true  },
@@ -50,6 +51,7 @@ const FACELESS_STYLE_IDS: { id: FacelessStyle; pro: boolean }[] = [
 const styleKeyMap: Record<string, string> = {
   'cinematique':     'fn_style_cinematique',
   'stock-vo':        'fn_style_stockvo',
+  'character-story': 'fn_style_characterstory',
   'whiteboard':      'fn_style_whiteboard',
   'stickman':        'fn_style_stickman',
   'flat-design':     'fn_style_flatdesign',

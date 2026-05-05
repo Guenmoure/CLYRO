@@ -71,6 +71,7 @@ export type FacelessStyle =
   | 'infographie'
   | 'motion-graphics'
   | 'animation-2d'
+  | 'character-story'
 
 export type MotionStyle = 'corporate' | 'dynamique' | 'luxe' | 'fun'
 export type VideoFormat = '9:16' | '1:1' | '16:9'

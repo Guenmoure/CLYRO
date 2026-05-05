@@ -95,6 +95,9 @@ const F1_STYLE_MODEL_MAP: Record<string, string> = {
   dynamique:        'fal-ai/flux/schnell',
   fun:              'fal-ai/flux/schnell',
 
+  // Character story — needs good face rendering, flux-pro
+  'character-story':'fal-ai/flux-pro/v1.1',
+
   // Typography-sensitive → flux-pro v1.1 for cleaner vector edges
   'flat-design':    'fal-ai/flux-pro/v1.1',
   minimaliste:      'fal-ai/flux-pro/v1.1',

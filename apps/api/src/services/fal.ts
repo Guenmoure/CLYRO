@@ -120,6 +120,13 @@ const STYLE_CONFIGS: Record<string, StyleConfig> = {
     image_size: 'landscape_16_9',
     num_inference_steps: 25,
   },
+  // Character Story — stylized digital characters, cel-shaded, dark bg
+  'character-story': {
+    prompt_prefix: 'digital character illustration, stylized semi-realistic cartoon, smooth cel-shaded rendering, warm rim lighting against dark background, subtle ambient glow, modern digital art style, Artstation quality,',
+    prompt_suffix: 'vibrant but controlled color palette, cinematic composition, dark navy environment, floating holographic elements, 8K resolution',
+    image_size: 'landscape_16_9',
+    num_inference_steps: 28,
+  },
   // Motion Graphics styles
   corporate: {
     prompt_prefix: 'clean corporate business illustration, navy blue and white palette, professional office setting, minimal geometric shapes, modern UI elements,',

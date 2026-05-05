@@ -31,6 +31,7 @@ export const STYLE_VISUAL_GUIDE: Record<string, string> = {
   // 3d-pixar, animation-2d → schnell, NO text
   '3d-pixar':         'Pixar-style 3D CGI render, claymation texture, rounded adorable characters, soft studio lighting, rich vibrant colors — Disney Pixar movie quality, no photorealism, NO visible text in frame',
   'animation-2d':     'flat vector 2D cartoon illustration, bold outlines, vibrant saturated colors — absolutely NO photorealism, no 3D, NO readable text, traditional animation frame',
+  'character-story':  'digital character illustration, stylized semi-realistic cartoon, smooth cel-shaded rendering, warm rim lighting against dark background, subtle ambient glow, tech aesthetic with floating UI elements, modern digital art style, Artstation quality, vibrant but controlled color palette, cinematic composition — NO readable text, NO photorealism, 8K',
   // motion-graphics → Ideogram v2 (bold animated typography OK)
   'motion-graphics':  'flat design motion graphics, geometric shapes, vibrant vector colors, kinetic composition — tech brand, high-end ad quality, bold typographic headline (1-3 words max, rendered via Ideogram)',
   // ── Motion styles — all schnell ─────────────────────────────────────
