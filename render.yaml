@@ -161,3 +161,30 @@ services:
       # — Pipeline watchdog —
       - key: PIPELINE_TIMEOUT_MS
         sync: false
+
+      # — Remotion Lambda (Motion + MotionDesign cloud rendering) —
+      # Active le rendu Remotion via AWS Lambda au lieu de Chromium local.
+      # Avantages : 3-5× plus rapide sur les longues vidéos, scale infini.
+      # Coût : ~$0.005-0.01 par vidéo de 30s avec 3009 MB / 240s timeout.
+      #
+      # Setup initial (à faire une fois) :
+      #   1. Créer un IAM user avec les policies remotion (npx remotion lambda policies validate)
+      #   2. Déployer la fonction : npx remotion lambda functions deploy --memory=3009 --timeout=240 --disk=2048
+      #   3. Déployer le site Remotion : npx remotion lambda sites create apps/api/src/remotion/Root.tsx --site-name=clyro-motion
+      #   4. Renseigner les 6 variables ci-dessous (USE_REMOTION_LAMBDA + AWS_* + REMOTION_LAMBDA_*)
+      #
+      # Si USE_REMOTION_LAMBDA n'est pas 'true' OU si une variable manque,
+      # le pipeline retombe automatiquement sur le rendu Chromium local
+      # (plus lent mais fonctionnel sans config AWS). Aucune obligation.
+      - key: USE_REMOTION_LAMBDA
+        sync: false       # 'true' pour activer Lambda, sinon laisser vide / 'false'
+      - key: AWS_REGION
+        sync: false       # ex: eu-west-3
+      - key: AWS_ACCESS_KEY_ID
+        sync: false       # IAM user avec accès Lambda + S3
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: REMOTION_LAMBDA_FUNCTION_NAME
+        sync: false       # ex: remotion-render-4-0-448-mem3009mb-disk2048mb-240sec
+      - key: REMOTION_LAMBDA_SERVE_URL
+        sync: false       # ex: https://xxxxx.s3.eu-west-3.amazonaws.com/sites/clyro-motion/index.html
