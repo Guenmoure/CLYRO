@@ -20,6 +20,13 @@
 
 set -euo pipefail
 
+# ─── Auto-detect repo root from this script's location ─────────────────────
+# Le script vit dans <repo>/scripts/, donc le repo root = $SCRIPT_DIR/..
+# Permet de lancer le script depuis n'importe quel cwd (npm run, alias, etc.).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
 # ─── Defaults ────────────────────────────────────────────────────────────────
 REGION="${AWS_REGION:-eu-central-1}"
 SITE_NAME="clyro-motion"
