@@ -71,74 +71,57 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
     await updateStatus('audio', 50)
 
     // ÉTAPE 3 — Rendu Remotion MotionDesign (Lambda si configuré, sinon local)
+    // Les deux renderers retournent { mp4: Buffer, thumbnail: Buffer | null }
+    // depuis que le Lambda re-télécharge l'output S3. Single code path pour
+    // l'upload Supabase + thumbnail.
     await updateStatus('assembly', 55)
 
+    const useLambda = isLambdaEnabled()
+    logger.info({ videoId, renderer: useLambda ? 'lambda' : 'local' }, 'MotionDesign: starting render')
+
+    const renderArgs = { scenes, format, voiceoverBuffer, musicUrl }
+    const { mp4: mp4Buffer, thumbnail: thumbnailBuffer } = useLambda
+      ? await renderMotionDesignVideoLambda(renderArgs)
+      : await renderMotionDesignVideo(renderArgs)
+
+    await updateStatus('assembly', 88)
+
+    // Upload Supabase Storage avec retry — un 503 transient ne doit pas
+    // tuer la pipeline (le buffer est en RAM, on peut réessayer).
     const storagePath = `${userId}/${videoId}/output.mp4`
-    let outputUrl   = ''
-    let thumbnailUrl: string | undefined
+    const UPLOAD_MAX_RETRIES = 3
+    let uploadError: { message: string } | null = null
 
-    if (isLambdaEnabled()) {
-      // Lambda path : rendu cloud, retourne directement l'URL S3.
-      // Pas de thumbnail server-side (à générer plus tard via un job
-      // séparé si nécessaire). Beaucoup plus rapide que local pour les
-      // longues vidéos (~3-5× wall-time).
-      logger.info({ videoId }, 'MotionDesign: using Lambda renderer')
-      outputUrl = await renderMotionDesignVideoLambda({
-        scenes,
-        format,
-        voiceoverBuffer,
-        musicUrl,
-      })
-      await updateStatus('assembly', 92)
-    } else {
-      // Local path : Chromium headless sur le worker. Renvoie un Buffer
-      // qu'on uploade nous-mêmes sur Supabase Storage.
-      logger.info({ videoId }, 'MotionDesign: using local renderer')
-      const { mp4: mp4Buffer, thumbnail: thumbnailBuffer } = await renderMotionDesignVideo({
-        scenes,
-        format,
-        voiceoverBuffer,
-        musicUrl,
-      })
-
-      await updateStatus('assembly', 88)
-
-      // Upload Supabase Storage avec retry — un 503 transient ne doit pas
-      // tuer la pipeline (le buffer est en RAM, on peut réessayer).
-      const UPLOAD_MAX_RETRIES = 3
-      let uploadError: { message: string } | null = null
-
-      for (let attempt = 1; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
-        const result = await supabaseAdmin.storage
-          .from('videos')
-          .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
-        uploadError = result.error
-        if (!uploadError) break
-        logger.warn({ attempt, videoId, error: uploadError.message }, 'MotionDesign: upload retry…')
-        if (attempt < UPLOAD_MAX_RETRIES) {
-          await new Promise((r) => setTimeout(r, [5_000, 15_000, 30_000][attempt - 1] ?? 30_000))
-        }
-      }
-      if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
-
-      const { data: signedUrl } = await supabaseAdmin.storage
+    for (let attempt = 1; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
+      const result = await supabaseAdmin.storage
         .from('videos')
-        .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+        .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
+      uploadError = result.error
+      if (!uploadError) break
+      logger.warn({ attempt, videoId, error: uploadError.message }, 'MotionDesign: upload retry…')
+      if (attempt < UPLOAD_MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, [5_000, 15_000, 30_000][attempt - 1] ?? 30_000))
+      }
+    }
+    if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
 
-      outputUrl = signedUrl?.signedUrl ?? ''
+    const { data: signedUrl } = await supabaseAdmin.storage
+      .from('videos')
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+    const outputUrl = signedUrl?.signedUrl ?? ''
 
-      // Thumbnail (uniquement en local — Lambda ne renvoie pas de still PNG)
-      if (thumbnailBuffer) {
-        const thumbPath = `${userId}/${videoId}/thumbnail.png`
-        const { error: thumbErr } = await supabaseAdmin.storage
+    // Thumbnail (works for both Lambda and local paths now)
+    let thumbnailUrl: string | undefined
+    if (thumbnailBuffer) {
+      const thumbPath = `${userId}/${videoId}/thumbnail.png`
+      const { error: thumbErr } = await supabaseAdmin.storage
+        .from('videos')
+        .upload(thumbPath, thumbnailBuffer, { contentType: 'image/png', upsert: true })
+      if (!thumbErr) {
+        const { data: thumbSigned } = await supabaseAdmin.storage
           .from('videos')
-          .upload(thumbPath, thumbnailBuffer, { contentType: 'image/png', upsert: true })
-        if (!thumbErr) {
-          const { data: thumbSigned } = await supabaseAdmin.storage
-            .from('videos')
-            .createSignedUrl(thumbPath, 60 * 60 * 24 * 365)
-          thumbnailUrl = thumbSigned?.signedUrl
-        }
+          .createSignedUrl(thumbPath, 60 * 60 * 24 * 365)
+        thumbnailUrl = thumbSigned?.signedUrl
       }
     }
 
@@ -156,7 +139,7 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
       })
       .eq('id', videoId)
 
-    logger.info({ videoId, outputUrl, lambda: isLambdaEnabled() }, 'MotionDesign pipeline completed')
+    logger.info({ videoId, outputUrl, lambda: useLambda }, 'MotionDesign pipeline completed')
 
     await sendVideoReadyEmail(userEmail, title, outputUrl).catch((err) =>
       logger.warn({ err }, 'Failed to send video ready email')

@@ -184,7 +184,10 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
       })
     }
 
-    // ÉTAPE 4 : Rendu Remotion (Lambda si activé, sinon local)
+    // ÉTAPE 4 : Rendu Remotion (Lambda si activé, sinon local) — single code path
+    // Les deux renderers retournent { mp4: Buffer, thumbnail: Buffer | null }
+    // depuis que le Lambda re-télécharge l'output S3 dans le worker. Storage
+    // uniforme côté Supabase, retention contrôlée par CLYRO, URLs signées 1 an.
     await updateStatus('assembly', 75)
 
     const renderOptions = {
@@ -196,61 +199,56 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
       musicBuffer,
     }
 
-    let outputUrl: string
+    const useLambda = isLambdaEnabled()
+    logger.info({ videoId, renderer: useLambda ? 'lambda' : 'local' }, 'Motion: starting render')
 
-    let thumbnailUrl: string | undefined
+    const { mp4: mp4Buffer, thumbnail: thumbnailBuffer } = useLambda
+      ? await renderMotionVideoLambda(renderOptions)
+      : await renderMotionVideo(renderOptions)
 
-    if (isLambdaEnabled()) {
-      logger.info({ videoId }, 'Using Remotion Lambda renderer')
-      outputUrl = await renderMotionVideoLambda(renderOptions)
-    } else {
-      logger.info({ videoId }, 'Using local Remotion renderer')
-      const { mp4: mp4Buffer, thumbnail: thumbnailBuffer } = await renderMotionVideo(renderOptions)
+    await updateStatus('assembly', 88)
+    const storagePath = `${userId}/${videoId}/output.mp4`
 
-      await updateStatus('assembly', 88)
-      const storagePath = `${userId}/${videoId}/output.mp4`
-
-      // Retry sur upload : un 503 transient ne doit pas jeter la pipeline
-      const UPLOAD_MAX_RETRIES = 3
-      let uploadError: { message: string } | null = null
-      for (let attempt = 1; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
-        const result = await supabaseAdmin.storage
-          .from('videos')
-          .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
-        uploadError = result.error
-        if (!uploadError) break
-
-        logger.warn(
-          { attempt, videoId, error: uploadError.message, sizeMB: Math.round(mp4Buffer.length / 1024 / 1024) },
-          'Supabase upload failed, retrying…',
-        )
-        if (attempt < UPLOAD_MAX_RETRIES) {
-          await new Promise((r) => setTimeout(r, [5_000, 15_000, 30_000][attempt - 1] ?? 30_000))
-        }
-      }
-      if (uploadError) throw new Error(`Storage upload failed after ${UPLOAD_MAX_RETRIES} attempts: ${uploadError.message}`)
-
-      const { data: signedUrl } = await supabaseAdmin.storage
+    // Retry sur upload : un 503 transient ne doit pas jeter la pipeline
+    const UPLOAD_MAX_RETRIES = 3
+    let uploadError: { message: string } | null = null
+    for (let attempt = 1; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
+      const result = await supabaseAdmin.storage
         .from('videos')
-        .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+        .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
+      uploadError = result.error
+      if (!uploadError) break
 
-      outputUrl = signedUrl?.signedUrl ?? ''
+      logger.warn(
+        { attempt, videoId, error: uploadError.message, sizeMB: Math.round(mp4Buffer.length / 1024 / 1024) },
+        'Supabase upload failed, retrying…',
+      )
+      if (attempt < UPLOAD_MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, [5_000, 15_000, 30_000][attempt - 1] ?? 30_000))
+      }
+    }
+    if (uploadError) throw new Error(`Storage upload failed after ${UPLOAD_MAX_RETRIES} attempts: ${uploadError.message}`)
 
-      // Upload thumbnail if captured
-      if (thumbnailBuffer) {
-        const thumbPath = `${userId}/${videoId}/thumbnail.png`
-        const { error: thumbErr } = await supabaseAdmin.storage
+    const { data: signedUrl } = await supabaseAdmin.storage
+      .from('videos')
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+    const outputUrl: string = signedUrl?.signedUrl ?? ''
+
+    // Upload thumbnail if captured (works for both Lambda and local paths now)
+    let thumbnailUrl: string | undefined
+    if (thumbnailBuffer) {
+      const thumbPath = `${userId}/${videoId}/thumbnail.png`
+      const { error: thumbErr } = await supabaseAdmin.storage
+        .from('videos')
+        .upload(thumbPath, thumbnailBuffer, { contentType: 'image/png', upsert: true })
+      if (!thumbErr) {
+        const { data: thumbSigned } = await supabaseAdmin.storage
           .from('videos')
-          .upload(thumbPath, thumbnailBuffer, { contentType: 'image/png', upsert: true })
-        if (!thumbErr) {
-          const { data: thumbSigned } = await supabaseAdmin.storage
-            .from('videos')
-            .createSignedUrl(thumbPath, 60 * 60 * 24 * 365)
-          thumbnailUrl = thumbSigned?.signedUrl
-          logger.info({ videoId, thumbnailUrl }, 'Motion: thumbnail uploaded')
-        } else {
-          logger.warn({ thumbErr }, 'Motion: thumbnail upload failed')
-        }
+          .createSignedUrl(thumbPath, 60 * 60 * 24 * 365)
+        thumbnailUrl = thumbSigned?.signedUrl
+        logger.info({ videoId, thumbnailUrl }, 'Motion: thumbnail uploaded')
+      } else {
+        logger.warn({ thumbErr }, 'Motion: thumbnail upload failed')
       }
     }
 

@@ -185,6 +185,8 @@ services:
       - key: AWS_SECRET_ACCESS_KEY
         sync: false
       - key: REMOTION_LAMBDA_FUNCTION_NAME
-        sync: false       # ex: remotion-render-4-0-448-mem3009mb-disk2048mb-240sec
+        sync: false       # ex: remotion-render-4-0-448-mem3008mb-disk2048mb-240sec
       - key: REMOTION_LAMBDA_SERVE_URL
-        sync: false       # ex: https://xxxxx.s3.eu-west-3.amazonaws.com/sites/clyro-motion/index.html
+        sync: false       # ex: https://xxxxx.s3.eu-central-1.amazonaws.com/sites/clyro-motion/index.html
+      - key: REMOTION_FRAMES_PER_LAMBDA
+        sync: false       # optionnel — d&eacute;faut 100 (param&egrave;tre la parall&eacute;lisation Lambda)

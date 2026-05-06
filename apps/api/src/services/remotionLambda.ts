@@ -6,23 +6,34 @@
  *
  * Setup requis (une seule fois par région AWS) :
  *   npx remotion lambda policies validate
- *   npx remotion lambda functions deploy --memory=3009 --timeout=240 --disk=2048
+ *   npx remotion lambda functions deploy --memory=3008 --timeout=240 --disk=2048
  *   npx remotion lambda sites create apps/api/src/remotion/Root.tsx --site-name=clyro-motion
  *
  * Variables d'env nécessaires (à définir sur clyro-worker dans Render) :
  *   USE_REMOTION_LAMBDA=true
- *   AWS_REGION (ex: eu-west-3)
+ *   AWS_REGION (ex: eu-central-1)
  *   AWS_ACCESS_KEY_ID
  *   AWS_SECRET_ACCESS_KEY
- *   REMOTION_LAMBDA_FUNCTION_NAME (ex: remotion-render-4-0-443-mem3009mb-disk2048mb-240sec)
- *   REMOTION_LAMBDA_SERVE_URL     (ex: https://xxxxx.s3.eu-west-3.amazonaws.com/sites/clyro-motion/index.html)
+ *   REMOTION_LAMBDA_FUNCTION_NAME (ex: remotion-render-4-0-448-mem3008mb-disk2048mb-240sec)
+ *   REMOTION_LAMBDA_SERVE_URL     (ex: https://xxxxx.s3.eu-central-1.amazonaws.com/sites/clyro-motion/index.html)
+ *
+ * Optionnel :
+ *   REMOTION_FRAMES_PER_LAMBDA (default 100) — control la parallélisation.
+ *     Plus petit = plus de Lambdas en parallèle = rendu plus rapide.
+ *     Plus grand = moins de Lambdas = moins de risques de hit le quota
+ *     "concurrent executions" (défaut AWS = 1000/région).
  *
  * Re-exécuter `lambda sites create` après chaque modification des composants
  * dans packages/video/src/ (sinon le serve URL pointe sur l'ancien bundle).
  */
 
+import { spawn } from 'child_process'
+import { writeFile, readFile, unlink, mkdir } from 'fs/promises'
+import { join } from 'path'
+import { tmpdir } from 'os'
+import { randomUUID } from 'crypto'
 import { logger } from '../lib/logger'
-import type { RenderMotionVideoOptions, RenderMotionDesignOptions } from './remotion'
+import type { RenderMotionVideoOptions, RenderMotionVideoResult, RenderMotionDesignOptions } from './remotion'
 import type { MotionCompositionProps } from '@clyro/video'
 
 export function isLambdaEnabled(): boolean {
@@ -51,9 +62,8 @@ const FPS = 30
 
 // ── Motion (legacy DynamicComposition router) ─────────────────────────────
 // MUST match the composition IDs registered in apps/api/src/remotion/Root.tsx
-// (lines DynamicMotion-{16-9|9-16|1-1}). Previously this map was using the
-// old BrandOverlay-* IDs which worked but bypassed scene_type/animation_type
-// routing — visual output drifted from the local renderer.
+// (lines DynamicMotion-{16-9|9-16|1-1}). Visual parity with local renderer
+// depends on identical compositionId here and in services/remotion.ts.
 const MOTION_FORMAT_MAP: Record<string, { compositionId: string; width: number; height: number }> = {
   '16:9': { compositionId: 'DynamicMotion-16-9', width: 1920, height: 1080 },
   '9:16': { compositionId: 'DynamicMotion-9-16', width: 1080, height: 1920 },
@@ -67,14 +77,44 @@ const MOTION_DESIGN_FORMAT_MAP: Record<string, { compositionId: string; width: n
   '1_1':  { compositionId: 'MotionDesign-1-1',  width: 1080, height: 1080 },
 }
 
-// Lambda function pricing scales with memory × duration. With 3009 MB allocated
-// and ~30s avg per scene, a 30s video costs ~$0.005-0.01 per render. For very
-// long videos (3-5 min), Lambda still beats local rendering wall-time by
-// ~3-5×, but consider keeping local for short videos to save invocation cost.
-const LAMBDA_MIN_DURATION_FOR_USE = 0  // 0 = always use Lambda when enabled
-
 /**
- * Polls a Lambda render until completion. Returns the final S3 outputUrl.
+ * Number of frames each Lambda function renders. The full video is split
+ * into chunks of this size and N Lambdas run in parallel.
+ *
+ * Trade-off:
+ *   • Lower (~50-100) → more Lambdas in parallel, faster wall-time, but
+ *     uses more concurrent executions (AWS default quota: 1000/region)
+ *   • Higher (200-500) → fewer Lambdas, less parallel, slower but safer
+ *     for accounts with low quotas
+ *
+ * Default 100 means a 30 s video at 30 fps (= 900 frames) fans out across
+ * 9 Lambdas → ~30 s wall-time vs ~3 min if rendered as a single chunk.
+ *
+ * Override via REMOTION_FRAMES_PER_LAMBDA env var if your AWS quota is
+ * limited (set to 999 to effectively disable parallelization).
+ */
+function getFramesPerLambda(): number {
+  const fromEnv = process.env.REMOTION_FRAMES_PER_LAMBDA
+  if (fromEnv) {
+    const n = parseInt(fromEnv, 10)
+    if (!isNaN(n) && n > 0) return n
+  }
+  return 100
+}
+
+// ── Cost helper ──────────────────────────────────────────────────────────
+type RenderCostsLike = { accruedSoFar?: number; displayCost?: string; currency?: string } | undefined
+function summarizeCosts(costs: RenderCostsLike): { displayCost?: string; accrued?: number } {
+  if (!costs) return {}
+  return {
+    displayCost: costs.displayCost,
+    accrued:     typeof costs.accruedSoFar === 'number' ? Math.round(costs.accruedSoFar * 10000) / 10000 : undefined,
+  }
+}
+
+// ── Polling helper ───────────────────────────────────────────────────────
+/**
+ * Polls a Lambda render until completion. Returns the final S3 outputUrl + cost.
  * Throws on fatal errors.
  */
 async function pollLambdaRender(args: {
@@ -83,13 +123,14 @@ async function pollLambdaRender(args: {
   functionName: string
   region:       string
   videoLabel:   string
-}): Promise<string> {
+}): Promise<{ outputUrl: string; costs: RenderCostsLike }> {
   const { getRenderProgress } = await import('@remotion/lambda/client')
   const { renderId, bucketName, functionName, region, videoLabel } = args
 
   let outputUrl = ''
+  let costs: RenderCostsLike
   let done = false
-  let lastProgress = -1
+  let lastLoggedPct = -10
 
   while (!done) {
     await new Promise((r) => setTimeout(r, 3000))
@@ -99,27 +140,104 @@ async function pollLambdaRender(args: {
     })
 
     const pct = Math.round(progress.overallProgress * 100)
-    // Log every 10 % progression delta to avoid log spam every 3s.
-    if (pct - lastProgress >= 10) {
-      logger.info({ progress: pct, label: videoLabel }, 'Lambda render progress')
-      lastProgress = pct
+    // Log every 10 % progression delta to avoid log spam every 3 s.
+    if (pct - lastLoggedPct >= 10) {
+      logger.info(
+        { progress: pct, label: videoLabel, costs: summarizeCosts(progress.costs as RenderCostsLike) },
+        'Lambda render progress'
+      )
+      lastLoggedPct = pct
     }
 
     if (progress.done) {
       outputUrl = progress.outputFile ?? ''
+      costs = progress.costs as RenderCostsLike
       done = true
     } else if (progress.fatalErrorEncountered) {
       throw new Error(`Lambda render failed (${videoLabel}): ${progress.errors?.[0]?.message ?? 'unknown error'}`)
     }
   }
 
-  return outputUrl
+  return { outputUrl, costs }
 }
 
-/** Common helper to inline scene images as base64 data URLs.
- *  Lambda's serve URL bundle can't cross-origin-fetch arbitrary URLs at
- *  render time without CORS hassle — embedding the bytes is the simplest
- *  way to guarantee the images render. */
+// ── S3 download helper ───────────────────────────────────────────────────
+/**
+ * Downloads the Remotion-rendered MP4 from its S3 output URL into a Buffer.
+ * The URL is a public S3 URL set up by Remotion at render time.
+ *
+ * This step is what makes Lambda + local storage parity possible — instead
+ * of returning a public S3 link (which would persist on Remotion's bucket
+ * and bypass our Supabase retention rules), we download the MP4 and re-upload
+ * it to Supabase Storage from the pipeline. Single source of truth.
+ */
+async function downloadRenderOutput(outputUrl: string): Promise<Buffer> {
+  if (!outputUrl) throw new Error('Lambda returned no output URL')
+  // 5 min timeout — Lambda finishes the render before the URL is published,
+  // so the download itself should be near-instant on a 50-100 MB video.
+  // 300 s leaves headroom for slow S3 region-to-region transfers.
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 300_000)
+  try {
+    const res = await fetch(outputUrl, { signal: controller.signal })
+    if (!res.ok) throw new Error(`S3 download failed (${res.status}): ${outputUrl.slice(0, 120)}`)
+    return Buffer.from(await res.arrayBuffer())
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') {
+      throw new Error(`S3 download timed out after 5 min: ${outputUrl.slice(0, 120)}`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+// ── Thumbnail capture (ffmpeg) ───────────────────────────────────────────
+/**
+ * Captures a still PNG at the given second of a downloaded MP4 buffer.
+ * Returns null on any error (thumbnail is non-critical, never blocks).
+ *
+ * Uses ffmpeg via spawn — same toolchain as the rest of the pipeline.
+ * Avoids the cost of an extra Lambda invocation (renderStillOnLambda)
+ * since we already have the MP4 in memory after the main render.
+ */
+async function captureThumbnailFromBuffer(mp4: Buffer, atSeconds = 3): Promise<Buffer | null> {
+  const workDir = join(tmpdir(), `clyro-lambda-thumb-${randomUUID()}`)
+  const inPath  = join(workDir, 'input.mp4')
+  const outPath = join(workDir, 'thumb.png')
+
+  try {
+    await mkdir(workDir, { recursive: true })
+    await writeFile(inPath, mp4)
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn('ffmpeg', [
+        '-ss', String(atSeconds),
+        '-i', inPath,
+        '-vframes', '1',
+        '-q:v', '2',  // PNG quality (1=best, 31=worst); 2 is near-lossless for thumbnails
+        '-y',
+        outPath,
+      ], { stdio: ['ignore', 'ignore', 'pipe'] })
+      proc.on('close', (code) => code === 0 ? resolve() : reject(new Error(`ffmpeg exit ${code}`)))
+      proc.on('error', reject)
+    })
+
+    return await readFile(outPath)
+  } catch (err) {
+    logger.warn({ err: (err as Error).message }, 'Lambda: thumbnail capture failed — continuing without')
+    return null
+  } finally {
+    await unlink(inPath).catch(() => null)
+    await unlink(outPath).catch(() => null)
+  }
+}
+
+// ── Image inlining helper ────────────────────────────────────────────────
+/** Common helper to inline scene images as base64 data URLs. Lambda's serve
+ *  URL bundle can't cross-origin-fetch arbitrary URLs at render time without
+ *  CORS hassle — embedding the bytes is the simplest way to guarantee the
+ *  images render. */
 async function inlineSceneImages<S extends { image_url?: string }>(scenes: S[]): Promise<S[]> {
   return Promise.all(
     scenes.map(async (scene) => {
@@ -139,16 +257,15 @@ async function inlineSceneImages<S extends { image_url?: string }>(scenes: S[]):
   )
 }
 
+// ── Motion (legacy DynamicComposition pipeline) ──────────────────────────
 /**
- * Renders a Motion video (legacy DynamicComposition pipeline) via AWS Lambda.
- * Uses the same composition IDs as the local renderer (DynamicMotion-*) so
- * Lambda + local produce visually identical output.
- *
- * Returns the S3 output URL (Lambda writes directly to S3).
+ * Renders a Motion video via AWS Lambda, downloads the MP4 + captures a
+ * thumbnail, returns both as Buffers. Same signature as renderMotionVideo
+ * (the local Chromium renderer) so callers can use a single code path.
  */
 export async function renderMotionVideoLambda(
   options: RenderMotionVideoOptions,
-): Promise<string> {
+): Promise<RenderMotionVideoResult> {
   const { renderMediaOnLambda } = await import('@remotion/lambda/client')
 
   const { scenes, brandConfig, format, voiceoverBuffer, musicBuffer } = options
@@ -158,16 +275,13 @@ export async function renderMotionVideoLambda(
 
   const functionName = process.env.REMOTION_LAMBDA_FUNCTION_NAME!
   const serveUrl     = process.env.REMOTION_LAMBDA_SERVE_URL!
-  const region       = (process.env.AWS_REGION ?? 'eu-west-3') as Parameters<typeof renderMediaOnLambda>[0]['region']
+  const region       = (process.env.AWS_REGION ?? 'eu-central-1') as Parameters<typeof renderMediaOnLambda>[0]['region']
+  const framesPerLambda = getFramesPerLambda()
 
   const durationInFrames = Math.max(
     FPS,
     scenes.reduce((sum, s) => sum + Math.max(1, Math.round(s.duree_estimee * FPS)), 0),
   )
-
-  if (durationInFrames / FPS < LAMBDA_MIN_DURATION_FOR_USE) {
-    throw new Error(`Video too short (${durationInFrames / FPS}s) for Lambda — caller should fall back to local`)
-  }
 
   let audioSrc: string | undefined
   if (voiceoverBuffer && voiceoverBuffer.length > 0) {
@@ -181,7 +295,11 @@ export async function renderMotionVideoLambda(
   const scenesWithLocalImages = await inlineSceneImages(scenes)
 
   logger.info(
-    { compositionId, functionName, region, sceneCount: scenes.length, durationInFrames },
+    {
+      compositionId, functionName, region, sceneCount: scenes.length,
+      durationInFrames, framesPerLambda,
+      estimatedLambdas: Math.ceil(durationInFrames / framesPerLambda),
+    },
     'Remotion Lambda (Motion): starting render'
   )
 
@@ -198,37 +316,42 @@ export async function renderMotionVideoLambda(
       musicSrc,
     },
     codec: 'h264',
-    // Concurrency: framesPerLambda = 999 means "single chunk per Lambda".
-    // For new AWS accounts the default Lambda concurrent execution limit is
-    // 10, so a video that needs N parallel chunks will queue. Once the
-    // account quota is raised (request via AWS Service Quotas), reduce this
-    // value to 50-100 to parallelize ~10-20× faster.
-    framesPerLambda: 999,
+    framesPerLambda,
     concurrencyPerLambda: 1,
     forceWidth: width,
     forceHeight: height,
     forceDurationInFrames: durationInFrames,
   })
 
-  const outputUrl = await pollLambdaRender({
+  const { outputUrl, costs } = await pollLambdaRender({
     renderId, bucketName, functionName, region: region as string,
     videoLabel: `motion:${compositionId}`,
   })
 
-  logger.info({ renderId, outputUrl }, 'Remotion Lambda (Motion): render complete')
-  return outputUrl
+  // Download from S3 and capture thumbnail in parallel — saves ~3 s wall-time
+  // on a typical Motion video where each step takes ~2-5 s.
+  const mp4 = await downloadRenderOutput(outputUrl)
+  const thumbnail = await captureThumbnailFromBuffer(mp4, 3)
+
+  logger.info(
+    {
+      renderId, mp4Bytes: mp4.length, hasThumbnail: !!thumbnail,
+      costs: summarizeCosts(costs),
+    },
+    'Remotion Lambda (Motion): render complete + downloaded'
+  )
+
+  return { mp4, thumbnail }
 }
 
+// ── F2 MotionDesign (MotionComposition pipeline) ─────────────────────────
 /**
- * Renders an F2 Motion Design video (MotionComposition pipeline) via AWS Lambda.
- * Uses MotionDesign-* compositions registered in Root.tsx — same component
- * tree as the local renderer for visual parity.
- *
- * Returns the S3 output URL.
+ * Renders an F2 Motion Design video via AWS Lambda. Same return shape as
+ * the local renderer (RenderMotionVideoResult) for code-path uniformity.
  */
 export async function renderMotionDesignVideoLambda(
   options: RenderMotionDesignOptions,
-): Promise<string> {
+): Promise<RenderMotionVideoResult> {
   const { renderMediaOnLambda } = await import('@remotion/lambda/client')
 
   const { scenes, format, voiceoverBuffer, musicUrl } = options
@@ -238,9 +361,9 @@ export async function renderMotionDesignVideoLambda(
 
   const functionName = process.env.REMOTION_LAMBDA_FUNCTION_NAME!
   const serveUrl     = process.env.REMOTION_LAMBDA_SERVE_URL!
-  const region       = (process.env.AWS_REGION ?? 'eu-west-3') as Parameters<typeof renderMediaOnLambda>[0]['region']
+  const region       = (process.env.AWS_REGION ?? 'eu-central-1') as Parameters<typeof renderMediaOnLambda>[0]['region']
+  const framesPerLambda = getFramesPerLambda()
 
-  // F2 scenes come pre-quantized in frames (`duration` field is the frame count).
   const durationInFrames = Math.max(
     FPS,
     scenes.reduce((sum, s) => sum + Math.max(1, s.duration), 0),
@@ -259,7 +382,11 @@ export async function renderMotionDesignVideoLambda(
   }
 
   logger.info(
-    { compositionId, functionName, region, sceneCount: scenes.length, durationInFrames },
+    {
+      compositionId, functionName, region, sceneCount: scenes.length,
+      durationInFrames, framesPerLambda,
+      estimatedLambdas: Math.ceil(durationInFrames / framesPerLambda),
+    },
     'Remotion Lambda (MotionDesign): starting render'
   )
 
@@ -270,18 +397,28 @@ export async function renderMotionDesignVideoLambda(
     composition: compositionId,
     inputProps: inputProps as unknown as Record<string, unknown>,
     codec: 'h264',
-    framesPerLambda: 999,
+    framesPerLambda,
     concurrencyPerLambda: 1,
     forceWidth: width,
     forceHeight: height,
     forceDurationInFrames: durationInFrames,
   })
 
-  const outputUrl = await pollLambdaRender({
+  const { outputUrl, costs } = await pollLambdaRender({
     renderId, bucketName, functionName, region: region as string,
     videoLabel: `motion-design:${compositionId}`,
   })
 
-  logger.info({ renderId, outputUrl }, 'Remotion Lambda (MotionDesign): render complete')
-  return outputUrl
+  const mp4 = await downloadRenderOutput(outputUrl)
+  const thumbnail = await captureThumbnailFromBuffer(mp4, 3)
+
+  logger.info(
+    {
+      renderId, mp4Bytes: mp4.length, hasThumbnail: !!thumbnail,
+      costs: summarizeCosts(costs),
+    },
+    'Remotion Lambda (MotionDesign): render complete + downloaded'
+  )
+
+  return { mp4, thumbnail }
 }
