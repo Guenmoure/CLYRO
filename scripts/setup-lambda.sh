@@ -30,7 +30,12 @@ cd "$REPO_ROOT"
 # ─── Defaults ────────────────────────────────────────────────────────────────
 REGION="${AWS_REGION:-eu-central-1}"
 SITE_NAME="clyro-motion"
-MEMORY="3009"
+# AWS basic-tier accounts cap Lambda memory at 3008 MB. Remotion's docs
+# recommend 3009 MB but it requires a Service Quotas increase request.
+# 3008 vs 3009 is < 0.05 % perf difference — pas la peine de demander
+# un quota AWS pour 1 MB. Override via --memory=3009 si ton compte est
+# dans le tier "elevated" (3009-10240 MB).
+MEMORY="3008"
 DISK="2048"
 TIMEOUT="240"
 REDEPLOY_SITE_ONLY=false

@@ -77,13 +77,15 @@ This creates the actual Lambda function in your AWS account. You only do this on
 ```bash
 cd apps/api
 npx remotion lambda functions deploy \
-  --memory=3009 \
+  --memory=3008 \
   --timeout=240 \
   --disk=2048 \
   --region=eu-central-1
 ```
 
-What this does: deploys a Lambda function with 3 GB of RAM, 240 s max execution time, 2 GB ephemeral disk. The function name is auto-generated and includes the Remotion version + memory + disk + timeout (e.g. `remotion-render-4-0-448-mem3009mb-disk2048mb-240sec`).
+What this does: deploys a Lambda function with ~3 GB of RAM, 240 s max execution time, 2 GB ephemeral disk. The function name is auto-generated and includes the Remotion version + memory + disk + timeout (e.g. `remotion-render-4-0-448-mem3008mb-disk2048mb-240sec`).
+
+> **Memory note:** AWS basic-tier accounts cap Lambda at **3008 MB**. The Remotion docs sometimes recommend 3009 MB but that requires a quota increase via AWS Service Quotas → Lambda → "Concurrent executions" / "Memory". The 1 MB difference is < 0.05 % performance impact — not worth the quota request unless you also need higher concurrency. If your account is already at the elevated tier, override with `--memory=3009`.
 
 **Save the function name** that gets printed — you'll need it for the env var `REMOTION_LAMBDA_FUNCTION_NAME`.
 
