@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/node'
-import { writeFile, unlink } from 'fs/promises'
+import { writeFile, unlink, rm } from 'fs/promises'
+import { createReadStream } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
@@ -541,11 +542,11 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
               const { adjustClipDurationFromUrl } = await import('../services/ffmpeg.js')
               const adjustedPath = await adjustClipDurationFromUrl(videoUrl, exactAudioDur)
               const adjustedStoragePath = `${userId}/${videoId}/clips/scene-${sceneId}-sync.mp4`
-              const { readFile: rf } = await import('fs/promises')
-              const adjustedBuf = await rf(adjustedPath)
+              const adjustedStream = createReadStream(adjustedPath)
               const { data: upload, error: upErr } = await supabaseAdmin.storage
                 .from('videos')
-                .upload(adjustedStoragePath, adjustedBuf, { contentType: 'video/mp4', upsert: true })
+                .upload(adjustedStoragePath, adjustedStream as any, { contentType: 'video/mp4', upsert: true, duplex: 'half' } as any)
+              await unlink(adjustedPath).catch(() => null)
               if (!upErr && upload) {
                 const { data } = supabaseAdmin.storage.from('videos').getPublicUrl(adjustedStoragePath)
                 videoUrl = data.publicUrl
@@ -570,11 +571,11 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
               const videoFormat: '16:9' | '9:16' | '1:1' = (params.format === '9:16' || params.format === '1:1') ? params.format : '16:9'
               const overlayPath = await applyOverlayToClipUrl(videoUrl, klingOverlay, videoFormat)
               const overlayStoragePath = `${userId}/${videoId}/clips/scene-${sceneId}-overlay.mp4`
-              const { readFile: rf2 } = await import('fs/promises')
-              const overlayBuf = await rf2(overlayPath)
+              const overlayStream = createReadStream(overlayPath)
               const { data: upload2, error: upErr2 } = await supabaseAdmin.storage
                 .from('videos')
-                .upload(overlayStoragePath, overlayBuf, { contentType: 'video/mp4', upsert: true })
+                .upload(overlayStoragePath, overlayStream as any, { contentType: 'video/mp4', upsert: true, duplex: 'half' } as any)
+              await unlink(overlayPath).catch(() => null)
               if (!upErr2 && upload2) {
                 const { data: pub } = supabaseAdmin.storage.from('videos').getPublicUrl(overlayStoragePath)
                 videoUrl = pub.publicUrl
@@ -639,7 +640,8 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
 
     // Si tous les clips vidéo animés ont réussi → assemble depuis clips Kling/wan
     // Sinon → fallback sur assemblage statique (loopImageToClip)
-    const mp4Buffer = sceneVideoUrls.length === sceneImages.length
+    // Returns { filePath, workDir } — file stays on disk, no Buffer in RAM.
+    const assembleResult = sceneVideoUrls.length === sceneImages.length
       ? await assembleVideoFromVideoClips({
           sceneVideoUrls,
           voiceoverBuffer: combinedAudioBuffer,
@@ -659,32 +661,51 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
           format: (params.format === '9:16' || params.format === '1:1') ? params.format : '16:9',
         })
 
+    const { filePath: mp4FilePath, workDir: assembleWorkDir } = assembleResult
+
+    // Free the audio buffer now — it's been written into the MP4 already.
+    // This alone saves ~30 MB before the upload step.
+    // @ts-expect-error — intentional null-out to free memory
+    combinedAudioBuffer = null
+
     // Cleanup musique tmp
     if (musicTmpPath) await unlink(musicTmpPath).catch(() => null)
 
-    // ÉTAPE 5 : Upload Supabase Storage (avec retry — un 503 transient sur
-    // un upload de 300 MB ne doit pas jeter toute la pipeline à la poubelle)
+    // ÉTAPE 5 : Upload Supabase Storage via stream (pas de Buffer en RAM)
+    // Le MP4 final reste sur disque et est streamé vers Supabase — pic mémoire
+    // réduit de ~200 MB à ~16 KB (taille du chunk de lecture).
     await updateStatus('assembly', 90)
     const storagePath = `${userId}/${videoId}/output.mp4`
+
+    const { statSync } = await import('fs')
+    const mp4FileSize = statSync(mp4FilePath).size
 
     const UPLOAD_MAX_RETRIES = 3
     let uploadError: { message: string } | null = null
     for (let attempt = 1; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
+      const fileStream = createReadStream(mp4FilePath)
       const result = await supabaseAdmin.storage
         .from('videos')
-        .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
+        .upload(storagePath, fileStream as any, {
+          contentType: 'video/mp4',
+          upsert: true,
+          duplex: 'half',
+        } as any)
       uploadError = result.error
       if (!uploadError) break
 
       logger.warn(
-        { attempt, videoId, error: uploadError.message, sizeMB: Math.round(mp4Buffer.length / 1024 / 1024) },
+        { attempt, videoId, error: uploadError.message, sizeMB: Math.round(mp4FileSize / 1024 / 1024) },
         'Supabase upload failed, retrying…',
       )
       if (attempt < UPLOAD_MAX_RETRIES) {
-        // Exponential backoff: 5s, 15s, 30s
         await new Promise((r) => setTimeout(r, [5_000, 15_000, 30_000][attempt - 1] ?? 30_000))
       }
     }
+
+    // Cleanup the assemble workDir now — upload is done (or failed)
+    await rm(assembleWorkDir, { recursive: true, force: true }).catch(() => null)
+
     if (uploadError) throw new Error(`Storage upload failed after ${UPLOAD_MAX_RETRIES} attempts: ${uploadError.message}`)
 
     // Signed URL 1 an — avec retry (Supabase Storage peut être lent)
@@ -712,11 +733,7 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
 
     logger.info({ videoId, outputUrl }, 'Faceless pipeline completed')
 
-    // Libère explicitement la heap V8 avant que BullMQ ne pick le job suivant.
-    // Le mp4Buffer final (~50-200 MB) + combinedAudioBuffer (~30 MB) restent
-    // sinon en mémoire jusqu'au prochain cycle GC naturel, ce qui déclenche
-    // un OOM sur le worker Render si un nouveau job démarre tout de suite.
-    // Nécessite --expose-gc dans NODE_OPTIONS (voir render.yaml).
+    // GC hint — much lighter now since the MP4 was never in RAM.
     if (typeof global.gc === 'function') {
       try {
         global.gc()

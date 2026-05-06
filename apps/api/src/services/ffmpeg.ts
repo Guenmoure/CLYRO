@@ -1056,7 +1056,7 @@ interface AssembleFromClipsOptions {
  * 4. Mixe l'audio (voix off + musique)
  * 5. (optionnel) Ajoute les sous-titres karaoke mot par mot
  */
-export async function assembleVideoFromVideoClips(options: AssembleFromClipsOptions): Promise<Buffer> {
+export async function assembleVideoFromVideoClips(options: AssembleFromClipsOptions): Promise<{ filePath: string; workDir: string }> {
   const { sceneVideoUrls, voiceoverBuffer, backgroundMusicPath, karaokeSubsContent, skipTransitions = false, style } = options
 
   const workDir = join(tmpdir(), `clyro-kling-${randomUUID()}`)
@@ -1319,12 +1319,17 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
       await runFFmpeg(['-i', concatPath, '-c', 'copy', finalPath])
     }
 
-    const finalBuffer = await readFile(finalPath)
-    logger.info({ clipCount: sceneVideoUrls.length, outputSize: finalBuffer.length }, 'FFmpeg: Kling clips assembled')
-    return finalBuffer
-  } finally {
+    const { statSync } = await import('fs')
+    const outputSize = statSync(finalPath).size
+    logger.info({ clipCount: sceneVideoUrls.length, outputSize }, 'FFmpeg: Kling clips assembled')
+    // Clean intermediate files but keep finalPath — caller will clean workDir after upload
+    await Promise.all(tempFiles.filter((f) => f !== finalPath).map((f) => unlink(f).catch(() => null)))
+    return { filePath: finalPath, workDir }
+  } catch (err) {
+    // On error, clean everything including workDir
     await Promise.all(tempFiles.map((f) => unlink(f).catch(() => null)))
     await rm(workDir, { recursive: true, force: true }).catch(() => null)
+    throw err
   }
 }
 
@@ -1359,7 +1364,7 @@ interface AssembleVideoOptions {
  * 4. (optionnel) Ajoute les sous-titres
  * Retourne le Buffer MP4 final
  */
-export async function assembleVideo(options: AssembleVideoOptions): Promise<Buffer> {
+export async function assembleVideo(options: AssembleVideoOptions): Promise<{ filePath: string; workDir: string }> {
   const { scenes, sceneImages, voiceoverBuffer, backgroundMusicPath, addSubtitlesFlag, format = '16:9' } = options
 
   const workDir = join(tmpdir(), `clyro-assemble-${randomUUID()}`)
@@ -1436,17 +1441,21 @@ export async function assembleVideo(options: AssembleVideoOptions): Promise<Buff
       currentPath = subtitledPath
     }
 
-    // Lire le fichier final
-    const finalBuffer = await readFile(currentPath)
+    const { statSync } = await import('fs')
+    const outputSize = statSync(currentPath).size
 
     logger.info(
-      { sceneCount: scenes.length, outputSize: finalBuffer.length },
+      { sceneCount: scenes.length, outputSize },
       'FFmpeg: video assembled'
     )
 
-    return finalBuffer
-  } finally {
+    // Clean intermediate files but keep currentPath — caller will clean workDir after upload
+    const intermediates = tempFiles.filter((f) => f !== currentPath)
+    await Promise.all(intermediates.map((f) => unlink(f).catch(() => null)))
+    return { filePath: currentPath, workDir }
+  } catch (err) {
     await rm(workDir, { recursive: true, force: true }).catch(() => null)
+    throw err
   }
 }
 

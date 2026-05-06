@@ -25,7 +25,8 @@ import { getMusicTrackUrl } from '../../lib/music'
 import { checkScriptWpm, condenseScript } from '../../services/claude'
 import { uploadFalUrlToStorage, generateSceneVideoAuto, generateSceneVideoWan } from '../../services/fal'
 import { assembleVideoFromVideoClips } from '../../services/ffmpeg'
-import { writeFile, unlink } from 'fs/promises'
+import { writeFile, unlink, rm } from 'fs/promises'
+import { createReadStream } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
@@ -588,18 +589,22 @@ async function runReassembleInBackground(args: ReassembleBackgroundArgs): Promis
     }
 
     // Réassembler la vidéo (FFmpeg concat — child process)
-    const mp4Buffer = await assembleVideoFromVideoClips({
+    const { filePath: mp4FilePath, workDir: assembleWorkDir } = await assembleVideoFromVideoClips({
       sceneVideoUrls,
       voiceoverBuffer,
       backgroundMusicPath: undefined,
       karaokeSubsContent,
     })
 
-    // Uploader la vidéo finale
+    // Uploader la vidéo finale via stream (pas de Buffer en RAM)
     const storagePath = metadata.storage_path ?? `${userId}/${videoId}/output.mp4`
+    const fileStream = createReadStream(mp4FilePath)
     const { error: uploadError } = await supabaseAdmin.storage
       .from('videos')
-      .upload(storagePath, mp4Buffer, { contentType: 'video/mp4', upsert: true })
+      .upload(storagePath, fileStream as any, { contentType: 'video/mp4', upsert: true, duplex: 'half' } as any)
+
+    // Cleanup assemble workDir
+    await rm(assembleWorkDir, { recursive: true, force: true }).catch(() => null)
 
     if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
 
