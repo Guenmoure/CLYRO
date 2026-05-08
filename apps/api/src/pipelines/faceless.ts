@@ -246,23 +246,32 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       audioDuration: audioDurations.get(scene.id),
     }))
 
-    const combinedAudioBuffer: Buffer | null =
+    // `let` (not `const`) — we null this out after the assembly step has
+    // consumed it, to free ~30 MB of RAM before the upload pass. Marking it
+    // const broke the runtime with "Assignment to constant variable" right
+    // after the final assembly (TS suppression directives can't bypass V8's
+    // runtime enforcement of const). Bug introduced in commit 6c3e412.
+    let combinedAudioBuffer: Buffer | null =
       audioResults.length > 0
         ? Buffer.concat(audioResults.map((r) => r.audioBuffer))
         : null
 
-    // Persist combined audio + timestamps to Supabase Storage (non-blocking)
+    // Persist combined audio + timestamps to Supabase Storage (non-blocking).
+    // Snapshot the buffer reference so the .then() closures don't see the
+    // post-assembly null-out (TypeScript narrowing can't track that across
+    // closure boundaries now that combinedAudioBuffer is `let`).
     if (combinedAudioBuffer && audioResults.length > 0) {
+      const audioBufSnapshot: Buffer = combinedAudioBuffer
       Promise.all([
         // Upload combined voiceover audio
         supabaseAdmin.storage
           .from('videos')
-          .upload(`${userId}/${videoId}/voiceover.mp3`, combinedAudioBuffer, { contentType: 'application/octet-stream', upsert: true })
+          .upload(`${userId}/${videoId}/voiceover.mp3`, audioBufSnapshot, { contentType: 'application/octet-stream', upsert: true })
           .then(({ error }) => {
             if (error) {
               logger.warn({ error, videoId }, 'Failed to persist combined voiceover to storage (non-blocking)')
             } else {
-              logger.info({ videoId, audioBytes: combinedAudioBuffer.length }, 'Combined voiceover persisted to storage')
+              logger.info({ videoId, audioBytes: audioBufSnapshot.length }, 'Combined voiceover persisted to storage')
             }
           }),
         // Build and upload word timestamps with cumulative audio offsets
@@ -665,7 +674,6 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
 
     // Free the audio buffer now — it's been written into the MP4 already.
     // This alone saves ~30 MB before the upload step.
-    // @ts-expect-error — intentional null-out to free memory
     combinedAudioBuffer = null
 
     // Cleanup musique tmp
