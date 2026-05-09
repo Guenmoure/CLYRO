@@ -83,6 +83,14 @@ function StudioNewPageInner() {
   const [avatarTab, setAvatarTab] = useState<string>('all')
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
 
+  // HyperFrames enrichment (Phase B) — wraps each HeyGen scene in a richer
+  // composition (lower-third, vignette, brand color). Off by default — opt-in
+  // via a checkbox before submit. The 'enriched' look is dramatically more
+  // produced than concat-only HeyGen output, so we surface it as a feature.
+  const [useHyperframes, setUseHyperframes] = useState(false)
+  const [hyperframesTemplate, setHyperframesTemplate] = useState<'avatar-lower-third' | 'avatar-intro-card'>('avatar-lower-third')
+  const [brandColor, setBrandColor] = useState('#3B8EF0')
+
   const AVATAR_TABS = [
     { key: 'all', label: t('all') },
     { key: 'professional', label: t('professional') },
@@ -196,6 +204,13 @@ function StudioNewPageInner() {
         avatarId: selectedLookId || avatarId || undefined,
         voiceId: selectedVoice?.id ?? undefined,
         format: '16_9',
+        // HyperFrames enrichment — only sent when the user explicitly
+        // opted in, so existing flows (no toggle) stay untouched.
+        ...(useHyperframes ? {
+          useHyperframes:      true,
+          hyperframesTemplate,
+          brandColor,
+        } : {}),
       })
 
       setStep(t('redirectingToEditor'))
@@ -496,6 +511,95 @@ function StudioNewPageInner() {
           libraryVoices={libraryVoices}
           loading={loadingVoices}
         />
+
+        {/* HyperFrames enrichment — wraps each HeyGen avatar scene in a richer
+            HTML composition (lower-third, branded ribbon, vignette). Defaults
+            off so existing flows stay unchanged. */}
+        <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-border accent-blue-500 cursor-pointer"
+              checked={useHyperframes}
+              onChange={(e) => setUseHyperframes(e.target.checked)}
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-display text-sm font-semibold text-foreground">
+                  HyperFrames
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                  Beta
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-[--text-muted] leading-relaxed">
+                Habille chaque sc&egrave;ne de ton avatar avec un design enrichi (lower-third anim&eacute;, caption, vignette cin&eacute;matique) au lieu d'un simple talking head.
+              </p>
+            </div>
+          </label>
+
+          {useHyperframes && (
+            <div className="space-y-3 pt-2 pl-7 border-l-2 border-blue-500/20">
+              {/* Template picker */}
+              <div>
+                <label className="block font-mono text-xs uppercase tracking-wider text-[--text-muted] mb-2">
+                  Template
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['avatar-lower-third', 'avatar-intro-card'] as const).map((tpl) => (
+                    <button
+                      key={tpl}
+                      type="button"
+                      onClick={() => setHyperframesTemplate(tpl)}
+                      className={cn(
+                        'rounded-xl border p-3 text-left transition-all',
+                        hyperframesTemplate === tpl
+                          ? 'border-blue-500 bg-blue-500/5'
+                          : 'border-border bg-background hover:border-border/80',
+                      )}
+                    >
+                      <div className="font-display text-sm font-semibold text-foreground">
+                        {tpl === 'avatar-lower-third' ? 'Lower-third' : 'Intro card'}
+                      </div>
+                      <div className="mt-1 text-[11px] text-[--text-muted] leading-snug">
+                        {tpl === 'avatar-lower-third'
+                          ? 'Avatar plein-cadre + barre brand-color + caption en bas.'
+                          : 'Avatar dans une carte centr&eacute;e + label en haut + citation en bas.'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Brand color picker */}
+              <div>
+                <label className="block font-mono text-xs uppercase tracking-wider text-[--text-muted] mb-2">
+                  Couleur de marque
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    className="h-10 w-14 rounded-lg border border-border bg-transparent cursor-pointer"
+                    title="Brand color"
+                  />
+                  <input
+                    type="text"
+                    value={brandColor}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setBrandColor(v)
+                    }}
+                    className="flex-1 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-blue-500/60"
+                    placeholder="#3B8EF0"
+                    maxLength={7}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* CTA */}
         <Button

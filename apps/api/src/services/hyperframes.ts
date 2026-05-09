@@ -35,7 +35,7 @@ import { logger } from '../lib/logger'
 // Loaded once at module init. Each template has placeholders interpolated by
 // `interpolateTemplate()` at compose time.
 const TEMPLATE_DIR = join(__dirname, '..', 'templates', 'hyperframes')
-type TemplateName = 'avatar-lower-third'  // expand as we add templates
+type TemplateName = 'avatar-lower-third' | 'avatar-intro-card'
 let templateCache: Partial<Record<TemplateName, string>> = {}
 
 async function loadTemplate(name: TemplateName): Promise<string> {

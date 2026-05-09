@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CLYRO Avatar Intro Card</title>
+  <!--
+    HyperFrames composition — wraps a HeyGen avatar in a "magazine cover"
+    style frame : avatar in a centered rounded card with a brand-color
+    gradient background, a top label with the project title, and a bottom
+    quote ribbon for the script. Cinematic feel, less broadcast-news.
+
+    Variables interpolated server-side :
+      __AVATAR_SRC__         data:URL or relative path to the HeyGen MP4
+      __DURATION__           total scene duration in seconds (float)
+      __WIDTH__              composition width in px
+      __HEIGHT__             composition height in px
+      __BRAND_COLOR__        hex like "#3B8EF0"
+      __BRAND_COLOR_DARK__   slightly darker hex for gradient
+      __LOWER_THIRD_TITLE__  shown big at top (e.g. project name)
+      __LOWER_THIRD_SUB__    shown below title (e.g. "Scene N")
+      __CAPTION_TEXT__       shown in bottom ribbon as a quote
+  -->
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Liberation Sans', system-ui, -apple-system, sans-serif; }
+
+    [data-composition-id] {
+      position: relative;
+      width: __WIDTH__px;
+      height: __HEIGHT__px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 30% 20%, __BRAND_COLOR__30 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, __BRAND_COLOR_DARK__40 0%, transparent 50%),
+        linear-gradient(135deg, #0a0a0a 0%, #1a1a1f 100%);
+    }
+
+    /* Animated mesh gradient overlay for premium feel */
+    .mesh-overlay {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 50% 50%, transparent 30%, rgba(0,0,0,0.5) 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Avatar card — centered, rounded, with brand-color glow */
+    .avatar-card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      width: 65%;
+      max-width: 900px;
+      aspect-ratio: 16 / 9;
+      border-radius: 32px;
+      overflow: hidden;
+      z-index: 2;
+      opacity: 0;
+      box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 0 80px __BRAND_COLOR__40;
+    }
+
+    .avatar-card video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Top label */
+    .top-label {
+      position: absolute;
+      top: 8%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      text-align: center;
+      z-index: 3;
+      opacity: 0;
+    }
+
+    .top-label-title {
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: white;
+      line-height: 1;
+      text-shadow: 0 4px 24px rgba(0,0,0,0.6);
+    }
+
+    .top-label-sub {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 8px 20px;
+      background: linear-gradient(135deg, __BRAND_COLOR__ 0%, __BRAND_COLOR_DARK__ 100%);
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      box-shadow: 0 6px 20px __BRAND_COLOR__50;
+    }
+
+    /* Bottom quote ribbon */
+    .quote-ribbon {
+      position: absolute;
+      bottom: 6%;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      max-width: 70%;
+      text-align: center;
+      padding: 18px 36px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      z-index: 3;
+      opacity: 0;
+    }
+
+    .quote-ribbon::before {
+      content: '"';
+      position: absolute;
+      top: -12px;
+      left: 24px;
+      font-size: 80px;
+      font-weight: 900;
+      color: __BRAND_COLOR__;
+      line-height: 1;
+      opacity: 0.6;
+    }
+
+    .quote-ribbon-text {
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 22px;
+      font-style: italic;
+      font-weight: 500;
+      line-height: 1.4;
+      letter-spacing: 0.01em;
+    }
+
+    /* Vertical (9:16) overrides */
+    @media (max-aspect-ratio: 1/1) {
+      .avatar-card { width: 88%; max-width: none; aspect-ratio: 4 / 5; }
+      .top-label-title { font-size: 80px; }
+      .top-label-sub { font-size: 22px; padding: 10px 24px; }
+      .quote-ribbon { max-width: 88%; padding: 20px 28px; }
+      .quote-ribbon-text { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="root"
+       data-composition-id="avatar-intro-card"
+       data-start="0"
+       data-width="__WIDTH__"
+       data-height="__HEIGHT__"
+       data-duration="__DURATION__">
+
+    <div class="mesh-overlay clip"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="0"></div>
+
+    <div class="avatar-card clip"
+         id="card"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="1">
+      <video src="__AVATAR_SRC__"
+             muted
+             playsinline></video>
+    </div>
+
+    <div class="top-label clip"
+         id="topLabel"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="2">
+      <div class="top-label-title">__LOWER_THIRD_TITLE__</div>
+      <div class="top-label-sub">__LOWER_THIRD_SUB__</div>
+    </div>
+
+    <div class="quote-ribbon clip"
+         id="quote"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="3">
+      <div class="quote-ribbon-text">__CAPTION_TEXT__</div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Card scales in with elastic bounce
+    tl.to('#card', {
+      opacity: 1,
+      scale: 1,
+      duration: 0.9,
+      ease: 'back.out(1.4)',
+    }, 0);
+
+    // Top label slides down + fades in
+    tl.to('#topLabel', {
+      opacity: 1,
+      y: 0,
+      duration: 0.7,
+      ease: 'power3.out',
+    }, 0.3);
+
+    // Quote ribbon slides up + fades in
+    tl.to('#quote', {
+      opacity: 1,
+      y: 0,
+      duration: 0.7,
+      ease: 'power3.out',
+    }, 0.5);
+
+    // Hold + smooth exit at the end of the scene (last 0.6s)
+    tl.to(['#topLabel', '#quote'], {
+      opacity: 0,
+      duration: 0.4,
+      ease: 'power2.in',
+    }, '__DURATION__' - 0.5);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines['avatar-intro-card'] = tl;
+  </script>
+</body>
+</html>

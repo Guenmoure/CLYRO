@@ -258,6 +258,18 @@ const analyzeSchema = z.object({
   avatarId:  z.string().optional(),
   voiceId:   z.string().optional(),
   format:    z.enum(['16_9', '9_16', 'both']).default('16_9'),
+  // ── HyperFrames enrichment (Phase B) ──────────────────────────────────
+  // When true, each scene's HeyGen MP4 gets wrapped in a HyperFrames
+  // composition (lower-third, brand color, vignette) before final concat.
+  // Defaults to false — opt-in per project. The worker also reads
+  // ENRICH_AVATAR_WITH_HYPERFRAMES env var as a master kill-switch :
+  // env=false disables HF for all projects regardless of project flag.
+  useHyperframes:        z.boolean().optional(),
+  /** Optional template name. Default 'avatar-lower-third'. */
+  hyperframesTemplate:   z.enum(['avatar-lower-third', 'avatar-intro-card']).optional(),
+  /** Brand primary color for HF lower-third. Falls back to
+   *  background_color, then to CLYRO blue (#3B8EF0). */
+  brandColor:            z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
 })
 
 studioRouter.post('/analyze', authMiddleware, async (req, res) => {
@@ -304,6 +316,13 @@ studioRouter.post('/analyze', authMiddleware, async (req, res) => {
     )
 
     // 3. Create project + scenes in Supabase
+    // HyperFrames per-project options stored in `metadata` JSON to avoid
+    // a schema migration. The render-final endpoint reads them back.
+    const projectMetadata: Record<string, unknown> = {}
+    if (parsed.useHyperframes !== undefined)      projectMetadata.use_hyperframes = parsed.useHyperframes
+    if (parsed.hyperframesTemplate)               projectMetadata.hyperframes_template = parsed.hyperframesTemplate
+    if (parsed.brandColor)                        projectMetadata.brand_color = parsed.brandColor
+
     const { data: project, error: pErr } = await supabaseAdmin
       .from('studio_projects')
       .insert({
@@ -318,6 +337,10 @@ studioRouter.post('/analyze', authMiddleware, async (req, res) => {
         voice_id:       parsed.voiceId ?? null,
         format:         parsed.format,
         status:         'editing',
+        // metadata column may not exist on all schemas; spread when non-empty
+        // so existing rows aren't impacted. Postgres ignores unknown keys via
+        // the supabase client when the column is jsonb.
+        ...(Object.keys(projectMetadata).length > 0 ? { metadata: projectMetadata } : {}),
       })
       .select()
       .single()
@@ -1031,40 +1054,71 @@ async function runStudioFinalRender(
   try {
     let sceneClips: StudioSceneClip[]
 
-    if (isHyperframesEnabled()) {
+    // ── Decide if this project gets HF enrichment ─────────────────────
+    // Per-project flag stored in studio_projects.metadata.use_hyperframes
+    // wins over the worker-wide ENRICH_AVATAR_WITH_HYPERFRAMES env var,
+    // so users can opt-in/out without touching infra. The env var stays
+    // as a master kill-switch (set 'false' to disable HF for ALL projects).
+    const [{ data: projectForFlag }, { data: fullScenesForFlag }] = await Promise.all([
+      supabaseAdmin
+        .from('studio_projects')
+        .select('title, background_color, format, metadata')
+        .eq('id', projectId)
+        .single()
+        .then((r) => r, () => ({ data: null })),
+      supabaseAdmin
+        .from('studio_scenes')
+        .select('id, duration_est, script_text')
+        .eq('project_id', projectId)
+        .then((r) => r, () => ({ data: null })),
+    ])
+
+    const projectMeta = (projectForFlag?.metadata ?? {}) as Record<string, unknown>
+    const projectFlag = typeof projectMeta.use_hyperframes === 'boolean'
+      ? projectMeta.use_hyperframes as boolean
+      : null
+    // If the env var is explicitly 'false', force-disable regardless of project flag.
+    // Otherwise: project flag wins; if absent, fall back to env-based default.
+    const envKillSwitch = process.env.ENRICH_AVATAR_WITH_HYPERFRAMES === 'false'
+    const useHyperframes = !envKillSwitch && (projectFlag ?? isHyperframesEnabled())
+
+    if (useHyperframes) {
       // ── HyperFrames enrichment path ─────────────────────────────────
       // For each HeyGen avatar clip, compose a richer scene with brand
       // lower-third + animated caption + cinematic vignette. Each HF
       // compose runs in its own tmp project dir; we batch with concurrency
       // 2 (each spawns 1 Chrome via --workers=1 + ffmpeg encode ≈ ~550 MB
       // peak, fits inside Render Standard's 2 GB minus heap cap).
-      logger.info({ projectId, sceneCount: scenes.length }, 'Studio: HyperFrames enrichment starting')
+      logger.info(
+        { projectId, sceneCount: scenes.length, source: projectFlag === null ? 'env' : 'project' },
+        'Studio: HyperFrames enrichment starting'
+      )
 
       const { join } = await import('path')
       const { tmpdir } = await import('os')
       const { randomUUID } = await import('crypto')
 
-      // Pull project + per-scene metadata for richer compositions.
-      const [{ data: project }, { data: fullScenes }] = await Promise.all([
-        supabaseAdmin
-          .from('studio_projects')
-          .select('title, background_color, format')
-          .eq('id', projectId)
-          .single()
-          .then((r) => r, () => ({ data: null })),
-        supabaseAdmin
-          .from('studio_scenes')
-          .select('id, duration_est, script_text')
-          .eq('project_id', projectId)
-          .then((r) => r, () => ({ data: null })),
-      ])
+      // Reuse the data we already fetched above for the flag check.
+      const project = projectForFlag
+      const fullScenes = fullScenesForFlag
 
-      // Brand color : project's background_color (HeyGen scene bg) is the
-      // closest proxy for now. Falls back to CLYRO blue if unset.
-      const brandColor = (typeof project?.background_color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(project.background_color))
-        ? project.background_color
-        : '#3B8EF0'
+      // Brand color priority : project metadata.brand_color > project
+      // background_color (HeyGen scene bg) > CLYRO blue default.
+      const projectBrandColor = typeof projectMeta.brand_color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(projectMeta.brand_color)
+        ? projectMeta.brand_color as string
+        : null
+      const brandColor = projectBrandColor
+        ?? ((typeof project?.background_color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(project.background_color))
+          ? project.background_color
+          : '#3B8EF0')
       const projectTitle = (typeof project?.title === 'string' && project.title.trim()) ? project.title : 'CLYRO'
+
+      // Template choice : per-project metadata > default 'avatar-lower-third'.
+      type HFTemplate = 'avatar-lower-third' | 'avatar-intro-card'
+      const projectTemplate = typeof projectMeta.hyperframes_template === 'string'
+        && (projectMeta.hyperframes_template === 'avatar-lower-third' || projectMeta.hyperframes_template === 'avatar-intro-card')
+        ? projectMeta.hyperframes_template as HFTemplate
+        : 'avatar-lower-third' as HFTemplate
       type SceneMeta = { id: string; duration_est: number | null; script_text: string | null }
       const sceneMetaById = new Map<string, SceneMeta>(
         ((fullScenes ?? []) as SceneMeta[]).map((s) => [s.id, s]),
@@ -1091,6 +1145,7 @@ async function runStudioFinalRender(
                 lowerThirdSub:     `Scene ${sceneIdx + 1}`,
                 captionText:       (meta?.script_text ?? '').slice(0, 80),
                 outputPath:        tempPath,
+                template:          projectTemplate,
                 workers:           1,
               })
               hfTempPaths.push(tempPath)
