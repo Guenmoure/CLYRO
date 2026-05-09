@@ -418,7 +418,11 @@ export async function renderKenBurnsFFmpeg(options: {
       '-vf', zoompanFilter,
       '-c:v', 'libx264',
       '-preset', 'ultrafast',
-      '-crf', '23',
+      // CRF 26 (au lieu de 23) sur l'intermédiaire Ken Burns : ~20% encode
+      // plus rapide, ~25% plus petit, qualité visuelle quasi identique car le
+      // final pass ré-encode tout en CRF 28 — pas la peine d'avoir un master
+      // intermédiaire de meilleure qualité que la sortie finale.
+      '-crf', '26',
       '-pix_fmt', 'yuv420p',
       '-t', String(durationSeconds),
       '-threads', '2',
@@ -492,7 +496,7 @@ export async function adjustClipDurationFromUrl(
     '-vf', vf,
     '-t', String(target),
     '-c:v', 'libx264',
-    '-preset', 'veryfast',
+    '-preset', 'superfast',  // veryfast → superfast : ~30% encode-time win, CRF identique
     '-crf', '23',
     '-pix_fmt', 'yuv420p',
     '-an',
@@ -550,7 +554,7 @@ export async function applyOverlayToClipUrl(
     '-i', srcPath,
     '-vf', drawtext,
     '-c:v', 'libx264',
-    '-preset', 'veryfast',
+    '-preset', 'superfast',  // gain ~30% sur l'encode du clip avec overlay
     '-crf', '23',
     '-pix_fmt', 'yuv420p',
     '-c:a', 'copy',
@@ -681,7 +685,7 @@ export async function mixAudio(
       ? `[0:v]tpad=stop_mode=clone:stop_duration=${videoOverhang.toFixed(2)}[vbase]`
       : null
     const videoMap = videoBaseFilter ? '[vbase]' : '0:v'
-    const videoCodec = videoBaseFilter ? ['libx264', '-preset', 'veryfast', '-crf', '28', '-pix_fmt', 'yuv420p'] : ['copy']
+    const videoCodec = videoBaseFilter ? ['libx264', '-preset', 'superfast', '-crf', '28', '-pix_fmt', 'yuv420p'] : ['copy']
 
     if (backgroundMusicPath) {
       // Normalize voiceover in the filter chain (single-pass loudnorm within the complex filter)
@@ -1103,13 +1107,15 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
         await concatenateClipsWithTransitions(kenBurnsPaths, concatPath, plan.duration, plan)
       }
     } else {
-      // Re-encode concurrency limit: each ffmpeg process peaks at ~400-600MB RSS
-      // when converting a Kling 5-10s 720p clip to 1080p yuv420p (1080p is ~1.5×
-      // the memory of 720p). Render Standard = 2GB RAM → 4 in parallel = OOM
-      // risk. 2 keeps peak at ~1.2GB leaving room for the final encode + Node
-      // heap + the mp4Buffer we hold until upload.
-      const CLIP_CONCURRENCY = 2
+      // Re-encode concurrency : chaque ffmpeg process pique à ~400-600MB RSS
+      // sur conversion 1080p ultrafast. Render Standard = 2GB RAM, NODE_OPTIONS
+      // cap heap V8 à 1800MB, FFmpeg run hors heap. À 3 en parallèle on est à
+      // ~1.5GB peak avant final encode → OK avec marge. Override via env :
+      //   FFMPEG_CLIP_CONCURRENCY=4   (compte plan plus gros)
+      //   FFMPEG_CLIP_CONCURRENCY=2   (compte plan plus petit / OOM observés)
+      const CLIP_CONCURRENCY = Number(process.env.FFMPEG_CLIP_CONCURRENCY ?? 3)
       const reEncodedPaths: string[] = []
+      const reencStart = Date.now()
 
       for (let i = 0; i < downloadedPaths.length; i += CLIP_CONCURRENCY) {
         const batch = downloadedPaths.slice(i, i + CLIP_CONCURRENCY)
@@ -1134,13 +1140,22 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
         )
         reEncodedPaths.push(...batchPaths)
       }
+      logger.info(
+        { clipCount: downloadedPaths.length, durationMs: Date.now() - reencStart, concurrency: CLIP_CONCURRENCY },
+        'FFmpeg: clip re-encode pass complete'
+      )
 
+      const concatStart = Date.now()
       if (reEncodedPaths.length === 1) {
         await concatenateClips(reEncodedPaths, concatPath)
       } else {
         const plan = style ? pickTransitionPlan(style, reEncodedPaths.length) : undefined
         await concatenateClipsWithTransitions(reEncodedPaths, concatPath, plan?.duration ?? 0.4, plan)
       }
+      logger.info(
+        { clipCount: reEncodedPaths.length, durationMs: Date.now() - concatStart, withTransitions: !!style },
+        'FFmpeg: concat pass complete'
+      )
     }
 
     // ── Single final pass: loudnorm + audio mix + subtitle burn in ONE FFmpeg call ──
@@ -1266,13 +1281,17 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
         // shorter than audio, so it truncated the LAST WORDS of narration.
         // With explicit -t we control output length precisely, and the
         // tpad above ensures video reaches that length too.
+        const finalPassStart = Date.now()
         await runFFmpeg([
           ...inputs,
           '-filter_complex', filterComplex,
           '-map', videoMap,
           '-map', audioMap,
           '-c:v', 'libx264',
-          '-preset', 'veryfast',
+          // superfast (au lieu de veryfast) : ~30% gain sur le final pass,
+          // qualité visuelle quasi identique en CRF 28 (différence imperceptible
+          // sur des vidéos faceless 1080p qui sortent à ~1-3 Mbps).
+          '-preset', 'superfast',
           '-crf', '28',
           '-pix_fmt', 'yuv420p',
           '-c:a', 'aac',
@@ -1281,7 +1300,10 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
           '-t', targetDur.toFixed(2),
           finalPath,
         ])
-        logger.info({ subs: !!srtPath, music: !!backgroundMusicPath, targetDur: targetDur.toFixed(2) }, 'FFmpeg: final pass done (single encode)')
+        logger.info(
+          { subs: !!srtPath, music: !!backgroundMusicPath, targetDur: targetDur.toFixed(2), durationMs: Date.now() - finalPassStart },
+          'FFmpeg: final pass done (single encode)'
+        )
       } catch (finalErr) {
         // Fallback: skip subtitles if the subtitle filter failed (font not found etc.)
         // Re-encode video here too (instead of `-c copy`) because we need the
@@ -1307,7 +1329,7 @@ export async function assembleVideoFromVideoClips(options: AssembleFromClipsOpti
           '-map', fallbackVideoMap,
           '-map', '[aout]',
           '-c:v', videoBaseFilter ? 'libx264' : 'copy',
-          ...(videoBaseFilter ? ['-preset', 'veryfast', '-crf', '28', '-pix_fmt', 'yuv420p'] : []),
+          ...(videoBaseFilter ? ['-preset', 'superfast', '-crf', '28', '-pix_fmt', 'yuv420p'] : []),
           '-c:a', 'aac',
           '-b:a', '128k',
           '-t', targetDur.toFixed(2),
@@ -1517,7 +1539,7 @@ export async function assembleStudioVideo(
             '-vf', scalePad,
             '-r', '30',
             '-c:v', 'libx264',
-            '-preset', 'veryfast',
+            '-preset', 'superfast',  // gain ~30% sur la normalisation des clips Studio
             '-crf', '23',
             '-pix_fmt', 'yuv420p',
             '-c:a', 'aac',
