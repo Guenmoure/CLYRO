@@ -1,7 +1,8 @@
 # ── Build stage ───────────────────────────────────────────────────────────────
-# Using Debian-based image because Remotion's headless Chrome binary is linked
-# against glibc and does not run on Alpine/musl.
-FROM node:20-bookworm-slim AS builder
+# Using Debian-based image because Remotion's + HyperFrames' headless Chrome
+# binaries are linked against glibc and do not run on Alpine/musl.
+# Node 22+ required by HyperFrames CLI (apps/api/services/hyperframes.ts).
+FROM node:22-bookworm-slim AS builder
 
 # FFmpeg + build tools + Chromium runtime shared libs required by Remotion's
 # chrome-headless-shell at both download time (postinstall) and render time.
@@ -56,9 +57,18 @@ RUN npm run build --workspace=apps/api
 RUN cd apps/api && npx --yes remotion@4.0.448 browser ensure \
       || echo "remotion browser ensure failed; will download on first render"
 
+# Pre-cache HyperFrames CLI + bundled Chrome so the first Avatar Studio render
+# doesn't pay a ~30 s download cost. Uses --yes for non-interactive install,
+# pinned to latest at build time. The npm cache survives across the layer so
+# subsequent `npx hyperframes` calls run instantly.
+# Non-fatal: feature is opt-in via ENRICH_AVATAR_WITH_HYPERFRAMES env var, so
+# a build-time download failure just delays the first render.
+RUN npx --yes hyperframes@latest doctor \
+      || echo "hyperframes doctor failed; will download on first render"
+
 # ── Production stage ───────────────────────────────────────────────────────────
 # Same Debian-slim base as builder to keep the Chrome binary runnable.
-FROM node:20-bookworm-slim AS production
+FROM node:22-bookworm-slim AS production
 
 # ffmpeg + Chromium runtime shared libs + wget (used by HEALTHCHECK below) +
 # python3 (runtime for yt-dlp, used by F5 Studio YouTube transcription).

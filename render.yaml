@@ -190,3 +190,13 @@ services:
         sync: false       # ex: https://xxxxx.s3.eu-central-1.amazonaws.com/sites/clyro-motion/index.html
       - key: REMOTION_FRAMES_PER_LAMBDA
         sync: false       # optionnel — d&eacute;faut 100 (param&egrave;tre la parall&eacute;lisation Lambda)
+
+      # — HyperFrames (Avatar Studio enrichi) —
+      # Active la composition HeyGen Avatar dans des sc&egrave;nes HTML/CSS riches
+      # (lower-third + caption + vignette) au lieu d'un simple concat des
+      # talking heads. Off par d&eacute;faut — feature flag opt-in scene-par-scene.
+      # Voir docs/HYPERFRAMES_AVATAR.md (&agrave; venir) pour le setup et les templates.
+      - key: ENRICH_AVATAR_WITH_HYPERFRAMES
+        sync: false       # 'true' pour activer, vide / 'false' pour d&eacute;sactiver
+      - key: HYPERFRAMES_CONCURRENCY
+        sync: false       # optionnel — d&eacute;faut 2 (compose 2 sc&egrave;nes en parall&egrave;le)

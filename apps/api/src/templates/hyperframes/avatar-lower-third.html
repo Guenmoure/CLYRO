@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CLYRO Avatar Lower-Third</title>
+  <!--
+    HyperFrames composition — wraps a HeyGen avatar video with a brand-colored
+    lower-third + caption. Variables interpolated server-side by composeAvatarSceneWithHyperframes() :
+      __AVATAR_SRC__         data:URL or file://… of the HeyGen avatar MP4
+      __DURATION__           total scene duration in seconds (float)
+      __WIDTH__              composition width in px (1920 for 16_9, 1080 for 9_16)
+      __HEIGHT__             composition height in px (1080 for 16_9, 1920 for 9_16)
+      __BRAND_COLOR__        hex like "#3B8EF0"
+      __BRAND_COLOR_DARK__   slightly darker hex for gradient
+      __LOWER_THIRD_TITLE__  string shown big in lower-third (e.g. avatar's name)
+      __LOWER_THIRD_SUB__    string shown small (e.g. their tagline / role)
+      __CAPTION_TEXT__       optional string shown as caption (e.g. scene title)
+  -->
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Liberation Sans', system-ui, -apple-system, sans-serif; }
+
+    /* Composition root — required attrs for HyperFrames */
+    [data-composition-id] {
+      position: relative;
+      width: __WIDTH__px;
+      height: __HEIGHT__px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Avatar video full-bleed */
+    .avatar-video {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    /* Subtle vignette for cinematic feel */
+    .vignette {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Lower-third container — sits at bottom-left for 16:9, bottom-center for 9:16 */
+    .lower-third {
+      position: absolute;
+      left: 5%;
+      bottom: 8%;
+      max-width: 60%;
+      z-index: 3;
+      opacity: 0;
+      transform: translateY(40px);
+    }
+
+    .lower-third-bar {
+      width: 6px;
+      height: 80px;
+      background: linear-gradient(180deg, __BRAND_COLOR__ 0%, __BRAND_COLOR_DARK__ 100%);
+      border-radius: 3px;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 18px;
+      box-shadow: 0 4px 16px __BRAND_COLOR__40;
+    }
+
+    .lower-third-text {
+      display: inline-block;
+      vertical-align: middle;
+      color: white;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    }
+
+    .lower-third-title {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .lower-third-sub {
+      font-size: 24px;
+      font-weight: 500;
+      opacity: 0.85;
+      margin-top: 6px;
+      letter-spacing: 0.01em;
+    }
+
+    /* Caption ribbon at top — shows scene title if provided */
+    .caption-ribbon {
+      position: absolute;
+      top: 6%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      padding: 14px 32px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      color: white;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      z-index: 3;
+      opacity: 0;
+    }
+
+    .caption-ribbon::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: __BRAND_COLOR__;
+      border-radius: 50%;
+      margin-right: 12px;
+      vertical-align: middle;
+      box-shadow: 0 0 12px __BRAND_COLOR__;
+    }
+
+    /* 9:16 / vertical layout overrides */
+    @media (max-aspect-ratio: 1/1) {
+      .lower-third { left: 5%; right: 5%; max-width: 90%; bottom: 12%; }
+      .lower-third-title { font-size: 72px; }
+      .lower-third-sub { font-size: 32px; }
+      .caption-ribbon { font-size: 28px; padding: 16px 36px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="root"
+       data-composition-id="avatar-lower-third"
+       data-start="0"
+       data-width="__WIDTH__"
+       data-height="__HEIGHT__"
+       data-duration="__DURATION__">
+
+    <!-- Avatar video as full-bleed background. HyperFrames recognizes
+         <video> elements with data-start as timed clips. -->
+    <video class="avatar-video clip"
+           src="__AVATAR_SRC__"
+           data-start="0"
+           data-duration="__DURATION__"
+           data-track-index="0"
+           muted
+           playsinline></video>
+
+    <div class="vignette clip"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="1"></div>
+
+    <div class="caption-ribbon clip"
+         id="caption"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="2">
+      __CAPTION_TEXT__
+    </div>
+
+    <div class="lower-third clip"
+         id="lt"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="3">
+      <span class="lower-third-bar"></span>
+      <div class="lower-third-text">
+        <div class="lower-third-title">__LOWER_THIRD_TITLE__</div>
+        <div class="lower-third-sub">__LOWER_THIRD_SUB__</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- GSAP for entrance animations — seek-driven by HyperFrames so timing is
+       frame-accurate (unlike Remotion which plays at wall-clock). -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script>
+    // CRITICAL: Timeline must be paused + registered on window.__timelines.
+    // HyperFrames' renderer seeks this timeline frame-by-frame during capture.
+    const tl = gsap.timeline({ paused: true });
+
+    // Caption ribbon : slide down from top at t=0, fade out at t=duration-0.6
+    tl.to('#caption', {
+      opacity: 1,
+      y: 0,
+      duration: 0.6,
+      ease: 'power3.out',
+    }, 0.2);
+    tl.to('#caption', {
+      opacity: 0,
+      y: -20,
+      duration: 0.4,
+      ease: 'power2.in',
+    }, '__DURATION__' - 0.6);
+
+    // Lower-third : slide up from bottom at t=0.4, hold, fade out at end
+    tl.to('#lt', {
+      opacity: 1,
+      y: 0,
+      duration: 0.7,
+      ease: 'power3.out',
+    }, 0.4);
+    tl.to('#lt', {
+      opacity: 0,
+      y: 20,
+      duration: 0.4,
+      ease: 'power2.in',
+    }, '__DURATION__' - 0.5);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines['avatar-lower-third'] = tl;
+  </script>
+</body>
+</html>

@@ -82,6 +82,7 @@ import {
 import { generateVoiceoverWithTimestamps } from '../../services/elevenlabs'
 import { transcribeYouTube, isValidYouTubeUrl } from '../../services/transcribe'
 import { assembleStudioVideo, type StudioSceneClip } from '../../services/ffmpeg'
+import { composeAvatarSceneWithHyperframes, isHyperframesEnabled } from '../../services/hyperframes'
 import { renderMotionVideo } from '../../services/remotion'
 
 // Scene types rendered by Remotion (not HeyGen)
@@ -1024,11 +1025,106 @@ async function runStudioFinalRender(
   format: '16_9' | '9_16',
 ): Promise<void> {
   const startedAt = Date.now()
+  // Files written by the optional HyperFrames enrichment step. Cleaned in
+  // the finally block regardless of success.
+  const hfTempPaths: string[] = []
   try {
-    const sceneClips: StudioSceneClip[] = scenes.map((s) => ({
-      sceneId: s.id,
-      videoUrl: s.video_url,
-    }))
+    let sceneClips: StudioSceneClip[]
+
+    if (isHyperframesEnabled()) {
+      // ── HyperFrames enrichment path ─────────────────────────────────
+      // For each HeyGen avatar clip, compose a richer scene with brand
+      // lower-third + animated caption + cinematic vignette. Each HF
+      // compose runs in its own tmp project dir; we batch with concurrency
+      // 2 (each spawns 1 Chrome via --workers=1 + ffmpeg encode ≈ ~550 MB
+      // peak, fits inside Render Standard's 2 GB minus heap cap).
+      logger.info({ projectId, sceneCount: scenes.length }, 'Studio: HyperFrames enrichment starting')
+
+      const { join } = await import('path')
+      const { tmpdir } = await import('os')
+      const { randomUUID } = await import('crypto')
+
+      // Pull project + per-scene metadata for richer compositions.
+      const [{ data: project }, { data: fullScenes }] = await Promise.all([
+        supabaseAdmin
+          .from('studio_projects')
+          .select('title, background_color, format')
+          .eq('id', projectId)
+          .single()
+          .then((r) => r, () => ({ data: null })),
+        supabaseAdmin
+          .from('studio_scenes')
+          .select('id, duration_est, script_text')
+          .eq('project_id', projectId)
+          .then((r) => r, () => ({ data: null })),
+      ])
+
+      // Brand color : project's background_color (HeyGen scene bg) is the
+      // closest proxy for now. Falls back to CLYRO blue if unset.
+      const brandColor = (typeof project?.background_color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(project.background_color))
+        ? project.background_color
+        : '#3B8EF0'
+      const projectTitle = (typeof project?.title === 'string' && project.title.trim()) ? project.title : 'CLYRO'
+      type SceneMeta = { id: string; duration_est: number | null; script_text: string | null }
+      const sceneMetaById = new Map<string, SceneMeta>(
+        ((fullScenes ?? []) as SceneMeta[]).map((s) => [s.id, s]),
+      )
+
+      // Concurrency 2 — each HF compose spawns a Chrome + ffmpeg.
+      const HF_CONCURRENCY = Number(process.env.HYPERFRAMES_CONCURRENCY ?? 2)
+      const enriched: StudioSceneClip[] = []
+
+      for (let i = 0; i < scenes.length; i += HF_CONCURRENCY) {
+        const batch = scenes.slice(i, i + HF_CONCURRENCY)
+        const batchResults = await Promise.all(
+          batch.map(async (s, batchIdx) => {
+            const sceneIdx = i + batchIdx
+            const meta = sceneMetaById.get(s.id)
+            const tempPath = join(tmpdir(), `clyro-hf-${randomUUID()}.mp4`)
+            try {
+              await composeAvatarSceneWithHyperframes({
+                avatarVideoUrl:    s.video_url,
+                durationSeconds:   typeof meta?.duration_est === 'number' && meta.duration_est > 0 ? meta.duration_est : 8,
+                format,
+                brandColor,
+                lowerThirdTitle:   projectTitle,
+                lowerThirdSub:     `Scene ${sceneIdx + 1}`,
+                captionText:       (meta?.script_text ?? '').slice(0, 80),
+                outputPath:        tempPath,
+                workers:           1,
+              })
+              hfTempPaths.push(tempPath)
+              return { sceneId: s.id, videoUrl: `file://${tempPath}` }
+            } catch (err) {
+              logger.warn(
+                { err: (err as Error).message, sceneId: s.id, projectId },
+                'Studio HF: compose failed for scene — falling back to raw HeyGen MP4',
+              )
+              return { sceneId: s.id, videoUrl: s.video_url }
+            }
+          }),
+        )
+        enriched.push(...batchResults)
+      }
+
+      sceneClips = enriched
+      logger.info(
+        {
+          projectId,
+          sceneCount: scenes.length,
+          enrichedCount: hfTempPaths.length,
+          fallbackCount: scenes.length - hfTempPaths.length,
+          durationMs: Date.now() - startedAt,
+        },
+        'Studio: HyperFrames enrichment complete',
+      )
+    } else {
+      // ── Default path : raw HeyGen MP4s, just concat ─────────────────
+      sceneClips = scenes.map((s) => ({
+        sceneId: s.id,
+        videoUrl: s.video_url,
+      }))
+    }
 
     const buf = await assembleStudioVideo(sceneClips, format)
 
@@ -1073,6 +1169,14 @@ async function runStudioFinalRender(
       .update({ status: 'error' })
       .eq('id', projectId)
       .then(() => null, () => null)
+  } finally {
+    // Cleanup HyperFrames intermediate MP4s. Best-effort — leftover files
+    // in /tmp eventually get reaped by the OS but this keeps disk usage
+    // bounded across long-running worker sessions.
+    if (hfTempPaths.length > 0) {
+      const { unlink } = await import('fs/promises')
+      await Promise.all(hfTempPaths.map((p) => unlink(p).catch(() => null)))
+    }
   }
 }
 
