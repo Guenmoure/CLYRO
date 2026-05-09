@@ -8,10 +8,11 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'Styles', href: '#styles' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'Features',   href: '#features' },
+  { label: 'Use Cases',  href: '#use-cases' },
+  { label: 'Styles',     href: '#styles' },
+  { label: 'Pricing',    href: '/pricing' },
+  { label: 'FAQ',        href: '#faq' },
 ]
 
 export function MobileMenu() {
