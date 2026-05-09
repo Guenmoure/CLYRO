@@ -593,6 +593,8 @@ export interface MotionStudioDraftState {
   phase?:    Phase
   /** Version marker so future shape changes can be detected. */
   v?: 1
+  /** Marker for DraftCard — routes hub drafts to /motion/hub (not /motion/new). */
+  hub?: true
 }
 
 interface InitialDraft {
@@ -698,6 +700,12 @@ export function MotionStudio({
     initialDraftId: initialDraft?.id ?? null,
     state:          {
       v:        1,
+      // `hub: true` marker — DraftCard routes hub drafts to /motion/hub
+      // instead of /motion/new (the wizard), so the rich state (scenes,
+      // script, phase) is rehydrated properly. Without this marker the
+      // draft would land on the wizard which only knows brief/style/format
+      // and the user lands at step 0 = looks like the home page.
+      hub:      true,
       brief,
       script,
       voiceId,
