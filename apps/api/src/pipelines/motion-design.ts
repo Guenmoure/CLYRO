@@ -21,6 +21,10 @@ export interface MotionDesignPipelineParams {
   brief:     string
   format:    '16_9' | '9_16' | '1_1'
   duration:  string
+  /** Visual register from the frontend's style picker. Threaded into Claude's
+   *  scene-type selection so corporate/dynamique/luxe/fun produce visibly
+   *  different videos instead of one generic mix. */
+  style?:    'corporate' | 'dynamique' | 'luxe' | 'fun'
   brandConfig: {
     primary_color:   string
     secondary_color?: string
@@ -33,7 +37,7 @@ export interface MotionDesignPipelineParams {
 }
 
 export async function runMotionDesignPipeline(params: MotionDesignPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, brief, format, duration, brandConfig, voiceId, musicUrl, creditCost } = params
+  const { videoId, userId, userEmail, title, brief, format, duration, style, brandConfig, voiceId, musicUrl, creditCost } = params
 
   const updateStatus = async (status: string, progress: number, extra?: object) => {
     await supabaseAdmin
@@ -49,10 +53,10 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
     const language = detectLanguage(brief)
     logger.info({ videoId, language: language.code }, 'Brief language detected')
     const { scenes, voiceoverScript, totalFrames } = await generateMotionDesignScenes(
-      brief, format, duration, brandConfig, language,
+      brief, format, duration, brandConfig, language, style,
     )
     await updateStatus('storyboard', 25, { scenes })
-    logger.info({ videoId, sceneCount: scenes.length, totalFrames }, 'MotionDesign scenes generated')
+    logger.info({ videoId, sceneCount: scenes.length, totalFrames, styleHint: style }, 'MotionDesign scenes generated')
 
     // ÉTAPE 2 — ElevenLabs voiceover (parallèle-possible mais court ici)
     await updateStatus('audio', 30)

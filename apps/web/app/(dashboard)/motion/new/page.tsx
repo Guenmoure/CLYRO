@@ -13,7 +13,7 @@ import { ResultModal } from '@/components/creation/ResultModal'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toast'
 import {
-  startMotionGeneration,
+  startMotionDesignGeneration,
   getPublicVoices,
   subscribeToVideoStatus,
 } from '@/lib/api'
@@ -495,17 +495,26 @@ function MotionNewPageInner() {
     setCompletedSteps([])
 
     try {
-      const result = await startMotionGeneration({
+      // F2 Motion Design pipeline (MotionComposition) — produit des sc&egrave;nes
+      // agency-quality : 3d_cards, hero_typo (word-by-word/scale_bounce),
+      // floating_icons, dark_light_switch, mockup_zoom, stats_counter,
+      // logo_reveal. Le `style` biaise la s&eacute;lection des sc&egrave;nes c&ocirc;t&eacute; Claude
+      // pour que corporate/dynamique/luxe/fun produisent des vid&eacute;os
+      // visuellement distinctes.
+      //
+      // Format mapping : F2 utilise '16_9' (underscore) au lieu de '16:9'
+      // (deux-points) pour matcher les compositionId Remotion.
+      const f2Format = format.replace(':', '_') as '16_9' | '9_16' | '1_1'
+      const result = await startMotionDesignGeneration({
         title: projectName,
         brief,
-        format,
+        format: f2Format,
         duration,
         style,
         brand_config: {
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           font_family: fontFamily,
-          style,
         },
         voice_id: selectedVoice?.id,
       })

@@ -32,7 +32,10 @@ export default function MotionIndexPage() {
           .from('videos')
           .select('id, title, status, output_url, thumbnail_url, created_at, duration_seconds')
           .eq('user_id', user?.id ?? '')
-          .eq('module', 'motion')
+          // Both legacy 'motion' (DynamicComposition) and current 'motion_design'
+          // (F2 MotionComposition agency-quality) videos belong to the same
+          // product surface — surface both in this list.
+          .in('module', ['motion', 'motion_design'])
           .neq('status', 'draft')
           .order('created_at', { ascending: false })
           .limit(60)

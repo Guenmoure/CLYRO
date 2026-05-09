@@ -183,13 +183,20 @@ export interface CreateMotionDesignPayload {
   brief:    string
   format:   '16_9' | '9_16' | '1_1'
   duration: string
+  /** Visual register from the wizard's style picker — biases Claude's scene
+   *  type selection (corporate→trust, dynamique→fast, luxe→cinematic, fun→playful). */
+  style?:   'corporate' | 'dynamique' | 'luxe' | 'fun'
   brand_config: {
     primary_color:   string
     secondary_color?: string
-    logo_url?:        string
+    /** Optional brand font (e.g. "Inter, sans-serif"). The MotionDesign
+     *  components fall back to system sans when omitted. */
+    font_family?:    string
+    logo_url?:       string
   }
-  voice_id?:  string
-  music_url?: string
+  voice_id?:      string
+  music_url?:     string
+  music_track_id?: string
 }
 
 export async function startMotionDesignGeneration(payload: CreateMotionDesignPayload) {

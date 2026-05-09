@@ -25,7 +25,9 @@ export default async function MotionHubPage({
       .from('videos')
       .select('id, title, status, output_url, created_at')
       .eq('user_id', userId)
-      .eq('module', 'motion')
+      // Both legacy 'motion' and F2 'motion_design' belong to the same product
+      // surface from the user's perspective — show both in the Motion hub.
+      .in('module', ['motion', 'motion_design'])
       .neq('status', 'draft')          // drafts are surfaced via /projects + /drafts, not the sidebar
       .order('created_at', { ascending: false })
       .limit(20),

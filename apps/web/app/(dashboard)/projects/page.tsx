@@ -116,7 +116,14 @@ export default function ProjectsPage() {
         .range(from, to)
 
       if (moduleFilter) {
-        query = query.eq('module', moduleFilter)
+        // 'motion' tab covers both legacy DynamicComposition videos AND the
+        // current F2 'motion_design' agency-quality output — show both under
+        // the same Motion Design product surface.
+        if (moduleFilter === 'motion') {
+          query = query.in('module', ['motion', 'motion_design'])
+        } else {
+          query = query.eq('module', moduleFilter)
+        }
       }
 
       if (statusMatch && statusMatch.length > 0) {

@@ -555,6 +555,9 @@ export async function generateMotionDesignScenes(
   duration: string,
   brandConfig: { primary_color: string; secondary_color?: string; logo_url?: string },
   language?: DetectedLanguage,
+  /** Visual register hint — biases Claude's scene-type picks toward the right
+   *  feel. Optional; when missing Claude picks a balanced mix. */
+  styleHint?: 'corporate' | 'dynamique' | 'luxe' | 'fun',
 ): Promise<MotionDesignResult> {
   const FPS = 30
 
@@ -572,6 +575,16 @@ You reply ONLY with valid JSON, no markdown, no comments.`
   const color = brandConfig.primary_color
   const logoUrl = brandConfig.logo_url ?? null
 
+  // Style register — biases scene-type selection. Only injected when the
+  // caller passed a hint; the prompt without it produces a balanced mix.
+  const styleRegister: Record<string, string> = {
+    corporate: 'Visual register: CORPORATE — confident, structured, high-trust. Prefer hero_typo (line_by_line / 3d_rotate), stats_counter, mockup_zoom, logo_reveal (assemble). Mode mostly "light" with strong typography. Avoid playful elements.',
+    dynamique: 'Visual register: DYNAMIQUE — high-energy, fast-paced, social. Prefer 3d_cards (scatter/orbit), floating_icons, dark_light_switch (flash/wipe), hero_typo (word_by_word / scale_bounce). Mix dark + light modes. Snappy pacing.',
+    luxe:      'Visual register: LUXE — slow, refined, cinematic. Prefer hero_typo (3d_rotate / scale_bounce, BIG fontSize), dark_light_switch (circle_reveal), logo_reveal (particles_in), mockup_zoom. Mode mostly "dark" with subtle motion. Patience > flash.',
+    fun:       'Visual register: FUN — playful, colorful, expressive. Prefer 3d_cards (scatter), floating_icons (lots of emoji icons), hero_typo (split_reveal / scale_bounce), dark_light_switch (flash). Mix bright modes, varied colors, snappy pacing.',
+  }
+  const styleLine = styleHint ? `\n${styleRegister[styleHint]}\n` : ''
+
   const userPrompt = `${languageHeader(lang)}Create an F2 Motion Design sequence of ${sceneCount} scenes for this brief:
 
 """
@@ -581,7 +594,7 @@ ${brief}
 Video format: ${format}
 Target duration: ${duration}
 Brand color: ${color}
-${logoUrl ? `Logo available: ${logoUrl}` : ''}
+${logoUrl ? `Logo available: ${logoUrl}` : ''}${styleLine}
 
 Each scene is a JSON object with these fields:
 - "id": unique string ("scene_001", "scene_002", …)
