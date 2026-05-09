@@ -266,7 +266,13 @@ const analyzeSchema = z.object({
   // env=false disables HF for all projects regardless of project flag.
   useHyperframes:        z.boolean().optional(),
   /** Optional template name. Default 'avatar-lower-third'. */
-  hyperframesTemplate:   z.enum(['avatar-lower-third', 'avatar-intro-card']).optional(),
+  hyperframesTemplate:   z.enum([
+    'avatar-lower-third',
+    'avatar-intro-card',
+    'avatar-pip',
+    'avatar-tiktok',
+    'avatar-instagram',
+  ]).optional(),
   /** Brand primary color for HF lower-third. Falls back to
    *  background_color, then to CLYRO blue (#3B8EF0). */
   brandColor:            z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
@@ -1114,11 +1120,16 @@ async function runStudioFinalRender(
       const projectTitle = (typeof project?.title === 'string' && project.title.trim()) ? project.title : 'CLYRO'
 
       // Template choice : per-project metadata > default 'avatar-lower-third'.
-      type HFTemplate = 'avatar-lower-third' | 'avatar-intro-card'
-      const projectTemplate = typeof projectMeta.hyperframes_template === 'string'
-        && (projectMeta.hyperframes_template === 'avatar-lower-third' || projectMeta.hyperframes_template === 'avatar-intro-card')
-        ? projectMeta.hyperframes_template as HFTemplate
-        : 'avatar-lower-third' as HFTemplate
+      type HFTemplate = 'avatar-lower-third' | 'avatar-intro-card' | 'avatar-pip' | 'avatar-tiktok' | 'avatar-instagram'
+      const VALID_TEMPLATES: readonly HFTemplate[] = [
+        'avatar-lower-third', 'avatar-intro-card', 'avatar-pip', 'avatar-tiktok', 'avatar-instagram',
+      ]
+      const candidate = typeof projectMeta.hyperframes_template === 'string'
+        ? projectMeta.hyperframes_template
+        : ''
+      const projectTemplate: HFTemplate = (VALID_TEMPLATES as readonly string[]).includes(candidate)
+        ? candidate as HFTemplate
+        : 'avatar-lower-third'
       type SceneMeta = { id: string; duration_est: number | null; script_text: string | null }
       const sceneMetaById = new Map<string, SceneMeta>(
         ((fullScenes ?? []) as SceneMeta[]).map((s) => [s.id, s]),

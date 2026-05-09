@@ -512,7 +512,12 @@ export interface StudioAnalyzePayload {
    *  composition (lower-third, vignette, brand color) before final concat. */
   useHyperframes?: boolean
   /** Template name for HyperFrames enrichment. Default 'avatar-lower-third'. */
-  hyperframesTemplate?: 'avatar-lower-third' | 'avatar-intro-card'
+  hyperframesTemplate?:
+    | 'avatar-lower-third'
+    | 'avatar-intro-card'
+    | 'avatar-pip'
+    | 'avatar-tiktok'
+    | 'avatar-instagram'
   /** Brand primary color for the lower-third / intro-card. Falls back to
    *  HeyGen background color, then CLYRO blue. */
   brandColor?: string

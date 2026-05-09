@@ -1335,6 +1335,23 @@ export const translations = {
     sn_voiceChoose: 'Choose a voice…',
     sn_voiceDefault: 'Without selection, a default French voice will be used.',
 
+    // ── Studio HyperFrames enrichment (sn_hf_) ────────────────────────────
+    sn_hf_section_title: 'HyperFrames',
+    sn_hf_section_badge: 'Beta',
+    sn_hf_section_desc: 'Wrap each avatar scene in a richer design (animated lower-third, caption, cinematic vignette) instead of a plain talking head.',
+    sn_hf_template_label: 'Template',
+    sn_hf_brand_color_label: 'Brand color',
+    sn_hf_tpl_lower_third_name: 'Lower-third',
+    sn_hf_tpl_lower_third_desc: 'Full-bleed avatar + brand-color bar + caption ribbon on top.',
+    sn_hf_tpl_intro_card_name: 'Intro card',
+    sn_hf_tpl_intro_card_desc: 'Avatar in a centered card + project label + glassmorphism quote.',
+    sn_hf_tpl_pip_name: 'Picture-in-picture',
+    sn_hf_tpl_pip_desc: 'Avatar in a corner card + big text on the side. Explainer feel.',
+    sn_hf_tpl_tiktok_name: 'TikTok captions',
+    sn_hf_tpl_tiktok_desc: 'Avatar full-bleed + word-by-word karaoke captions. Vertical-friendly.',
+    sn_hf_tpl_instagram_name: 'Instagram post',
+    sn_hf_tpl_instagram_desc: 'Avatar in a fake Instagram UI — handle, verified check, like/comment bar.',
+
     // ── Studio TopBar (st_) ───────────────────────────────────────────────
     st_backToDashboard: 'Back to dashboard',
     st_projectTitle: 'Project title',
@@ -2945,6 +2962,23 @@ export const translations = {
     bl_brandLabel: 'Marque',
     bl_default: 'Défaut',
 
+    // ── Studio HyperFrames enrichment (sn_hf_) ────────────────────────────
+    sn_hf_section_title: 'HyperFrames',
+    sn_hf_section_badge: 'Bêta',
+    sn_hf_section_desc: 'Habille chaque scène de ton avatar avec un design enrichi (lower-third animé, caption, vignette cinématique) au lieu d\'un simple talking head.',
+    sn_hf_template_label: 'Template',
+    sn_hf_brand_color_label: 'Couleur de marque',
+    sn_hf_tpl_lower_third_name: 'Lower-third',
+    sn_hf_tpl_lower_third_desc: 'Avatar plein-cadre + barre brand-color + caption en haut.',
+    sn_hf_tpl_intro_card_name: 'Carte intro',
+    sn_hf_tpl_intro_card_desc: 'Avatar dans une carte centrée + label projet + citation glassmorphism.',
+    sn_hf_tpl_pip_name: 'Picture-in-picture',
+    sn_hf_tpl_pip_desc: 'Avatar dans un coin + grand texte sur le côté. Style explainer.',
+    sn_hf_tpl_tiktok_name: 'TikTok captions',
+    sn_hf_tpl_tiktok_desc: 'Avatar plein-écran + sous-titres karaoké mot-à-mot. Idéal vertical.',
+    sn_hf_tpl_instagram_name: 'Post Instagram',
+    sn_hf_tpl_instagram_desc: 'Avatar dans une fausse UI Instagram — handle, badge vérifié, barre like/commentaire.',
+
     // ── Studio new page — remaining hardcoded strings (sn_) ───────────────
     sn_voiceLabel: 'Voix off',
     sn_voiceOptional: 'optionnel',
@@ -4514,6 +4548,23 @@ export const translations = {
     bl_brandLabel: 'Marca',
     bl_default: 'Predeterminado',
 
+    // ── Studio HyperFrames enrichment (sn_hf_) ────────────────────────────
+    sn_hf_section_title: 'HyperFrames',
+    sn_hf_section_badge: 'Beta',
+    sn_hf_section_desc: 'Envuelve cada escena del avatar en un diseño más rico (lower-third animado, caption, viñeta cinematográfica) en vez de un simple talking head.',
+    sn_hf_template_label: 'Plantilla',
+    sn_hf_brand_color_label: 'Color de marca',
+    sn_hf_tpl_lower_third_name: 'Lower-third',
+    sn_hf_tpl_lower_third_desc: 'Avatar a pantalla completa + barra del color de marca + caption arriba.',
+    sn_hf_tpl_intro_card_name: 'Tarjeta intro',
+    sn_hf_tpl_intro_card_desc: 'Avatar en una tarjeta centrada + etiqueta del proyecto + cita glassmorphism.',
+    sn_hf_tpl_pip_name: 'Picture-in-picture',
+    sn_hf_tpl_pip_desc: 'Avatar en una esquina + texto grande al lado. Estilo explainer.',
+    sn_hf_tpl_tiktok_name: 'TikTok captions',
+    sn_hf_tpl_tiktok_desc: 'Avatar a pantalla completa + subtítulos karaoke palabra a palabra. Ideal vertical.',
+    sn_hf_tpl_instagram_name: 'Post Instagram',
+    sn_hf_tpl_instagram_desc: 'Avatar en una UI falsa de Instagram — handle, verificado, barra de like/comentario.',
+
     // ── Studio new page — remaining hardcoded strings (sn_) ───────────────
     sn_voiceLabel: 'Voz en off',
     sn_voiceOptional: 'opcional',
@@ -6034,6 +6085,23 @@ export const translations = {
     bl_untitledKit: 'Kit ohne Titel',
     bl_brandLabel: 'Marke',
     bl_default: 'Standard',
+
+    // ── Studio HyperFrames enrichment (sn_hf_) ────────────────────────────
+    sn_hf_section_title: 'HyperFrames',
+    sn_hf_section_badge: 'Beta',
+    sn_hf_section_desc: 'Hülle jede Avatar-Szene in ein reicheres Design (animierte Bauchbinde, Bildunterschrift, kinematische Vignette) statt einfacher Talking-Heads.',
+    sn_hf_template_label: 'Vorlage',
+    sn_hf_brand_color_label: 'Markenfarbe',
+    sn_hf_tpl_lower_third_name: 'Lower-third',
+    sn_hf_tpl_lower_third_desc: 'Avatar bildschirmfüllend + Markenfarben-Balken + Caption oben.',
+    sn_hf_tpl_intro_card_name: 'Intro-Karte',
+    sn_hf_tpl_intro_card_desc: 'Avatar in zentrierter Karte + Projekt-Label + Glassmorphism-Zitat.',
+    sn_hf_tpl_pip_name: 'Picture-in-picture',
+    sn_hf_tpl_pip_desc: 'Avatar in einer Ecke + großer Text daneben. Erklärvideo-Stil.',
+    sn_hf_tpl_tiktok_name: 'TikTok-Untertitel',
+    sn_hf_tpl_tiktok_desc: 'Avatar bildschirmfüllend + Wort-für-Wort-Karaoke. Ideal vertikal.',
+    sn_hf_tpl_instagram_name: 'Instagram-Post',
+    sn_hf_tpl_instagram_desc: 'Avatar in falscher Instagram-UI — Handle, Verifiziert-Badge, Like/Kommentar-Leiste.',
 
     // ── Studio new page — remaining hardcoded strings (sn_) ───────────────
     sn_voiceLabel: 'Sprachausgabe',
@@ -7603,6 +7671,23 @@ export const translations = {
     bl_untitledKit: 'Kit sem título',
     bl_brandLabel: 'Marca',
     bl_default: 'Predefinido',
+
+    // ── Studio HyperFrames enrichment (sn_hf_) ────────────────────────────
+    sn_hf_section_title: 'HyperFrames',
+    sn_hf_section_badge: 'Beta',
+    sn_hf_section_desc: 'Envolve cada cena do avatar num design mais rico (lower-third animado, caption, vinheta cinematográfica) em vez de apenas um talking head.',
+    sn_hf_template_label: 'Template',
+    sn_hf_brand_color_label: 'Cor da marca',
+    sn_hf_tpl_lower_third_name: 'Lower-third',
+    sn_hf_tpl_lower_third_desc: 'Avatar em ecrã inteiro + barra com a cor da marca + caption no topo.',
+    sn_hf_tpl_intro_card_name: 'Cartão de intro',
+    sn_hf_tpl_intro_card_desc: 'Avatar num cartão centrado + etiqueta do projeto + citação glassmorphism.',
+    sn_hf_tpl_pip_name: 'Picture-in-picture',
+    sn_hf_tpl_pip_desc: 'Avatar num canto + texto grande ao lado. Estilo explainer.',
+    sn_hf_tpl_tiktok_name: 'Legendas TikTok',
+    sn_hf_tpl_tiktok_desc: 'Avatar em ecrã inteiro + legendas karaoke palavra a palavra. Ideal vertical.',
+    sn_hf_tpl_instagram_name: 'Post Instagram',
+    sn_hf_tpl_instagram_desc: 'Avatar numa UI falsa do Instagram — handle, verificado, barra de like/comentário.',
 
     // ── Studio new page — remaining hardcoded strings (sn_) ───────────────
     sn_voiceLabel: 'Voz off',

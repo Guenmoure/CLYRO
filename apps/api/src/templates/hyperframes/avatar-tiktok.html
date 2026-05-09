@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CLYRO Avatar TikTok</title>
+  <!--
+    Full-bleed avatar with TikTok-style karaoke captions at the bottom.
+    Best for short vertical 9:16 content. Words appear sequentially with
+    a brand-color highlight on the active word, big bold typography.
+
+    Uses the script_text passed in __CAPTION_TEXT__ split by space — first
+    8 words appear at staggered timings to feel "live transcribed".
+
+    Variables :
+      __AVATAR_SRC__ __DURATION__ __WIDTH__ __HEIGHT__
+      __BRAND_COLOR__ __BRAND_COLOR_DARK__
+      __LOWER_THIRD_TITLE__ __LOWER_THIRD_SUB__ __CAPTION_TEXT__
+  -->
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000;
+      font-family: 'Liberation Sans', system-ui, sans-serif; }
+
+    [data-composition-id] {
+      position: relative;
+      width: __WIDTH__px;
+      height: __HEIGHT__px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Avatar full-bleed */
+    .avatar-video {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    /* Bottom gradient — keeps captions readable over busy avatar shots */
+    .bottom-shade {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 50%;
+      background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 80%);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Top brand pill — small floating pill with project name */
+    .top-pill {
+      position: absolute;
+      top: 5%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      padding: 10px 22px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      z-index: 4;
+      opacity: 0;
+    }
+
+    .top-pill::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: __BRAND_COLOR__;
+      border-radius: 50%;
+      margin-right: 10px;
+      vertical-align: middle;
+      box-shadow: 0 0 10px __BRAND_COLOR__;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Karaoke captions container */
+    .karaoke {
+      position: absolute;
+      bottom: 14%;
+      left: 5%;
+      right: 5%;
+      z-index: 3;
+      text-align: center;
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+      color: white;
+      text-shadow:
+        0 4px 12px rgba(0,0,0,0.8),
+        0 2px 0 rgba(0,0,0,0.6);
+    }
+
+    .karaoke-word {
+      display: inline-block;
+      margin: 0 8px;
+      padding: 4px 12px;
+      border-radius: 14px;
+      transform: translateY(20px) scale(0.9);
+      opacity: 0;
+      transition: background 0.18s ease, color 0.18s ease;
+    }
+
+    .karaoke-word.active {
+      background: __BRAND_COLOR__;
+      color: white;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      transform: translateY(0) scale(1.05);
+    }
+
+    /* Side branding bar */
+    .side-brand {
+      position: absolute;
+      left: 4%;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 25%;
+      background: linear-gradient(180deg, __BRAND_COLOR__ 0%, __BRAND_COLOR_DARK__ 100%);
+      border-radius: 2px;
+      z-index: 4;
+      box-shadow: 0 0 16px __BRAND_COLOR__;
+      opacity: 0;
+    }
+
+    /* Horizontal 16:9 — captions smaller, side bar hidden */
+    @media (min-aspect-ratio: 1/1) {
+      .karaoke { font-size: 52px; bottom: 10%; }
+      .side-brand { display: none; }
+      .top-pill { font-size: 22px; padding: 12px 26px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="root"
+       data-composition-id="avatar-tiktok"
+       data-start="0"
+       data-width="__WIDTH__"
+       data-height="__HEIGHT__"
+       data-duration="__DURATION__">
+
+    <video class="avatar-video clip"
+           src="__AVATAR_SRC__"
+           data-start="0"
+           data-duration="__DURATION__"
+           data-track-index="0"
+           muted playsinline></video>
+
+    <div class="bottom-shade clip"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="1"></div>
+
+    <div class="side-brand clip"
+         id="sideBrand"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="2"></div>
+
+    <div class="top-pill clip"
+         id="topPill"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="3">
+      LIVE · __LOWER_THIRD_TITLE__
+    </div>
+
+    <div class="karaoke clip"
+         id="karaoke"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="4"></div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script>
+    // Split caption into max 10 words for the karaoke effect — beyond that,
+    // the screen gets cluttered. Excess words are dropped (the spoken audio
+    // stays full).
+    const captionText = `__CAPTION_TEXT__`.trim();
+    const words = captionText ? captionText.split(/\s+/).slice(0, 10) : [];
+    const karaoke = document.getElementById('karaoke');
+    words.forEach((w) => {
+      const span = document.createElement('span');
+      span.className = 'karaoke-word';
+      span.textContent = w;
+      karaoke.appendChild(span);
+    });
+
+    const tl = gsap.timeline({ paused: true });
+
+    // Top pill slides down at start
+    tl.to('#topPill', {
+      opacity: 1,
+      y: 0,
+      duration: 0.5,
+      ease: 'power3.out',
+    }, 0.2);
+
+    // Side brand bar fades in
+    tl.to('#sideBrand', {
+      opacity: 1,
+      duration: 0.4,
+      ease: 'power2.out',
+    }, 0.4);
+
+    // Words appear sequentially over the full scene duration, with active
+    // class swapping word-by-word like a live transcription.
+    const wordEls = karaoke.querySelectorAll('.karaoke-word');
+    if (wordEls.length > 0) {
+      const sceneDur = parseFloat('__DURATION__');
+      const slot = Math.max(0.4, (sceneDur - 1.0) / Math.max(1, wordEls.length));
+      wordEls.forEach((el, i) => {
+        const t = 0.6 + i * slot;
+        // Word enters
+        tl.to(el, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.25,
+          ease: 'back.out(1.8)',
+        }, t);
+        // Highlight active
+        tl.add(() => el.classList.add('active'), t);
+        // Un-highlight after one slot (last word stays active until end)
+        if (i < wordEls.length - 1) {
+          tl.add(() => el.classList.remove('active'), t + slot);
+        }
+      });
+    }
+
+    // Exit fade
+    tl.to(['#topPill', '#sideBrand', '#karaoke'], {
+      opacity: 0,
+      duration: 0.4,
+      ease: 'power2.in',
+    }, '__DURATION__' - 0.4);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines['avatar-tiktok'] = tl;
+  </script>
+</body>
+</html>

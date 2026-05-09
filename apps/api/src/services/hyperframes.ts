@@ -35,7 +35,21 @@ import { logger } from '../lib/logger'
 // Loaded once at module init. Each template has placeholders interpolated by
 // `interpolateTemplate()` at compose time.
 const TEMPLATE_DIR = join(__dirname, '..', 'templates', 'hyperframes')
-type TemplateName = 'avatar-lower-third' | 'avatar-intro-card'
+export type TemplateName =
+  | 'avatar-lower-third'
+  | 'avatar-intro-card'
+  | 'avatar-pip'
+  | 'avatar-tiktok'
+  | 'avatar-instagram'
+
+/** All available templates — used by the frontend for the picker UI. */
+export const HYPERFRAMES_TEMPLATES: readonly TemplateName[] = [
+  'avatar-lower-third',
+  'avatar-intro-card',
+  'avatar-pip',
+  'avatar-tiktok',
+  'avatar-instagram',
+] as const
 let templateCache: Partial<Record<TemplateName, string>> = {}
 
 async function loadTemplate(name: TemplateName): Promise<string> {
@@ -194,6 +208,11 @@ export async function composeAvatarSceneWithHyperframes(
     // Load + interpolate the template.
     const { width, height } = FORMAT_DIMS[format]
     const html = await loadTemplate(template)
+    // First-letter initial for Instagram-style avatars. Falls back to 'C'
+    // if the title is empty or starts with whitespace/punctuation.
+    const firstChar = lowerThirdTitle.trim().charAt(0).toUpperCase()
+    const initial = /[A-ZÀ-ſ]/.test(firstChar) ? firstChar : 'C'
+
     const interpolated = html
       .replace(/__AVATAR_SRC__/g,         'assets/avatar.mp4')
       .replace(/__DURATION__/g,           durationSeconds.toFixed(2))
@@ -204,6 +223,7 @@ export async function composeAvatarSceneWithHyperframes(
       .replace(/__LOWER_THIRD_TITLE__/g,  escapeHtml(lowerThirdTitle))
       .replace(/__LOWER_THIRD_SUB__/g,    escapeHtml(lowerThirdSub))
       .replace(/__CAPTION_TEXT__/g,       escapeHtml(captionText))
+      .replace(/__INITIAL__/g,            escapeHtml(initial))
 
     const indexPath = join(projectDir, 'index.html')
     await writeFile(indexPath, interpolated, 'utf-8')

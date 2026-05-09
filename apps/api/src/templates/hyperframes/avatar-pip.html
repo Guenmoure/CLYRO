@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CLYRO Avatar PIP</title>
+  <!--
+    Picture-in-Picture template — avatar in a small corner card,
+    big background space for animated text. Best for "voice-over with
+    talking head" style content (explainer videos, news segments).
+
+    Variables (interpolated server-side) :
+      __AVATAR_SRC__ __DURATION__ __WIDTH__ __HEIGHT__
+      __BRAND_COLOR__ __BRAND_COLOR_DARK__
+      __LOWER_THIRD_TITLE__ __LOWER_THIRD_SUB__ __CAPTION_TEXT__
+  -->
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000;
+      font-family: 'Liberation Sans', system-ui, sans-serif; }
+
+    [data-composition-id] {
+      position: relative;
+      width: __WIDTH__px;
+      height: __HEIGHT__px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 20% 30%, __BRAND_COLOR__30 0%, transparent 55%),
+        radial-gradient(ellipse at 90% 90%, __BRAND_COLOR_DARK__40 0%, transparent 50%),
+        linear-gradient(160deg, #0a0a14 0%, #1a0f1a 100%);
+    }
+
+    /* Animated grid pattern background — adds depth */
+    .grid-bg {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(__BRAND_COLOR__08 1px, transparent 1px),
+        linear-gradient(90deg, __BRAND_COLOR__08 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+      z-index: 1;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* Avatar PIP card — top-right corner, rounded, brand-color glow */
+    .pip-card {
+      position: absolute;
+      top: 6%;
+      right: 5%;
+      width: 28%;
+      max-width: 480px;
+      aspect-ratio: 1 / 1;
+      border-radius: 24px;
+      overflow: hidden;
+      z-index: 4;
+      transform: translateX(80px) scale(0.9);
+      opacity: 0;
+      box-shadow:
+        0 24px 48px rgba(0, 0, 0, 0.6),
+        0 0 0 2px __BRAND_COLOR__,
+        0 0 60px __BRAND_COLOR__40;
+    }
+
+    .pip-card video {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+
+    /* Big text block on the left side */
+    .text-block {
+      position: absolute;
+      top: 50%;
+      left: 6%;
+      max-width: 55%;
+      transform: translateY(-50%) translateX(-40px);
+      z-index: 3;
+      opacity: 0;
+    }
+
+    .text-block-eyebrow {
+      display: inline-block;
+      padding: 6px 14px;
+      background: linear-gradient(135deg, __BRAND_COLOR__ 0%, __BRAND_COLOR_DARK__ 100%);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      margin-bottom: 18px;
+    }
+
+    .text-block-title {
+      font-size: 84px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: white;
+      line-height: 1.04;
+      text-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    .text-block-caption {
+      margin-top: 22px;
+      font-size: 22px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.5;
+      letter-spacing: 0.005em;
+      max-width: 90%;
+    }
+
+    /* Vertical 9:16 overrides — PIP card moves to bottom-right, text stack on top */
+    @media (max-aspect-ratio: 1/1) {
+      .pip-card { top: auto; bottom: 6%; right: 6%; width: 40%; max-width: none; }
+      .text-block {
+        top: 8%; left: 6%; right: 6%; max-width: 88%;
+        transform: translateY(0) translateX(-40px);
+      }
+      .text-block-title { font-size: 96px; }
+      .text-block-caption { font-size: 28px; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="root"
+       data-composition-id="avatar-pip"
+       data-start="0"
+       data-width="__WIDTH__"
+       data-height="__HEIGHT__"
+       data-duration="__DURATION__">
+
+    <div class="grid-bg clip"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="0"></div>
+
+    <div class="text-block clip"
+         id="textBlock"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="1">
+      <div class="text-block-eyebrow">__LOWER_THIRD_SUB__</div>
+      <div class="text-block-title">__LOWER_THIRD_TITLE__</div>
+      <div class="text-block-caption">__CAPTION_TEXT__</div>
+    </div>
+
+    <div class="pip-card clip"
+         id="pipCard"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="2">
+      <video src="__AVATAR_SRC__" muted playsinline></video>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // PIP card slides in from right with spring
+    tl.to('#pipCard', {
+      opacity: 1,
+      x: 0,
+      scale: 1,
+      duration: 0.9,
+      ease: 'back.out(1.5)',
+    }, 0);
+
+    // Text block slides in from left, slight delay
+    tl.to('#textBlock', {
+      opacity: 1,
+      x: 0,
+      duration: 0.8,
+      ease: 'power3.out',
+    }, 0.3);
+
+    // Exit fade in last 0.5s
+    tl.to(['#pipCard', '#textBlock'], {
+      opacity: 0,
+      duration: 0.4,
+      ease: 'power2.in',
+    }, '__DURATION__' - 0.5);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines['avatar-pip'] = tl;
+  </script>
+</body>
+</html>
