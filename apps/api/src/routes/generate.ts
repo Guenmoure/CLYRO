@@ -36,15 +36,19 @@ interface BriefQualityResult {
 
 function validateBriefQuality(brief: {
   name?: string; secteur?: string; cible?: string; valeurs?: string[]; ambiance?: string
+  usp?: string; concurrents?: string; references?: string
 }): BriefQualityResult {
   const issues: string[] = []
   const warnings: string[] = []
   let score = 100
 
-  const name    = (brief.name    ?? '').trim()
-  const secteur = (brief.secteur ?? '').trim()
-  const cible   = (brief.cible   ?? '').trim()
-  const valeurs = (brief.valeurs ?? []).map((v) => v.trim()).filter(Boolean)
+  const name        = (brief.name        ?? '').trim()
+  const secteur     = (brief.secteur     ?? '').trim()
+  const cible       = (brief.cible       ?? '').trim()
+  const valeurs     = (brief.valeurs     ?? []).map((v) => v.trim()).filter(Boolean)
+  const usp         = (brief.usp         ?? '').trim()
+  const concurrents = (brief.concurrents ?? '').trim()
+  const references  = (brief.references  ?? '').trim()
 
   // ── Champs obligatoires ──────────────────────────────────────────────────
   if (name.length < 2) {
@@ -79,8 +83,29 @@ function validateBriefQuality(brief: {
     score -= 10
   }
 
+  // ── Champs optionnels MAIS qui boostent fortement la qualité ─────────────
+  // USP est le plus gros levier qualité : sans elle, Claude tombe sur du
+  // "moyen-pour-le-secteur". On chasse les utilisateurs vers ce champ via
+  // un warning bien visible quand il manque, mais SANS bloquer.
+  if (usp.length === 0) {
+    warnings.push("Ajoute une USP claire (qu'est-ce qui rend la marque différente ?) — c'est le levier qualité #1")
+    score -= 8
+  } else if (usp.length < 20) {
+    warnings.push("Décris la USP plus précisément (≥20 caractères, idéalement 1 phrase")
+    score -= 4
+  }
+
+  if (concurrents.length === 0) {
+    // Pas un warning — juste -3 pts. La majorité des briefs n'auront pas
+    // de concurrents en tête.
+    score -= 3
+  }
+  if (references.length === 0) {
+    score -= 3
+  }
+
   // ── Richesse globale du brief ──────────────────────────────────────────────
-  const totalWords = [name, secteur, cible, ...valeurs].join(' ').split(/\s+/).filter(Boolean).length
+  const totalWords = [name, secteur, cible, usp, ...valeurs].join(' ').split(/\s+/).filter(Boolean).length
   if (totalWords < 6) {
     warnings.push('Le brief est très succinct — plus de détails = meilleure identité générée')
     score -= 10

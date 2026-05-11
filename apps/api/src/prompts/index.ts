@@ -255,48 +255,82 @@ export interface BrandBriefInput {
   cible: string
   valeurs: string[]
   ambiance: string
+  /** Unique selling proposition — the key differentiator. Optional but
+   *  the strongest single quality signal for prompts that touch
+   *  positioning, tagline, mood, and visual direction. */
+  usp?: string
   couleurs_imposees?: string
   concurrents?: string
   references?: string
 }
 
 export function buildBrandAnalystPrompts(brief: BrandBriefInput): { system: string; user: string } {
-  const system = `Tu es un Brand Analyst expert. Tu réponds UNIQUEMENT en JSON valide, sans markdown.`
-  const user = `Tu es un Brand Analyst expert. Analyse ce brief de marque et retourne une évaluation structurée.
+  const system = `Tu es un Brand Strategist senior (15 ans, ex-Wolff Olins / Pentagram).
+Tu auditeras des briefs marque comme un partenaire critique : tu pointes ce qui manque,
+ce qui se contredit, et ce qui rendra le résultat médiocre.
 
-BRIEF :
-- Nom : ${brief.name}
-- Secteur : ${brief.secteur}
-- Cible : ${brief.cible}
-- Valeurs : ${brief.valeurs.join(', ')}
-- Ambiance : ${brief.ambiance}
-${brief.couleurs_imposees ? `- Couleurs imposées : ${brief.couleurs_imposees}` : ''}
-${brief.concurrents ? `- Concurrents : ${brief.concurrents}` : ''}
-${brief.references ? `- Références : ${brief.references}` : ''}
+Réponds UNIQUEMENT en JSON valide. Aucun markdown, aucun commentaire avant ou après.`
 
-Analyse le brief et retourne :
+  // Determine which optional fields are present so the prompt can hold the
+  // model accountable for using them (e.g. "tu DOIS exploiter la USP").
+  const hasUsp          = !!brief.usp?.trim()
+  const hasConcurrents  = !!brief.concurrents?.trim()
+  const hasReferences   = !!brief.references?.trim()
+  const hasImposedColor = !!brief.couleurs_imposees?.trim()
 
-1. brief_quality : évalue si le brief est 'sufficient' ou 'insufficient'
-   - 'sufficient' si le brief contient assez de détails pour générer des directions cohérentes
-   - 'insufficient' si le brief est vague ou trop court (ex: juste quelques mots)
+  const user = `Audit ce brief de marque comme un strategist senior. Sois exigeant — un brief médiocre = un kit médiocre.
 
-2. Si brief_quality === 'insufficient', génère 2-3 clarification_questions précises et actionables
+═══════════════════════════ BRIEF ═══════════════════════════
+Marque         : ${brief.name}
+Secteur        : ${brief.secteur}
+Cible          : ${brief.cible}
+Valeurs        : ${brief.valeurs.join(', ')}
+Ambiance       : ${brief.ambiance}
+USP            : ${brief.usp?.trim() || '⚠️ NON RENSEIGNÉE'}
+Concurrents    : ${brief.concurrents?.trim() || '— non renseignés'}
+Références     : ${brief.references?.trim() || '— non renseignées'}
+Couleurs       : ${brief.couleurs_imposees?.trim() || '— libres'}
+═════════════════════════════════════════════════════════════
 
-3. Détecte les CONTRADICTIONS (ex: ambiance luxe + secteur discount, ou "minimalist mais coloré et fun")
-   - Si une contradiction existe, définis 2 chemins créatifs différents pour la résoudre
-   - Exemple : "luxury minimalist" peut se résoudre comme:
-     * Path A: Minimalisme LUXE (sobriété dorée, qualité over quantity)
-     * Path B: Minimalisme FUN (épuré mais avec couleurs vives et détails ludiques)
+ÉVALUATION EN 3 PASSES :
 
-4. Analyse aussi :
-   - Les informations MANQUANTES qui affaibliraient les directions créatives
-   - Les QUESTIONS DE CLARIFICATION (seulement si vraiment nécessaires)
+1. PROFONDEUR DU BRIEF (champ brief_quality)
+   • 'sufficient' = on peut générer 3 directions différenciées et défendables sans deviner.
+   • 'insufficient' = au moins UN des cas suivants :
+     - cible vague ("entrepreneurs", "tout le monde", "les gens")
+     - valeurs génériques ("qualité, professionnel, innovant" sans secteur précis)
+     - secteur trop large ("tech", "lifestyle" → demander un sous-segment)
+     - ${hasUsp ? 'USP imprécise ou identique au secteur' : 'USP absente → on tombera sur du "moyen-pour-le-secteur"'}
 
-Règles :
-- Si une contradiction majeure existe → has_contradiction: true + 2 chemins créatifs distincts
-- Si le brief est cohérent → has_contradiction: false
-- brief_score = 0-100 (100 = brief parfait)
-- is_ready = true seulement si brief_quality suffisant ET pas de contradiction majeure
+2. CONTRADICTIONS (champ has_contradiction)
+   Une vraie contradiction = deux signaux qui forceraient des chemins visuels opposés.
+   Exemples canoniques :
+   • "luxe" + "fun" → palette dorée sobre  vs  palette vibrant playful
+   • "tech" + "naturel" → dark mode mono  vs  earth-tone organic
+   • "haut de gamme" + "cible 18-25" → matières précieuses lentes  vs  drop culture rapide
+   ❌ NE PAS qualifier de contradiction : "moderne + classique" (résoluble en "néo-classique"),
+      "minimaliste + chaleureux" (résoluble en "warm minimalism").
+   Si vraie contradiction → fournir EXACTEMENT 2 paths distincts et défendables.
+
+3. AVERTISSEMENTS (champ suggestions)
+   Liste 2-4 conseils CONCRETS pour renforcer le brief, dans cet ordre de priorité :
+   ${hasUsp ? '' : 'a) "Ajoute une USP claire : qu\'est-ce qui rend %name% différent de tous les autres en %secteur% ?" '}
+   ${hasConcurrents ? '' : 'b) "Liste 2-3 concurrents à éviter visuellement — ça empêche Claude de produire un look déjà-vu." '}
+   ${hasReferences ? '' : 'c) "Cite 2-3 marques que tu admires (hors secteur de préférence) comme inspiration." '}
+   Plus de "valeurs vagues", de cibles imprécises, etc.
+
+SCORING (brief_score 0-100) — barème strict :
+  • +25 pts si name spécifique (pas "Brand", "Test", "Mon Projet"…)
+  • +20 pts si secteur ≥ 3 mots concrets (pas juste "tech" / "food")
+  • +15 pts si cible ≥ 8 mots avec qualifiers (âge / persona / contexte)
+  • +15 pts si valeurs ≥ 3, toutes spécifiques au secteur
+  • +10 pts si USP renseignée ET différenciante${hasUsp ? '' : ' (— 10 pts ici)'}
+  • +05 pts si concurrents renseignés${hasConcurrents ? '' : ' (— 5 pts ici)'}
+  • +05 pts si références renseignées${hasReferences ? '' : ' (— 5 pts ici)'}
+  • +05 pts si ambiance choisie cohérente avec secteur + cible
+  Score < 60 → 'insufficient'. Score 60-79 → 'sufficient' avec warnings. Score ≥ 80 → 'sufficient' clean.
+
+is_ready = (brief_score ≥ 60) && !has_contradiction.
 
 Réponds UNIQUEMENT avec ce JSON valide :
 {
@@ -304,28 +338,19 @@ Réponds UNIQUEMENT avec ce JSON valide :
   "clarification_questions": ["Question 1 ?", "Question 2 ?"],
   "is_ready": true/false,
   "brief_score": 85,
-  "contradictions": ["..."],
+  "score_breakdown": { "name": 25, "secteur": 20, "cible": 15, "valeurs": 15, "usp": 10, "concurrents": 5, "references": 5, "ambiance": 5 },
+  "contradictions": ["…"],
   "has_contradiction": false,
   "contradiction_paths": [],
   "questions": ["Question 1 ?", "Question 2 ?"],
-  "suggestions": ["Suggestion d'amélioration..."]
+  "suggestions": ["Conseil concret 1", "Conseil concret 2"]
 }
 
-Format de contradiction_paths (UNIQUEMENT si has_contradiction === true) :
-{
-  "contradiction_paths": [
-    {
-      "label": "Path A: Nom court de la direction",
-      "description": "Explication claire de cette interprétation (1-2 phrases)",
-      "resolution": "Directive créative précise pour cette résolution (2-3 mots clés, ex: 'luxury, refined, golden')"
-    },
-    {
-      "label": "Path B: Nom court de la direction",
-      "description": "Explication claire de cette interprétation (1-2 phrases)",
-      "resolution": "Directive créative précise pour cette résolution (2-3 mots clés, ex: 'vibrant, playful, bold')"
-    }
-  ]
-}`
+Format contradiction_paths (UNIQUEMENT si has_contradiction === true, EXACTEMENT 2 entrées) :
+[
+  { "label": "Path A: …", "description": "…(1-2 phrases)", "resolution": "3-5 mots-clés visuels" },
+  { "label": "Path B: …", "description": "…(1-2 phrases)", "resolution": "3-5 mots-clés visuels" }
+]`
   return { system, user }
 }
 
@@ -340,50 +365,117 @@ export const AMBIANCE_GUIDE: Record<string, string> = {
   corporate:  'professionnel, fiable, structuré, navy / blanc / gris, sobre et clair',
 }
 
-export const BRAND_STRATEGY_SYSTEM = `Tu es un directeur artistique senior et brand strategist avec 20 ans d'expérience.\nTu génères des identités visuelles de marque complètes, précises et différenciées.\nTu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
+export const BRAND_STRATEGY_SYSTEM = `Tu es un directeur artistique senior et brand strategist (Pentagram, Sagmeister & Walsh, ex-COLLINS).
+Tu génères des identités visuelles complètes, défendables devant un comité créatif, ZÉRO cliché de secteur.
+
+Réponds UNIQUEMENT en JSON valide. Aucun markdown, aucun commentaire avant ou après.`
+
+// Whitelist of solid, free, multi-weight Google Fonts that pair well together.
+// Used to anchor the model so it stops returning "Inter" / "Poppins" for every
+// brand. Mixing display + neutral families produces real typographic identity.
+const GOOGLE_FONTS_WHITELIST = {
+  display_serif:    ['Playfair Display', 'Cormorant Garamond', 'Fraunces', 'DM Serif Display', 'Spectral', 'Crimson Pro', 'Lora'],
+  display_sans:     ['Space Grotesk', 'Archivo', 'Big Shoulders Display', 'Bricolage Grotesque', 'Anybody', 'Unbounded', 'Familjen Grotesk'],
+  display_editorial:['Instrument Serif', 'Editorial New', 'Newsreader', 'Source Serif 4', 'EB Garamond'],
+  neutral_sans:     ['Inter', 'Geist', 'Manrope', 'Outfit', 'Plus Jakarta Sans', 'Sora', 'IBM Plex Sans'],
+  mono:             ['JetBrains Mono', 'IBM Plex Mono', 'Geist Mono', 'Space Mono', 'Fragment Mono'],
+}
 
 export function buildBrandStrategyUserPrompt(brief: BrandBriefInput): string {
   const ambianceGuide = AMBIANCE_GUIDE[brief.ambiance] ?? brief.ambiance
-  const couleursContext = brief.couleurs_imposees ? `\nCOULEURS IMPOSÉES : ${brief.couleurs_imposees} — chaque direction DOIT intégrer ces couleurs comme couleur primary ou accent.` : ''
-  const referencesContext = brief.references ? `\nRÉFÉRENCES VISUELLES : ${brief.references} — s'en inspirer sans copier.` : ''
-  const concurrentsContext = brief.concurrents ? `\nCONCURRENTS À ÉVITER : ${brief.concurrents} — ne pas ressembler à ces marques.` : ''
+  const couleursContext   = brief.couleurs_imposees?.trim() ? `\n• COULEURS IMPOSÉES : ${brief.couleurs_imposees} → CHAQUE direction DOIT intégrer ≥1 de ces HEX comme primary ou accent (jamais comme neutral / background).` : ''
+  const referencesContext = brief.references?.trim()        ? `\n• RÉFÉRENCES À ADMIRER : ${brief.references} → s'inspirer du parti pris, JAMAIS copier les couleurs/typo précises.` : ''
+  const concurrentsContext= brief.concurrents?.trim()       ? `\n• CONCURRENTS À ÉVITER : ${brief.concurrents} → AUCUNE direction ne doit visuellement ressembler à ces marques (palette, geste typo, mood).` : ''
+  const uspContext        = brief.usp?.trim()
+    ? `\n• USP — DIFFÉRENCIATEUR CLÉ : ${brief.usp} → c'est l'angle qui doit transparaître dans positioning, tagline, mood et keywords de CHAQUE direction.`
+    : `\n• USP : non renseignée → infère 1 hypothèse plausible à partir de secteur+valeurs+cible, puis aligne les 3 directions autour de cette hypothèse (sans l'inventer ex-nihilo).`
 
-  return `Génère une stratégie de marque complète pour :
+  return `Génère une stratégie de marque complète, ultra-différenciée et défendable.
 
-MARQUE : ${brief.name}
-SECTEUR : ${brief.secteur}
-CIBLE : ${brief.cible}
-VALEURS : ${brief.valeurs.join(', ')}
-AMBIANCE : ${brief.ambiance} — ${ambianceGuide}${couleursContext}${referencesContext}${concurrentsContext}
+═══════════════════════════ BRIEF ═══════════════════════════
+• MARQUE   : ${brief.name}
+• SECTEUR  : ${brief.secteur}
+• CIBLE    : ${brief.cible}
+• VALEURS  : ${brief.valeurs.join(', ')}
+• AMBIANCE : ${brief.ambiance} → ${ambianceGuide}${uspContext}${couleursContext}${referencesContext}${concurrentsContext}
+═════════════════════════════════════════════════════════════
 
-Génère exactement 3 directions créatives distinctes et contrastées, plus la voix de marque.
+Génère EXACTEMENT 3 directions créatives + la voix de marque.
 
-Chaque direction doit avoir :
-- "id": "direction_1", "direction_2", ou "direction_3"
-- "name": nom créatif de la direction (ex: "L'Élégance Minimaliste")
-- "tagline": slogan court percutant (max 8 mots)
-- "positioning": positionnement de marque (2-3 phrases)
-- "palette": { "primary": "#HEX", "secondary": "#HEX", "accent": "#HEX", "neutral": "#HEX", "background": "#HEX", "description": "..." }
-- "typography": { "heading": "nom de police Google Fonts", "body": "nom de police Google Fonts", "description": "..." }
-- "mood": description du mood board (3-4 phrases evocatrices)
-- "keywords": 5 mots-clés visuels en français
+═════ STRUCTURE PAR DIRECTION (objet JSON strict) ═════
+{
+  "id":          "direction_1" | "direction_2" | "direction_3",
+  "name":        "Nom créatif évocateur (3-5 mots, ex: 'L'Élégance Sismique')",
+  "tagline":     "Slogan max 8 mots, anglais OU français selon ce qui sonne mieux",
+  "positioning": "2-3 phrases qui répondent : pour QUI, contre QUOI, en faisant QUOI mieux. Cite l'USP.",
+  "palette": {
+    "primary":    "#HEX",   // couleur signature, lisible sur background
+    "secondary":  "#HEX",   // complément à 30-60° de teinte du primary
+    "accent":     "#HEX",   // pop color, contraste élevé, usage parcimonieux
+    "neutral":    "#HEX",   // gris/sand/charcoal pour texte courant
+    "background": "#HEX",   // fond principal (souvent très clair OU très foncé)
+    "description":"1 phrase décrivant l'intention de la palette"
+  },
+  "typography": {
+    "heading":   "Nom EXACT d'une Google Font (voir whitelist plus bas)",
+    "body":      "Nom EXACT d'une Google Font (≠ heading sauf cas justifié)",
+    "description":"Pourquoi cette pair fonctionne pour la marque"
+  },
+  "mood":       "3-4 phrases qui évoquent une scène, une matière, un son, une émotion. Pas de bullet-points, pas de jargon. Du cinéma écrit.",
+  "keywords":   ["5 mots-clés visuels en français, concrets et imagés (ex: 'marbre brossé', 'lumière rasante', 'typographie tendue')"]
+}
 
-La voix de marque :
-- "tone": description du ton éditorial
-- "examples": 3 exemples de phrases dans ce ton
-- "dos": 4 choses à faire dans la communication
-- "donts": 4 choses à éviter absolument
+═════ VOIX DE MARQUE (objet 'voice') ═════
+{
+  "tone":     "Description du ton éditorial en 2 phrases — registre, niveau de langue, personnalité",
+  "examples": ["3 phrases courtes ÉCRITES DANS CE TON (pas méta, des vrais exemples publishable)"],
+  "dos":      ["4 choses concrètes à FAIRE dans la com (verbes d'action)"],
+  "donts":    ["4 pièges précis à ÉVITER (formules, mots, postures interdites)"]
+}
 
-RÈGLES CRITIQUES :
-1. Les 3 directions doivent être TRÈS DIFFÉRENTES entre elles (palette, mood, typographie)
-2. Les couleurs HEX doivent être précises et esthétiquement cohérentes
-3. Utilise uniquement des polices disponibles sur Google Fonts
-4. Le positionnement doit être spécifique au secteur "${brief.secteur}"
+═══════════════════════════ RÈGLES NON-NÉGOCIABLES ═══════════════════════════
 
-Réponds UNIQUEMENT avec ce JSON valide :
+R1. DIFFÉRENCIATION DES 3 DIRECTIONS
+    Les 3 directions doivent être radicalement opposables sur ≥3 axes parmi :
+    palette (warm/cool/mono), typo (serif/sans/display), mood (luxe/raw/playful),
+    composition (dense/aérée), époque (classique/contemporain/futur).
+    ❌ Interdiction de proposer 2 variantes du même concept.
+
+R2. PALETTE — CONTRASTE & HARMONIE (auto-check OBLIGATOIRE avant de répondre)
+    a) Contraste WCAG AA : ratio (primary vs background) ≥ 4.5:1 pour le texte courant.
+       Si tu ne peux PAS garantir ≥ 4.5:1, force background = '#FFFFFF' ou '#0A0A0A'.
+    b) Harmonie : utilise une logique de roue chromatique
+       (monochromatique / analogue / complémentaire / triadique / split-complémentaire).
+       Précise dans palette.description quelle logique est utilisée.
+    c) Pas de couleur "ternie sans intention" — chaque HEX a un rôle.
+    d) Background ≠ neutral, sauf direction "minimalist mono" assumée.
+
+R3. TYPOGRAPHIE — GOOGLE FONTS UNIQUEMENT, depuis la whitelist ci-dessous
+    DISPLAY_SERIF    : ${GOOGLE_FONTS_WHITELIST.display_serif.join(', ')}
+    DISPLAY_SANS     : ${GOOGLE_FONTS_WHITELIST.display_sans.join(', ')}
+    DISPLAY_EDITORIAL: ${GOOGLE_FONTS_WHITELIST.display_editorial.join(', ')}
+    NEUTRAL_SANS     : ${GOOGLE_FONTS_WHITELIST.neutral_sans.join(', ')}
+    MONO             : ${GOOGLE_FONTS_WHITELIST.mono.join(', ')}
+    Règles de pairing :
+    • heading = display (serif/sans/editorial) ; body = neutral_sans ou mono.
+    • PAS 'Inter + Inter' (zéro identité).
+    • PAS 'Poppins' pour heading (overused).
+    • Le pair heading+body doit refléter le mood (ex: luxe → editorial+neutral, tech → sans+mono).
+
+R4. POSITIONING & TAGLINE
+    Le positioning doit nommer la cible précise (${brief.cible}) ET pointer le différenciateur.
+    La tagline n'est PAS une description ; c'est une promesse mémorable. Pas de buzzwords ('experience', 'solutions', 'unlock').
+
+R5. CHAQUE DIRECTION REFLÈTE L'AMBIANCE "${brief.ambiance}"
+    sans tomber dans le cliché. ${ambianceGuide}.
+    Mais chaque direction interprète cette ambiance différemment.
+
+═════════════════════════════════════════════════════════════════════════════
+
+Réponds UNIQUEMENT avec ce JSON valide (rien avant, rien après) :
 {
   "directions": [ {...direction_1...}, {...direction_2...}, {...direction_3...} ],
-  "voice": { "tone": "...", "examples": [...], "dos": [...], "donts": [...] }
+  "voice":      { "tone": "...", "examples": [...], "dos": [...], "donts": [...] }
 }`
 }
 
@@ -397,54 +489,108 @@ export interface BrandDirectionInput {
 }
 
 export function buildBrandChartePrompts(brief: BrandBriefInput, direction: BrandDirectionInput): { system: string; user: string } {
-  const system = `Tu es un directeur artistique expert en brand design. Tu génères des chartes graphiques professionnelles. Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires.`
-  const user = `Rédige une charte graphique complète et professionnelle pour la marque "${brief.name}".
+  const system = `Tu es un directeur artistique senior spécialisé en charte graphique d'entreprise (ex-Pentagram, ex-Base Design).
+Tu rédiges des chartes qu'un développeur ou un imprimeur peut appliquer sans poser de question.
+Chaque champ est DIRECTEMENT actionnable (pas de "à définir", pas de "selon le contexte").
 
-DIRECTION CRÉATIVE SÉLECTIONNÉE : "${direction.name}"
-POSITIONNEMENT : ${direction.positioning}
-SECTEUR : ${brief.secteur}
-CIBLE : ${brief.cible}
+Réponds UNIQUEMENT en JSON valide. Aucun markdown, aucun commentaire, AUCUNE clé en plus de celles demandées.`
 
-PALETTE DE COULEURS :
-- Primaire : ${direction.palette.primary}
-- Secondaire : ${direction.palette.secondary}
-- Accent : ${direction.palette.accent}
-- Neutre : ${direction.palette.neutral}
-- Fond : ${direction.palette.background}
+  const uspLine = brief.usp?.trim() ? `\n• USP        : ${brief.usp}` : ''
 
-TYPOGRAPHIE :
-- Titres : ${direction.typography.heading}
-- Corps : ${direction.typography.body}
+  const user = `Rédige une charte graphique COMPLÈTE et IMPLÉMENTABLE pour "${brief.name}".
 
-Génère une charte graphique détaillée avec :
+═══════════════════════════ CONTEXTE ═══════════════════════════
+• Marque     : ${brief.name}
+• Secteur    : ${brief.secteur}
+• Cible      : ${brief.cible}
+• Ambiance   : ${brief.ambiance}${uspLine}
 
-1. "logo_rules" : règles d'usage du logo
-   - "clear_space": distance minimale autour du logo
-   - "allowed_backgrounds": liste de 4 fonds autorisés
-   - "forbidden": liste de 4 interdits absolus
+• Direction  : "${direction.name}"
+• Pitch      : ${direction.positioning}
 
-2. "colors": tableau de toutes les couleurs de la palette avec pour chaque :
-   - "name": nom de la couleur (ex: "Bleu Nuit")
-   - "hex": code HEX
-   - "rgb": code RGB
-   - "usage": usage principal (1-2 phrases)
+• Palette    : primary ${direction.palette.primary} · secondary ${direction.palette.secondary} · accent ${direction.palette.accent} · neutral ${direction.palette.neutral} · background ${direction.palette.background}
+• Typo       : heading "${direction.typography.heading}" · body "${direction.typography.body}"
+═════════════════════════════════════════════════════════════════
 
-3. "typography": hiérarchie typographique complète
-   - "heading": { "font": "...", "weight": "Bold 700", "sizes": "48px / 36px / 28px", "usage": "..." }
-   - "body": { "font": "...", "weight": "Regular 400 / Medium 500", "sizes": "16px / 14px", "usage": "..." }
-   - "caption": { "font": "...", "weight": "Regular 400", "sizes": "12px / 11px", "usage": "..." }
+═══════════════════════════ RÈGLES ═══════════════════════════
+R1. AUCUN champ vide ni "to be defined". Si une règle n'a pas d'évidence, propose une valeur par défaut sensée.
+R2. Les unités sont CONCRÈTES : px, rem, % — jamais "petit/moyen/grand".
+R3. Les couleurs sortent en HEX MAJUSCULE (#1F2A44) et RGB "31, 42, 68".
+R4. Photography.style décrit ce qu'on voit ET comment c'est shooté (cadrage, lumière, post-prod).
+R5. Pas de générique : "professional, modern, clean" est INTERDIT seul — relie-le au secteur + ambiance.
+══════════════════════════════════════════════════════════════
 
-4. "layout": système de mise en page
-   - "grid": description de la grille
-   - "spacing": unité de base et progression
-   - "margins": marges de sécurité recommandées
+═══════════════════════════ OUTPUT JSON ═══════════════════════════
+Réponds UNIQUEMENT avec cet objet (toutes les clés sont OBLIGATOIRES) :
 
-5. "photography": direction artistique photo
-   - "style": style photographique (2-3 phrases)
-   - "mood": ambiance et émotions recherchées
-   - "forbidden": 3 types de photos à proscrire
+{
+  "logo_rules": {
+    "clear_space":          "Distance minimale autour du logo, exprimée en multiple de la hauteur du logo (ex: '½ × hauteur du logo, soit ~24 px à taille minimale').",
+    "min_size":             "Taille minimale d'affichage en px ET mm (ex: '24 px / 8 mm').",
+    "allowed_backgrounds":  ["4 fonds OK, du plus safe au plus créatif — ex: 'Blanc #FFFFFF', 'Fond couleur primaire #…', 'Photo avec ≥60 % de zone sombre uniforme', 'Texture sable très claire'"],
+    "forbidden":            ["4 interdits CONCRETS : '— Ne jamais déformer (stretch horizontal/vertical)', '— Pas de drop shadow ni effet 3D', '— Pas d'apposition sur photo chargée sans plaque de contraste', '— Pas de recoloration hors palette officielle'"]
+  },
 
-Réponds UNIQUEMENT avec ce JSON valide et complet.`
+  "colors": [
+    {
+      "name":  "Nom évocateur — pas juste 'Bleu' (ex: 'Bleu Nuit', 'Ocre Soleil', 'Vert Crépuscule')",
+      "hex":   "#XXXXXX",
+      "rgb":   "R, G, B",
+      "role":  "primary" | "secondary" | "accent" | "neutral" | "background",
+      "usage": "1-2 phrases — OÙ on l'utilise (boutons, titres, fond, badge…) ET combien (%, jamais plus de X %)."
+    }
+    // EXACTEMENT 5 entrées, dans l'ordre primary, secondary, accent, neutral, background
+  ],
+
+  "typography": {
+    "heading": {
+      "font":   "${direction.typography.heading}",
+      "weight": "ex: '700 Bold' ou '600 SemiBold / 800 ExtraBold'",
+      "sizes":  "Échelle complète : H1 / H2 / H3 / H4 — ex: '48 px / 36 px / 28 px / 22 px'",
+      "tracking": "ex: '-0.02 em (display tendu)' ou '0 em (neutre)'",
+      "leading":  "ex: '1.05 (display) ou 1.15 (titre courant)'",
+      "usage":  "1-2 phrases — quand utiliser cette police, quand l'éviter."
+    },
+    "body": {
+      "font":   "${direction.typography.body}",
+      "weight": "ex: '400 Regular ; 500 Medium pour emphase ; 600 SemiBold pour liens'",
+      "sizes":  "ex: 'Body L 18 px / Body M 16 px / Body S 14 px'",
+      "tracking": "ex: '0 em' (par défaut)",
+      "leading":  "ex: '1.5 (web) / 1.4 (mobile)'",
+      "usage":  "1-2 phrases — paragraphe courant, UI, navigation."
+    },
+    "caption": {
+      "font":   "Précise une 3e police mono OU la body en petit caps (cohérent avec mood)",
+      "weight": "ex: '500 Medium'",
+      "sizes":  "ex: '12 px / 11 px (mobile)'",
+      "tracking": "ex: '+0.08 em (open, UPPERCASE-friendly)'",
+      "leading":  "ex: '1.3'",
+      "usage":  "Légendes, badges, timestamps, labels formulaires."
+    },
+    "pairing_rationale": "1-2 phrases expliquant pourquoi heading+body fonctionnent ensemble (contraste, proportion, mood)."
+  },
+
+  "layout": {
+    "grid":    "Système concret : '12 colonnes / gouttières 24 px / largeur max 1280 px (desktop), 4 colonnes 16 px (mobile)'",
+    "spacing": "Unité de base ET échelle : 'base 8 px → 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96'",
+    "margins": "Marges de sécurité : 'desktop 80 px latéral, mobile 20 px, vertical ≥ 48 px entre sections'",
+    "radius":  "Rayons de coin : 'inputs 10 px, cards 16 px, modals 24 px, pills full'"
+  },
+
+  "photography": {
+    "style":     "3 phrases CONCRÈTES — décris (a) le sujet typique (ex: 'mains au travail, matières naturelles, lumière du nord'), (b) le cadrage (close-up, plan-américain, large), (c) la post-prod (grain léger, contraste doux, désaturation rouge -10).",
+    "mood":      "Émotions visées en 1 phrase + référence inspirante (ex: 'sérénité industrielle façon Wim Wenders').",
+    "lighting":  "Direction et qualité de lumière (ex: 'lumière naturelle latérale, ombres marquées mais douces — éviter le flash direct').",
+    "color_grading": "Recette de colorimétrie alignée sur la palette (ex: 'highlights ocre #${direction.palette.accent.slice(1)}, shadows bleutées vers ${direction.palette.primary}, mids désaturés -5').",
+    "forbidden": ["4 types de photos PROSCRITES : '— stock photo générique souriant entreprise', '— fond blanc cyclo studio', '— overlay de drapeau ou citation', '— flou bokeh excessif en arrière-plan'"]
+  },
+
+  "voice_recap": {
+    "tone":   "1 phrase qui reprend / affine le ton de la direction.",
+    "lexicon_use":   ["3-5 mots à PRIVILÉGIER, alignés sur l'USP et la cible"],
+    "lexicon_avoid": ["3-5 mots à BANNIR (jargon, buzzwords, formules creuses)"]
+  }
+}`
   return { system, user }
 }
 

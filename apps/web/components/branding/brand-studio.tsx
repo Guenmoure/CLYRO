@@ -648,6 +648,10 @@ function BriefForm({
   const [cible, setCible] = useState("");
   const [valeurs, setValeurs] = useState(["", "", ""]);
   const [ambiance, setAmbiance] = useState<BrandAmbiance | null>(null);
+  // USP = "unique selling proposition" — the strongest single quality lever
+  // for generated brand kits. Without it, Claude produces "average for the
+  // sector" identities; with it, the brand has a real centre of gravity.
+  const [usp, setUsp] = useState("");
   const [concurrents, setConcurrents] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [references, setReferences] = useState("");
@@ -673,6 +677,7 @@ function BriefForm({
       cible: cible.trim(),
       valeurs: valeurs.filter(Boolean),
       ambiance,
+      usp: usp.trim() || undefined,
       concurrents: concurrents.trim() || undefined,
       logo_url: logoUrl.trim() || undefined,
       references: references.trim() || undefined,
@@ -720,6 +725,29 @@ function BriefForm({
           placeholder="e.g.: Women 25-40 years, upper class, urban, wellness enthusiasts"
           className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
         />
+      </div>
+
+      {/* ── USP — highest-impact field for differentiated kits ──────────────
+          Marked "recommandé" rather than "required" so we never block the
+          flow, but the placeholder + helper text actively coach the user
+          into giving a meaningful answer. */}
+      <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-border flex items-center justify-between gap-2">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
+            USP — qu'est-ce qui rend cette marque différente ?
+            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 text-[9px] font-bold">RECOMMANDÉ</span>
+          </p>
+        </div>
+        <textarea
+          value={usp}
+          onChange={(e) => setUsp(e.target.value)}
+          rows={2}
+          placeholder="ex: Le seul atelier qui livre des bijoux sur-mesure en 72h, sans minimum de commande, dans un univers normalement réservé à la haute joaillerie."
+          className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3 resize-none"
+        />
+        <p className="px-4 pb-3 font-body text-[11px] text-[--text-muted] leading-relaxed">
+          C'est le levier qualité #1. Sans USP, les directions générées sonneront "moyennes pour le secteur".
+        </p>
       </div>
 
       <div className="rounded-2xl border border-border bg-muted overflow-hidden">

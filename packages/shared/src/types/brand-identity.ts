@@ -8,6 +8,14 @@ export interface BrandBrief {
   cible: string
   valeurs: string[]           // 3 brand value keywords
   ambiance: BrandAmbiance
+  /**
+   * Unique selling proposition — what makes this brand different from
+   * everyone else in the same sector. The single most important signal
+   * for differentiation. Without it, Claude produces "average for the
+   * sector" identities; with it, the brand has a real centre of gravity.
+   * Optional for backwards compat, but heavily incentivised in the UI.
+   */
+  usp?: string
   concurrents?: string        // brands to NOT look like
   logo_url?: string           // existing logo URL (optional)
   couleurs_imposees?: string  // imposed HEX colors (comma-separated)
