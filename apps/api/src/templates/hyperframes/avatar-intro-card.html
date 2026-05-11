@@ -30,8 +30,8 @@
       height: __HEIGHT__px;
       overflow: hidden;
       background:
-        radial-gradient(ellipse at 30% 20%, __BRAND_COLOR__30 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 80%, __BRAND_COLOR_DARK__40 0%, transparent 50%),
+        radial-gradient(ellipse at 30% 20%, __BRAND_RGBA_30__ 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, __BRAND_RGBA_40__ 0%, transparent 50%),
         linear-gradient(135deg, #0a0a0a 0%, #1a1a1f 100%);
     }
 
@@ -60,7 +60,7 @@
       box-shadow:
         0 24px 64px rgba(0, 0, 0, 0.5),
         0 0 0 1px rgba(255, 255, 255, 0.08),
-        0 0 80px __BRAND_COLOR__40;
+        0 0 80px __BRAND_RGBA_40__;
     }
 
     .avatar-card video {
@@ -101,7 +101,7 @@
       letter-spacing: 0.05em;
       text-transform: uppercase;
       border-radius: 999px;
-      box-shadow: 0 6px 20px __BRAND_COLOR__50;
+      box-shadow: 0 6px 20px __BRAND_RGBA_50__;
     }
 
     /* Bottom quote ribbon */
@@ -172,7 +172,14 @@
          data-start="0"
          data-duration="__DURATION__"
          data-track-index="1">
-      <video src="__AVATAR_SRC__"
+      <!-- HyperFrames seeks <video class="clip"> frame-by-frame during render.
+           Without these data-* attrs the clip plays at wall-clock and audio
+           desyncs from the final timeline. -->
+      <video class="clip"
+             src="__AVATAR_SRC__"
+             data-start="0"
+             data-duration="__DURATION__"
+             data-track-index="1"
              muted
              playsinline></video>
     </div>
@@ -229,7 +236,7 @@
       opacity: 0,
       duration: 0.4,
       ease: 'power2.in',
-    }, '__DURATION__' - 0.5);
+    }, parseFloat('__DURATION__') - 0.5);
 
     window.__timelines = window.__timelines || {};
     window.__timelines['avatar-intro-card'] = tl;

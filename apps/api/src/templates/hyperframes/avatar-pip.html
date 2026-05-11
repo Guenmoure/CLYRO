@@ -24,8 +24,8 @@
       height: __HEIGHT__px;
       overflow: hidden;
       background:
-        radial-gradient(ellipse at 20% 30%, __BRAND_COLOR__30 0%, transparent 55%),
-        radial-gradient(ellipse at 90% 90%, __BRAND_COLOR_DARK__40 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 30%, __BRAND_RGBA_30__ 0%, transparent 55%),
+        radial-gradient(ellipse at 90% 90%, __BRAND_RGBA_40__ 0%, transparent 50%),
         linear-gradient(160deg, #0a0a14 0%, #1a0f1a 100%);
     }
 
@@ -33,8 +33,8 @@
     .grid-bg {
       position: absolute; inset: 0;
       background-image:
-        linear-gradient(__BRAND_COLOR__08 1px, transparent 1px),
-        linear-gradient(90deg, __BRAND_COLOR__08 1px, transparent 1px);
+        linear-gradient(__BRAND_RGBA_08__ 1px, transparent 1px),
+        linear-gradient(90deg, __BRAND_RGBA_08__ 1px, transparent 1px);
       background-size: 60px 60px;
       mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
       -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
@@ -59,7 +59,7 @@
       box-shadow:
         0 24px 48px rgba(0, 0, 0, 0.6),
         0 0 0 2px __BRAND_COLOR__,
-        0 0 60px __BRAND_COLOR__40;
+        0 0 60px __BRAND_RGBA_40__;
     }
 
     .pip-card video {
@@ -151,7 +151,12 @@
          data-start="0"
          data-duration="__DURATION__"
          data-track-index="2">
-      <video src="__AVATAR_SRC__" muted playsinline></video>
+      <video class="clip"
+             src="__AVATAR_SRC__"
+             data-start="0"
+             data-duration="__DURATION__"
+             data-track-index="2"
+             muted playsinline></video>
     </div>
 
   </div>
@@ -182,7 +187,7 @@
       opacity: 0,
       duration: 0.4,
       ease: 'power2.in',
-    }, '__DURATION__' - 0.5);
+    }, parseFloat('__DURATION__') - 0.5);
 
     window.__timelines = window.__timelines || {};
     window.__timelines['avatar-pip'] = tl;

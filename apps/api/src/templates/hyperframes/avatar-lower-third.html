@@ -64,7 +64,7 @@
       display: inline-block;
       vertical-align: middle;
       margin-right: 18px;
-      box-shadow: 0 4px 16px __BRAND_COLOR__40;
+      box-shadow: 0 4px 16px __BRAND_RGBA_40__;
     }
 
     .lower-third-text {
@@ -196,7 +196,7 @@
       y: -20,
       duration: 0.4,
       ease: 'power2.in',
-    }, '__DURATION__' - 0.6);
+    }, parseFloat('__DURATION__') - 0.6);
 
     // Lower-third : slide up from bottom at t=0.4, hold, fade out at end
     tl.to('#lt', {
@@ -210,7 +210,7 @@
       y: 20,
       duration: 0.4,
       ease: 'power2.in',
-    }, '__DURATION__' - 0.5);
+    }, parseFloat('__DURATION__') - 0.5);
 
     window.__timelines = window.__timelines || {};
     window.__timelines['avatar-lower-third'] = tl;

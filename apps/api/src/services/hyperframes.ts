@@ -78,6 +78,24 @@ function darkenHex(hex: string, factor = 0.7): string {
   return `#${[r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')}`
 }
 
+/**
+ * Build a proper `rgba()` string from a #RRGGBB hex and a 0-100 alpha %.
+ * Used to interpolate `__BRAND_RGBA_<NN>__` placeholders in templates with a
+ * real alpha channel — the old `__BRAND_COLOR__40` trick produced 8-digit
+ * hex like `#RRGGBB40` which CSS interprets as ~25 % alpha (0x40 / 0xFF),
+ * not the intended 40 %.
+ */
+function hexToRgba(hex: string, alphaPercent: number): string {
+  const m = hex.match(/^#([0-9A-Fa-f]{6})$/)
+  if (!m) return hex
+  const v = parseInt(m[1], 16)
+  const r = (v >> 16) & 0xff
+  const g = (v >> 8)  & 0xff
+  const b =  v        & 0xff
+  const a = Math.max(0, Math.min(1, alphaPercent / 100))
+  return `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`
+}
+
 // ── Public API ─────────────────────────────────────────────────────────────
 
 export interface ComposeAvatarSceneParams {
@@ -213,17 +231,28 @@ export async function composeAvatarSceneWithHyperframes(
     const firstChar = lowerThirdTitle.trim().charAt(0).toUpperCase()
     const initial = /[A-ZÀ-ſ]/.test(firstChar) ? firstChar : 'C'
 
-    const interpolated = html
+    // Pre-compute the rgba alpha variants the templates reference. Adding new
+    // values here is OK — they just become extra no-op replacements if the
+    // template doesn't use them.
+    const rgbaAlphas = [8, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90] as const
+    let interpolated = html
       .replace(/__AVATAR_SRC__/g,         'assets/avatar.mp4')
       .replace(/__DURATION__/g,           durationSeconds.toFixed(2))
       .replace(/__WIDTH__/g,              String(width))
       .replace(/__HEIGHT__/g,             String(height))
-      .replace(/__BRAND_COLOR__/g,        brandColor)
       .replace(/__BRAND_COLOR_DARK__/g,   darkenHex(brandColor, 0.6))
+      // CRITICAL: replace __BRAND_COLOR__ *after* __BRAND_COLOR_DARK__ so the
+      // longer key wins. If we did `__BRAND_COLOR__` first it would munch the
+      // prefix of `__BRAND_COLOR_DARK__` and leave a stray `_DARK__`.
+      .replace(/__BRAND_COLOR__/g,        brandColor)
       .replace(/__LOWER_THIRD_TITLE__/g,  escapeHtml(lowerThirdTitle))
       .replace(/__LOWER_THIRD_SUB__/g,    escapeHtml(lowerThirdSub))
       .replace(/__CAPTION_TEXT__/g,       escapeHtml(captionText))
       .replace(/__INITIAL__/g,            escapeHtml(initial))
+    for (const pct of rgbaAlphas) {
+      const re = new RegExp(`__BRAND_RGBA_${String(pct).padStart(2, '0')}__`, 'g')
+      interpolated = interpolated.replace(re, hexToRgba(brandColor, pct))
+    }
 
     const indexPath = join(projectDir, 'index.html')
     await writeFile(indexPath, interpolated, 'utf-8')

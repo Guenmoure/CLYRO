@@ -209,7 +209,12 @@
       </div>
 
       <div class="ig-media">
-        <video src="__AVATAR_SRC__" muted playsinline></video>
+        <video class="clip"
+               src="__AVATAR_SRC__"
+               data-start="0"
+               data-duration="__DURATION__"
+               data-track-index="1"
+               muted playsinline></video>
       </div>
 
       <div class="ig-footer">
@@ -276,7 +281,7 @@
       scale: 0.96,
       duration: 0.4,
       ease: 'power2.in',
-    }, '__DURATION__' - 0.5);
+    }, parseFloat('__DURATION__') - 0.5);
 
     window.__timelines = window.__timelines || {};
     window.__timelines['avatar-instagram'] = tl;
