@@ -4,14 +4,16 @@ import { cn } from '@/lib/utils'
 
 // ── Size map ─────────────────────────────────────────────────────────────────
 // `box` = collapsed sidebar / favicon slot (square)
-// `img` = full wordmark display dims. Aspect 3:2 to match clyro-full-dark.jpeg
-//         (1280 × 853 source → ~1.5:1 ratio). object-contain handles any drift.
+// `cH`   = C-swoosh height in `full` variant (intentionally bigger than `textH`
+//          so the brand mark dominates the wordmark, as per the user's design
+//          preference). Aspect 3:4 portrait from the 768×1024 source PNG.
+// `textH`= "CLYRO" wordmark height in `full` variant (~70 % of cH).
 const SIZE = {
-  xs: { box: 'w-6 h-6 rounded-lg',    text: 'text-[10px]', wordmark: 'text-sm',   gap: 'gap-1.5', img: { w: 64,  h: 24 } },
-  sm: { box: 'w-8 h-8 rounded-xl',    text: 'text-xs',     wordmark: 'text-base', gap: 'gap-2',   img: { w: 88,  h: 28 } },
-  md: { box: 'w-10 h-10 rounded-xl',  text: 'text-sm',     wordmark: 'text-xl',   gap: 'gap-2.5', img: { w: 124, h: 36 } },
-  lg: { box: 'w-14 h-14 rounded-2xl', text: 'text-lg',     wordmark: 'text-3xl',  gap: 'gap-3',   img: { w: 168, h: 48 } },
-  xl: { box: 'w-20 h-20 rounded-3xl', text: 'text-2xl',    wordmark: 'text-5xl',  gap: 'gap-4',   img: { w: 232, h: 64 } },
+  xs: { box: 'w-7 h-7 rounded-lg',    text: 'text-[10px]', wordmark: 'text-sm',   gap: 'gap-1.5', cH: 32, textH: 22 },
+  sm: { box: 'w-9 h-9 rounded-xl',    text: 'text-xs',     wordmark: 'text-base', gap: 'gap-2',   cH: 40, textH: 28 },
+  md: { box: 'w-12 h-12 rounded-xl',  text: 'text-sm',     wordmark: 'text-xl',   gap: 'gap-2.5', cH: 52, textH: 36 },
+  lg: { box: 'w-16 h-16 rounded-2xl', text: 'text-lg',     wordmark: 'text-3xl',  gap: 'gap-3',   cH: 72, textH: 50 },
+  xl: { box: 'w-24 h-24 rounded-3xl', text: 'text-2xl',    wordmark: 'text-5xl',  gap: 'gap-4',   cH: 96, textH: 68 },
 } as const
 
 type Size    = keyof typeof SIZE
@@ -30,18 +32,21 @@ interface LogoProps {
 }
 
 // ── Asset paths ──────────────────────────────────────────────────────────────
-// Real assets shipped May 2026 :
-//   /public/logo/clyro-full-dark.jpeg — full wordmark (C swoosh + "CLYRO")
-//                                       on dark background, baked in.
-//   /public/logo/CLYRO_C_logo.png     — C swoosh only, transparent PNG,
-//                                       works on any background (sidebar collapsed,
-//                                       favicons, avatar slots, dark + light modes).
-//   /public/logo/CLYRO_text_logo.png  — "CLYRO" wordmark only, transparent PNG.
-//                                       Reserved for future use (e.g. light-mode
-//                                       full variant once we composite C + text).
+// Real assets shipped May 2026, all transparent PNG so they work on any
+// background (dark sidebar, light card, gradient hero…) :
+//   /public/logo/CLYRO_C_logo.png    — C swoosh only (used by `icon` variant
+//                                      and as the prominent left mark in `full`)
+//   /public/logo/CLYRO_text_logo.png — "CLYRO" wordmark only (used as the right
+//                                      element in `full`, slightly smaller than
+//                                      the C for visual hierarchy)
+//
+// The legacy clyro-full-dark.jpeg is still in /public/logo/ but is no longer
+// referenced by the component — the dark background of the JPEG made it jar
+// on light surfaces. The new `full` variant composites the two transparent
+// PNGs side-by-side so it renders correctly on every theme.
 
-const ASSET_FULL = '/logo/clyro-full-dark.jpeg'
-const ASSET_ICON = '/logo/CLYRO_C_logo.png'
+const ASSET_C_LOGO   = '/logo/CLYRO_C_logo.png'
+const ASSET_TEXT_LOGO = '/logo/CLYRO_text_logo.png'
 
 // Set to true once you want the CSS fallback (gradient C + "CLYRO" text via
 // background-clip) instead of the real assets. The fallback works on any
@@ -69,35 +74,83 @@ export function Logo({
     return <LogoFallback variant={variant} size={size} href={href} className={className} />
   }
 
-  const s   = SIZE[size]
-  const src = variant === 'icon' ? ASSET_ICON : ASSET_FULL
-  const alt = variant === 'icon' ? 'CLYRO' : 'CLYRO — AI video creation'
+  const s = SIZE[size]
 
-  // icon variant → square box from s.box dims (parsed from `w-N` tailwind class)
-  //                The CLYRO_C_logo PNG is 768×1024 portrait with transparent
-  //                margins; object-contain keeps the swoosh centered.
-  // full variant → wide wordmark from s.img dims (≈3:2 aspect of the JPEG).
-  const boxPx = (Number(s.box.match(/w-(\d+)/)?.[1] ?? 10)) * 4
-  const dims  = variant === 'icon'
-    ? { width: boxPx, height: boxPx }
-    : { width: s.img.w, height: s.img.h }
+  // The two PNGs are 768×1024 (3:4 portrait). We render each at its target
+  // height; Next.js Image needs explicit width + height (we pass the source
+  // aspect so it doesn't print a layout-shift warning), then object-contain
+  // honors transparent margins.
+  const C_ASPECT     = 768 / 1024  // 0.75 — width/height
+  const TEXT_ASPECT  = 768 / 1024  // same source canvas
+
+  // icon variant → square box, C swoosh fills with object-contain
+  //                Apply a scale-110 transform so the swoosh visually fills
+  //                more of the box (the source PNG has ~15% transparent
+  //                margin on each side, which makes the icon feel small by
+  //                default).
+  if (variant === 'icon') {
+    const boxPx = (Number(s.box.match(/w-(\d+)/)?.[1] ?? 12)) * 4
+    const mark = (
+      <div
+        className={cn(s.box, 'relative flex items-center justify-center shrink-0 overflow-visible', className)}
+        aria-label="CLYRO"
+      >
+        <Image
+          src={ASSET_C_LOGO}
+          alt="CLYRO"
+          width={boxPx}
+          height={boxPx}
+          priority
+          className="object-contain select-none scale-110"
+        />
+      </div>
+    )
+    if (href === false) return mark
+    return (
+      <Link
+        href={href}
+        className="inline-flex items-center hover:opacity-90 transition-opacity duration-200"
+        aria-label="CLYRO home"
+      >
+        {mark}
+      </Link>
+    )
+  }
+
+  // full variant → flex row : C swoosh (bigger) + "CLYRO" wordmark (smaller)
+  //                Both transparent PNG → looks correct on dark + light.
+  const cMark = (
+    <Image
+      src={ASSET_C_LOGO}
+      alt=""
+      aria-hidden="true"
+      width={Math.round(s.cH * C_ASPECT)}
+      height={s.cH}
+      priority
+      className="object-contain select-none scale-110"
+    />
+  )
+  const textMark = (
+    <Image
+      src={ASSET_TEXT_LOGO}
+      alt=""
+      aria-hidden="true"
+      width={Math.round(s.textH * TEXT_ASPECT)}
+      height={s.textH}
+      priority
+      className="object-contain select-none"
+    />
+  )
 
   const mark = (
-    <Image
-      src={src}
-      alt={alt}
-      width={dims.width}
-      height={dims.height}
-      priority
-      className={cn(
-        'select-none',
-        variant === 'icon' ? 'object-contain' : 'object-contain',
-        // Round the full JPEG slightly to soften the dark rectangle on
-        // light-mode surfaces. No effect when displayed on dark sidebars.
-        variant === 'full' && 'rounded-md',
-        className,
-      )}
-    />
+    <div
+      className={cn('inline-flex items-center', s.gap, className)}
+      aria-label="CLYRO — AI video creation"
+      role="img"
+    >
+      {cMark}
+      {textMark}
+    </div>
   )
 
   if (href === false) return mark
