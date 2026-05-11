@@ -3,17 +3,19 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 // ── Size map ─────────────────────────────────────────────────────────────────
-// `box` = collapsed sidebar / favicon slot (square)
-// `cH`   = C-swoosh height in `full` variant (intentionally bigger than `textH`
-//          so the brand mark dominates the wordmark, as per the user's design
-//          preference). Aspect 3:4 portrait from the 768×1024 source PNG.
-// `textH`= "CLYRO" wordmark height in `full` variant (~70 % of cH).
+// `box`   = collapsed sidebar / favicon slot (square, icon variant only)
+// `cH`    = C-swoosh height (in px) for the `full` variant. The brand mark is
+//           intentionally taller than the wordmark so it dominates.
+// `textH` = "CLYRO" wordmark cap-height (in px) for the `full` variant.
+//           Roughly cH ÷ 2 — the wordmark is very wide (aspect ≈ 5.83) so we
+//           keep it short to balance the side-by-side composition and avoid
+//           overrunning narrow containers like the 240 px sidebar.
 const SIZE = {
-  xs: { box: 'w-7 h-7 rounded-lg',    text: 'text-[10px]', wordmark: 'text-sm',   gap: 'gap-1.5', cH: 32, textH: 22 },
-  sm: { box: 'w-9 h-9 rounded-xl',    text: 'text-xs',     wordmark: 'text-base', gap: 'gap-2',   cH: 40, textH: 28 },
-  md: { box: 'w-12 h-12 rounded-xl',  text: 'text-sm',     wordmark: 'text-xl',   gap: 'gap-2.5', cH: 52, textH: 36 },
-  lg: { box: 'w-16 h-16 rounded-2xl', text: 'text-lg',     wordmark: 'text-3xl',  gap: 'gap-3',   cH: 72, textH: 50 },
-  xl: { box: 'w-24 h-24 rounded-3xl', text: 'text-2xl',    wordmark: 'text-5xl',  gap: 'gap-4',   cH: 96, textH: 68 },
+  xs: { box: 'w-7 h-7 rounded-lg',    text: 'text-[10px]', wordmark: 'text-sm',   gap: 'gap-1.5', cH: 24, textH: 10 },
+  sm: { box: 'w-9 h-9 rounded-xl',    text: 'text-xs',     wordmark: 'text-base', gap: 'gap-2',   cH: 32, textH: 14 },
+  md: { box: 'w-12 h-12 rounded-xl',  text: 'text-sm',     wordmark: 'text-xl',   gap: 'gap-2.5', cH: 44, textH: 20 },
+  lg: { box: 'w-16 h-16 rounded-2xl', text: 'text-lg',     wordmark: 'text-3xl',  gap: 'gap-3',   cH: 60, textH: 28 },
+  xl: { box: 'w-24 h-24 rounded-3xl', text: 'text-2xl',    wordmark: 'text-5xl',  gap: 'gap-4',   cH: 84, textH: 40 },
 } as const
 
 type Size    = keyof typeof SIZE
@@ -97,12 +99,15 @@ export function Logo({
 
   const s = SIZE[size]
 
-  // The two PNGs are 768×1024 (3:4 portrait). We render each at its target
-  // height; Next.js Image needs explicit width + height (we pass the source
-  // aspect so it doesn't print a layout-shift warning), then object-contain
-  // honors transparent margins.
-  const C_ASPECT     = 768 / 1024  // 0.75 — width/height
-  const TEXT_ASPECT  = 768 / 1024  // same source canvas
+  // PNGs have been tightly trimmed to their content (via `convert -trim`) +
+  // a small transparent border for breathing room. Aspect ratios reflect the
+  // visible artwork — not the original 768×1024 source canvas.
+  //   CLYRO_C_logo.png       → 654×453  → 1.444 (wider than tall)
+  //   CLYRO_text_logo*.png   → 647×111  → 5.83  (very wide, short)
+  // We render each at its target HEIGHT (cH / textH); width follows aspect
+  // automatically so Next.js Image won't squish or pillarbox the artwork.
+  const C_ASPECT     = 654 / 453   // ≈ 1.444 — width / height
+  const TEXT_ASPECT  = 647 / 111   // ≈ 5.83  — width / height
 
   // icon variant → square box, C swoosh fills with object-contain
   //                Apply a scale-110 transform so the swoosh visually fills

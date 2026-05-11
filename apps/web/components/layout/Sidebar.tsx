@@ -178,8 +178,8 @@ export function Sidebar({
           aria-label="Go to dashboard"
         >
           {collapsed && !mobileOpen
-            ? <Logo variant="icon" size="sm" />
-            : <Logo variant="full" size="sm" />
+            ? <Logo variant="icon" size="md" />
+            : <Logo variant="full" size="md" />
           }
         </button>
 
