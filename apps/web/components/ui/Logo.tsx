@@ -18,12 +18,21 @@ const SIZE = {
 
 type Size    = keyof typeof SIZE
 type Variant = 'full' | 'icon'
+type Tone    = 'light' | 'dark' | 'auto'
 
 interface LogoProps {
   variant?:  Variant
   size?:     Size
   href?:     string | false   // false = no link wrapper; string = custom href
   className?: string
+  /**
+   * Which "CLYRO" wordmark PNG to use:
+   *   tone="auto"  → navy on light theme, white on dark theme (via Tailwind dark:). DEFAULT.
+   *   tone="light" → force white wordmark (use on always-dark surfaces).
+   *   tone="dark"  → force navy wordmark (use on always-light surfaces).
+   * Ignored when variant="icon" (the C swoosh is multicoloured, no tone variant).
+   */
+  tone?:     Tone
   /**
    * Forces use of the CSS fallback (gradient C + CLYRO text) instead of the
    * real PNG/JPEG assets. Default false — uses /public/logo/* assets now.
@@ -32,21 +41,32 @@ interface LogoProps {
 }
 
 // ── Asset paths ──────────────────────────────────────────────────────────────
-// Real assets shipped May 2026, all transparent PNG so they work on any
-// background (dark sidebar, light card, gradient hero…) :
-//   /public/logo/CLYRO_C_logo.png    — C swoosh only (used by `icon` variant
-//                                      and as the prominent left mark in `full`)
-//   /public/logo/CLYRO_text_logo.png — "CLYRO" wordmark only (used as the right
-//                                      element in `full`, slightly smaller than
-//                                      the C for visual hierarchy)
+// Real assets shipped May 2026, all transparent PNG with white-edge stripping
+// applied via ImageMagick `-fuzz 8% -transparent white` so they composite
+// cleanly on any background (dark sidebar, light card, gradient hero…):
+//
+//   /public/logo/CLYRO_C_logo.png         — C swoosh only (gradient cyan→purple).
+//                                            Multi-colour so no tone variant needed.
+//                                            Used by `icon` variant and as the
+//                                            prominent left mark in `full`.
+//   /public/logo/CLYRO_text_logo.png       — "CLYRO" wordmark in original navy.
+//                                            For LIGHT backgrounds only.
+//   /public/logo/CLYRO_text_logo_white.png — "CLYRO" wordmark in white. Built
+//                                            from the navy PNG by extracting its
+//                                            alpha mask and filling white. For
+//                                            DARK backgrounds (sidebar). DEFAULT.
+//
+// Caller picks via `tone="light"` (default, white wordmark on dark surface) or
+// `tone="dark"` (navy wordmark on light surface).
 //
 // The legacy clyro-full-dark.jpeg is still in /public/logo/ but is no longer
 // referenced by the component — the dark background of the JPEG made it jar
-// on light surfaces. The new `full` variant composites the two transparent
-// PNGs side-by-side so it renders correctly on every theme.
+// on light surfaces. The new `full` variant composites two transparent PNGs
+// side-by-side so it renders correctly on every theme.
 
-const ASSET_C_LOGO   = '/logo/CLYRO_C_logo.png'
-const ASSET_TEXT_LOGO = '/logo/CLYRO_text_logo.png'
+const ASSET_C_LOGO        = '/logo/CLYRO_C_logo.png'
+const ASSET_TEXT_LOGO_DARK  = '/logo/CLYRO_text_logo.png'        // original navy wordmark
+const ASSET_TEXT_LOGO_LIGHT = '/logo/CLYRO_text_logo_white.png'  // pure-white wordmark (for dark surfaces)
 
 // Set to true once you want the CSS fallback (gradient C + "CLYRO" text via
 // background-clip) instead of the real assets. The fallback works on any
@@ -68,6 +88,7 @@ export function Logo({
   size         = 'md',
   href         = '/dashboard',
   className,
+  tone         = 'auto',
   useFallback  = USE_FALLBACK_DEFAULT,
 }: LogoProps) {
   if (useFallback) {
@@ -130,17 +151,47 @@ export function Logo({
       className="object-contain select-none scale-110"
     />
   )
-  const textMark = (
+  // ── Wordmark — tone-aware ────────────────────────────────────────────────
+  // tone="auto"  → render BOTH PNGs (navy + white) and let Tailwind toggle them
+  //                via the `dark:` modifier; navy shows on light theme, white on dark.
+  // tone="dark"  → only navy (for permanently-light surfaces)
+  // tone="light" → only white (for permanently-dark surfaces)
+  const textWidth = Math.round(s.textH * TEXT_ASPECT)
+  const textHeight = s.textH
+  const navyMark = (
     <Image
-      src={ASSET_TEXT_LOGO}
+      key="navy"
+      src={ASSET_TEXT_LOGO_DARK}
       alt=""
       aria-hidden="true"
-      width={Math.round(s.textH * TEXT_ASPECT)}
-      height={s.textH}
+      width={textWidth}
+      height={textHeight}
       priority
-      className="object-contain select-none"
+      className={cn(
+        'object-contain select-none',
+        tone === 'auto' && 'dark:hidden',
+      )}
     />
   )
+  const whiteMark = (
+    <Image
+      key="white"
+      src={ASSET_TEXT_LOGO_LIGHT}
+      alt=""
+      aria-hidden="true"
+      width={textWidth}
+      height={textHeight}
+      priority
+      className={cn(
+        'object-contain select-none',
+        tone === 'auto' && 'hidden dark:block',
+      )}
+    />
+  )
+  const textMark =
+    tone === 'dark'  ? navyMark  :
+    tone === 'light' ? whiteMark :
+    /* auto */         <>{navyMark}{whiteMark}</>
 
   const mark = (
     <div
