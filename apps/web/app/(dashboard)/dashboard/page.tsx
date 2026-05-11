@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
 // Dashboard components
-import { PromoBanner }        from '@/components/dashboard/PromoBanner'
+import { HomeHero }           from '@/components/dashboard/HomeHero'
+import { HomeFeatureGrid }    from '@/components/dashboard/HomeFeatureGrid'
 import { NewProjectDropdown } from '@/components/dashboard/NewProjectDropdown'
-import { QuickActions }       from '@/components/dashboard/QuickActions'
 import { CreditsBanner }      from '@/components/dashboard/CreditsBanner'
 import { EmptyDashboard }     from '@/components/dashboard/EmptyDashboard'
 import { ProjectsSection }    from '@/components/dashboard/ProjectsSection'
@@ -98,10 +98,10 @@ export default async function DashboardPage() {
   const hasProjects = videos.length > 0
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto space-y-5">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto space-y-8">
 
-      {/* ── 1. Promo banner (dismissable, ~48px) ────────────── */}
-      <PromoBanner />
+      {/* ── 1. Hero — HeyGen-style centred banner with carousel ─── */}
+      <HomeHero />
 
       {/* ── 2. Greeting + New project button ────────────────── */}
       <div className="flex items-center justify-between gap-4">
@@ -112,8 +112,8 @@ export default async function DashboardPage() {
       {/* ── 3. Credits banner ────────────────────────────────── */}
       <CreditsBanner plan={plan} creditsLeft={credits} />
 
-      {/* ── 4. Quick actions — 4 cards on 1 row ─────────────── */}
-      <QuickActions />
+      {/* ── 4. 6-card feature grid (3×2) ──────────────────────── */}
+      <HomeFeatureGrid />
 
       {/* ── Fetch error ──────────────────────────────────────── */}
       {errorMsg && (
