@@ -247,6 +247,111 @@ Generate:
 Respond ONLY with: {"imagePrompt":"...","animationPrompt":"..."}`
 }
 
+// ── Brand Design Knowledge ─────────────────────────────────────────────────────
+// Shared "design school" reference injected into every Claude prompt that
+// generates brand identity. Distilled from Adobe Express' design fundamentals,
+// type-pairing, and logo guides — re-expressed as MACHINE-ACTIONABLE rules
+// (avoid generic "make it modern" prose). Strategy, charte and logo selection
+// all reference this block so the model has shared vocabulary and shared
+// constraints across the pipeline.
+
+export const BRAND_DESIGN_PRINCIPLES = `
+COMPOSITION FUNDAMENTALS — apply ALL of these to every output:
+
+• EMPHASIS — chaque direction a UN point focal qui domine (couleur, échelle,
+  contraste, texture, ou typo). Pas deux. Nomme-le explicitement.
+• HIÉRARCHIE — classe les éléments par importance décroissante (titre > sous-titre
+  > body > caption). L'ordre de lecture doit être prédictible en 1 coup d'œil.
+• ÉCHELLE & PROPORTION — grand = important. Rapport titre/body ≥ 2.5×.
+  Évite les échelles "moyennes" qui aplatissent la hiérarchie.
+• CONTRASTE — typographique (light vs bold, serif vs sans), colorimétrique
+  (WCAG AA ≥ 4.5:1), formel (rond vs angulaire). Au moins UN contraste fort
+  par composition, sinon l'œil n'a pas d'accroche.
+• RÉPÉTITION & MOTIF — un détail récurrent (couleur, forme, geste typo) crée
+  l'unité visuelle entre des éléments disparates. Une charte sans répétition
+  paraît bricolée.
+• MOUVEMENT & RYTHME — le flux de lecture doit être intentionnel (Z-pattern,
+  F-pattern, ou directionnel selon le médium). L'espacement crée le rythme.
+• ÉQUILIBRE — symétrique (sobre, institutionnel) OU asymétrique (dynamique,
+  moderne) — JAMAIS au hasard. Précise lequel par direction.
+• ESPACE NÉGATIF — réserve ≥ 30 % de chaque composition à du vide intentionnel.
+  Sur un logo : padding ≥ ½ hauteur du mark. Sur un layout : marges respiratoires.
+• UNITÉ — visuelle (cohérence formelle) ET conceptuelle (l'identité raconte
+  une seule histoire). Test final : si tu retires une direction du contexte,
+  reconnaît-on la marque ?
+`.trim()
+
+export const COLOR_PSYCHOLOGY = `
+COLOR PSYCHOLOGY — pèse 62-90 % de la perception d'une marque selon les études.
+Aligne TOUJOURS la palette sur l'émotion ciblée :
+  • Rouge      → passion, urgence, danger, appétit (food, sport, alerte)
+  • Orange     → énergie, chaleur, créativité, abordable (loisirs, kids)
+  • Jaune      → optimisme, soleil, jeunesse, attention (tech grand public, food)
+  • Vert       → nature, santé, croissance, finance stable (wellness, eco, fintech)
+  • Bleu       → confiance, sérénité, eau, tech (B2B SaaS, banque, santé)
+  • Violet     → luxe, créativité, royauté, spiritualité (haut de gamme, beauté)
+  • Rose       → tendresse, féminité, joie, ludique (lifestyle, cosmétique)
+  • Noir       → sophistication, élégance, drame, autorité (luxe, mode, premium)
+  • Blanc      → modernité, propreté, minimalisme, neutralité (tech, médical)
+  • Marron/Beige → artisanat, naturel, authenticité (food artisanal, mode durable)
+Évite la couleur qui contredit la valeur de marque (ex : ne JAMAIS choisir le
+rouge "danger" pour une marque santé, le vert "argent" pour le luxe pur, etc.).
+`.trim()
+
+export const SHAPE_PSYCHOLOGY = `
+SHAPE PSYCHOLOGY — chaque forme porte un sous-texte :
+  • Carré / rectangle  → solide, fiable, équilibré, prévisible (institutionnel)
+  • Cercle / arrondi   → humain, doux, continu, éternel (communauté, wellness)
+  • Triangle           → direction, mouvement, stabilité, avertissement (action)
+  • Spirale            → naturel, dynamique, spirituel (croissance, créatif)
+  • Forme abstraite    → intellectuel, artistique, minimaliste (tech, art)
+  • Forme organique    → naturel, vivant (alimentaire, eco, beauté)
+Le geste du logo (angles vifs vs courbes) doit refléter la cible ET la USP.
+`.trim()
+
+export const LOGO_TYPES_GUIDE = `
+LOGO TYPES — choisis le type qui sert la USP, pas le goût personnel :
+  • LOGOTYPE (wordmark) — uniquement le nom en typo travaillée. À utiliser quand
+    le nom est court (≤ 8 lettres), facile à prononcer, et que la USP est
+    typographique (élégance, modernité). Ex : Google, Coca-Cola, FedEx.
+  • LETTERMARK (monogramme) — initiales en composition graphique. Idéal pour
+    les noms longs ou multi-mots. Souvent utilisé par les institutions et
+    les chaînes (HBO, IBM, NASA, CNN).
+  • LETTERFORM — UNE seule lettre. Pour les marques très installées ou comme
+    déclinaison compacte (Netflix N, Pinterest P, McDonald's M).
+  • PICTORIAL (symbole) — icône seule, sans texte. Ne marche QUE pour les
+    marques déjà notoires (Apple, Nike swoosh, Twitter bird). Risqué en
+    lancement — préférer un combination logo.
+  • COMBINATION — icône + nom côte-à-côte ou empilés. Le plus polyvalent et
+    le plus recommandé pour une marque qui démarre : on peut isoler chaque
+    partie selon le contexte (favicon = icon, signature email = full).
+  • EMBLEM — texte enchâssé DANS la forme (badges, sceaux). Évoque
+    l'institution, l'artisanat, la tradition (universités, breweries, sport).
+Critères de qualité (Adobe Express) : distinctif · mémorable · flexible
+(scalable, monochrome OK) · fidèle à l'identité · intemporel.
+`.trim()
+
+export const TYPOGRAPHY_PAIRING_GUIDE = `
+TYPOGRAPHY PAIRING — règles de combinaison :
+  • HEADING accroche, BODY supporte. Heading doit être ≥ 2.5× plus grand que
+    body. La police heading peut être expressive ; la body doit être lisible.
+  • CONTRASTE FAMILLE : pair preferred = serif heading + sans body, OU sans
+    expressif heading + sans neutre body. Évite serif + serif (sauf editorial
+    assumé) et sans neutre + sans neutre (zéro identité).
+  • SIMILARITÉ DES GLYPHES : si tu mixes 2 polices, vérifie que les lettres
+    signatures (g, a, e) ont des hauteurs proches — sinon le mix paraît brisé.
+  • POIDS : heading 600-900 (bold/black), body 400-500 (regular/medium).
+    L'écart de poids crée la hiérarchie même quand l'échelle est proche.
+  • CASSE : UPPERCASE pour heading court + tracking ≥ +0.05em, sentence case
+    pour body + tracking 0. Le tout-cap body devient illisible.
+  • CATÉGORIES :
+    - Serif       → sophistication, tradition, éditorial (luxe, presse, légal)
+    - Sans-serif  → modernité, clarté, polyvalence (tech, lifestyle, B2B)
+    - Slab        → impact, headlines, presse (food, sport, retail)
+    - Script      → artisanal, féminin, événement (beauté, mariage, food artisanal)
+    - Display     → attention, hero ONLY (jamais pour body, jamais en bloc)
+`.trim()
+
 // ── Brand Analyst ──────────────────────────────────────────────────────────────
 
 export interface BrandBriefInput {
@@ -319,6 +424,14 @@ Couleurs       : ${brief.couleurs_imposees?.trim() || '— libres'}
    ${hasReferences ? '' : 'c) "Cite 2-3 marques que tu admires (hors secteur de préférence) comme inspiration." '}
    Plus de "valeurs vagues", de cibles imprécises, etc.
 
+DESIGN ALIGNMENT — utilise la psychologie des couleurs et formes (voir bas) pour
+détecter les briefs qui mèneraient à des incohérences visuelles :
+  • Si l'ambiance ('${brief.ambiance}') est incompatible avec le secteur
+    typique (ex: "fun" pour un cabinet d'avocats, "luxe" pour discount),
+    flag-la comme contradiction.
+  • Si la cible (${brief.cible}) appelle une psychologie de couleurs/formes
+    incompatible avec l'ambiance, mentionne-le dans suggestions.
+
 SCORING (brief_score 0-100) — barème strict :
   • +25 pts si name spécifique (pas "Brand", "Test", "Mon Projet"…)
   • +20 pts si secteur ≥ 3 mots concrets (pas juste "tech" / "food")
@@ -350,7 +463,14 @@ Format contradiction_paths (UNIQUEMENT si has_contradiction === true, EXACTEMENT
 [
   { "label": "Path A: …", "description": "…(1-2 phrases)", "resolution": "3-5 mots-clés visuels" },
   { "label": "Path B: …", "description": "…(1-2 phrases)", "resolution": "3-5 mots-clés visuels" }
-]`
+]
+
+═══════════════════════════ RÉFÉRENCES DESIGN ═══════════════════════════
+(à utiliser pour détecter les incohérences brief↔visuel attendu)
+
+${COLOR_PSYCHOLOGY}
+
+${SHAPE_PSYCHOLOGY}`
   return { system, user }
 }
 
@@ -470,7 +590,41 @@ R5. CHAQUE DIRECTION REFLÈTE L'AMBIANCE "${brief.ambiance}"
     sans tomber dans le cliché. ${ambianceGuide}.
     Mais chaque direction interprète cette ambiance différemment.
 
-═════════════════════════════════════════════════════════════════════════════
+R6. PRINCIPES DE DESIGN — applique ces lois à chaque direction (voir détails plus bas) :
+    • Emphasis : chaque direction nomme UN point focal dominant.
+    • Hiérarchie : la palette doit avoir une couleur "lead" (primary) qui domine
+      sans contredire les autres ; la typographie a UN heading vs UN body
+      avec contraste de poids ≥ 300 (ex: 700 vs 400).
+    • Balance : précise dans palette.description si l'identité est symétrique
+      (institutionnel, calme) ou asymétrique (dynamique, contemporain).
+    • Unité : les 5 mots-clés visuels doivent raconter UNE histoire cohérente,
+      pas être 5 attributs déconnectés.
+    • Mood (composition) : précise un type de rythme dominant —
+      "monumental + posé", "dense + saturé", "aéré + suspendu", etc.
+
+R7. PSYCHOLOGIE COULEURS — la palette doit traduire l'émotion ciblée par
+    secteur + valeurs. Voir la grille COLOR PSYCHOLOGY ci-dessous.
+    INTERDIT : couleur qui contredit la valeur (ex : rouge "danger" pour santé,
+    vert "argent" pour luxe pur). Si tu enfreins cette règle, justifie-la
+    explicitement dans palette.description.
+
+R8. PSYCHOLOGIE FORMES — keywords (et plus tard logo) doivent refléter
+    une géométrie cohérente avec la cible. Voir SHAPE PSYCHOLOGY.
+
+R9. TYPOGRAPHIE PAIR — voir TYPOGRAPHY PAIRING GUIDE pour les règles
+    serif/sans/slab/script et les contrastes hauteur/poids/casse.
+
+═══════════════════════════ RÉFÉRENCES DESIGN ═══════════════════════════
+
+${BRAND_DESIGN_PRINCIPLES}
+
+${COLOR_PSYCHOLOGY}
+
+${SHAPE_PSYCHOLOGY}
+
+${TYPOGRAPHY_PAIRING_GUIDE}
+
+═════════════════════════════════════════════════════════════════════════
 
 Réponds UNIQUEMENT avec ce JSON valide (rien avant, rien après) :
 {
@@ -518,7 +672,31 @@ R2. Les unités sont CONCRÈTES : px, rem, % — jamais "petit/moyen/grand".
 R3. Les couleurs sortent en HEX MAJUSCULE (#1F2A44) et RGB "31, 42, 68".
 R4. Photography.style décrit ce qu'on voit ET comment c'est shooté (cadrage, lumière, post-prod).
 R5. Pas de générique : "professional, modern, clean" est INTERDIT seul — relie-le au secteur + ambiance.
+R6. CHAQUE règle s'aligne sur les principes de design (voir RÉFÉRENCES en bas) :
+    • Le clear_space du logo respecte l'ESPACE NÉGATIF (≥ ½ hauteur du mark).
+    • Les couleurs portent un nom évocateur qui reflète leur PSYCHOLOGIE
+      (pas "Blue 1" mais "Bleu Crépuscule — sérénité + technologie").
+    • La hiérarchie typo crée l'EMPHASE via le ratio heading/body ≥ 2.5×
+      ET un contraste de poids ≥ 300 (ex: 700 vs 400).
+    • Le layout.grid précise s'il est SYMÉTRIQUE (institutionnel) ou
+      ASYMÉTRIQUE (dynamique) — choix conscient à justifier.
+    • Photography.style applique le RYTHME (cadrage récurrent) et l'UNITÉ
+      (palette de grading alignée sur palette de marque).
+R7. PSYCHOLOGIE COULEURS — chaque couleur.usage cite explicitement l'émotion
+    visée (voir COLOR PSYCHOLOGY ci-dessous). Si une couleur de la palette
+    semble contradictoire avec les valeurs (ex: rouge urgent pour wellness),
+    explique-le ou propose un override dans usage.
 ══════════════════════════════════════════════════════════════
+
+═══════════════════════════ RÉFÉRENCES DESIGN ═══════════════════════════
+
+${BRAND_DESIGN_PRINCIPLES}
+
+${COLOR_PSYCHOLOGY}
+
+${TYPOGRAPHY_PAIRING_GUIDE}
+
+═════════════════════════════════════════════════════════════════════════
 
 ═══════════════════════════ OUTPUT JSON ═══════════════════════════
 Réponds UNIQUEMENT avec cet objet (toutes les clés sont OBLIGATOIRES) :

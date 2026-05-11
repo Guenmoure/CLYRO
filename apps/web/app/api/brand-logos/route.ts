@@ -42,6 +42,26 @@ function buildBriefSummary(brief: BrandBrief, direction: BrandDirection): string
   return parts.join('. ')
 }
 
+// Pick a SHAPE PSYCHOLOGY hint based on the direction's mood + keywords.
+// Recraft-v3 reacts well to "geometric construction" hints — telling it
+// "angular, triangular" vs "rounded, circular" actually changes the output.
+function shapeHintFor(direction: BrandDirection): string {
+  const haystack = (direction.mood + ' ' + direction.keywords.join(' ')).toLowerCase()
+  if (/round|soft|warm|human|gentle|wellness|care|community|organic|fluid/.test(haystack)) {
+    return 'rounded, circular, soft curves — shape psychology: warmth, continuity, humanity'
+  }
+  if (/sharp|angular|tech|edge|bold|disrupt|future|geometric|precise/.test(haystack)) {
+    return 'angular, geometric, sharp edges — shape psychology: direction, stability, intentionality'
+  }
+  if (/luxe|premium|elegant|sophist|refin|heritage|institut/.test(haystack)) {
+    return 'symmetrical, balanced, vertical-leaning composition — shape psychology: solidity, reliability, prestige'
+  }
+  if (/play|fun|joy|kid|youth|vibrant|bold colour|energ/.test(haystack)) {
+    return 'organic, asymmetric, slightly off-balance — shape psychology: movement, energy, surprise'
+  }
+  return 'balanced abstract geometry — shape psychology: minimalist, intellectual, contemporary'
+}
+
 async function generateLogoVariant(brief: BrandBrief, direction: BrandDirection, concept: typeof LOGO_CONCEPTS[number], bgColor: string): Promise<string | undefined> {
   const isLight = bgColor === '#FFFFFF'
   const isDark = bgColor === '#0A0A0A'
@@ -58,14 +78,17 @@ async function generateLogoVariant(brief: BrandBrief, direction: BrandDirection,
     ? `letterforms inspired by the word "${brief.name.slice(0, 12)}" but rendered as abstract refined lettering (do NOT spell the actual word — letters may be illegible)`
     : 'no text, no letters, no words'
 
+  const shapeHint = shapeHintFor(direction)
+
   const prompt = [
     `Professional brand logo design — ${concept.construction}.`,
     briefSummary + '.',
     concept.style_hint + '.',
-    `Composition: isolated centred mark on a ${isLight ? 'pure white' : isDark ? 'pure black' : 'brand-colored'} background, generous negative space, single object only, no surrounding elements, no decorative frame.`,
+    `Geometry: ${shapeHint}.`,
+    `Composition: isolated centred mark on a ${isLight ? 'pure white' : isDark ? 'pure black' : 'brand-colored'} background, generous negative space (≥ 25 % padding on every side), single object only, no surrounding elements, no decorative frame, perfectly balanced.`,
     `Color: render the mark in ${textColor} (HEX ${textColor}). No gradients unless elegant and subtle.`,
-    `Style: vector flat, award-winning identity design, geometric precision, looks at home in a 2026 design annual.`,
-    `Constraints: ${wordmarkHint}, no photo realism, no 3D, no shadow, no glow, no rasterized texture, no mockup.`,
+    `Design quality: vector flat, award-winning identity design (Brand New / Adobe Express annual quality), geometric precision, distinctive at 1× and recognisable at 32 px favicon scale, monochrome-safe.`,
+    `Constraints: ${wordmarkHint}, no photo realism, no 3D, no shadow, no glow, no rasterized texture, no mockup, no AI-art clichés (no orbs, no cosmic backgrounds, no glassmorphism).`,
   ].join(' ')
 
   try {
