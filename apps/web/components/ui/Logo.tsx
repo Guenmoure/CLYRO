@@ -3,13 +3,15 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 // ── Size map ─────────────────────────────────────────────────────────────────
-
+// `box` = collapsed sidebar / favicon slot (square)
+// `img` = full wordmark display dims. Aspect 3:2 to match clyro-full-dark.jpeg
+//         (1280 × 853 source → ~1.5:1 ratio). object-contain handles any drift.
 const SIZE = {
-  xs: { box: 'w-6 h-6 rounded-lg',    text: 'text-[10px]', wordmark: 'text-sm',   gap: 'gap-1.5', img: { w: 92,  h: 24 } },
-  sm: { box: 'w-8 h-8 rounded-xl',    text: 'text-xs',     wordmark: 'text-base', gap: 'gap-2',   img: { w: 108, h: 28 } },
-  md: { box: 'w-10 h-10 rounded-xl',  text: 'text-sm',     wordmark: 'text-xl',   gap: 'gap-2.5', img: { w: 140, h: 36 } },
-  lg: { box: 'w-14 h-14 rounded-2xl', text: 'text-lg',     wordmark: 'text-3xl',  gap: 'gap-3',   img: { w: 192, h: 48 } },
-  xl: { box: 'w-20 h-20 rounded-3xl', text: 'text-2xl',    wordmark: 'text-5xl',  gap: 'gap-4',   img: { w: 260, h: 64 } },
+  xs: { box: 'w-6 h-6 rounded-lg',    text: 'text-[10px]', wordmark: 'text-sm',   gap: 'gap-1.5', img: { w: 64,  h: 24 } },
+  sm: { box: 'w-8 h-8 rounded-xl',    text: 'text-xs',     wordmark: 'text-base', gap: 'gap-2',   img: { w: 88,  h: 28 } },
+  md: { box: 'w-10 h-10 rounded-xl',  text: 'text-sm',     wordmark: 'text-xl',   gap: 'gap-2.5', img: { w: 124, h: 36 } },
+  lg: { box: 'w-14 h-14 rounded-2xl', text: 'text-lg',     wordmark: 'text-3xl',  gap: 'gap-3',   img: { w: 168, h: 48 } },
+  xl: { box: 'w-20 h-20 rounded-3xl', text: 'text-2xl',    wordmark: 'text-5xl',  gap: 'gap-4',   img: { w: 232, h: 64 } },
 } as const
 
 type Size    = keyof typeof SIZE
@@ -21,24 +23,31 @@ interface LogoProps {
   href?:     string | false   // false = no link wrapper; string = custom href
   className?: string
   /**
-   * Forces use of the real image asset instead of the CSS fallback.
-   * Set to true once transparent PNG assets are in `public/logo/`.
+   * Forces use of the CSS fallback (gradient C + CLYRO text) instead of the
+   * real PNG/JPEG assets. Default false — uses /public/logo/* assets now.
    */
-  useImage?: boolean
+  useFallback?: boolean
 }
 
 // ── Asset paths ──────────────────────────────────────────────────────────────
-// Drop the real (preferably transparent PNG) logo files here:
-//   /public/logo/clyro-full-dark.png   — full wordmark, for dark backgrounds
-//   /public/logo/clyro-icon.png        — C-mark only, square, for collapsed sidebar & favicons
-//
-// Until those assets exist, `Logo` falls back to `LogoFallback` (CSS-only).
+// Real assets shipped May 2026 :
+//   /public/logo/clyro-full-dark.jpeg — full wordmark (C swoosh + "CLYRO")
+//                                       on dark background, baked in.
+//   /public/logo/CLYRO_C_logo.png     — C swoosh only, transparent PNG,
+//                                       works on any background (sidebar collapsed,
+//                                       favicons, avatar slots, dark + light modes).
+//   /public/logo/CLYRO_text_logo.png  — "CLYRO" wordmark only, transparent PNG.
+//                                       Reserved for future use (e.g. light-mode
+//                                       full variant once we composite C + text).
 
-const ASSET_FULL = '/logo/clyro-full-dark.png'
-const ASSET_ICON = '/logo/clyro-icon.png'
+const ASSET_FULL = '/logo/clyro-full-dark.jpeg'
+const ASSET_ICON = '/logo/CLYRO_C_logo.png'
 
-// Flip to `true` once the PNG assets are present in /public/logo/.
-const USE_IMAGE_DEFAULT = false
+// Set to true once you want the CSS fallback (gradient C + "CLYRO" text via
+// background-clip) instead of the real assets. The fallback works on any
+// background and adapts to dark/light mode — useful as a safety net during
+// asset migrations.
+const USE_FALLBACK_DEFAULT = false
 
 /**
  * CLYRO brand logo.
@@ -46,17 +55,17 @@ const USE_IMAGE_DEFAULT = false
  * variant="full"  — full wordmark "CLYRO" (default)
  * variant="icon"  — square C-mark only (sidebar collapsed, favicons, avatar slots…)
  *
- * When `useImage` is true AND the PNG assets are available, renders `next/image`.
- * Otherwise defers to `LogoFallback`, a pure-CSS gradient-C + "CLYRO" mark.
+ * Uses the real /public/logo/* assets by default. Falls back to a pure-CSS
+ * gradient mark when `useFallback` is true.
  */
 export function Logo({
-  variant    = 'full',
-  size       = 'md',
-  href       = '/dashboard',
+  variant      = 'full',
+  size         = 'md',
+  href         = '/dashboard',
   className,
-  useImage   = USE_IMAGE_DEFAULT,
+  useFallback  = USE_FALLBACK_DEFAULT,
 }: LogoProps) {
-  if (!useImage) {
+  if (useFallback) {
     return <LogoFallback variant={variant} size={size} href={href} className={className} />
   }
 
@@ -64,9 +73,13 @@ export function Logo({
   const src = variant === 'icon' ? ASSET_ICON : ASSET_FULL
   const alt = variant === 'icon' ? 'CLYRO' : 'CLYRO — AI video creation'
 
-  // icon variant → square; full variant → wide wordmark
-  const dims = variant === 'icon'
-    ? { width: Number(s.box.match(/w-(\d+)/)?.[1] ?? 10) * 4, height: Number(s.box.match(/h-(\d+)/)?.[1] ?? 10) * 4 }
+  // icon variant → square box from s.box dims (parsed from `w-N` tailwind class)
+  //                The CLYRO_C_logo PNG is 768×1024 portrait with transparent
+  //                margins; object-contain keeps the swoosh centered.
+  // full variant → wide wordmark from s.img dims (≈3:2 aspect of the JPEG).
+  const boxPx = (Number(s.box.match(/w-(\d+)/)?.[1] ?? 10)) * 4
+  const dims  = variant === 'icon'
+    ? { width: boxPx, height: boxPx }
     : { width: s.img.w, height: s.img.h }
 
   const mark = (
@@ -76,13 +89,24 @@ export function Logo({
       width={dims.width}
       height={dims.height}
       priority
-      className={cn('object-contain select-none', className)}
+      className={cn(
+        'select-none',
+        variant === 'icon' ? 'object-contain' : 'object-contain',
+        // Round the full JPEG slightly to soften the dark rectangle on
+        // light-mode surfaces. No effect when displayed on dark sidebars.
+        variant === 'full' && 'rounded-md',
+        className,
+      )}
     />
   )
 
   if (href === false) return mark
   return (
-    <Link href={href} className="inline-flex items-center hover:opacity-90 transition-opacity duration-200" aria-label="CLYRO home">
+    <Link
+      href={href}
+      className="inline-flex items-center hover:opacity-90 transition-opacity duration-200"
+      aria-label="CLYRO home"
+    >
       {mark}
     </Link>
   )
@@ -92,7 +116,7 @@ export function Logo({
 //
 // Pure-CSS brand mark — works without any image assets.
 // Gradient "C" square + "CLYRO" wordmark in matching gradient.
-// Used as a graceful default until transparent PNGs are wired up.
+// Kept as a fallback for the `useFallback` prop / future light-mode adjustments.
 
 interface LogoFallbackProps {
   variant?:  Variant
