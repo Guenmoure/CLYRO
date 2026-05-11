@@ -13,7 +13,7 @@ const PLATFORMS   = ['instagram_post', 'instagram_story', 'linkedin', 'twitter',
 const generateSchema = z.object({
   brand_kit_id: z.string().uuid(),
   type:         z.enum(ASSET_TYPES),
-  prompt:       z.string().min(5).max(500),
+  prompt:       z.string().min(5).max(2000),
   platform:     z.enum(PLATFORMS).optional(), // requis si type === 'social_post'
 })
 
