@@ -331,6 +331,75 @@ Critères de qualité (Adobe Express) : distinctif · mémorable · flexible
 (scalable, monochrome OK) · fidèle à l'identité · intemporel.
 `.trim()
 
+export const BERTIN_VISUAL_VARIABLES = `
+LES 8 VARIABLES VISUELLES (Jacques Bertin, "Sémiologie graphique", 1967) —
+chaque marque visuelle disposée dans l'espace 2D peut varier sur 8 dimensions
+indépendantes. Une identité visuelle FORTE en exploite explicitement 3-5 :
+  • POSITION       — placement sur le plan (composition, alignement, axes)
+  • TAILLE         — échelle relative des éléments → hiérarchie immédiate
+  • VALEUR         — clair/sombre → contraste et profondeur sans recourir à la couleur
+  • GRAIN          — texture, finesse de la trame → matière et tactilité
+  • COULEUR        — teinte, saturation → émotion et catégorisation
+  • ORIENTATION    — angle des éléments → mouvement, dynamisme
+  • FORME          — silhouette de la tache → identité géométrique
+  • (ANIMATION)    — si le médium le permet (web, motion) → 8e dimension
+Question à se poser pour CHAQUE direction : laquelle de ces variables porte la
+SIGNATURE de la marque ? Si la réponse est "couleur uniquement", l'identité
+est fragile. Une marque forte joue sur ≥ 3 variables simultanément (ex : Nike
+= forme + position + taille du swoosh ; Apple = forme + valeur + grain).
+`.trim()
+
+export const BRAND_SEMIOTICS_PRINCIPLES = `
+SÉMIOTIQUE DU DESIGN DE MARQUE (Peirce / Greimas, théorie publique) — chaque
+signe visuel se lit sur 3 niveaux que la direction doit articuler consciemment :
+
+  1. SIGNIFIANT   — ce que l'œil voit (forme, couleur, typo, composition)
+  2. SIGNIFIÉ DÉNOTATIF — la lecture littérale (un cercle bleu = "un cercle bleu")
+  3. SIGNIFIÉ CONNOTATIF — les valeurs culturelles évoquées (un cercle bleu = sérénité,
+     tech, infini, eau — DÉPEND DU CONTEXTE CULTUREL DE LA CIBLE)
+
+TYPOLOGIE DES SIGNES (à choisir consciemment par direction) :
+  • Signe ICONIQUE   — ressemble à son référent (un logo croissant pour boulangerie)
+                       → lisibilité immédiate, faible originalité
+  • Signe INDICIEL   — pointe vers son référent par lien causal (flèche = direction)
+                       → mémorable, modérément culturel
+  • Signe SYMBOLIQUE — relation arbitraire à son référent (swoosh Nike = victoire)
+                       → fort capital de marque mais nécessite construction dans le temps
+
+Une marque qui démarre privilégie souvent l'iconique (compréhensible vite) puis
+construit le symbolique avec le temps. Précise dans positioning quel niveau
+sémiotique est visé.
+
+DISCOURS DE MARQUE — 3 axes à équilibrer :
+  • Discours FONCTIONNEL : ce que la marque FAIT (utilité, performance)
+  • Discours ÉMOTIONNEL  : ce que la marque FAIT RESSENTIR (joie, fierté, calme)
+  • Discours IDENTITAIRE : ce que la marque DIT DE SON UTILISATEUR (statut, valeurs)
+Identifie lequel domine pour la cible — sans les 3, l'identité paraît plate.
+`.trim()
+
+export const BRAND_ARCHITECTURE_GUIDE = `
+ARCHITECTURES DE MARQUE (modèle d'Aaker, 1996 — théorie publique) — choisis la
+structure qui sert la stratégie business, PAS l'esthétique :
+
+  • MONOLITHIQUE (branded house) — une seule marque-mère pour tout (FedEx, Google,
+    Virgin). Avantage : capital concentré, économies marketing. Risque : un
+    scandale sur un produit affecte tout. Adapté quand l'USP est transverse.
+
+  • ENDOSSÉE — la marque mère cautionne des sous-marques (Nestlé KitKat, Marriott
+    Courtyard). Avantage : chaque sous-marque a sa personnalité + crédibilité
+    parent. Risque : complexité de gouvernance.
+
+  • MARQUES-PRODUIT (house of brands) — chaque marque est indépendante (P&G,
+    Unilever). Avantage : segmentation fine. Risque : coût marketing × N.
+
+  • SUB-BRANDING — la mère partage la scène avec un nom produit (Apple iPhone,
+    Sony PlayStation). Avantage : récupère la notoriété mère + crée identité produit.
+
+Précise dans positioning quelle architecture est envisagée — ça change radicalement
+le logo (mono = wordmark fort ; endossée = combination avec mention parent ;
+marque-produit = identité autonome).
+`.trim()
+
 export const TYPOGRAPHY_PAIRING_GUIDE = `
 TYPOGRAPHY PAIRING — règles de combinaison :
   • HEADING accroche, BODY supporte. Heading doit être ≥ 2.5× plus grand que
@@ -470,7 +539,9 @@ Format contradiction_paths (UNIQUEMENT si has_contradiction === true, EXACTEMENT
 
 ${COLOR_PSYCHOLOGY}
 
-${SHAPE_PSYCHOLOGY}`
+${SHAPE_PSYCHOLOGY}
+
+${BRAND_ARCHITECTURE_GUIDE}`
   return { system, user }
 }
 
@@ -614,6 +685,19 @@ R8. PSYCHOLOGIE FORMES — keywords (et plus tard logo) doivent refléter
 R9. TYPOGRAPHIE PAIR — voir TYPOGRAPHY PAIRING GUIDE pour les règles
     serif/sans/slab/script et les contrastes hauteur/poids/casse.
 
+R10. VARIABLES VISUELLES — chaque direction nomme dans 'mood' au moins 3
+     variables de Bertin qui portent la SIGNATURE de la marque (ex: "taille +
+     forme + grain dominent"). C'est ce qui sépare une identité forte d'une
+     identité interchangeable.
+
+R11. SÉMIOTIQUE — précise dans positioning sur quel niveau sémiotique la marque
+     mise (iconique pour lisibilité immédiate, symbolique pour capital long terme)
+     et quel discours domine (fonctionnel / émotionnel / identitaire).
+
+R12. ARCHITECTURE DE MARQUE — si l'USP suggère plusieurs produits/sous-marques
+     futures, propose explicitement une architecture (monolithique / endossée /
+     sub-branding) dans positioning. Ça change le logo recommandé.
+
 ═══════════════════════════ RÉFÉRENCES DESIGN ═══════════════════════════
 
 ${BRAND_DESIGN_PRINCIPLES}
@@ -623,6 +707,12 @@ ${COLOR_PSYCHOLOGY}
 ${SHAPE_PSYCHOLOGY}
 
 ${TYPOGRAPHY_PAIRING_GUIDE}
+
+${BERTIN_VISUAL_VARIABLES}
+
+${BRAND_SEMIOTICS_PRINCIPLES}
+
+${BRAND_ARCHITECTURE_GUIDE}
 
 ═════════════════════════════════════════════════════════════════════════
 
@@ -695,6 +785,10 @@ ${BRAND_DESIGN_PRINCIPLES}
 ${COLOR_PSYCHOLOGY}
 
 ${TYPOGRAPHY_PAIRING_GUIDE}
+
+${BERTIN_VISUAL_VARIABLES}
+
+${BRAND_SEMIOTICS_PRINCIPLES}
 
 ═════════════════════════════════════════════════════════════════════════
 
