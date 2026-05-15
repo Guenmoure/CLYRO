@@ -44,6 +44,21 @@
       pointer-events: none;
     }
 
+    /* grain-overlay catalog pattern — fractalNoise SVG embedded as data-URL,
+       overlaid with mix-blend-mode for a subtle film texture. 100 % CSS, no
+       JS, no external request, deterministic at every frame. Equivalent to
+       what `hyperframes add grain-overlay` installs as a component, but
+       inlined here so the template ships self-contained. */
+    .grain-overlay {
+      position: absolute; inset: 0;
+      z-index: 8;
+      pointer-events: none;
+      opacity: 0.18;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      background-size: 200px 200px;
+    }
+
     /* Avatar card — centered, rounded, with brand-color glow */
     .avatar-card {
       position: absolute;
@@ -82,12 +97,32 @@
     }
 
     .top-label-title {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
       font-size: 64px;
       font-weight: 900;
       letter-spacing: -0.03em;
       color: white;
       line-height: 1;
       text-shadow: 0 4px 24px rgba(0,0,0,0.6);
+    }
+
+    /* shimmer-sweep catalog pattern — diagonal light pass across the title
+       at scene start. Triggered by GSAP, positioned via overlay div so the
+       text stays at full color and only the highlight band moves. */
+    .shimmer-sweep {
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%;
+      width: 60%;
+      background: linear-gradient(110deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.55) 50%,
+        transparent 100%);
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      transform: translateX(-200%);
     }
 
     .top-label-sub {
@@ -167,14 +202,17 @@
          data-duration="__DURATION__"
          data-track-index="0"></div>
 
-    <div class="avatar-card clip"
-         id="card"
+    <!-- grain-overlay (catalog pattern) — adds a subtle film texture on top
+         of everything. Pure CSS / SVG so the layer is deterministic. -->
+    <div class="grain-overlay clip"
          data-start="0"
          data-duration="__DURATION__"
-         data-track-index="1">
-      <!-- HyperFrames seeks <video class="clip"> frame-by-frame during render.
-           Without these data-* attrs the clip plays at wall-clock and audio
-           desyncs from the final timeline. -->
+         data-track-index="9"></div>
+
+    <!-- HF spec: never nest a timed <video class="clip"> inside another
+         timed <div class="clip"> — the wrapper has no timing attrs so
+         only the <video> drives the clip lifecycle. -->
+    <div class="avatar-card" id="card">
       <video class="clip"
              src="__AVATAR_SRC__"
              data-start="0"
@@ -184,12 +222,24 @@
              playsinline></video>
     </div>
 
+    <!-- Audio track — pulls voiceover out of the same MP4. The <video>
+         above is muted per spec; without this <audio> the render is silent. -->
+    <audio id="avatarAudio"
+           src="__AVATAR_SRC__"
+           data-start="0"
+           data-duration="__DURATION__"
+           data-track-index="4"
+           data-volume="1"></audio>
+
     <div class="top-label clip"
          id="topLabel"
          data-start="0"
          data-duration="__DURATION__"
          data-track-index="2">
-      <div class="top-label-title">__LOWER_THIRD_TITLE__</div>
+      <div class="top-label-title">
+        __LOWER_THIRD_TITLE__
+        <span class="shimmer-sweep" id="introShimmer"></span>
+      </div>
       <div class="top-label-sub">__LOWER_THIRD_SUB__</div>
     </div>
 
@@ -203,7 +253,7 @@
 
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js" crossorigin="anonymous"></script>
   <script>
     const tl = gsap.timeline({ paused: true });
 
@@ -230,6 +280,15 @@
       duration: 0.7,
       ease: 'power3.out',
     }, 0.5);
+
+    // shimmer-sweep catalog effect — diagonal light pass over the title
+    // 1.2 s after entrance. Single pass (no repeat) so it's a "premium AI"
+    // accent, not a constant motion distraction.
+    tl.fromTo('#introShimmer',
+      { x: '-200%' },
+      { x: '400%', duration: 1.2, ease: 'power2.inOut' },
+      0.8
+    );
 
     // Hold + smooth exit at the end of the scene (last 0.6s)
     tl.to(['#topLabel', '#quote'], {

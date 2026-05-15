@@ -66,8 +66,12 @@
       opacity: 0;
     }
 
-    .top-pill::before {
-      content: '';
+    /* "Live" indicator — was previously a CSS @keyframes animation with
+       `infinite`, which plays at wall-clock during HF capture and produces
+       non-deterministic frames. Now a real <span class="live-dot"> element
+       inside the pill so a GSAP timeline can drive the pulse with a finite
+       repeat count computed from composition duration. */
+    .live-dot {
       display: inline-block;
       width: 6px; height: 6px;
       background: __BRAND_COLOR__;
@@ -75,11 +79,6 @@
       margin-right: 10px;
       vertical-align: middle;
       box-shadow: 0 0 10px __BRAND_COLOR__;
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
     }
 
     /* Karaoke captions container */
@@ -172,7 +171,7 @@
          data-start="0"
          data-duration="__DURATION__"
          data-track-index="3">
-      LIVE · __LOWER_THIRD_TITLE__
+      <span class="live-dot" id="liveDot"></span>LIVE · __LOWER_THIRD_TITLE__
     </div>
 
     <div class="karaoke clip"
@@ -181,9 +180,17 @@
          data-duration="__DURATION__"
          data-track-index="4"></div>
 
+    <!-- Audio out of the same avatar MP4 — without this the render is silent. -->
+    <audio id="avatarAudio"
+           src="__AVATAR_SRC__"
+           data-start="0"
+           data-duration="__DURATION__"
+           data-track-index="5"
+           data-volume="1"></audio>
+
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js" crossorigin="anonymous"></script>
   <script>
     // Split caption into max 10 words for the karaoke effect — beyond that,
     // the screen gets cluttered. Excess words are dropped (the spoken audio
@@ -208,6 +215,20 @@
       ease: 'power3.out',
     }, 0.2);
 
+    // "LIVE" dot pulse — replaces the previous CSS `animation: pulse infinite`
+    // (non-deterministic at render time). Finite repeat count computed from
+    // composition duration so the timeline always terminates.
+    const sceneDur = parseFloat('__DURATION__');
+    const CYCLE = 1.5;
+    const pulseRepeats = Math.max(0, Math.ceil(sceneDur / CYCLE) - 1);
+    tl.to('#liveDot', {
+      opacity: 0.4,
+      duration: CYCLE / 2,
+      ease: 'sine.inOut',
+      yoyo: true,
+      repeat: pulseRepeats,
+    }, 0);
+
     // Side brand bar fades in
     tl.to('#sideBrand', {
       opacity: 1,
@@ -215,14 +236,17 @@
       ease: 'power2.out',
     }, 0.4);
 
-    // Words appear sequentially over the full scene duration, with active
-    // class swapping word-by-word like a live transcription.
+    // Words appear sequentially over the full scene duration. The "active"
+    // styling is driven by GSAP property tweens (background-color +
+    // transform) instead of tl.add(() => classList.add(...)) — callbacks
+    // don't re-run cleanly under HF's backward seek, but property tweens are
+    // deterministic at every timeline position.
     const wordEls = karaoke.querySelectorAll('.karaoke-word');
     if (wordEls.length > 0) {
-      const sceneDur = parseFloat('__DURATION__');
       const slot = Math.max(0.4, (sceneDur - 1.0) / Math.max(1, wordEls.length));
       wordEls.forEach((el, i) => {
         const t = 0.6 + i * slot;
+        const isLast = i === wordEls.length - 1;
         // Word enters
         tl.to(el, {
           opacity: 1,
@@ -231,11 +255,23 @@
           duration: 0.25,
           ease: 'back.out(1.8)',
         }, t);
-        // Highlight active
-        tl.add(() => el.classList.add('active'), t);
-        // Un-highlight after one slot (last word stays active until end)
-        if (i < wordEls.length - 1) {
-          tl.add(() => el.classList.remove('active'), t + slot);
+        // Active highlight (brand-color background + scale up)
+        tl.to(el, {
+          backgroundColor: '__BRAND_COLOR__',
+          color: '#ffffff',
+          scale: 1.05,
+          duration: 0.12,
+          ease: 'power2.out',
+        }, t);
+        // Un-highlight after one slot — last word stays highlighted until end
+        if (!isLast) {
+          tl.to(el, {
+            backgroundColor: 'rgba(0,0,0,0)',
+            color: '#ffffff',
+            scale: 1,
+            duration: 0.12,
+            ease: 'power2.in',
+          }, t + slot);
         }
       });
     }
@@ -245,7 +281,7 @@
       opacity: 0,
       duration: 0.4,
       ease: 'power2.in',
-    }, parseFloat('__DURATION__') - 0.4);
+    }, sceneDur - 0.4);
 
     window.__timelines = window.__timelines || {};
     window.__timelines['avatar-tiktok'] = tl;

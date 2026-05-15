@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CLYRO Logo Outro</title>
+  <!--
+    HyperFrames composition — branded END card. Inspired by the official
+    `logo-outro` catalog block (cinematic logo reveal with tagline). The
+    avatar MP4 is used only as a darkened, blurred backdrop so the same
+    composeAvatarSceneWithHyperframes API can drive this template without
+    a separate codepath.
+
+    Best for : single-scene splash, project intro, or the LAST scene of a
+    multi-scene Studio project (set this as the project's template).
+
+    Variables interpolated server-side :
+      __AVATAR_SRC__         data:URL or relative path to the HeyGen MP4
+      __DURATION__           total scene duration in seconds (float)
+      __WIDTH__              composition width in px
+      __HEIGHT__             composition height in px
+      __BRAND_COLOR__        hex like "#3B8EF0"
+      __BRAND_COLOR_DARK__   slightly darker hex for gradient
+      __LOWER_THIRD_TITLE__  project name (huge, centered)
+      __LOWER_THIRD_SUB__    tagline below the title
+      __CAPTION_TEXT__       optional final CTA / footer
+      __INITIAL__            first letter for the logo medallion fallback
+  -->
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000;
+      font-family: 'Liberation Sans', system-ui, -apple-system, sans-serif; }
+
+    [data-composition-id] {
+      position: relative;
+      width: __WIDTH__px;
+      height: __HEIGHT__px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 35%, __BRAND_RGBA_40__ 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 95%, __BRAND_RGBA_30__ 0%, transparent 60%),
+        linear-gradient(180deg, #0a0a0a 0%, #050507 100%);
+    }
+
+    /* Avatar pulled in as a blurred, dimmed backdrop. Adds motion energy
+       without competing with the brand mark. */
+    .backdrop-video {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      filter: blur(28px) saturate(1.3) brightness(0.35);
+      opacity: 0.55;
+      z-index: 1;
+    }
+
+    /* grain-overlay catalog pattern */
+    .grain-overlay {
+      position: absolute; inset: 0;
+      z-index: 8;
+      pointer-events: none;
+      opacity: 0.18;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      background-size: 200px 200px;
+    }
+
+    /* Central stack — logo medallion, big project name, tagline, CTA */
+    .outro-stack {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 88%;
+      max-width: 1100px;
+      text-align: center;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    /* Logo medallion — circle with first-letter monogram, glowing brand ring */
+    .logo-mark {
+      width: 144px;
+      height: 144px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, __BRAND_COLOR__ 0%, __BRAND_COLOR_DARK__ 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 64px;
+      letter-spacing: -0.04em;
+      box-shadow:
+        0 24px 60px __BRAND_RGBA_40__,
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 2px 0 rgba(255, 255, 255, 0.18);
+      opacity: 0;
+      transform: scale(0.6);
+    }
+
+    /* Project name — huge editorial weight, room for shimmer-sweep */
+    .outro-title {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+      font-size: 128px;
+      font-weight: 900;
+      letter-spacing: -0.045em;
+      color: white;
+      line-height: 0.96;
+      text-shadow: 0 4px 32px rgba(0, 0, 0, 0.55);
+      opacity: 0;
+      transform: translateY(40px);
+    }
+
+    /* shimmer-sweep catalog pattern */
+    .shimmer-sweep {
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%;
+      width: 60%;
+      background: linear-gradient(110deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.6) 50%,
+        transparent 100%);
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      transform: translateX(-200%);
+    }
+
+    .outro-sub {
+      font-size: 30px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.78);
+      letter-spacing: 0.04em;
+      max-width: 80%;
+      line-height: 1.4;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    /* CTA pill at the bottom */
+    .outro-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .outro-cta::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: __BRAND_COLOR__;
+      border-radius: 50%;
+      box-shadow: 0 0 10px __BRAND_COLOR__;
+    }
+
+    /* Vertical 9:16 + square 1:1 — smaller sizes */
+    @media (max-aspect-ratio: 1/1) {
+      .logo-mark { width: 168px; height: 168px; font-size: 76px; }
+      .outro-title { font-size: 140px; }
+      .outro-sub { font-size: 36px; max-width: 92%; }
+      .outro-cta { font-size: 22px; padding: 16px 32px; }
+    }
+    @media (aspect-ratio: 1/1) {
+      .outro-title { font-size: 110px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="root"
+       data-composition-id="avatar-logo-outro"
+       data-start="0"
+       data-width="__WIDTH__"
+       data-height="__HEIGHT__"
+       data-duration="__DURATION__">
+
+    <!-- Backdrop video — same avatar MP4 used elsewhere, just blurred and
+         dimmed to provide ambient motion behind the brand mark. -->
+    <video class="backdrop-video clip"
+           src="__AVATAR_SRC__"
+           data-start="0"
+           data-duration="__DURATION__"
+           data-track-index="0"
+           muted
+           playsinline></video>
+
+    <!-- grain-overlay (catalog pattern) — film texture across everything -->
+    <div class="grain-overlay clip"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="9"></div>
+
+    <div class="outro-stack clip"
+         id="stack"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="2">
+
+      <div class="logo-mark" id="logoMark">__INITIAL__</div>
+
+      <div class="outro-title" id="outroTitle">
+        __LOWER_THIRD_TITLE__
+        <span class="shimmer-sweep" id="outroShimmer"></span>
+      </div>
+
+      <div class="outro-sub" id="outroSub">__LOWER_THIRD_SUB__</div>
+
+      <div class="outro-cta" id="outroCta">__CAPTION_TEXT__</div>
+
+    </div>
+
+    <!-- Audio out of the same avatar MP4 — keeps any voiceover audible
+         while the title is on screen. If the outro is silent (e.g. a
+         no-VO splash), the avatar MP4 audio track is silent too. -->
+    <audio id="avatarAudio"
+           src="__AVATAR_SRC__"
+           data-start="0"
+           data-duration="__DURATION__"
+           data-track-index="4"
+           data-volume="1"></audio>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js" crossorigin="anonymous"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // 1) Logo medallion — scale-pop with elastic bounce
+    tl.to('#logoMark', {
+      opacity: 1,
+      scale: 1,
+      duration: 0.9,
+      ease: 'back.out(1.6)',
+    }, 0.2);
+
+    // 2) Title — rises from below with a strong ease-out
+    tl.to('#outroTitle', {
+      opacity: 1,
+      y: 0,
+      duration: 0.8,
+      ease: 'expo.out',
+    }, 0.55);
+
+    // shimmer-sweep — one diagonal pass over the title once it lands
+    tl.fromTo('#outroShimmer',
+      { x: '-200%' },
+      { x: '400%', duration: 1.3, ease: 'power2.inOut' },
+      1.1
+    );
+
+    // 3) Tagline — slight delay, gentler ease
+    tl.to('#outroSub', {
+      opacity: 1,
+      y: 0,
+      duration: 0.7,
+      ease: 'power3.out',
+    }, 0.85);
+
+    // 4) CTA pill — last to arrive, signals "end"
+    tl.to('#outroCta', {
+      opacity: 1,
+      y: 0,
+      duration: 0.6,
+      ease: 'power3.out',
+    }, 1.1);
+
+    // 5) Final-scene exit fade (per HF spec, fade-to-black is only allowed
+    //    on the final scene — and this template IS a final scene by design).
+    tl.to(['#logoMark', '#outroTitle', '#outroSub', '#outroCta'], {
+      opacity: 0,
+      y: -10,
+      duration: 0.5,
+      ease: 'power2.in',
+    }, parseFloat('__DURATION__') - 0.6);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines['avatar-logo-outro'] = tl;
+  </script>
+</body>
+</html>

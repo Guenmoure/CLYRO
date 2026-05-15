@@ -17,6 +17,7 @@ export type HFTemplate =
   | 'avatar-pip'
   | 'avatar-tiktok'
   | 'avatar-instagram'
+  | 'avatar-logo-outro'
 
 const TEMPLATES: readonly HFTemplate[] = [
   'avatar-lower-third',
@@ -24,6 +25,7 @@ const TEMPLATES: readonly HFTemplate[] = [
   'avatar-pip',
   'avatar-tiktok',
   'avatar-instagram',
+  'avatar-logo-outro',
 ]
 
 // i18n key map for template name + description
@@ -33,6 +35,7 @@ const TEMPLATE_KEYS: Record<HFTemplate, { name: string; desc: string }> = {
   'avatar-pip':         { name: 'sn_hf_tpl_pip_name',         desc: 'sn_hf_tpl_pip_desc'         },
   'avatar-tiktok':      { name: 'sn_hf_tpl_tiktok_name',      desc: 'sn_hf_tpl_tiktok_desc'      },
   'avatar-instagram':   { name: 'sn_hf_tpl_instagram_name',   desc: 'sn_hf_tpl_instagram_desc'   },
+  'avatar-logo-outro':  { name: 'sn_hf_tpl_logo_outro_name',  desc: 'sn_hf_tpl_logo_outro_desc'  },
 }
 
 interface Props {
@@ -268,6 +271,37 @@ function TemplatePreview({ template, brandColor }: { template: HFTemplate; brand
           <text x="65" y="78" fontSize="5" fill="#222">{'➜'}</text>
           <rect x="46" y="80" width="34" height="1.6" rx="0.5" fill="#222" />
           <rect x="46" y="82.5" width="58" height="1.2" rx="0.5" fill={c} opacity="0.7" />
+        </svg>
+      )
+
+    case 'avatar-logo-outro':
+      return (
+        <svg viewBox="0 0 160 90" className="w-full h-auto rounded-lg" aria-hidden>
+          <defs>
+            <radialGradient id="outroBg">
+              <stop offset="0%" stopColor={c} stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#050507" stopOpacity="1" />
+            </radialGradient>
+            <linearGradient id="outroMark" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={c} />
+              <stop offset="100%" stopColor={dark} />
+            </linearGradient>
+          </defs>
+          {/* radial brand bg */}
+          <rect width="160" height="90" fill="url(#outroBg)" />
+          {/* faint grain hint */}
+          <rect width="160" height="90" fill={c} opacity="0.04" />
+          {/* logo medallion (centered, slightly above midline) */}
+          <circle cx="80" cy="32" r="11" fill="url(#outroMark)" />
+          <rect x="76" y="27" width="8" height="10" rx="1" fill="white" opacity="0.95" />
+          {/* big project name */}
+          <rect x="40" y="49" width="80" height="6" rx="1" fill="white" opacity="0.95" />
+          {/* tagline */}
+          <rect x="52" y="60" width="56" height="2.5" rx="1" fill="white" opacity="0.6" />
+          {/* CTA pill at bottom */}
+          <rect x="58" y="72" width="44" height="9" rx="4.5" fill="white" opacity="0.06" stroke="white" strokeOpacity="0.18" />
+          <circle cx="65" cy="76.5" r="1.4" fill={c} />
+          <rect x="70" y="75" width="26" height="3" rx="1" fill="white" opacity="0.85" />
         </svg>
       )
   }

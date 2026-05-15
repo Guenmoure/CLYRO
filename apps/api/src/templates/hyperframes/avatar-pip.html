@@ -29,6 +29,18 @@
         linear-gradient(160deg, #0a0a14 0%, #1a0f1a 100%);
     }
 
+    /* grain-overlay catalog pattern — fractalNoise SVG data-URL, cinematic
+       film texture on top of everything. */
+    .grain-overlay {
+      position: absolute; inset: 0;
+      z-index: 8;
+      pointer-events: none;
+      opacity: 0.14;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      background-size: 200px 200px;
+    }
+
     /* Animated grid pattern background — adds depth */
     .grid-bg {
       position: absolute; inset: 0;
@@ -92,12 +104,32 @@
     }
 
     .text-block-title {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
       font-size: 84px;
       font-weight: 900;
       letter-spacing: -0.03em;
       color: white;
       line-height: 1.04;
       text-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    /* shimmer-sweep catalog pattern — diagonal light pass across the title
+       at scene start. The text stays at full color; only the white highlight
+       band moves via GSAP. */
+    .shimmer-sweep {
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(110deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        transparent 100%);
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      transform: translateX(-200%);
     }
 
     .text-block-caption {
@@ -136,21 +168,28 @@
          data-duration="__DURATION__"
          data-track-index="0"></div>
 
+    <!-- grain-overlay (catalog pattern) — film grain texture overlay. -->
+    <div class="grain-overlay clip"
+         data-start="0"
+         data-duration="__DURATION__"
+         data-track-index="9"></div>
+
     <div class="text-block clip"
          id="textBlock"
          data-start="0"
          data-duration="__DURATION__"
          data-track-index="1">
       <div class="text-block-eyebrow">__LOWER_THIRD_SUB__</div>
-      <div class="text-block-title">__LOWER_THIRD_TITLE__</div>
+      <div class="text-block-title">
+        __LOWER_THIRD_TITLE__
+        <span class="shimmer-sweep" id="pipShimmer"></span>
+      </div>
       <div class="text-block-caption">__CAPTION_TEXT__</div>
     </div>
 
-    <div class="pip-card clip"
-         id="pipCard"
-         data-start="0"
-         data-duration="__DURATION__"
-         data-track-index="2">
+    <!-- HF spec: <video class="clip"> must NOT be nested inside another
+         <div class="clip" data-start>. Wrapper carries no timing attrs. -->
+    <div class="pip-card" id="pipCard">
       <video class="clip"
              src="__AVATAR_SRC__"
              data-start="0"
@@ -159,9 +198,17 @@
              muted playsinline></video>
     </div>
 
+    <!-- Audio out of the same avatar MP4 — without this the render is silent. -->
+    <audio id="avatarAudio"
+           src="__AVATAR_SRC__"
+           data-start="0"
+           data-duration="__DURATION__"
+           data-track-index="3"
+           data-volume="1"></audio>
+
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js" crossorigin="anonymous"></script>
   <script>
     const tl = gsap.timeline({ paused: true });
 
@@ -181,6 +228,14 @@
       duration: 0.8,
       ease: 'power3.out',
     }, 0.3);
+
+    // shimmer-sweep catalog effect — single diagonal pass across the title
+    // after it lands. Premium "AI" feel without becoming a constant motion.
+    tl.fromTo('#pipShimmer',
+      { x: '-200%' },
+      { x: '400%', duration: 1.3, ease: 'power2.inOut' },
+      1.0
+    );
 
     // Exit fade in last 0.5s
     tl.to(['#pipCard', '#textBlock'], {

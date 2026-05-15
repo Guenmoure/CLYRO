@@ -1351,6 +1351,8 @@ export const translations = {
     sn_hf_tpl_tiktok_desc: 'Avatar full-bleed + word-by-word karaoke captions. Vertical-friendly.',
     sn_hf_tpl_instagram_name: 'Instagram post',
     sn_hf_tpl_instagram_desc: 'Avatar in a fake Instagram UI — handle, verified check, like/comment bar.',
+    sn_hf_tpl_logo_outro_name: 'Logo outro',
+    sn_hf_tpl_logo_outro_desc: 'Branded end card — logo medallion, project name with shimmer, tagline, CTA pill. Use for single-scene splash or as the final scene.',
 
     // ── Studio TopBar (st_) ───────────────────────────────────────────────
     st_backToDashboard: 'Back to dashboard',
@@ -2978,6 +2980,8 @@ export const translations = {
     sn_hf_tpl_tiktok_desc: 'Avatar plein-écran + sous-titres karaoké mot-à-mot. Idéal vertical.',
     sn_hf_tpl_instagram_name: 'Post Instagram',
     sn_hf_tpl_instagram_desc: 'Avatar dans une fausse UI Instagram — handle, badge vérifié, barre like/commentaire.',
+    sn_hf_tpl_logo_outro_name: 'Logo outro',
+    sn_hf_tpl_logo_outro_desc: 'Carte de fin brandée — médaillon logo, titre projet avec shimmer, baseline, pilule CTA. Idéal pour splash mono-scène ou comme dernière scène.',
 
     // ── Studio new page — remaining hardcoded strings (sn_) ───────────────
     sn_voiceLabel: 'Voix off',
@@ -4564,6 +4568,8 @@ export const translations = {
     sn_hf_tpl_tiktok_desc: 'Avatar a pantalla completa + subtítulos karaoke palabra a palabra. Ideal vertical.',
     sn_hf_tpl_instagram_name: 'Post Instagram',
     sn_hf_tpl_instagram_desc: 'Avatar en una UI falsa de Instagram — handle, verificado, barra de like/comentario.',
+    sn_hf_tpl_logo_outro_name: 'Logo outro',
+    sn_hf_tpl_logo_outro_desc: 'Tarjeta final con marca — medallón logo, nombre del proyecto con shimmer, eslogan, píldora CTA. Ideal para splash mono-escena o como última escena.',
 
     // ── Studio new page — remaining hardcoded strings (sn_) ───────────────
     sn_voiceLabel: 'Voz en off',
@@ -6102,6 +6108,8 @@ export const translations = {
     sn_hf_tpl_tiktok_desc: 'Avatar bildschirmfüllend + Wort-für-Wort-Karaoke. Ideal vertikal.',
     sn_hf_tpl_instagram_name: 'Instagram-Post',
     sn_hf_tpl_instagram_desc: 'Avatar in falscher Instagram-UI — Handle, Verifiziert-Badge, Like/Kommentar-Leiste.',
+    sn_hf_tpl_logo_outro_name: 'Logo-Outro',
+    sn_hf_tpl_logo_outro_desc: 'Gebrandete Endkarte — Logo-Medaillon, Projektname mit Schimmer, Tagline, CTA-Pille. Ideal für Single-Scene-Splash oder als letzte Szene.',
 
     // ── Studio new page — remaining hardcoded strings (sn_) ───────────────
     sn_voiceLabel: 'Sprachausgabe',
@@ -7688,6 +7696,8 @@ export const translations = {
     sn_hf_tpl_tiktok_desc: 'Avatar em ecrã inteiro + legendas karaoke palavra a palavra. Ideal vertical.',
     sn_hf_tpl_instagram_name: 'Post Instagram',
     sn_hf_tpl_instagram_desc: 'Avatar numa UI falsa do Instagram — handle, verificado, barra de like/comentário.',
+    sn_hf_tpl_logo_outro_name: 'Logo outro',
+    sn_hf_tpl_logo_outro_desc: 'Cartão final com marca — medalhão logo, nome do projeto com brilho, slogan, pílula CTA. Ideal para splash de cena única ou como cena final.',
 
     // ── Studio new page — remaining hardcoded strings (sn_) ───────────────
     sn_voiceLabel: 'Voz off',

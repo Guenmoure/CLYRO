@@ -272,6 +272,7 @@ const analyzeSchema = z.object({
     'avatar-pip',
     'avatar-tiktok',
     'avatar-instagram',
+    'avatar-logo-outro',
   ]).optional(),
   /** Brand primary color for HF lower-third. Falls back to
    *  background_color, then to CLYRO blue (#3B8EF0). */
@@ -1120,9 +1121,9 @@ async function runStudioFinalRender(
       const projectTitle = (typeof project?.title === 'string' && project.title.trim()) ? project.title : 'CLYRO'
 
       // Template choice : per-project metadata > default 'avatar-lower-third'.
-      type HFTemplate = 'avatar-lower-third' | 'avatar-intro-card' | 'avatar-pip' | 'avatar-tiktok' | 'avatar-instagram'
+      type HFTemplate = 'avatar-lower-third' | 'avatar-intro-card' | 'avatar-pip' | 'avatar-tiktok' | 'avatar-instagram' | 'avatar-logo-outro'
       const VALID_TEMPLATES: readonly HFTemplate[] = [
-        'avatar-lower-third', 'avatar-intro-card', 'avatar-pip', 'avatar-tiktok', 'avatar-instagram',
+        'avatar-lower-third', 'avatar-intro-card', 'avatar-pip', 'avatar-tiktok', 'avatar-instagram', 'avatar-logo-outro',
       ]
       const candidate = typeof projectMeta.hyperframes_template === 'string'
         ? projectMeta.hyperframes_template

@@ -41,6 +41,7 @@ export type TemplateName =
   | 'avatar-pip'
   | 'avatar-tiktok'
   | 'avatar-instagram'
+  | 'avatar-logo-outro'
 
 /** All available templates — used by the frontend for the picker UI. */
 export const HYPERFRAMES_TEMPLATES: readonly TemplateName[] = [
@@ -49,6 +50,7 @@ export const HYPERFRAMES_TEMPLATES: readonly TemplateName[] = [
   'avatar-pip',
   'avatar-tiktok',
   'avatar-instagram',
+  'avatar-logo-outro',
 ] as const
 let templateCache: Partial<Record<TemplateName, string>> = {}
 
@@ -231,10 +233,11 @@ export async function composeAvatarSceneWithHyperframes(
     const firstChar = lowerThirdTitle.trim().charAt(0).toUpperCase()
     const initial = /[A-ZÀ-ſ]/.test(firstChar) ? firstChar : 'C'
 
-    // Pre-compute the rgba alpha variants the templates reference. Adding new
-    // values here is OK — they just become extra no-op replacements if the
-    // template doesn't use them.
-    const rgbaAlphas = [8, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90] as const
+    // Pre-compute the rgba alpha variants the templates actually reference.
+    // Keep this list tight — unused entries just bloat the replace() chain.
+    // If a template adds a new __BRAND_RGBA_NN__ placeholder, add the alpha
+    // here (otherwise the placeholder won't get substituted at render time).
+    const rgbaAlphas = [8, 30, 40, 50] as const
     let interpolated = html
       .replace(/__AVATAR_SRC__/g,         'assets/avatar.mp4')
       .replace(/__DURATION__/g,           durationSeconds.toFixed(2))

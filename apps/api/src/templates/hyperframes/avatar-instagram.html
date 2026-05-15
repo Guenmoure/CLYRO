@@ -142,6 +142,24 @@
       display: inline-block;
     }
 
+    /* Stacked heart icons — outline + filled, deterministic swap via GSAP
+       opacity tween (avoids tl.add(callback) which doesn't survive backward
+       seeks during HF capture). */
+    .ig-like-stack {
+      position: relative;
+      display: inline-block;
+      width: 32px;
+    }
+    .ig-like-stack > span {
+      position: absolute;
+      top: 0; left: 0;
+      transition: none;
+    }
+    .ig-heart-filled {
+      color: #ed4956;
+      opacity: 0;
+    }
+
     .ig-likes {
       margin-top: 8px;
       font-size: 14px;
@@ -219,11 +237,14 @@
 
       <div class="ig-footer">
         <div class="ig-actions">
-          <span class="ig-action" id="likeBtn">&#x2661;</span>
+          <span class="ig-action ig-like-stack">
+            <span class="ig-heart-outline" id="likeOutline">&#x2661;</span>
+            <span class="ig-heart-filled" id="likeFilled">&#10084;</span>
+          </span>
           <span class="ig-action">&#128172;</span>
           <span class="ig-action">&#10148;</span>
         </div>
-        <div class="ig-likes" id="likes">12 348 likes</div>
+        <div class="ig-likes" id="likes">12 349 likes</div>
         <div class="ig-caption">
           <strong>__LOWER_THIRD_TITLE__</strong>__CAPTION_TEXT__
         </div>
@@ -231,9 +252,17 @@
 
     </div>
 
+    <!-- Audio out of the same avatar MP4 — without this the render is silent. -->
+    <audio id="avatarAudio"
+           src="__AVATAR_SRC__"
+           data-start="0"
+           data-duration="__DURATION__"
+           data-track-index="2"
+           data-volume="1"></audio>
+
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js" crossorigin="anonymous"></script>
   <script>
     // Set the avatar initial to the first letter of __LOWER_THIRD_TITLE__
     // (server may have escaped the value, so we read from DOM via textContent
@@ -255,19 +284,23 @@
       ease: 'back.out(1.4)',
     }, 0);
 
-    // "Like" tap animation at t=1s — toggles to filled red heart
-    tl.add(() => {
-      const btn = document.getElementById('likeBtn');
-      const likes = document.getElementById('likes');
-      if (btn) {
-        btn.innerHTML = '&#10084;';  // filled heart
-        btn.style.color = '#ed4956';
-      }
-      if (likes) likes.textContent = '12 349 likes';
+    // "Like" swap at t=1s — done via stacked icons + opacity tweens instead
+    // of a tl.add(callback) DOM mutation. Callbacks don't survive the
+    // backward seeks HF's capture engine performs at scrub boundaries; opacity
+    // tweens do. Outline fades out as filled fades in (both already mounted).
+    tl.to('#likeOutline', {
+      opacity: 0,
+      duration: 0.15,
+      ease: 'power2.in',
+    }, 1.0);
+    tl.to('#likeFilled', {
+      opacity: 1,
+      duration: 0.15,
+      ease: 'power2.out',
     }, 1.0);
 
     // Brief scale pulse on the heart at like time
-    tl.fromTo('#likeBtn', { scale: 1 }, {
+    tl.fromTo('.ig-like-stack', { scale: 1 }, {
       scale: 1.4,
       duration: 0.18,
       ease: 'back.out(2)',

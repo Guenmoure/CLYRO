@@ -92,6 +92,7 @@ function StudioNewPageInner() {
     | 'avatar-pip'
     | 'avatar-tiktok'
     | 'avatar-instagram'
+    | 'avatar-logo-outro'
   const [useHyperframes, setUseHyperframes] = useState(false)
   const [hyperframesTemplate, setHyperframesTemplate] = useState<HFTemplate>('avatar-lower-third')
   const [brandColor, setBrandColor] = useState('#3B8EF0')
