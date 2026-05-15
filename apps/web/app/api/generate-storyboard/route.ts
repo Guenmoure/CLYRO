@@ -91,7 +91,7 @@ REQUIRED VISUAL STYLE for description_visuelle: ${styleGuide}
 
 For each scene, produce:
 - "index": scene number (starts at ${p.startIndex})
-- "description_visuelle": visual prompt in ENGLISH for Flux (40–80 words sweet spot, hard cap 150 chars). MUST follow the 4-LAYER STRUCTURE below and the visual style above. Describe ONLY the unique visual content of this scene — WHO is visible, WHAT happens, WHERE. Each scene must be visually distinct. Never include identifiable real people.
+- "description_visuelle": visual prompt in ENGLISH for Flux (60–120 words, max 500 chars). MUST follow the MEANINGFUL IMAGE RULES below and the visual style above. The image must ILLUSTRATE THE SPECIFIC CONCEPT being discussed — not the mood, not the niche. If the viewer mutes the video, they should understand what this scene is about from the image alone. Each scene must be visually distinct. Never include identifiable real people.
 - "animation_prompt": camera/motion prompt in ENGLISH for image-to-video (max 80 chars). Describes ONE primary subject motion + ONE camera move, ending with "smooth cinematic motion".
 - "texte_voix": REQUIRED — narration written in ${lang.name} (the script's language). NEVER translate. Always filled, never empty. Matches the corresponding portion of the script VERBATIM. Cumulatively across all scenes, every word of the script MUST appear.
 - "duree_estimee": duration in seconds (integer, between 3 and 12). Sum across all scenes ≈ ${p.estimatedSeconds}s (~${STORYBOARD_WPM} wpm narration of the script). Adjust naturally per scene based on the length of its texte_voix.
@@ -104,23 +104,60 @@ For each scene, produce:
 ${hasDialogue ? `- "speaker": NAME of the speaking character. Optional for narration, REQUIRED for dialogue lines.` : ''}
 
 ═══════════════════════════════════════════════════════════════════════
-4-LAYER STRUCTURE for description_visuelle (mandatory order):
-  1. SUBJECT     — main visual element with specific attributes
-  2. ENVIRONMENT — background, secondary elements, spatial context
-  3. LIGHTING    — direction, temperature, atmosphere
-  4. TECHNICAL   — camera/lens/finish (e.g. "shot on Canon R5, 85mm, 8K, photorealistic")
+MEANINGFUL IMAGE RULES for description_visuelle:
+
+CORE PRINCIPLE: The image must make the viewer UNDERSTAND the concept
+without hearing the narration. Decorative images = viewer leaves.
+
+STRUCTURE (mandatory order):
+  1. CONCEPT     — choose a technique from the 7 TYPES below that best illustrates the SPECIFIC idea
+  2. DETAILS     — include specific objects, numbers, textures, wear marks that make the scene real and concrete
+  3. ENVIRONMENT — background, spatial context, negative space for overlays if needed
+  4. LIGHTING    — direction, temperature, emotional match (serious=dramatic dark, positive=warm golden, warning=cold red accents)
+  5. TECHNICAL   — camera/lens/finish (e.g. "shot on Canon R5, 85mm, shallow DoF, 8K")
+
+7 TECHNIQUES — use in order of preference:
+  1. VISUAL METAPHOR — translate abstract concept into a physical object/scene
+     (compound interest = tiny seedling next to massive oak tree with coins at their bases)
+  2. SIDE-BY-SIDE COMPARISON — show contrast between two states in one frame
+     (cluttered desk with fast food vs clean minimal desk with notebook, split composition)
+  3. STORYTELLING OBJECT — one close-up object that embodies the concept with SPECIFIC details
+     (empty wallet next to $2,400 repair invoice, phone showing $47.23 bank balance)
+  4. SIMPLIFIED DIAGRAM — icons or objects arranged to show a process/cycle
+     (four glowing icons in a circle connected by gradient arrows showing a loop)
+  5. RECOGNIZABLE SITUATION — a specific everyday moment with precise details
+     (phone in bed at 1:47 AM, battery at 12%, scroll indicator showing deep into feed)
+  6. TEMPORAL PROGRESSION — left-to-right evolution showing change over time
+     (row of 5 glass jars from few coins to overflowing, subtle year labels beneath)
+  7. PHYSICAL DATA — make numbers tangible as physical objects
+     (100 gray figurines in a grid, only 3 painted gold = "97% never build wealth")
+
+BANNED GENERIC IMAGES — NEVER generate these:
+  ✗ Sunsets, sunrises, beaches (unless the script is literally about them)
+  ✗ Person walking on a road toward the horizon
+  ✗ Abstract particles, glowing orbs, or meaningless light effects
+  ✗ Generic city skyline at night
+  ✗ Person at a desk "being productive" with no specific details
+  ✗ Abstract brain visualization with no specific mechanism shown
+  ✗ Generic piggy bank, clock, hourglass, or lightbulb without a specific story
+
+DETAIL REQUIREMENTS — every prompt MUST include:
+  • Specific visible quantities when the script mentions numbers
+  • Specific object states (cracked, worn, overflowing, empty, fraying)
+  • Specific spatial relationships that tell the story (small vs large, empty vs full, broken vs intact)
+
 NEVER mention identifiable real people — use hands, silhouettes, objects, abstract shapes.
 End every prompt with "8K".
 
-Adapt SUBJECT + ENVIRONMENT to faceless_scene_type:
-  • broll       → rich narrative scene, no negative-space request
-  • infographic → object/icon related to the data + "wide negative space in the CENTER for text overlay" in ENVIRONMENT
-  • typography  → minimal abstract surface (smoke, gradient, light beam, single object) + "full-frame negative space for centered text" in ENVIRONMENT
+Adapt to faceless_scene_type:
+  • broll       → rich narrative scene using techniques 1-3 or 5 above, no negative-space request
+  • infographic → technique 4 or 7 + "negative space in the CENTER for text overlay"
+  • typography  → minimal abstract surface with single metaphorical object + "full-frame negative space for centered text"
   • demo        → clean device or interface mockup, focused subject, soft ambient light
 ═══════════════════════════════════════════════════════════════════════
 
 RULES:
-1. description_visuelle = unique visual content per scene (subject + action + setting). MUST follow the visual style. Good examples: "scientist examining glowing DNA strand in dark lab", "crowd celebrating in sunlit city square". Bad: "smooth animation" or generic shots.
+1. description_visuelle = CONCEPT-DRIVEN visual content per scene. Ask: "Can someone guess what the script discusses from this image alone?" If no, rewrite. MUST follow the visual style.
 2. animation_prompt MUST describe a CONCRETE motion (never just "smooth animation").
 3. texte_voix is REQUIRED — distribute the full script across ALL scenes verbatim, in ${lang.name}, omitting NOTHING. Every sentence of the script must appear in some scene.
 4. The total duration must FAITHFULLY reflect the script length (~${STORYBOARD_WPM} wpm spoken). Do NOT condense, do NOT shorten — every sentence is narrated in full.
