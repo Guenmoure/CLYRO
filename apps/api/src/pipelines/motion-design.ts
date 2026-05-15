@@ -29,6 +29,9 @@ export interface MotionDesignPipelineParams {
     primary_color:   string
     secondary_color?: string
     logo_url?:        string
+    /** Google Font name passed through to Claude (for editorial hint)
+     *  and to Remotion (loaded via @remotion/google-fonts). Optional. */
+    font_family?:    string
   }
   voiceId?:    string
   musicUrl?:   string
@@ -48,28 +51,75 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
   }
 
   try {
-    // ÉTAPE 1 — Claude génère les MotionScene[]
+    // ÉTAPE 1 — Claude génère les MotionScene[] + voiceovers[i] per scene
     await updateStatus('storyboard', 10)
     const language = detectLanguage(brief)
     logger.info({ videoId, language: language.code }, 'Brief language detected')
-    const { scenes, voiceoverScript, totalFrames } = await generateMotionDesignScenes(
+    const { scenes, voiceovers, voiceoverScript, totalFrames } = await generateMotionDesignScenes(
       brief, format, duration, brandConfig, language, style,
     )
     await updateStatus('storyboard', 25, { scenes })
-    logger.info({ videoId, sceneCount: scenes.length, totalFrames, styleHint: style }, 'MotionDesign scenes generated')
+    logger.info({ videoId, sceneCount: scenes.length, voiceoverWords: voiceoverScript.split(/\s+/).filter(Boolean).length, claudeTotalFrames: totalFrames, styleHint: style }, 'MotionDesign scenes generated')
 
-    // ÉTAPE 2 — ElevenLabs voiceover (parallèle-possible mais court ici)
+    // ÉTAPE 2 — ElevenLabs voiceover PER SCENE en parallèle
+    //
+    // Old design: one big TTS call on the concatenated script. The single
+    // audio track was then played from frame 0 regardless of where each
+    // scene started → systematic drift. Scene 2's narration would land on
+    // scene 1's visuals because Claude's duration guesses didn't match
+    // ElevenLabs' actual pacing.
+    //
+    // New design: parallel TTS per scene. Each scene's audio length is
+    // used to OVERRIDE Claude's duration hint, then the audio is attached
+    // back to that exact scene via voiceoverAudioUrl (data URL). Scenes
+    // without voiceover (dark_light_switch, pure visual beats) keep
+    // Claude's hint.
     await updateStatus('audio', 30)
 
-    let voiceoverBuffer: Buffer | null = null
-    if (voiceId && voiceoverScript.trim()) {
-      try {
-        const result = await generateVoiceoverWithTimestamps(voiceoverScript, voiceId)
-        voiceoverBuffer = result.audioBuffer
-        logger.info({ videoId, audioBytes: voiceoverBuffer.length }, 'MotionDesign voiceover generated')
-      } catch (err) {
-        logger.warn({ err, videoId }, 'MotionDesign: voiceover generation failed — continuing without audio')
+    const FPS = 30
+    if (voiceId) {
+      const ttsResults = await Promise.all(
+        voiceovers.map(async (text, i) => {
+          if (!text.trim()) return { i, audioBuffer: null as Buffer | null, audioSeconds: 0 }
+          try {
+            const { audioBuffer, words } = await generateVoiceoverWithTimestamps(text, voiceId)
+            // Last word's end time = audio length in seconds. Fall back
+            // to estimating from buffer size if alignment is missing
+            // (MP3 ~128 kbps mono → bytes / 16000 ≈ seconds).
+            const audioSeconds = words.length > 0
+              ? words[words.length - 1]!.end
+              : audioBuffer.length / 16_000
+            return { i, audioBuffer, audioSeconds }
+          } catch (err) {
+            logger.warn({ err, sceneIdx: i, videoId }, 'MotionDesign: scene TTS failed — scene will be silent')
+            return { i, audioBuffer: null as Buffer | null, audioSeconds: 0 }
+          }
+        }),
+      )
+
+      // Attach per-scene audio + override durations.
+      let totalAudioFrames = 0
+      for (const { i, audioBuffer, audioSeconds } of ttsResults) {
+        const scene = scenes[i]
+        if (!scene) continue
+        if (audioBuffer && audioSeconds > 0) {
+          // Ceil to whole frames + a 6-frame (0.2s) tail so the voice
+          // doesn't get clipped by the scene boundary.
+          const audioFrames = Math.ceil(audioSeconds * FPS) + 6
+          scene.duration = audioFrames
+          scene.voiceoverAudioUrl = `data:audio/mpeg;base64,${audioBuffer.toString('base64')}`
+          totalAudioFrames += audioFrames
+        }
       }
+      logger.info(
+        {
+          videoId,
+          ttsScenes: ttsResults.filter((r) => r.audioBuffer).length,
+          ttsFailed: ttsResults.filter((r) => !r.audioBuffer && voiceovers[r.i]?.trim()).length,
+          totalAudioFrames,
+        },
+        'MotionDesign: per-scene TTS done, durations re-derived from audio',
+      )
     }
 
     await updateStatus('audio', 50)
@@ -83,7 +133,24 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
     const useLambda = isLambdaEnabled()
     logger.info({ videoId, renderer: useLambda ? 'lambda' : 'local' }, 'MotionDesign: starting render')
 
-    const renderArgs = { scenes, format, voiceoverBuffer, musicUrl }
+    // Pass scenes with per-scene voiceover already attached. The legacy
+    // `voiceoverBuffer` is no longer needed — the audio lives on each
+    // MotionScene via `voiceoverAudioUrl`. Brand is threaded so every
+    // scene reads the live palette via React context instead of using
+    // hardcoded #ff6b00 / system fonts.
+    const renderArgs = {
+      scenes,
+      format,
+      voiceoverBuffer: null,
+      musicUrl,
+      brand: {
+        primary:    brandConfig.primary_color,
+        secondary:  brandConfig.secondary_color,
+        fontFamily: brandConfig.font_family
+          ? `${brandConfig.font_family}, system-ui, -apple-system, sans-serif`
+          : undefined,
+      },
+    }
     const { mp4: mp4Buffer, thumbnail: thumbnailBuffer } = useLambda
       ? await renderMotionDesignVideoLambda(renderArgs)
       : await renderMotionDesignVideo(renderArgs)

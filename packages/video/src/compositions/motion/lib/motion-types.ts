@@ -109,15 +109,44 @@ export type MotionSceneProps =
 export interface MotionScene {
   id:       string
   type:     MotionSceneType
-  duration: number   // frames at 30 fps
+  /**
+   * Duration in frames at 30 fps. The backend OVERRIDES Claude's hint
+   * with the actual ElevenLabs audio length (per scene) so visuals and
+   * voiceover stay perfectly synced. Scenes without voiceover keep
+   * Claude's hint.
+   */
+  duration: number
   props:    MotionSceneProps
+  /**
+   * Per-scene voiceover audio as a `data:audio/mpeg;base64,...` URL.
+   * Mounted as `<Audio>` INSIDE the scene's `<Sequence>` so each clip
+   * starts exactly when the scene appears on screen. When omitted the
+   * scene plays without voiceover (dark_light_switch transitions, pure
+   * visual beats). Replaces the legacy single-track `audioUrl` field.
+   */
+  voiceoverAudioUrl?: string
 }
 
 export interface MotionCompositionProps {
   scenes:    MotionScene[]
   musicUrl?: string
-  audioUrl?: string  // voiceover data-URL
+  /**
+   * Deprecated. Kept for backwards compat with any caller still passing
+   * a concatenated voiceover track. Prefer per-scene `voiceoverAudioUrl`
+   * on each MotionScene — see the pipeline rewrite for the rationale.
+   */
+  audioUrl?: string
   format:    '16_9' | '9_16' | '1_1'
+  /**
+   * Brand theme applied to every scene via the React context. When
+   * omitted scenes use the default CLYRO palette. Pipeline wires this
+   * from `brandConfig.{primary_color, secondary_color, font_family}`.
+   */
+  brand?: {
+    primary?:    string
+    secondary?:  string
+    fontFamily?: string
+  }
 }
 
 // ── Output dimensions per format ─────────────────────────────────────────────

@@ -354,7 +354,7 @@ export async function renderMotionDesignVideoLambda(
 ): Promise<RenderMotionVideoResult> {
   const { renderMediaOnLambda } = await import('@remotion/lambda/client')
 
-  const { scenes, format, voiceoverBuffer, musicUrl } = options
+  const { scenes, format, voiceoverBuffer, musicUrl, brand } = options
 
   const formatKey = (format in MOTION_DESIGN_FORMAT_MAP ? format : '16_9') as '16_9' | '9_16' | '1_1'
   const { compositionId, width, height } = MOTION_DESIGN_FORMAT_MAP[formatKey]
@@ -379,6 +379,7 @@ export async function renderMotionDesignVideoLambda(
     format: formatKey,
     audioUrl,
     musicUrl,
+    brand,
   }
 
   logger.info(

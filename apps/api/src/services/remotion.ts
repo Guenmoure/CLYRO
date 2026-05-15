@@ -327,6 +327,12 @@ export interface RenderMotionDesignOptions {
   format:          '16_9' | '9_16' | '1_1'
   voiceoverBuffer?: Buffer | null
   musicUrl?:       string
+  /** Brand theme applied via React context to every scene. */
+  brand?: {
+    primary?:    string
+    secondary?:  string
+    fontFamily?: string
+  }
 }
 
 /**
@@ -336,7 +342,7 @@ export interface RenderMotionDesignOptions {
 export async function renderMotionDesignVideo(
   options: RenderMotionDesignOptions,
 ): Promise<RenderMotionVideoResult> {
-  const { scenes, format, voiceoverBuffer, musicUrl } = options
+  const { scenes, format, voiceoverBuffer, musicUrl, brand } = options
   const { selectComposition, renderMedia } = await import('@remotion/renderer')
   const { readFile } = await import('fs/promises')
 
@@ -358,6 +364,7 @@ export async function renderMotionDesignVideo(
     format,
     audioUrl,
     musicUrl,
+    brand,
   }
 
   const tempFiles: string[] = []

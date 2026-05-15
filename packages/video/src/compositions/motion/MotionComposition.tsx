@@ -8,6 +8,7 @@ import { SceneDarkLightSwitch } from './scenes/SceneDarkLightSwitch'
 import { SceneMockupZoom }    from './scenes/SceneMockupZoom'
 import { SceneStatsCounter }  from './scenes/SceneStatsCounter'
 import { SceneLogoReveal }    from './scenes/SceneLogoReveal'
+import { BrandProvider }      from './lib/brand-context'
 import type {
   MotionCompositionProps,
   MotionScene,
@@ -47,6 +48,7 @@ export const MotionComposition: React.FC<MotionCompositionProps> = ({
   scenes,
   musicUrl,
   audioUrl,
+  brand,
 }) => {
   // Pre-compute start frame for each scene
   const sequences = useMemo(() => {
@@ -59,22 +61,30 @@ export const MotionComposition: React.FC<MotionCompositionProps> = ({
   }, [scenes])
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#000' }}>
-      {/* Voiceover */}
-      {audioUrl && <Audio src={audioUrl} />}
+    <BrandProvider value={brand}>
+      <AbsoluteFill style={{ backgroundColor: '#000' }}>
+        {/* Legacy single-track voiceover (kept for backwards compat — new
+            pipeline puts a per-scene <Audio> INSIDE each <Sequence> below). */}
+        {audioUrl && <Audio src={audioUrl} />}
 
-      {/* Background music — ducked to 15% */}
-      {musicUrl && <Audio src={musicUrl} volume={0.15} />}
+        {/* Background music — ducked to 15% */}
+        {musicUrl && <Audio src={musicUrl} volume={0.15} />}
 
-      {sequences.map((seq) => (
-        <Sequence
-          key={seq.id}
-          from={seq.startFrame}
-          durationInFrames={Math.max(1, seq.duration)}
-        >
-          {renderMotionScene(seq)}
-        </Sequence>
-      ))}
-    </AbsoluteFill>
+        {sequences.map((seq) => (
+          <Sequence
+            key={seq.id}
+            from={seq.startFrame}
+            durationInFrames={Math.max(1, seq.duration)}
+          >
+            {/* Per-scene voiceover: mounted inside the Sequence so it starts
+                the instant the scene appears and ends with it. Eliminates
+                the drift that happened when a single concatenated track was
+                played from frame 0 — visuals and voice now line up exactly. */}
+            {seq.voiceoverAudioUrl && <Audio src={seq.voiceoverAudioUrl} />}
+            {renderMotionScene(seq)}
+          </Sequence>
+        ))}
+      </AbsoluteFill>
+    </BrandProvider>
   )
 }

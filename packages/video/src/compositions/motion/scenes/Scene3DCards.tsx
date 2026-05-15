@@ -1,17 +1,22 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, interpolate } from 'remotion'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate } from 'remotion'
 import { GlassCard } from '../primitives/GlassCard'
 import { Particles } from '../primitives/Particles'
 import { PerspectiveGrid } from '../primitives/PerspectiveGrid'
+import { useBrand, TOKENS } from '../lib/brand-context'
 import type { Scene3DCardsProps } from '../lib/motion-types'
 
-const CARD_POSITIONS = [
-  { x: 80,   y: 120, rX: -8,  rY: 12,  rZ: -3, tZ: -100 },
-  { x: 450,  y: 60,  rX: -5,  rY: -8,  rZ:  2, tZ: -50  },
-  { x: 820,  y: 140, rX: -6,  rY: 10,  rZ: -1, tZ: -80  },
-  { x: 1200, y: 80,  rX: -4,  rY: -12, rZ:  3, tZ: -120 },
-  { x: 200,  y: 500, rX: -7,  rY:  6,  rZ: -2, tZ: -60  },
-  { x: 900,  y: 480, rX: -5,  rY: -10, rZ:  1, tZ: -90  },
+// Card positions are expressed as PERCENTAGES of the composition size so
+// the same layout works for 16:9, 9:16 and 1:1 outputs. The previous
+// hardcoded pixel positions (x up to 1200, y up to 500) put cards 4-6
+// completely offscreen in vertical 1080×1920 renders.
+const CARD_POSITIONS_PCT = [
+  { xPct: 0.05, yPct: 0.12, rX: -8, rY:  12, rZ: -3, tZ: -100 },
+  { xPct: 0.30, yPct: 0.06, rX: -5, rY:  -8, rZ:  2, tZ:  -50 },
+  { xPct: 0.55, yPct: 0.14, rX: -6, rY:  10, rZ: -1, tZ:  -80 },
+  { xPct: 0.78, yPct: 0.08, rX: -4, rY: -12, rZ:  3, tZ: -120 },
+  { xPct: 0.12, yPct: 0.55, rX: -7, rY:   6, rZ: -2, tZ:  -60 },
+  { xPct: 0.58, yPct: 0.53, rX: -5, rY: -10, rZ:  1, tZ:  -90 },
 ]
 
 interface Props extends Scene3DCardsProps {
@@ -21,7 +26,14 @@ interface Props extends Scene3DCardsProps {
 
 export const Scene3DCards: React.FC<Props> = ({ cards, headline, mode }) => {
   const frame  = useCurrentFrame()
+  const { width, height } = useVideoConfig()
+  const brand  = useBrand()
   const isDark = mode === 'dark'
+
+  // Card size scales with the smaller composition dimension so it stays
+  // legible on every format (square, landscape, portrait).
+  const cardW = Math.round(Math.min(width, height) * 0.30)   // ≈ 324 on 1080
+  const cardH = Math.round(cardW * 0.56)                      // ≈ 180
 
   const headlineOpacity = interpolate(frame, [20, 40], [0, 1], { extrapolateRight: 'clamp' })
   const words = headline.split(' ')
@@ -34,19 +46,27 @@ export const Scene3DCards: React.FC<Props> = ({ cards, headline, mode }) => {
           : 'radial-gradient(ellipse at 50% 0%, #fff0f0 0%, #ffffff 60%)',
       }}
     >
-      {isDark && <PerspectiveGrid mode="dark" color="#ff6b00" opacity={0.12} />}
+      {/* Perspective grid + particles now use the brand primary — no more
+          hardcoded #ff6b00 that ignored the customer's palette. */}
+      {isDark && <PerspectiveGrid mode="dark" color={brand.primary} opacity={0.12} />}
       <Particles mode={mode} count={30} />
 
       {cards.slice(0, 6).map((card, i) => {
-        const pos = CARD_POSITIONS[i] ?? CARD_POSITIONS[0]
+        const pos = CARD_POSITIONS_PCT[i] ?? CARD_POSITIONS_PCT[0]!
+        // Convert percentages → pixels for the current composition size,
+        // then clamp so the card right/bottom edge never goes off-frame.
+        const xRaw = Math.round(pos.xPct * width)
+        const yRaw = Math.round(pos.yPct * height)
+        const x = Math.max(8, Math.min(xRaw, width  - cardW - 8))
+        const y = Math.max(8, Math.min(yRaw, height - cardH - 8))
         return (
           <GlassCard
             key={i}
             index={i}
-            x={pos.x}
-            y={pos.y}
-            width={320}
-            height={180}
+            x={x}
+            y={y}
+            width={cardW}
+            height={cardH}
             rotateX={pos.rX}
             rotateY={pos.rY}
             rotateZ={pos.rZ}
@@ -96,12 +116,13 @@ export const Scene3DCards: React.FC<Props> = ({ cards, headline, mode }) => {
         zIndex:    100,
       }}>
         <h1 style={{
-          fontSize:   56,
+          fontSize:   TOKENS.fontScale.headingL,
           fontWeight: 800,
           color:      isDark ? '#ffffff' : '#1a1a1a',
+          fontFamily: brand.fontFamily,
           lineHeight: 1.2,
           textShadow: isDark ? '0 4px 20px rgba(0,0,0,0.8)' : 'none',
-          maxWidth:   800,
+          maxWidth:   Math.min(width * 0.65, 800),
           margin:     0,
         }}>
           {words.map((word, i) => {

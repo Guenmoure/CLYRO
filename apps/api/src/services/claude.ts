@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { z } from 'zod'
 import { logger } from '../lib/logger'
 import {
   type Scene,
@@ -8,6 +9,8 @@ import {
   validateScriptCoverage,
   STORYBOARD_WPM,
   STORYBOARD_SANITY_LIMIT,
+  getStyleLockSuffix,
+  applyAntiHallucination,
 } from '@clyro/shared'
 import type { DetectedLanguage } from '../lib/detect-language'
 
@@ -159,29 +162,110 @@ interface ChunkPromptParams {
 }
 
 function buildStoryboardSystemPrompt(): string {
-  return `You are an expert video producer and visual storyteller.
-You generate precise, professional storyboards for faceless videos (no on-camera presenter).
+  return `You are the Scene Director for CLYRO. You split scripts into scenes and
+generate image prompts for each scene. Faceless content (no on-camera presenter).
 
-CRITICAL RULE — Text inside the image:
-Diffusion models (Flux, Ideogram) cannot reliably render readable text in images.
-→ Specific numbers, stats, titles, quotes and CTAs are ALWAYS rendered in post-production
-  as drawtext overlays. Put them in the "overlay" field, NEVER in "description_visuelle".
-→ "description_visuelle" only describes the visual background (setting, characters, mood,
-  abstract shapes). If a scene expresses data, describe the SILENT chart
-  (e.g. "bar chart silhouette, three rising bars") — not the digits themselves.
+═══════════════════════════════════════════════════════════════════════
+10 ANTI-HALLUCINATION RULES (non-negotiable — every image_prompt obeys all of them)
+═══════════════════════════════════════════════════════════════════════
 
-CRITICAL RULE — Script preservation (NON-NEGOTIABLE):
-The user's script MUST be preserved VERBATIM across the texte_voix fields.
-→ Do NOT condense, do NOT summarize, do NOT skip any sentence.
-→ The concatenation of all texte_voix fields, in order, MUST reconstruct the original script (modulo whitespace).
-→ The video's duration is determined ENTIRELY by the script's length. There is no upper limit.
-→ If the script is long, produce many scenes. If it's short, produce few. Always full coverage.
+1. ONE SUBJECT PER IMAGE
+   Every image has EXACTLY ONE focal point. Not two objects interacting.
+   Not a complex scene with 5 elements. ONE thing the diffusion model
+   can render perfectly. If a concept needs multiple elements to be
+   understood, SPLIT IT into multiple short scenes (Rule 10).
+
+   BAD: "a wallet on a table next to a phone next to an invoice"
+   GOOD: "Close-up of an empty leather wallet lying open on dark wood"
+
+2. NEVER REQUEST READABLE TEXT IN IMAGES
+   Diffusion models cannot write legible text. Every "description_visuelle"
+   MUST end with "no text, no writing, no letters, no numbers visible".
+   Numbers, stats, titles, quotes, CTAs → "overlay" field ONLY.
+
+   BAD: "a price tag showing $1200" / "an invoice for $2,400"
+   GOOD: image shows BLANK price tag → overlay carries "$1,200"
+
+3. NEVER REQUEST SCREENS SHOWING CONTENT
+   Don't ask for "phone showing social media" or "laptop displaying a
+   spreadsheet" — the model paints gibberish UIs. Instead: show the
+   DEVICE with a generic glow / light. Specify any required on-screen
+   text in the overlay.
+
+   BAD: "a phone screen showing the Instagram feed"
+   GOOD: "smartphone face-down on a pillow, soft blue glow underneath
+          onto the fabric, late night atmosphere"
+
+4. PHYSICAL, NEVER CONCEPTUAL
+   Translate every abstract idea into a physical object the camera can see.
+   - "financial freedom" → a golden key on dark velvet
+   - "compound interest" → a seedling next to an oak tree
+   - "overwhelm" → hands gripping a desk edge, white knuckles
+   - "wasted time" → an hourglass with sand almost gone
+
+5. NO FACES
+   Faceless content. Show: hands, silhouettes, overhead views, close-ups
+   of objects. Never: face expressions, eye contact, identifiable people.
+   If the narration mentions a person, picture what they USE or HOLD or
+   stand IN, not what they look like.
+
+6. SIMPLE COMPOSITION TEMPLATE
+   Every "description_visuelle" follows this skeleton:
+     Close-up of [ONE OBJECT], [2-3 physical details],
+     [simple background], [light direction], [mood in 2 words],
+     no text no writing no letters no numbers visible,
+     [LIGHTING_LOCK], [COLOR_LOCK],
+     shot on [camera], [lens], shallow depth of field, 8K
+
+7. CONSISTENCY LOCKS — every prompt of the same video carries the same locks
+   The caller provides STYLE_LOCK_SUFFIX (palette + temperature + camera
+   feel). Append it verbatim at the end of EVERY description_visuelle so
+   all scenes share one visual identity. The pipeline also forcibly
+   appends it post-Claude as a safety net.
+
+8. SPLIT MULTI-STEP ACTIONS INTO MULTIPLE SCENES
+   If the narration describes a sequence ("he opens the wallet, sees
+   it's empty, looks at the bill"), split into 2-3 short scenes (3-5s
+   each), ONE element per scene. The SEQUENCE tells the story — not
+   one crowded image.
+
+9. OVERLAYS CARRY INFORMATION, IMAGES CARRY MOOD
+   The image creates ATMOSPHERE. The overlay text carries INFORMATION.
+   - Image: empty wallet on dark surface (mood: scarcity)
+     Overlay: "$47.23 remaining" (information: exact amount)
+   - Image: seedling next to oak tree (mood: growth)
+     Overlay: "$100/mo → $227,000" (information: the math)
+   Pick AT MOST ONE overlay per scene, with the exact "trigger_word"
+   from texte_voix that should fire it.
+
+10. NO REPEATING PATTERNS, NO FIXED CADENCE
+    Vary cadrage across the video: alternate Close-up (default) → Medium
+    → Overhead → Close-up. Avoid 5 consecutive close-ups OR 5
+    consecutive overheads — viewer fatigue. The close-up is the default,
+    the others are visual breathing.
+
+═══════════════════════════════════════════════════════════════════════
+SCRIPT PRESERVATION (also non-negotiable)
+═══════════════════════════════════════════════════════════════════════
+
+The user's script is preserved VERBATIM across the texte_voix fields.
+- Do NOT condense, do NOT summarize, do NOT skip any sentence.
+- The concatenation of all texte_voix fields, in order, MUST reconstruct
+  the original script (modulo whitespace).
+- The video's duration is determined ENTIRELY by the script's length.
+- If the script is long, produce many scenes. If it's short, produce few.
+  Always full coverage.
 
 You reply ONLY with valid JSON, no markdown, no comments.`
 }
 
 function buildStoryboardUserPrompt(p: ChunkPromptParams): string {
   const styleGuide = STYLE_VISUAL_GUIDE[p.style] ?? 'professional visual composition'
+  // Anti-hallucination locks — same suffix appended to every scene of
+  // this video so all images share lighting / palette / camera feel.
+  // The pipeline ALSO appends this post-Claude as a safety net (see
+  // `applyAntiHallucination`) so a forgotten lock can never reach fal.ai.
+  const styleLockSuffix = getStyleLockSuffix(p.style)
   const brandContext = p.brandKit
     ? `\nBRAND KIT "${p.brandKit.name}": use the color palette ${p.brandKit.primary_color}${p.brandKit.secondary_color ? ` / ${p.brandKit.secondary_color}` : ''} in the visual descriptions when relevant.`
     : ''
@@ -193,6 +277,14 @@ function buildStoryboardUserPrompt(p: ChunkPromptParams): string {
   return `${languageHeader(lang)}Break this script into approximately ${p.sceneCount} visual scenes for a "${p.style}" style video.${chunkContext}
 
 REQUIRED VISUAL STYLE for description_visuelle: ${styleGuide}${brandContext}
+
+═══════════════════════════════════════════════════════════════════════
+STYLE_LOCK_SUFFIX — append VERBATIM to every description_visuelle in this video
+(repeats across all scenes so they share one identity — palette, lighting,
+finishing). Stays in English.
+═══════════════════════════════════════════════════════════════════════
+${styleLockSuffix}
+═══════════════════════════════════════════════════════════════════════
 
 For each scene, produce:
 - "id": unique identifier ("scene_${String(p.startIndex + 1).padStart(3, '0')}", "scene_${String(p.startIndex + 2).padStart(3, '0')}", …)
@@ -350,6 +442,15 @@ export async function generateStoryboard(
     if (!coverage.ok) {
       logger.warn({ coverage }, 'Storyboard coverage low — Claude may have compressed the script')
     }
+    // Anti-hallucination safety net: force the no-text suffix + style
+    // lock onto every description_visuelle. Idempotent — Claude is told
+    // to include them in the prompt, this is the belt-and-braces in
+    // case it forgets on one scene.
+    for (const scene of result.scenes) {
+      if (scene.description_visuelle) {
+        scene.description_visuelle = applyAntiHallucination(scene.description_visuelle, style)
+      }
+    }
     result.master_seed = masterSeed
     return result
   }
@@ -378,17 +479,23 @@ export async function generateStoryboard(
     })),
   )
 
-  // Merge: re-number indices to be globally sequential and contiguous
+  // Merge: re-number indices to be globally sequential and contiguous +
+  // apply the anti-hallucination safety net to every scene (forces the
+  // no-text suffix + style lock if Claude omitted them on a chunk).
   let globalIndex = 0
   const mergedScenes: Scene[] = []
   for (const result of chunkResults) {
     const sortedScenes = [...result.scenes].sort((a, b) => a.index - b.index)
     for (const scene of sortedScenes) {
-      mergedScenes.push({
+      const safeScene = {
         ...scene,
         index: globalIndex,
         id:    `scene_${String(globalIndex + 1).padStart(3, '0')}`,
-      })
+        description_visuelle: scene.description_visuelle
+          ? applyAntiHallucination(scene.description_visuelle, style)
+          : scene.description_visuelle,
+      }
+      mergedScenes.push(safeScene)
       globalIndex += 1
     }
   }
@@ -545,15 +652,119 @@ Reply ONLY with this valid JSON:
  */
 export interface MotionDesignResult {
   scenes: import('@clyro/video').MotionScene[]
-  voiceoverScript: string   // texte consolidé pour ElevenLabs
-  totalFrames: number        // somme des durées en frames (30 fps)
+  /**
+   * Per-scene voiceover text, indexed by scene position. An empty string
+   * means the scene plays silently (dark_light_switch, pure visual beats).
+   * The pipeline runs ElevenLabs per scene in parallel and attaches each
+   * audio buffer back to the corresponding scene via
+   * `MotionScene.voiceoverAudioUrl`.
+   */
+  voiceovers: string[]
+  /**
+   * Concatenated voiceover (legacy field, kept for any caller that still
+   * wants a flat script — e.g. caption generation or downstream search).
+   */
+  voiceoverScript: string
+  totalFrames: number
 }
+
+// ── Zod schemas for Claude's motion-design output ────────────────────────
+// Every scene type has its own props schema so a missing field (e.g.
+// `stats[]` on stats_counter) fails validation cleanly INSTEAD of silently
+// producing a broken video that crashes at render time. The old code
+// JSON.parse-cast-as-MotionScene[] which let malformed responses through.
+
+const heroTypoPropsZ = z.object({
+  type:      z.literal('hero_typo'),
+  text:      z.string().min(1),
+  subtext:   z.string().optional(),
+  mode:      z.enum(['dark', 'light']),
+  animation: z.enum(['word_by_word', 'line_by_line', 'scale_bounce', 'split_reveal', '3d_rotate']),
+  color:     z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  fontSize:  z.number().int().min(20).max(400).optional(),
+})
+const cardsPropsZ = z.object({
+  type: z.literal('3d_cards'),
+  cards: z.array(z.object({
+    avatar:   z.string().optional(),
+    name:     z.string(),
+    content:  z.string(),
+    metrics:  z.object({ likes: z.number().optional(), comments: z.number().optional() }).optional(),
+    platform: z.enum(['instagram', 'linkedin', 'tiktok', 'twitter']).optional(),
+  })).min(1).max(6),
+  headline: z.string(),
+  mode:     z.enum(['dark', 'light']),
+  layout:   z.enum(['scatter', 'v_shape', 'tunnel', 'orbit']).optional(),
+})
+const statsPropsZ = z.object({
+  type: z.literal('stats_counter'),
+  stats: z.array(z.object({
+    value: z.number(),
+    unit:  z.string(),
+    label: z.string(),
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  })).min(1).max(4),
+  headline: z.string().optional(),
+  mode:     z.enum(['dark', 'light']),
+})
+const floatingPropsZ = z.object({
+  type: z.literal('floating_icons'),
+  icons: z.array(z.object({
+    emoji: z.string(),
+    label: z.string(),
+    color: z.string(),
+  })).min(1).max(8),
+  headline:     z.string(),
+  notification: z.object({ avatar: z.string(), text: z.string() }).optional(),
+  mode:         z.enum(['dark', 'light']),
+})
+const darkLightPropsZ = z.object({
+  type:      z.literal('dark_light_switch'),
+  direction: z.enum(['dark_to_light', 'light_to_dark']),
+  style:     z.enum(['flash', 'wipe', 'circle_reveal']).optional(),
+})
+const logoRevealPropsZ = z.object({
+  type:       z.literal('logo_reveal'),
+  logoUrl:    z.string(),
+  tagline:    z.string().optional(),
+  brandColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  style:      z.enum(['assemble', 'scale_bounce', 'particles_in']).optional(),
+  mode:       z.enum(['dark', 'light']),
+})
+const mockupPropsZ = z.object({
+  type:          z.literal('mockup_zoom'),
+  screenshotUrl: z.string(),
+  focusArea:     z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() }),
+  annotation:    z.string(),
+  cursorPath:    z.array(z.object({ x: z.number(), y: z.number(), frame: z.number(), click: z.boolean().optional() })),
+  mode:          z.enum(['dark', 'light']),
+})
+const avatarGridPropsZ = z.object({
+  type:      z.literal('avatar_grid'),
+  avatars:   z.array(z.object({ url: z.string(), name: z.string() })).min(1),
+  headline:  z.string(),
+  mode:      z.enum(['dark', 'light']),
+  zoomIndex: z.number().int().nonnegative().optional(),
+})
+const sceneZ = z.object({
+  id:        z.string().min(1),
+  type:      z.enum(['3d_cards','hero_typo','avatar_grid','dark_light_switch','floating_icons','mockup_zoom','stats_counter','logo_reveal']),
+  duration:  z.number().int().min(30).max(300),
+  voiceover: z.string().optional(),
+  props:     z.discriminatedUnion('type', [
+    heroTypoPropsZ, cardsPropsZ, statsPropsZ, floatingPropsZ,
+    darkLightPropsZ, logoRevealPropsZ, mockupPropsZ, avatarGridPropsZ,
+  ]),
+})
+const motionStoryboardZ = z.object({
+  scenes: z.array(sceneZ).min(1).max(30),
+})
 
 export async function generateMotionDesignScenes(
   brief: string,
   format: string,
   duration: string,
-  brandConfig: { primary_color: string; secondary_color?: string; logo_url?: string },
+  brandConfig: { primary_color: string; secondary_color?: string; logo_url?: string; font_family?: string },
   language?: DetectedLanguage,
   /** Visual register hint — biases Claude's scene-type picks toward the right
    *  feel. Optional; when missing Claude picks a balanced mix. */
@@ -573,17 +784,38 @@ You generate agency-quality motion design video scripts for premium brands.
 You reply ONLY with valid JSON, no markdown, no comments.`
 
   const color = brandConfig.primary_color
+  const secondary = brandConfig.secondary_color ?? null
+  const fontFamily = brandConfig.font_family ?? null
   const logoUrl = brandConfig.logo_url ?? null
 
-  // Style register — biases scene-type selection. Only injected when the
-  // caller passed a hint; the prompt without it produces a balanced mix.
+  // Style register — STRICT constraints, not soft hints. Claude regularly
+  // ignored "prefer" wording in the previous prompt so the 4 registers
+  // produced near-identical mixes. Each register now lists the EXACT scene
+  // types allowed, mode bias, and what to NEVER use.
   const styleRegister: Record<string, string> = {
-    corporate: 'Visual register: CORPORATE — confident, structured, high-trust. Prefer hero_typo (line_by_line / 3d_rotate), stats_counter, mockup_zoom, logo_reveal (assemble). Mode mostly "light" with strong typography. Avoid playful elements.',
-    dynamique: 'Visual register: DYNAMIQUE — high-energy, fast-paced, social. Prefer 3d_cards (scatter/orbit), floating_icons, dark_light_switch (flash/wipe), hero_typo (word_by_word / scale_bounce). Mix dark + light modes. Snappy pacing.',
-    luxe:      'Visual register: LUXE — slow, refined, cinematic. Prefer hero_typo (3d_rotate / scale_bounce, BIG fontSize), dark_light_switch (circle_reveal), logo_reveal (particles_in), mockup_zoom. Mode mostly "dark" with subtle motion. Patience > flash.',
-    fun:       'Visual register: FUN — playful, colorful, expressive. Prefer 3d_cards (scatter), floating_icons (lots of emoji icons), hero_typo (split_reveal / scale_bounce), dark_light_switch (flash). Mix bright modes, varied colors, snappy pacing.',
+    corporate: 'STYLE = CORPORATE: confident, structured, high-trust. ALLOWED scene types: hero_typo (animations: line_by_line OR 3d_rotate only), stats_counter, mockup_zoom, logo_reveal (style: assemble). Mode bias: "light" on ≥ 60 % of scenes. FORBIDDEN: floating_icons with emojis, 3d_cards scatter, hero_typo split_reveal, dark_light_switch flash.',
+    dynamique: 'STYLE = DYNAMIQUE: high-energy, fast-paced, social. ALLOWED scene types: 3d_cards (layout: scatter OR orbit), floating_icons, dark_light_switch (style: flash OR wipe), hero_typo (animations: word_by_word OR scale_bounce only). Mode bias: alternate dark/light every scene. FORBIDDEN: long hero_typo 3d_rotate, mockup_zoom.',
+    luxe:      'STYLE = LUXE: slow, refined, cinematic. ALLOWED scene types: hero_typo (animations: 3d_rotate OR scale_bounce only, fontSize ≥ 140), dark_light_switch (style: circle_reveal only), logo_reveal (style: particles_in), mockup_zoom. Mode bias: "dark" on ≥ 70 % of scenes. FORBIDDEN: floating_icons, 3d_cards scatter, hero_typo split_reveal.',
+    fun:       'STYLE = FUN: playful, colorful, expressive. ALLOWED scene types: 3d_cards (layout: scatter), floating_icons (5-8 emoji icons), hero_typo (animations: split_reveal OR scale_bounce only), dark_light_switch (style: flash). Mode bias: "light" with vibrant accents. FORBIDDEN: hero_typo 3d_rotate, logo_reveal assemble, mockup_zoom.',
   }
   const styleLine = styleHint ? `\n${styleRegister[styleHint]}\n` : ''
+  const brandLine = [
+    `Brand primary color: ${color}`,
+    secondary ? `Brand secondary color: ${secondary} (use for stats counters second highlight, particles, accents)` : null,
+    fontFamily ? `Brand font hint: ${fontFamily} (the frontend loads it via Remotion; you only need to keep text concise and well-spaced)` : null,
+    logoUrl ? `Logo URL: ${logoUrl}` : null,
+  ].filter(Boolean).join('\n')
+
+  // Hard WPM ceiling — used by the prompt to bound voiceover length per
+  // scene AND by the backend to abort generation if Claude blows past it.
+  // Pro VO French ≈ 150 wpm = 2.5 words/sec, so a 30s video supports ≤ 75
+  // narrated words MAX (we use a 80 % budget for breathing).
+  const TARGET_SECONDS = ({
+    '6s': 6, '15s': 15, '30s': 30, '60s': 60, '90s': 90, '120s': 120,
+    '180s': 180, '300s': 300, 'auto': 60,
+  } as Record<string, number>)[duration] ?? 30
+  const MAX_TOTAL_WORDS = Math.floor((TARGET_SECONDS * 2.5) * 0.8)
+  const MAX_WORDS_PER_SCENE = Math.floor(MAX_TOTAL_WORDS / sceneCount)
 
   const userPrompt = `${languageHeader(lang)}Create an F2 Motion Design sequence of ${sceneCount} scenes for this brief:
 
@@ -592,16 +824,26 @@ ${brief}
 """
 
 Video format: ${format}
-Target duration: ${duration}
-Brand color: ${color}
-${logoUrl ? `Logo available: ${logoUrl}` : ''}${styleLine}
+Target duration: ${duration} (${TARGET_SECONDS}s)
+${brandLine}${styleLine}
 
 Each scene is a JSON object with these fields:
 - "id": unique string ("scene_001", "scene_002", …)
 - "type": one of the scene types below
-- "duration": duration in frames (30 fps) — between 60 (2s) and 210 (7s)
+- "duration": HINT in frames at 30 fps (the backend will OVERRIDE this from the
+  actual TTS audio length to keep voice & visuals in sync — your hint is used
+  only as a fallback when a scene has empty voiceover). Use 60-210 range.
 - "props": props object matching the type (see types below)
-- "voiceover": narration text in ${lang.name} (NEVER translate; may be "" on scenes without narration)
+- "voiceover": narration text in ${lang.name} (NEVER translate; may be "" on
+  scenes without narration like dark_light_switch).
+
+VOICEOVER WORD BUDGET — non-negotiable:
+- Total voiceover across all scenes MUST be ≤ ${MAX_TOTAL_WORDS} words.
+  Computed from 150 wpm × ${TARGET_SECONDS}s × 80 % safety margin.
+- Per scene: ≤ ${MAX_WORDS_PER_SCENE} words on average. Don't pile 200 words
+  onto one scene and leave the others empty.
+- Visual-only scenes (dark_light_switch, logo_reveal without tagline) have
+  voiceover: "" and contribute zero to the budget.
 
 AVAILABLE SCENE TYPES:
 
@@ -666,17 +908,27 @@ Reply ONLY with this valid JSON:
         .replace(/\s*```$/m, '')
         .trim()
 
-      const parsed = JSON.parse(jsonText) as { scenes: Array<{ id: string; type: string; duration: number; props: object; voiceover?: string }> }
-
-      if (!parsed.scenes || !Array.isArray(parsed.scenes)) {
-        throw new Error('Invalid response: missing scenes array')
+      // Zod-validate Claude's JSON. A missing `stats[]` on stats_counter
+      // or `cards[]` on 3d_cards used to slip through and crash Remotion
+      // at render time; now it fails fast with a precise error so the
+      // retry loop can ask Claude to fix the exact field.
+      const rawParsed = JSON.parse(jsonText) as unknown
+      const validation = motionStoryboardZ.safeParse(rawParsed)
+      if (!validation.success) {
+        const issues = validation.error.issues.slice(0, 5)
+          .map((iss) => `${iss.path.join('.')}: ${iss.message}`)
+          .join(' | ')
+        throw new Error(`Storyboard validation failed: ${issues}`)
       }
+      const parsed = validation.data
 
-      // Build voiceover script from all non-empty voiceover fields
-      const voiceoverScript = parsed.scenes
-        .map((s) => s.voiceover ?? '')
-        .filter((v) => v.trim().length > 0)
-        .join(' ')
+      // Per-scene voiceover array — preserves alignment with scenes[i].
+      // Empty string for visual-only scenes (dark_light_switch, etc.).
+      const voiceovers = parsed.scenes.map((s) => (s.voiceover ?? '').trim())
+
+      // Flat script kept for callers that want a single text blob
+      // (caption fallback, search indexing, telemetry).
+      const voiceoverScript = voiceovers.filter((v) => v.length > 0).join(' ')
 
       // Convert to MotionScene[] (strip voiceover from final props — it's separate)
       const scenes = parsed.scenes.map((s) => ({
@@ -688,7 +940,7 @@ Reply ONLY with this valid JSON:
 
       const totalFrames = scenes.reduce((sum, s) => sum + s.duration, 0)
 
-      return { scenes, voiceoverScript, totalFrames }
+      return { scenes, voiceovers, voiceoverScript, totalFrames }
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
       logger.warn({ attempt, maxRetries: MAX_RETRIES, error: lastError.message }, 'Claude motion design attempt failed, retrying')

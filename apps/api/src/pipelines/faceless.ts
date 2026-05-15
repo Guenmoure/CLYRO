@@ -13,6 +13,7 @@ import { generateVoiceoverScenesWithTimestamps } from '../services/elevenlabs'
 import { assembleVideo, assembleVideoFromVideoClips, generateKaraokeFromWords, renderKenBurnsFFmpeg } from '../services/ffmpeg'
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
+import { applyAntiHallucination } from '@clyro/shared'
 
 // AnimationMode: user-selectable global strategy for clip generation
 // - 'storyboard' → always Ken Burns (static images with smooth transitions, no GPU cost)
@@ -154,7 +155,10 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
         scenes: preGeneratedScenes.map((s, i) => ({
           id: s.id,
           index: i,
-          description_visuelle: s.image_prompt ?? '',
+          // Apply the anti-hallucination safety net here too: pre-generated
+          // scenes might come from older drafts or external callers that
+          // didn't include the no-text + style-lock suffixes.
+          description_visuelle: applyAntiHallucination(s.image_prompt ?? '', style),
           animation_prompt: s.animation_prompt ?? 'smooth cinematic camera movement, natural motion',
           texte_voix: s.script_text ?? '',
           duree_estimee: 5,

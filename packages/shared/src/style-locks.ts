@@ -169,3 +169,52 @@ export function getStyleLock(styleId: string): StyleLock {
 export function getStyleLockSuffix(styleId: string): string {
   return getStyleLock(styleId).consistencySuffix
 }
+
+// ── Anti-hallucination layer (additive on top of the lock system) ──────
+//
+// Diffusion models (Flux / recraft / Ideogram) hallucinate text in two
+// classes of failures we observe in production:
+//   1. Claude forgets to add "no text" to a prompt → fal renders gibberish
+//      currencies, fake bank balances, made-up signs.
+//   2. Claude forgets to repeat the consistency suffix on every scene →
+//      scene 3 lands in a different palette/temperature than scenes 1-2.
+//
+// `applyAntiHallucination` runs AFTER Claude returns. It quietly appends
+// what's missing on each `description_visuelle` so a model "forgetting"
+// a rule never reaches fal.ai. Cheap, idempotent, never duplicates a
+// suffix that's already there.
+
+/**
+ * Universal negative keywords appended to every image prompt. Flux,
+ * recraft-v3 and Ideogram all respond to these literal negatives — the
+ * keyword repetition matters more than the exact wording. Don't
+ * paraphrase without A/B testing fal.ai output.
+ */
+export const NO_TEXT_NEGATIVE =
+  'no text, no writing, no letters, no numbers visible, no captions, no signs, no labels'
+
+/**
+ * Force the no-text suffix + the style's consistency lock onto a raw
+ * Claude-produced image prompt. Called per scene by the storyboard
+ * pipeline before the prompt is shipped to fal.ai.
+ *
+ * Idempotent: if Claude already included the suffix or the lock, this
+ * is a no-op. Detection uses cheap substring tests on lowercased text —
+ * we don't try to parse the prompt, just to spot the canonical phrases.
+ */
+export function applyAntiHallucination(rawPrompt: string, styleId: string): string {
+  const stripped = rawPrompt.trim().replace(/[.,;\s]+$/u, '')
+  const lower = stripped.toLowerCase()
+  const additions: string[] = []
+  if (!/no text/.test(lower)) {
+    additions.push(NO_TEXT_NEGATIVE)
+  }
+  const suffix = getStyleLockSuffix(styleId)
+  // The lock suffix is long; pick a rare keyword from each lock as a
+  // cheap presence test (palette names + camera bodies are distinctive).
+  const lockMarker = suffix.split(',')[0]?.trim().toLowerCase() ?? ''
+  if (lockMarker && !lower.includes(lockMarker)) {
+    additions.push(suffix)
+  }
+  return additions.length === 0 ? stripped : `${stripped}, ${additions.join(', ')}`
+}

@@ -1,5 +1,6 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } from 'remotion'
+import { useBrand } from '../lib/brand-context'
 import type { SceneHeroTypoProps } from '../lib/motion-types'
 
 export const SceneHeroTypo: React.FC<SceneHeroTypoProps> = ({
@@ -7,6 +8,7 @@ export const SceneHeroTypo: React.FC<SceneHeroTypoProps> = ({
 }) => {
   const frame    = useCurrentFrame()
   const { fps }  = useVideoConfig()
+  const brand    = useBrand()
   const isDark   = mode === 'dark'
   const words    = text.split(' ')
 
@@ -24,7 +26,7 @@ export const SceneHeroTypo: React.FC<SceneHeroTypoProps> = ({
         padding:         '0 80px',
       }}
     >
-      <div style={{ textAlign: 'center', maxWidth: '90%' }}>
+      <div style={{ textAlign: 'center', maxWidth: '90%', fontFamily: brand.fontFamily }}>
 
         {/* word_by_word */}
         {(animation === 'word_by_word' || animation === 'split_reveal') && (

@@ -1,5 +1,6 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion'
+import { useBrand, TOKENS } from '../lib/brand-context'
 import type { SceneStatsCounterProps } from '../lib/motion-types'
 
 export const SceneStatsCounter: React.FC<SceneStatsCounterProps> = ({
@@ -7,6 +8,7 @@ export const SceneStatsCounter: React.FC<SceneStatsCounterProps> = ({
 }) => {
   const frame   = useCurrentFrame()
   const { fps, durationInFrames } = useVideoConfig()
+  const brand   = useBrand()
   const isDark  = mode === 'dark'
   const countEnd = durationInFrames * 0.8
 
@@ -28,9 +30,10 @@ export const SceneStatsCounter: React.FC<SceneStatsCounterProps> = ({
     >
       {headline && (
         <h2 style={{
-          fontSize:   52,
+          fontSize:   TOKENS.fontScale.headingL,
           fontWeight: 800,
           color:      isDark ? '#ffffff' : '#1a1a1a',
+          fontFamily: brand.fontFamily,
           margin:     0,
           textAlign:  'center',
           opacity:    headlineOpacity,
