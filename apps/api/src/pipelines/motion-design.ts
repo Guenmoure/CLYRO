@@ -42,12 +42,17 @@ export interface MotionDesignPipelineParams {
 export async function runMotionDesignPipeline(params: MotionDesignPipelineParams): Promise<void> {
   const { videoId, userId, userEmail, title, brief, format, duration, style, brandConfig, voiceId, musicUrl, creditCost } = params
 
-  const updateStatus = async (status: string, progress: number, extra?: object) => {
+  // Status enum is fixed to 4 values: draft | generating | done | error.
+  // The granular pipeline phase (storyboard / audio / assembly / etc.)
+  // is now exposed via metadata.phase so the progress UI can still show
+  // what's running, without polluting the status enum that drives
+  // dashboard filters + UI badges.
+  const updateStatus = async (phase: string, progress: number, extra?: object) => {
     await supabaseAdmin
       .from('videos')
-      .update({ status, metadata: { progress, ...extra } })
+      .update({ status: 'generating', metadata: { phase, progress, ...extra } })
       .eq('id', videoId)
-    logger.info({ videoId, status, progress }, 'MotionDesign pipeline status update')
+    logger.info({ videoId, phase, progress }, 'MotionDesign pipeline status update')
   }
 
   try {

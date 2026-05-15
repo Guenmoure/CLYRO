@@ -2868,7 +2868,11 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
   // so they have a chance to cancel. Once the script has been broken into
   // scenes (hasScenes), leave silently — the draft is always auto-saved.
   const hasScenes = project.scenes.length > 0
+  // The faceless hub edits a project that already has scenes (Claude
+  // split has already run). We're past the arming threshold by
+  // definition — arm immediately so autosave UPDATEs the existing row.
   const { draftId, finalize } = useDraftSave({
+    armed: true,
     module:         'faceless',
     title:          project.title || 'Faceless draft',
     style:          (project.style as string | null) ?? 'draft',

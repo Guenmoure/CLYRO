@@ -49,7 +49,7 @@ const createMotionSchema = z.object({
   /**
    * When the user finishes a draft, the wizard sends this id so the
    * existing `videos` row (status='draft') is promoted in place to
-   * status='pending' instead of inserting a fresh sibling row. This
+   * status='generating' instead of inserting a fresh sibling row. This
    * eliminates the "every completed video has a zombie draft next to
    * it" bug. Optional — if absent we fall back to INSERT (legacy path
    * for any caller that doesn't pre-create a draft).
@@ -80,7 +80,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
     // Previously this always INSERTed a new row, which left the wizard's
     // draft row alive as a zombie sibling of the final video. Now: if the
     // wizard hands us its draft_id, we verify ownership + draft status,
-    // then UPDATE that same row to status='pending'. The id stays stable
+    // then UPDATE that same row to status='generating'. The id stays stable
     // through the entire draft → pending → processing → done lifecycle,
     // so there's only ever ONE row per video. If no draft_id is sent (or
     // it's stale / not a draft / not owned by req.userId), we fall back
@@ -104,7 +104,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
             module:   'motion',
             style,
             title,
-            status:   'pending',
+            status: 'generating',
             metadata: baseMetadata,
             wizard_step: null,
             wizard_state: null,
@@ -134,7 +134,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
           module:   'motion',
           style,
           title,
-          status:   'pending',
+          status: 'generating',
           metadata: baseMetadata,
         })
         .select('id')
@@ -265,7 +265,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
       throw err
     }
 
-    res.status(202).json({ video_id: video.id, status: 'pending', credits_deducted: creditCost })
+    res.status(202).json({ video_id: video.id, status: 'generating', credits_deducted: creditCost })
   } catch (err) {
     logger.error({ err, userId: req.userId }, 'pipeline.motion error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
@@ -511,7 +511,7 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
             module:   'motion_design',
             style:    'motion_design',
             title,
-            status:   'pending',
+            status: 'generating',
             metadata: baseMetadata,
             wizard_step: null,
             wizard_state: null,
@@ -536,7 +536,7 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
           module:   'motion_design',
           style:    'motion_design',
           title,
-          status:   'pending',
+          status: 'generating',
           metadata: baseMetadata,
         })
         .select('id')
@@ -628,7 +628,7 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
       throw err
     }
 
-    res.status(202).json({ video_id: video.id, status: 'pending', credits_deducted: creditCost })
+    res.status(202).json({ video_id: video.id, status: 'generating', credits_deducted: creditCost })
   } catch (err) {
     logger.error({ err, userId: req.userId }, 'pipeline.motion.design error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })

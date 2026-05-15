@@ -27,10 +27,16 @@ const SORT_OPTIONS = [
 
 type SortOption = typeof SORT_OPTIONS[number]['id']
 
+// Status enum is the canonical 4 values: draft | generating | done | error.
+// Legacy values ('pending', 'processing', 'storyboard', 'visuals', 'audio',
+// 'assembly', 'animation', 'completed') are still matched under
+// 'generating' for backwards-compat with rows created before the enum was
+// tightened; new writes only use the canonical 4.
 const STATUS_FILTERS = [
   { id: 'all',        labelKey: 'proj_allStatuses', match: null as string[] | null },
-  { id: 'done',       labelKey: 'proj_completed',   match: ['done'] },
-  { id: 'processing', labelKey: 'proj_processing',  match: ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly', 'animation'] },
+  { id: 'draft',      labelKey: 'proj_drafts',      match: ['draft'] },
+  { id: 'generating', labelKey: 'proj_processing',  match: ['generating', 'pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly', 'animation'] },
+  { id: 'done',       labelKey: 'proj_completed',   match: ['done', 'completed'] },
   { id: 'error',      labelKey: 'proj_failed',      match: ['error'] },
 ] as const
 

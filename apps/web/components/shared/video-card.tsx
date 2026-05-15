@@ -20,26 +20,37 @@ interface VideoCardProps {
   onDeleted: (id: string) => void
 }
 
+// Canonical 4-value status enum: draft | generating | done | error.
+// Legacy values are mapped to their canonical bucket below so any row
+// still carrying an old status (pre-migration) renders sensibly.
 const STATUS_STYLES: Record<string, string> = {
-  done: 'bg-success/10 text-success border-success/20',
-  error: 'bg-red-500/10 text-red-500 border-red-500/20',
-  pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
-  processing: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  storyboard: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  visuals: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  audio: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  assembly: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  draft:      'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  generating: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  done:       'bg-success/10 text-success border-success/20',
+  error:      'bg-red-500/10 text-red-500 border-red-500/20',
+  // Legacy fallbacks — same color as `generating`.
+  pending:    'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  processing: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  storyboard: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  visuals:    'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  audio:      'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  assembly:   'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  completed:  'bg-success/10 text-success border-success/20',
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'En attente',
-  processing: 'En traitement',
-  storyboard: 'Storyboard',
-  visuals: 'Génération visuels',
-  audio: 'Voix off',
-  assembly: 'Assemblage',
-  done: 'Terminé',
-  error: 'Erreur',
+  draft:      'Brouillon',
+  generating: 'En cours',
+  done:       'Terminé',
+  error:      'Erreur',
+  // Legacy fallbacks.
+  pending:    'En cours',
+  processing: 'En cours',
+  storyboard: 'En cours',
+  visuals:    'En cours',
+  audio:      'En cours',
+  assembly:   'En cours',
+  completed:  'Terminé',
 }
 
 const MODULE_ICONS: Record<string, string> = {

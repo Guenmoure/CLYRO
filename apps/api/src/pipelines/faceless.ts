@@ -131,12 +131,17 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
     }
   }, PIPELINE_TIMEOUT_MS)
 
-  const updateStatus = async (status: string, progress: number, extra?: object) => {
+  // Status enum is 'draft' | 'generating' | 'done' | 'error' — fixed
+  // 4 values, no more sub-phase strings. The granular phase
+  // (storyboard / visuals / audio / assembly) moves to metadata.phase
+  // for the progress UI, so dashboard filters and ProjectCard badges
+  // can rely on a stable 4-state enum.
+  const updateStatus = async (phase: string, progress: number, extra?: object) => {
     await supabaseAdmin
       .from('videos')
-      .update({ status, metadata: { progress, ...extra } })
+      .update({ status: 'generating', metadata: { phase, progress, ...extra } })
       .eq('id', videoId)
-    logger.info({ videoId, status, progress }, 'Faceless pipeline status update')
+    logger.info({ videoId, phase, progress }, 'Faceless pipeline status update')
   }
 
   // Déterminer si on peut utiliser des données pré-générées du frontend

@@ -431,7 +431,14 @@ function MotionNewPageInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftParam])
 
-  // DB-backed draft auto-save
+  // DB-backed draft auto-save.
+  //
+  // `armed` gates DB writes — only INSERT once the user has produced
+  // something worth saving. Motion has no separate "scene split" step
+  // (the storyboard is computed at generate-time), so we arm once the
+  // brief is substantial AND the style is past the first step.
+  // When resuming an existing draft (?draft= URL), arm immediately.
+  const armed = !!draftParam || (currentStep >= 1 && brief.trim().length > 30)
   const { draftId, wasRestored, lastSaved, isSaving: draftIsSaving, finalize } = useDraftSave({
     module:      'motion',
     title:       projectName,
@@ -441,6 +448,7 @@ function MotionNewPageInner() {
     stepLabel:   STEPS[currentStep]?.label ?? '',
     state:       { brief, style, format, duration, primaryColor, secondaryColor, fontFamily, selectedVoice },
     initialDraftId: draftParam,
+    armed,
   })
 
   const [voicePickerOpen, setVoicePickerOpen] = useState(false)

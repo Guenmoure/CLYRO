@@ -16,6 +16,21 @@ export interface DraftSaveOptions {
   /** Pass a video ID to resume an existing draft (e.g. from ?draft= URL param) */
   initialDraftId?: string | null
   /**
+   * When false (default), the hook is fully muted — no INSERT, no
+   * UPDATE, no beacon, no autosave. The wizard pages flip this to true
+   * ONLY once the user has reached the post-Claude step (scenes
+   * available). Before that, all state lives in React local state —
+   * no DB row is created.
+   *
+   * This implements the "no row until something to save" rule: a user
+   * who opens the wizard and bounces away leaves nothing behind. A user
+   * who reaches the scene split gets a `videos` row with status='draft'.
+   *
+   * The previous unconditional autosave produced one zombie row per
+   * abandoned session, polluting the Drafts tab indefinitely.
+   */
+  armed?:        boolean
+  /**
    * When true, trigger the browser's native "Leave site?" confirmation on
    * tab close / refresh so the user has a chance to cancel. When false,
    * leave silently (draft is still saved via sendBeacon).
@@ -56,6 +71,7 @@ export function useDraftSave({
   stepLabel,
   state,
   initialDraftId,
+  armed = false,
   promptOnLeave = false,
 }: DraftSaveOptions): DraftSaveResult {
   const [draftId,    setDraftId]    = useState<string | null>(initialDraftId ?? null)
@@ -103,8 +119,17 @@ export function useDraftSave({
   // without re-binding.
   const finalizedRef = useRef(false)
 
+  // Mirror of the `armed` prop so the beforeunload beacon (which can't
+  // re-read closures) sees the live value. The hook stays mute until
+  // the wizard flips `armed` true at the post-Claude step.
+  const armedRef = useRef(armed)
+  armedRef.current = armed
+
   // ── Core save function ──────────────────────────────────────
   const save = useCallback(async () => {
+    // Bail when the wizard hasn't reached the post-Claude step yet.
+    // Steps 0-N before scene split keep state in React local memory only.
+    if (!armedRef.current) return
     if (finalizedRef.current) return
     const supabase = createBrowserClient()
     const { data: { session } } = await supabase.auth.getSession()
@@ -165,6 +190,7 @@ export function useDraftSave({
   // ── Save on step change ─────────────────────────────────────
   const stepRef = useRef<number | null>(null)
   useEffect(() => {
+    if (!armedRef.current) return
     if (finalizedRef.current) return
     if (stepRef.current === null) {
       stepRef.current = currentStep
@@ -178,9 +204,11 @@ export function useDraftSave({
 
   // ── Debounced save on state change (1.5s) ───────────────────
   // Ensures a draft row is created quickly after the user starts
-  // working, so tab-close/unload is never catastrophic.
+  // working, so tab-close/unload is never catastrophic. Both gates
+  // (armed + finalized) must pass for the timer to even arm.
   const lastStateJsonRef = useRef<string>('')
   useEffect(() => {
+    if (!armedRef.current) return
     if (finalizedRef.current) return
     const json = JSON.stringify(state)
     if (json === lastStateJsonRef.current) return
@@ -194,6 +222,7 @@ export function useDraftSave({
   // ── Auto-save every 30s ─────────────────────────────────────
   useEffect(() => {
     const interval = setInterval(() => {
+      if (!armedRef.current) return
       if (finalizedRef.current) return
       save()
     }, AUTOSAVE_MS)
@@ -211,6 +240,7 @@ export function useDraftSave({
   promptOnLeaveRef.current = promptOnLeave
   useEffect(() => {
     function onBeforeUnload(e: BeforeUnloadEvent) {
+      if (!armedRef.current) return undefined
       if (finalizedRef.current) return undefined
       const { draftId: id, module: mod, title: t, style: s, currentStep: step, state: st } = latestRef.current
       const token = accessTokenRef.current

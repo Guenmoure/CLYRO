@@ -89,7 +89,7 @@ const createFacelessSchema = z.object({
   subtitles_enabled: z.boolean().optional().default(false),
   /**
    * Optional draft id — when the wizard sends it, the existing `videos`
-   * row (status='draft') is promoted in place to status='pending' instead
+   * row (status='draft') is promoted in place to status='generating' instead
    * of inserting a fresh sibling row. Eliminates the "every completed
    * video has a zombie draft next to it" bug.
    */
@@ -190,7 +190,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
       module: 'faceless' as const,
       style,
       title,
-      status: 'pending' as const,
+      status: 'generating' as const,
       animation_mode: resolvedAnimationMode,
       animation_overrides: resolvedAnimationOverrides,
       metadata: baseMetadata,
@@ -379,7 +379,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
     // Retourner immédiatement (avec le coût débité pour information UI)
     res.status(202).json({
       video_id: video.id,
-      status: 'pending',
+      status: 'generating',
       credits_deducted: creditCost,
       ...(wpmMeta.condensed !== undefined && { script_condensed: wpmMeta }),
     })

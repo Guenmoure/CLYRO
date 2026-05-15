@@ -56,7 +56,28 @@ export function resolveSceneMode(
 ): AnimationMode {
   return overrides[sceneIndex] ?? globalMode
 }
-export type VideoStatus = 'pending' | 'processing' | 'storyboard' | 'visuals' | 'audio' | 'animation' | 'assembly' | 'done' | 'error'
+/**
+ * Canonical 4-value status enum. New writes only use these four.
+ * Legacy values ('pending', 'processing', 'storyboard', 'visuals',
+ * 'audio', 'assembly', 'animation', 'completed') are still recognised
+ * by readers for backwards-compat with rows created before the enum
+ * was tightened — see apps/web/components/shared/video-card.tsx for
+ * the mapping table.
+ */
+export type VideoStatus =
+  | 'draft'
+  | 'generating'
+  | 'done'
+  | 'error'
+  // Legacy in-progress phases — still in production rows pending migration.
+  | 'pending'
+  | 'processing'
+  | 'storyboard'
+  | 'visuals'
+  | 'audio'
+  | 'animation'
+  | 'assembly'
+  | 'completed'
 
 export type FacelessStyle =
   | 'cinematique'

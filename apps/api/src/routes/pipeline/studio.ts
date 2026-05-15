@@ -365,7 +365,7 @@ studioRouter.post('/analyze', authMiddleware, async (req, res) => {
       type:        s.type,
       script:      s.script,
       duration_est: s.duration_est,
-      status:      'pending' as const,
+      status:     'generating' as const,
       broll_query: s.broll_query ?? null,
       remotion_params: s.infographic_data
         ? { chartType: s.infographic_data.chart_type, title: s.infographic_data.title, data: s.infographic_data.data, hint: s.remotion_hint }
@@ -950,7 +950,7 @@ studioRouter.post('/add-scene', authMiddleware, async (req, res) => {
       type: type ?? 'avatar',
       script: script ?? hint ?? 'New scene — edit the script in the inspector.',
       duration_est: 10,
-      status: 'pending',
+      status: 'generating',
     }).select().single()
 
     if (error || !newScene) { res.status(500).json({ error: 'Failed', code: 'DB_ERROR' }); return }

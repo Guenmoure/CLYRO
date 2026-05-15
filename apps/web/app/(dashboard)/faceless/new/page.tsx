@@ -782,7 +782,18 @@ function FacelessNewPageInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftParam])
 
-  // DB-backed draft auto-save
+  // DB-backed draft auto-save.
+  //
+  // `armed` gates DB writes — keeps a row from being INSERTed before the
+  // user has produced anything worth saving. We arm once the wizard is
+  // past the script step (currentStep >= 1 = styleVoice or later) AND
+  // the user has typed a meaningful script (>30 chars). Before that,
+  // state lives in React local memory only. A user who opens /new and
+  // bounces away leaves zero rows behind.
+  //
+  // When resuming an existing draft (initialDraftId from ?draft=...),
+  // arm immediately so the hook can UPDATE the row from step 0.
+  const armed = !!draftParam || (currentStep >= 1 && script.trim().length > 30)
   const { draftId, wasRestored, lastSaved, isSaving: draftIsSaving, finalize } = useDraftSave({
     module:      'faceless',
     title:       projectName,
@@ -792,6 +803,7 @@ function FacelessNewPageInner() {
     stepLabel:   STEPS[currentStep]?.label ?? '',
     state:       { script, style, selectedVoice, animationMode, format, duration, dialogueMode, musicPreset, subtitlesEnabled },
     initialDraftId: draftParam,
+    armed,
   })
 
   // User profile

@@ -35,18 +35,20 @@ export function ProgressBar({
   // Minimum visible width so the bar is always visible even at 0%
   const width = Math.max(clamped, 5)
 
-  // Determine bar color based on status
+  // Determine bar color based on the 4-value status enum.
+  // `pending` / `processing` are kept for backwards-compat with rows
+  // created before the enum was tightened.
   const getBarColor = () => {
     if (status === 'error') return 'from-red-500 to-red-600'
     if (status === 'done') return 'from-emerald-500 to-emerald-600'
-    if (status === 'pending' || status === 'processing') return 'from-amber-400 to-amber-500'
+    if (status === 'generating' || status === 'pending' || status === 'processing') return 'from-violet-500 to-violet-600'
     return 'from-blue-500 to-purple-500'
   }
 
   const getContainerColor = () => {
     if (status === 'error') return 'bg-red-100'
     if (status === 'done') return 'bg-emerald-100'
-    if (status === 'pending' || status === 'processing') return 'bg-amber-100'
+    if (status === 'generating' || status === 'pending' || status === 'processing') return 'bg-violet-100'
     return 'bg-card'
   }
 

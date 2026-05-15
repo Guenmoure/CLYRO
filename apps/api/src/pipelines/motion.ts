@@ -44,12 +44,15 @@ export interface MotionPipelineParams {
 export async function runMotionPipeline(params: MotionPipelineParams): Promise<void> {
   const { videoId, userId, userEmail, title, brief, script, style, voiceId, musicTrackUrl, creditCost } = params
 
-  const updateStatus = async (status: string, progress: number, extra?: object) => {
+  // Status is always 'generating' while the pipeline runs. The granular
+  // phase (storyboard / visuals / audio / assembly) lives in
+  // metadata.phase so the 4-value status enum stays clean.
+  const updateStatus = async (phase: string, progress: number, extra?: object) => {
     await supabaseAdmin
       .from('videos')
-      .update({ status, metadata: { progress, ...extra } })
+      .update({ status: 'generating', metadata: { phase, progress, ...extra } })
       .eq('id', videoId)
-    logger.info({ videoId, status, progress }, 'Motion pipeline status update')
+    logger.info({ videoId, phase, progress }, 'Motion pipeline status update')
   }
 
   try {

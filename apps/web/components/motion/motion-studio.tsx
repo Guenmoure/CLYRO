@@ -690,7 +690,11 @@ export function MotionStudio({
   // ── Draft persistence (creates a draft row on first edit, debounced save, sendBeacon on unload)
   // We expose an explicit step per phase so /projects can show a sensible resume CTA.
   const draftStep = phase === 'input' ? 0 : phase === 'board' ? 1 : 2
+  // motion-studio is the post-brief hub — by definition we're past the
+  // arming threshold the moment we mount (scenes already exist OR are
+  // about to be generated from the brief).
   const { draftId, wasRestored, finalize } = useDraftSave({
+    armed: true,
     module:         'motion',
     title:          scenes[0]?.text || brief.slice(0, 60) || 'Motion Design',
     style:          'dynamique',
