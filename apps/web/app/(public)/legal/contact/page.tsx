@@ -3,6 +3,7 @@
 
 import { Mail, MessageSquare, Shield, Briefcase } from 'lucide-react'
 import { PublicShell, DocTitle, DocSection, DocPara } from '@/components/public/PublicShell'
+import { decodeEntities } from '@/lib/safe-text'
 
 type Lang = 'en' | 'fr'
 
@@ -71,10 +72,11 @@ function ContactBody({ lang }: { lang: Lang }) {
           >
             <div className="flex items-center gap-2.5 mb-2">
               <c.icon size={18} className={c.color} />
-              <h3
-                className="font-display font-semibold text-foreground"
-                dangerouslySetInnerHTML={{ __html: c.title }}
-              />
+              {/* SECURITY: replaced dangerouslySetInnerHTML with safe
+                  entity-decoded plain text. See lib/safe-text.ts. */}
+              <h3 className="font-display font-semibold text-foreground">
+                {decodeEntities(c.title)}
+              </h3>
             </div>
             <p className="font-body text-sm text-[--text-secondary] mb-3">{c.desc}</p>
             <a

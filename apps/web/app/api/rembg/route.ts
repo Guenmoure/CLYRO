@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
 
 export const dynamic = 'force-dynamic'
@@ -8,6 +10,13 @@ const fal = createFalClient({ credentials: process.env.FAL_KEY })
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: calls fal.ai birefnet (billable compute). Auth required.
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { imageUrl } = await request.json() as { imageUrl: string }
     if (!imageUrl) return NextResponse.json({ error: 'imageUrl required' }, { status: 400 })
     if (!process.env.FAL_KEY) return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })

@@ -35,7 +35,13 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
-.claude/
+# `.claude/*` ignores all per-user state (agents/, skills/, settings.json)
+# but re-includes the `rules/` folder so the team checks in shared
+# conventions — `.claude/` alone wouldn't allow the re-include because
+# git refuses to descend into a fully-ignored directory.
+.claude/*
+!.claude/rules/
+!.claude/rules/*.md
 *.swp
 *.swo
 

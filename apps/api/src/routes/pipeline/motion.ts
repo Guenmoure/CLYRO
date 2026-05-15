@@ -46,6 +46,15 @@ const createMotionSchema = z.object({
   }),
   voice_id:       z.string().optional(),
   music_track_id: z.string().optional(),
+  /**
+   * When the user finishes a draft, the wizard sends this id so the
+   * existing `videos` row (status='draft') is promoted in place to
+   * status='pending' instead of inserting a fresh sibling row. This
+   * eliminates the "every completed video has a zombie draft next to
+   * it" bug. Optional — if absent we fall back to INSERT (legacy path
+   * for any caller that doesn't pre-create a draft).
+   */
+  draft_id:       z.string().uuid().optional(),
 })
 
 /**
@@ -60,25 +69,79 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
     return
   }
 
-  const { title, brief, script, format, duration, style, brand_config, voice_id, music_track_id } = parsed.data
+  const { title, brief, script, format, duration, style, brand_config, voice_id, music_track_id, draft_id } = parsed.data
 
   try {
     // userProfile is set by quotaMiddleware (currently unused beyond the
     // pre-flight balance check; per-video cost is computed below).
     void req.userProfile
 
-    const { data: video, error: dbError } = await supabaseAdmin
-      .from('videos')
-      .insert({
-        user_id:  req.userId,
-        module:   'motion',
-        style,
-        title,
-        status:   'pending',
-        metadata: { brief, script, format, duration, brand_config, voice_id, progress: 0 },
-      })
-      .select()
-      .single()
+    // ── Promote-in-place OR insert ────────────────────────────────────
+    // Previously this always INSERTed a new row, which left the wizard's
+    // draft row alive as a zombie sibling of the final video. Now: if the
+    // wizard hands us its draft_id, we verify ownership + draft status,
+    // then UPDATE that same row to status='pending'. The id stays stable
+    // through the entire draft → pending → processing → done lifecycle,
+    // so there's only ever ONE row per video. If no draft_id is sent (or
+    // it's stale / not a draft / not owned by req.userId), we fall back
+    // to INSERT — same behaviour as before, no regression for legacy
+    // callers.
+    const baseMetadata = { brief, script, format, duration, brand_config, voice_id, progress: 0 }
+    let video: { id: string } | null = null
+    let dbError: { message?: string } | null = null
+
+    if (draft_id) {
+      const { data: draftRow } = await supabaseAdmin
+        .from('videos')
+        .select('id, status, user_id')
+        .eq('id', draft_id)
+        .eq('user_id', req.userId)
+        .maybeSingle()
+      if (draftRow && draftRow.status === 'draft') {
+        const upd = await supabaseAdmin
+          .from('videos')
+          .update({
+            module:   'motion',
+            style,
+            title,
+            status:   'pending',
+            metadata: baseMetadata,
+            wizard_step: null,
+            wizard_state: null,
+          })
+          .eq('id', draft_id)
+          .eq('user_id', req.userId)
+          .select('id')
+          .single()
+        video = upd.data
+        dbError = upd.error
+        if (video) {
+          logger.info({ videoId: video.id, mode: 'promote-draft' }, 'Motion video row promoted from draft')
+        }
+      } else {
+        logger.info(
+          { draft_id, status: draftRow?.status, ownerMatch: !!draftRow },
+          'Motion start: draft_id provided but row missing / not a draft / wrong owner — falling back to INSERT',
+        )
+      }
+    }
+
+    if (!video) {
+      const ins = await supabaseAdmin
+        .from('videos')
+        .insert({
+          user_id:  req.userId,
+          module:   'motion',
+          style,
+          title,
+          status:   'pending',
+          metadata: baseMetadata,
+        })
+        .select('id')
+        .single()
+      video = ins.data
+      dbError = ins.error
+    }
 
     if (dbError || !video) {
       logger.error({ dbError }, 'Failed to create motion video entry')
@@ -404,6 +467,8 @@ const createMotionDesignSchema = z.object({
   }),
   voice_id:  z.string().optional(),
   music_url: z.string().url().optional(),
+  /** Optional draft id to promote in place — see /motion route for full rationale. */
+  draft_id:  z.string().uuid().optional(),
 })
 
 /**
@@ -418,25 +483,67 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
     return
   }
 
-  const { title, brief, format, duration, brand_config, voice_id, music_url } = parsed.data
+  const { title, brief, format, duration, brand_config, voice_id, music_url, draft_id } = parsed.data
 
   try {
     // userProfile is set by quotaMiddleware (currently unused beyond the
     // pre-flight balance check; per-video cost is computed below).
     void req.userProfile
 
-    const { data: video, error: dbError } = await supabaseAdmin
-      .from('videos')
-      .insert({
-        user_id:  req.userId,
-        module:   'motion_design',
-        style:    'motion_design',
-        title,
-        status:   'pending',
-        metadata: { brief, format, duration, brand_config, voice_id, progress: 0 },
-      })
-      .select()
-      .single()
+    // Promote-in-place when the wizard sends its draft_id; otherwise INSERT.
+    // See the /motion handler above for the full rationale (eliminates the
+    // zombie-draft-next-to-every-video bug).
+    const baseMetadata = { brief, format, duration, brand_config, voice_id, progress: 0 }
+    let video: { id: string } | null = null
+    let dbError: { message?: string } | null = null
+
+    if (draft_id) {
+      const { data: draftRow } = await supabaseAdmin
+        .from('videos')
+        .select('id, status, user_id')
+        .eq('id', draft_id)
+        .eq('user_id', req.userId)
+        .maybeSingle()
+      if (draftRow && draftRow.status === 'draft') {
+        const upd = await supabaseAdmin
+          .from('videos')
+          .update({
+            module:   'motion_design',
+            style:    'motion_design',
+            title,
+            status:   'pending',
+            metadata: baseMetadata,
+            wizard_step: null,
+            wizard_state: null,
+          })
+          .eq('id', draft_id)
+          .eq('user_id', req.userId)
+          .select('id')
+          .single()
+        video = upd.data
+        dbError = upd.error
+        if (video) {
+          logger.info({ videoId: video.id, mode: 'promote-draft' }, 'MotionDesign video row promoted from draft')
+        }
+      }
+    }
+
+    if (!video) {
+      const ins = await supabaseAdmin
+        .from('videos')
+        .insert({
+          user_id:  req.userId,
+          module:   'motion_design',
+          style:    'motion_design',
+          title,
+          status:   'pending',
+          metadata: baseMetadata,
+        })
+        .select('id')
+        .single()
+      video = ins.data
+      dbError = ins.error
+    }
 
     if (dbError || !video) {
       logger.error({ dbError }, 'Failed to create motion design video entry')

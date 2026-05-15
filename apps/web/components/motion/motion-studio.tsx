@@ -690,7 +690,7 @@ export function MotionStudio({
   // ── Draft persistence (creates a draft row on first edit, debounced save, sendBeacon on unload)
   // We expose an explicit step per phase so /projects can show a sensible resume CTA.
   const draftStep = phase === 'input' ? 0 : phase === 'board' ? 1 : 2
-  const { draftId, wasRestored, clearDraft } = useDraftSave({
+  const { draftId, wasRestored, finalize } = useDraftSave({
     module:         'motion',
     title:          scenes[0]?.text || brief.slice(0, 60) || 'Motion Design',
     style:          'dynamique',
@@ -837,6 +837,9 @@ export function MotionStudio({
           ...(logoUrl && { logo_url: logoUrl }),
         },
         voice_id: voiceId || undefined,
+        // Promote-in-place: the existing draft row becomes the actual
+        // video, so we don't end up with two rows side-by-side.
+        ...(draftId ? { draft_id: draftId } : {}),
       })
       setVideoId(res.video_id)
       setVideoTitle(title)
@@ -845,10 +848,9 @@ export function MotionStudio({
         { id: res.video_id, title, status: 'processing', created_at: new Date().toISOString() },
         ...prev,
       ])
-      // Launch succeeded: the draft row has served its purpose — delete it so
-      // we don't leave orphan 'draft' rows alongside the new 'processing' row.
-      // Failure keeps the draft so the user can retry without losing work.
-      void clearDraft()
+      // Mute the save hook: the row is now the real video (status='pending').
+      // No DELETE needed — the row IS the video.
+      finalize()
       onVideoCreated?.(res.video_id, title)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Launch error')

@@ -197,6 +197,13 @@ export interface CreateMotionDesignPayload {
   voice_id?:      string
   music_url?:     string
   music_track_id?: string
+  /**
+   * Existing wizard draft id. When present, the backend promotes the
+   * draft row in place (status='draft' → 'pending') instead of inserting
+   * a fresh sibling row. Eliminates the "completed video + zombie draft"
+   * duplication.
+   */
+  draft_id?:      string
 }
 
 export async function startMotionDesignGeneration(payload: CreateMotionDesignPayload) {
@@ -518,6 +525,7 @@ export interface StudioAnalyzePayload {
     | 'avatar-pip'
     | 'avatar-tiktok'
     | 'avatar-instagram'
+    | 'avatar-logo-outro'
   /** Brand primary color for the lower-third / intro-card. Falls back to
    *  HeyGen background color, then CLYRO blue. */
   brandColor?: string

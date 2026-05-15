@@ -432,7 +432,7 @@ function MotionNewPageInner() {
   }, [draftParam])
 
   // DB-backed draft auto-save
-  const { wasRestored, lastSaved, isSaving: draftIsSaving, clearDraft } = useDraftSave({
+  const { draftId, wasRestored, lastSaved, isSaving: draftIsSaving, finalize } = useDraftSave({
     module:      'motion',
     title:       projectName,
     style:       style as string,
@@ -517,7 +517,16 @@ function MotionNewPageInner() {
           font_family: fontFamily,
         },
         voice_id: selectedVoice?.id,
+        // Promote the draft row in place instead of creating a fresh
+        // sibling — this is what stops the "zombie draft next to every
+        // completed video" duplication.
+        ...(draftId ? { draft_id: draftId } : {}),
       })
+
+      // Backend has now promoted the row from 'draft' → 'pending'. Mute
+      // the save hook IMMEDIATELY so the next autosave tick or state
+      // change can't re-INSERT a new draft while the pipeline runs.
+      finalize()
 
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -551,7 +560,9 @@ function MotionNewPageInner() {
 
       setResultVideoUrl(video?.output_url ?? undefined)
       setGenerating(false)
-      clearDraft()
+      // No clearDraft() here — the backend already promoted the same row
+      // from 'draft' → 'pending' → 'done'. Deleting it now would destroy
+      // the user's video. finalize() above already muted the hook.
       setResultOpen(true)
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('mn_toast_unknownError')

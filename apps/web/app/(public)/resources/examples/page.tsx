@@ -4,6 +4,7 @@
 import Link from 'next/link'
 import { Play, Sparkles, Layers, Scissors, ArrowRight } from 'lucide-react'
 import { PublicShell, DocTitle } from '@/components/public/PublicShell'
+import { decodeEntities } from '@/lib/safe-text'
 
 type Lang = 'en' | 'fr'
 
@@ -98,10 +99,9 @@ function ExamplesBody({ lang }: { lang: Lang }) {
                     {t.pipelineTitles[ex.pipeline]}
                   </span>
                 </div>
-                <h3
-                  className="font-display font-semibold text-foreground text-sm mb-1.5"
-                  dangerouslySetInnerHTML={{ __html: ex.title }}
-                />
+                <h3 className="font-display font-semibold text-foreground text-sm mb-1.5">
+                  {decodeEntities(ex.title)}
+                </h3>
                 <p className="font-body text-xs text-[--text-secondary] leading-relaxed">{ex.summary}</p>
               </div>
             </article>

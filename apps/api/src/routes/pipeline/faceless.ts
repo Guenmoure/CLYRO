@@ -87,6 +87,13 @@ const createFacelessSchema = z.object({
   // F1-013: whether to burn word-level subtitles into the final render.
   // Defaults to FALSE — users explicitly opt in via the wizard's toggle.
   subtitles_enabled: z.boolean().optional().default(false),
+  /**
+   * Optional draft id — when the wizard sends it, the existing `videos`
+   * row (status='draft') is promoted in place to status='pending' instead
+   * of inserting a fresh sibling row. Eliminates the "every completed
+   * video has a zombie draft next to it" bug.
+   */
+  draft_id:     z.string().uuid().optional(),
 })
 
 const regenerateSceneSchema = z.object({
@@ -119,7 +126,7 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
     return
   }
 
-  const { title, style, input_type, format, duration, script, audio_url, voice_id, brand_kit_id, music_track_id, pre_generated_scenes, dialogue_mode, speaker_voices, animation_mode, animation_overrides, music_preset, subtitles_enabled } = parsed.data
+  const { title, style, input_type, format, duration, script, audio_url, voice_id, brand_kit_id, music_track_id, pre_generated_scenes, dialogue_mode, speaker_voices, animation_mode, animation_overrides, music_preset, subtitles_enabled, draft_id } = parsed.data
 
   const hasPreGeneratedScenes = pre_generated_scenes && pre_generated_scenes.length > 0
   if (input_type === 'script' && !script && !hasPreGeneratedScenes) {
@@ -164,34 +171,73 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
     //     format consommé par le pipeline.
     const resolvedAnimationMode = animation_mode ?? 'storyboard'
     const resolvedAnimationOverrides = animation_overrides ?? {}
-    const { data: video, error: dbError } = await supabaseAdmin
-      .from('videos')
-      .insert({
-        user_id: req.userId,
-        module: 'faceless',
-        style,
-        title,
-        status: 'pending',
-        animation_mode: resolvedAnimationMode,
-        animation_overrides: resolvedAnimationOverrides,
-        metadata: {
-          voice_id,
-          input_type,
-          format,
-          duration,
-          brand_kit_id: brand_kit_id ?? null,
-          animation_mode: resolvedAnimationMode,
-          animation_overrides: resolvedAnimationOverrides,
-          music_preset: music_preset ?? 'none',
-          subtitles_enabled: !!subtitles_enabled,
-          // Store script for draft recovery on pipeline failure (max 50KB)
-          script_draft: input_type === 'script' && script
-            ? script.substring(0, 50_000)
-            : undefined,
-        },
-      })
-      .select()
-      .single()
+    const baseMetadata = {
+      voice_id,
+      input_type,
+      format,
+      duration,
+      brand_kit_id: brand_kit_id ?? null,
+      animation_mode: resolvedAnimationMode,
+      animation_overrides: resolvedAnimationOverrides,
+      music_preset: music_preset ?? 'none',
+      subtitles_enabled: !!subtitles_enabled,
+      // Store script for draft recovery on pipeline failure (max 50KB)
+      script_draft: input_type === 'script' && script
+        ? script.substring(0, 50_000)
+        : undefined,
+    }
+    const baseRow = {
+      module: 'faceless' as const,
+      style,
+      title,
+      status: 'pending' as const,
+      animation_mode: resolvedAnimationMode,
+      animation_overrides: resolvedAnimationOverrides,
+      metadata: baseMetadata,
+    }
+
+    // Promote-in-place when the wizard sends its draft_id; otherwise INSERT.
+    // See apps/web/hooks/use-draft-save.ts and the /motion handler for the
+    // full rationale — eliminates the zombie-draft-next-to-every-video bug.
+    let video: { id: string } | null = null
+    let dbError: { message?: string } | null = null
+
+    if (draft_id) {
+      const { data: draftRow } = await supabaseAdmin
+        .from('videos')
+        .select('id, status, user_id')
+        .eq('id', draft_id)
+        .eq('user_id', req.userId)
+        .maybeSingle()
+      if (draftRow && draftRow.status === 'draft') {
+        const upd = await supabaseAdmin
+          .from('videos')
+          .update({
+            ...baseRow,
+            wizard_step: null,
+            wizard_state: null,
+          })
+          .eq('id', draft_id)
+          .eq('user_id', req.userId)
+          .select('id')
+          .single()
+        video = upd.data
+        dbError = upd.error
+        if (video) {
+          logger.info({ videoId: video.id, mode: 'promote-draft' }, 'Faceless video row promoted from draft')
+        }
+      }
+    }
+
+    if (!video) {
+      const ins = await supabaseAdmin
+        .from('videos')
+        .insert({ user_id: req.userId, ...baseRow })
+        .select('id')
+        .single()
+      video = ins.data
+      dbError = ins.error
+    }
 
     if (dbError || !video) {
       logger.error({ dbError }, 'Failed to create video entry')

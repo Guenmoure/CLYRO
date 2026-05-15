@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import type { BrandBrief, BrandDirection, BrandCharte } from '@clyro/shared'
 import { buildCharteHtml } from '@/lib/brand-charte-html'
 
@@ -131,17 +133,29 @@ const SIGNED_URL_EXPIRY = 60 * 60 * 24 * 365
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: this route fetches signed asset URLs and packages them
+    // into a ZIP. Previously the caller passed an arbitrary `userId` in
+    // the body to attribute the share — anyone could spoof another
+    // user's id. Now we derive the user from the session and IGNORE any
+    // userId in the body.
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json() as {
       brief: BrandBrief
       direction: BrandDirection
       charte: BrandCharte
       assets: Record<string, string | undefined>
       logoUrl?: string
-      userId?: string
       userEmail?: string
       share?: boolean
     }
-    const { brief, direction, charte, assets, logoUrl, userId, share } = body
+    const { brief, direction, charte, assets, logoUrl, share } = body
+    // Always use the authenticated user — never trust a body-supplied id.
+    const userId = user.id
 
     const slug = brief.name.toLowerCase().replace(/\s+/g, '-')
 

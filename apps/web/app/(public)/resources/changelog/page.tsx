@@ -2,6 +2,7 @@
 'use client'
 
 import { PublicShell, DocTitle } from '@/components/public/PublicShell'
+import { decodeEntities } from '@/lib/safe-text'
 
 type Lang = 'en' | 'fr'
 type Tag = 'new' | 'improved' | 'fixed'
@@ -162,10 +163,9 @@ function ChangelogBody({ lang }: { lang: Lang }) {
                   >
                     {t.tagLabels[entry.tag]}
                   </span>
-                  <span
-                    className="font-body text-sm text-[--text-secondary] leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: entry.label }}
-                  />
+                  <span className="font-body text-sm text-[--text-secondary] leading-relaxed">
+                    {decodeEntities(entry.label)}
+                  </span>
                 </li>
               ))}
             </ul>

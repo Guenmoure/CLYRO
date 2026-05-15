@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
 import type { BrandBrief, BrandDirection } from '@clyro/shared'
 
@@ -59,6 +61,16 @@ async function runBatch(jobs: AssetJob[]): Promise<Record<string, string | undef
  */
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: this route calls fal.ai flux-pro / flux-dev / recraft-v3
+    // — up to 10 images per bulk run, ~$0.05/image. Unauthenticated would
+    // allow a single curl loop to drain the FAL_KEY balance.
+    // See .claude/rules/security.md → "Cost-amplification protection".
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json() as {
       brief: BrandBrief
       direction: BrandDirection

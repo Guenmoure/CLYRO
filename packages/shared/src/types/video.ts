@@ -248,6 +248,12 @@ export interface CreateFacelessVideoPayload {
   music_preset?: 'none' | 'soft' | 'upbeat' | 'cinematic' | 'corporate'
   // F1-013: burn-in subtitles (word-level via TTS timestamps)
   subtitles_enabled?: boolean
+  /**
+   * Existing wizard draft id. When present, the backend promotes the
+   * draft row in place instead of inserting a fresh sibling row. See
+   * apps/web/hooks/use-draft-save.ts for the full rationale.
+   */
+  draft_id?: string
 }
 
 export interface MotionScene {
@@ -286,4 +292,6 @@ export interface CreateMotionVideoPayload {
   brand_config: BrandConfig
   voice_id?: string
   music_track_id?: string
+  /** See CreateFacelessVideoPayload.draft_id. */
+  draft_id?: string
 }

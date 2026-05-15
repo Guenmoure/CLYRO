@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import { BookOpen, Sparkles, Video, Mic, Image as ImageIcon, Zap, Settings, HelpCircle, ArrowRight } from 'lucide-react'
 import { PublicShell, DocTitle } from '@/components/public/PublicShell'
+import { decodeEntities } from '@/lib/safe-text'
 
 type Lang = 'en' | 'fr'
 
@@ -82,15 +83,13 @@ function DocsBody({ lang }: { lang: Lang }) {
             <div key={item.title} className="rounded-xl border border-border/50 bg-card/40 p-4 hover:bg-card/60 transition-colors">
               <div className="flex items-center gap-2.5 mb-1.5">
                 <item.icon size={16} className="text-blue-500" />
-                <h3
-                  className="font-display font-semibold text-foreground text-sm"
-                  dangerouslySetInnerHTML={{ __html: item.title }}
-                />
+                <h3 className="font-display font-semibold text-foreground text-sm">
+                  {decodeEntities(item.title)}
+                </h3>
               </div>
-              <p
-                className="font-body text-sm text-[--text-secondary]"
-                dangerouslySetInnerHTML={{ __html: item.desc }}
-              />
+              <p className="font-body text-sm text-[--text-secondary]">
+                {decodeEntities(item.desc)}
+              </p>
             </div>
           ))}
         </div>

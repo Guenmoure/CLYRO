@@ -3,6 +3,7 @@
 
 import { CheckCircle2, AlertTriangle, Activity } from 'lucide-react'
 import { PublicShell, DocTitle } from '@/components/public/PublicShell'
+import { decodeEntities } from '@/lib/safe-text'
 
 type Lang = 'en' | 'fr'
 type HealthState = 'operational' | 'degraded' | 'outage'
@@ -105,10 +106,9 @@ function StatusBody({ lang }: { lang: Lang }) {
   return (
     <>
       <DocTitle eyebrow={t.eyebrow} title={t.title} />
-      <p
-        className="font-body text-lg text-[--text-secondary] mb-10 leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: t.intro }}
-      />
+      <p className="font-body text-lg text-[--text-secondary] mb-10 leading-relaxed">
+        {decodeEntities(t.intro)}
+      </p>
 
       {/* Overall banner */}
       <div
@@ -146,10 +146,9 @@ function StatusBody({ lang }: { lang: Lang }) {
             <div key={s.name} className="p-4 flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="font-display font-semibold text-foreground text-sm truncate">{s.name}</p>
-                <p
-                  className="font-body text-xs text-[--text-muted] truncate"
-                  dangerouslySetInnerHTML={{ __html: lang === 'fr' ? s.descFr : s.descEn }}
-                />
+                <p className="font-body text-xs text-[--text-muted] truncate">
+                  {decodeEntities(lang === 'fr' ? s.descFr : s.descEn)}
+                </p>
               </div>
               <div className="flex items-center gap-4 shrink-0">
                 <span className="font-mono text-[11px] text-[--text-muted] hidden sm:inline">
@@ -203,10 +202,9 @@ function StatusBody({ lang }: { lang: Lang }) {
                   {lang === 'fr' ? inc.dateFr : inc.dateEn}
                 </span>
               </div>
-              <h3
-                className="font-display font-semibold text-foreground text-sm mb-1.5"
-                dangerouslySetInnerHTML={{ __html: lang === 'fr' ? inc.titleFr : inc.titleEn }}
-              />
+              <h3 className="font-display font-semibold text-foreground text-sm mb-1.5">
+                {decodeEntities(lang === 'fr' ? inc.titleFr : inc.titleEn)}
+              </h3>
               <p className="font-body text-sm text-[--text-secondary] leading-relaxed">
                 {lang === 'fr' ? inc.noteFr : inc.noteEn}
               </p>

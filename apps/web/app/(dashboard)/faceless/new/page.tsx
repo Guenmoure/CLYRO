@@ -783,7 +783,7 @@ function FacelessNewPageInner() {
   }, [draftParam])
 
   // DB-backed draft auto-save
-  const { wasRestored, lastSaved, isSaving: draftIsSaving, clearDraft } = useDraftSave({
+  const { draftId, wasRestored, lastSaved, isSaving: draftIsSaving, finalize } = useDraftSave({
     module:      'faceless',
     title:       projectName,
     style:       style as string,
@@ -923,7 +923,14 @@ function FacelessNewPageInner() {
         animation_mode: animationMode,
         music_preset: musicPreset,
         subtitles_enabled: subtitlesEnabled,
+        // Promote the draft row in place — kills the zombie-draft pattern.
+        ...(draftId ? { draft_id: draftId } : {}),
       })
+
+      // Backend has promoted the row from 'draft' → 'pending'. Mute the
+      // hook immediately so the next autosave / state change cannot
+      // re-INSERT a sibling draft while the pipeline runs.
+      finalize()
 
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -957,7 +964,9 @@ function FacelessNewPageInner() {
 
       setResultVideoUrl(video?.output_url ?? undefined)
       setGenerating(false)
-      clearDraft()
+      // No clearDraft() — the backend promoted the SAME row from 'draft'
+      // to 'pending' → 'done'. DELETing it would destroy the user's
+      // output. finalize() above already muted the save hook.
       setResultOpen(true)
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('fn_toast_unknownError')

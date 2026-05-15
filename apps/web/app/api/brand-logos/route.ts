@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
 import type { BrandBrief, BrandDirection } from '@clyro/shared'
 
@@ -125,6 +127,16 @@ async function generateLogoVariant(brief: BrandBrief, direction: BrandDirection,
  */
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: this route calls fal.ai recraft-v3 which is billable
+    // (~$0.04/image × up to 9 images per call). Without auth, anyone
+    // could loop curl on this endpoint and burn our credit balance.
+    // See .claude/rules/security.md → "Cost-amplification protection".
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json() as {
       brief:         BrandBrief
       direction:     BrandDirection

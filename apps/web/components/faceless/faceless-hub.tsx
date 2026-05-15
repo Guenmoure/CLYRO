@@ -2868,7 +2868,7 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
   // so they have a chance to cancel. Once the script has been broken into
   // scenes (hasScenes), leave silently — the draft is always auto-saved.
   const hasScenes = project.scenes.length > 0
-  const { clearDraft } = useDraftSave({
+  const { draftId, finalize } = useDraftSave({
     module:         'faceless',
     title:          project.title || 'Faceless draft',
     style:          (project.style as string | null) ?? 'draft',
@@ -3064,7 +3064,14 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
         dialogue_mode: dialogue.hasDialogue,
         speaker_voices: speakerVoices,
         animation_mode: project.animationMode ?? 'fast',
+        // Promote the draft row in place — see useDraftSave docs.
+        ...(draftId ? { draft_id: draftId } : {}),
       })
+
+      // Mute the save hook now that the row has been promoted to the
+      // real pipeline row. Replaces the previous clearDraft() DELETE
+      // which would now destroy the actual video.
+      finalize()
 
       // Display condensation warning if script was auto-condensed
       if (script_condensed?.condensed) {
@@ -3088,9 +3095,10 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
       if (typeof window !== 'undefined') {
         window.history.replaceState(null, '', `/faceless/hub?resume=${video_id}`)
       }
-      // Pipeline row now owns this project — remove the draft row so
-      // it no longer appears in /drafts or the DraftsSection of /projects.
-      await clearDraft().catch(() => null)
+      // No clearDraft() — the backend promoted the SAME row from
+      // 'draft' to 'pending'. Deleting it would destroy the new video.
+      // finalize() above already disabled the autosave hook so no fresh
+      // draft can be re-INSERTed.
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error('[goToFinal] Pipeline start failed:', msg, err)

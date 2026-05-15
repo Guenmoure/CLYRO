@@ -30,7 +30,21 @@ export interface DraftSaveResult {
   wasRestored: boolean
   lastSaved:   Date | null
   isSaving:    boolean
+  /**
+   * Delete the draft row and permanently disable the hook (no further
+   * auto-saves, beacon, step-change saves, etc.). Use this on a clean
+   * "abandon draft" path. For successful submissions where the backend
+   * promotes the same row from `draft` → `pending`, prefer `finalize()`
+   * which only mutes the hook without deleting (the row is now the real
+   * video).
+   */
   clearDraft:  () => Promise<void>
+  /**
+   * Permanently disable all save triggers without touching the row.
+   * Call this AFTER the backend has promoted the draft in place — the row
+   * is now the actual video, deleting it would destroy the user's output.
+   */
+  finalize:    () => void
 }
 
 export function useDraftSave({
@@ -53,8 +67,45 @@ export function useDraftSave({
   const latestRef = useRef({ module, title, style, currentStep, totalSteps, stepLabel, state, draftId })
   latestRef.current = { module, title, style, currentStep, totalSteps, stepLabel, state, draftId }
 
+  // Latest Supabase access_token — refreshed in the background. The
+  // beforeunload handler reads from this ref because `sendBeacon` runs
+  // synchronously during unload (no async API calls possible).
+  const accessTokenRef = useRef<string | null>(null)
+  useEffect(() => {
+    const supabase = createBrowserClient()
+    let cancelled = false
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    void (supabase.auth.getSession() as Promise<any>).then(({ data }: any) => {
+      if (!cancelled) accessTokenRef.current = data?.session?.access_token ?? null
+    })
+    // Keep the ref fresh on auth state changes (refresh, sign-out).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: sub } = (supabase.auth.onAuthStateChange as any)(
+      (_event: unknown, session: { access_token?: string } | null) => {
+        accessTokenRef.current = session?.access_token ?? null
+      },
+    )
+    return () => {
+      cancelled = true
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(sub as any)?.subscription?.unsubscribe?.()
+    }
+  }, [])
+
+  // One-way kill switch flipped by clearDraft() / finalize(). Once true,
+  // every save trigger short-circuits — the 30 s autosave interval, the
+  // state-change debounce, the step-change effect, AND the beforeunload
+  // beacon all read this ref. Previously the hook kept saving after
+  // clearDraft (because draftId was just set to null), so the next
+  // autosave tick re-INSERTed a fresh draft and you ended up with a
+  // zombie draft sitting next to every completed video. A ref (not
+  // state) is used so the beforeunload handler reads the latest value
+  // without re-binding.
+  const finalizedRef = useRef(false)
+
   // ── Core save function ──────────────────────────────────────
   const save = useCallback(async () => {
+    if (finalizedRef.current) return
     const supabase = createBrowserClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
@@ -114,6 +165,7 @@ export function useDraftSave({
   // ── Save on step change ─────────────────────────────────────
   const stepRef = useRef<number | null>(null)
   useEffect(() => {
+    if (finalizedRef.current) return
     if (stepRef.current === null) {
       stepRef.current = currentStep
       return
@@ -129,6 +181,7 @@ export function useDraftSave({
   // working, so tab-close/unload is never catastrophic.
   const lastStateJsonRef = useRef<string>('')
   useEffect(() => {
+    if (finalizedRef.current) return
     const json = JSON.stringify(state)
     if (json === lastStateJsonRef.current) return
     const isFirstObserved = lastStateJsonRef.current === ''
@@ -140,7 +193,10 @@ export function useDraftSave({
 
   // ── Auto-save every 30s ─────────────────────────────────────
   useEffect(() => {
-    const interval = setInterval(save, AUTOSAVE_MS)
+    const interval = setInterval(() => {
+      if (finalizedRef.current) return
+      save()
+    }, AUTOSAVE_MS)
     return () => clearInterval(interval)
   }, [save])
 
@@ -148,14 +204,23 @@ export function useDraftSave({
   // If `promptOnLeave` is true AND we have nothing to lose silently (draft
   // exists but user hasn't passed the "real work" threshold), trigger the
   // native confirmation so the user has a chance to cancel. Either way,
-  // when unload proceeds the beacon fires and the draft is persisted.
+  // when unload proceeds the beacon fires and the draft is persisted —
+  // UNLESS the hook has been finalised (user already submitted), in which
+  // case there's nothing to preserve.
   const promptOnLeaveRef = useRef(promptOnLeave)
   promptOnLeaveRef.current = promptOnLeave
   useEffect(() => {
     function onBeforeUnload(e: BeforeUnloadEvent) {
+      if (finalizedRef.current) return undefined
       const { draftId: id, module: mod, title: t, style: s, currentStep: step, state: st } = latestRef.current
-      if (id) {
-        const body = JSON.stringify({ draftId: id, module: mod, title: t, style: s, currentStep: step, state: st })
+      const token = accessTokenRef.current
+      // Only beacon when we have BOTH the draft id and a session token —
+      // the server rejects unauthenticated beacons (see /api/draft-save).
+      if (id && token) {
+        const body = JSON.stringify({
+          draftId: id, accessToken: token,
+          module: mod, title: t, style: s, currentStep: step, state: st,
+        })
         navigator.sendBeacon('/api/draft-save', body)
       }
       if (promptOnLeaveRef.current) {
@@ -170,15 +235,32 @@ export function useDraftSave({
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [])
 
+  // ── Permanently mute the hook (no DELETE) ───────────────────
+  // Use this when the backend has promoted the draft row in place to a
+  // real video (status changed from 'draft' → 'pending'). The row IS the
+  // video now — deleting it would destroy the user's output.
+  const finalize = useCallback(() => {
+    finalizedRef.current = true
+  }, [])
+
   // ── Clear (delete) the draft ────────────────────────────────
+  // Sets the finalized flag SYNCHRONOUSLY before the DELETE so any
+  // already-pending save (debounced state change, autosave tick) bails
+  // out instead of racing the DELETE and re-INSERTing a fresh draft.
   const clearDraft = useCallback(async () => {
+    finalizedRef.current = true
     const id = latestRef.current.draftId
     if (!id) return
     const supabase = createBrowserClient()
-    await supabase.from('videos').delete().eq('id', id)
+    try {
+      await supabase.from('videos').delete().eq('id', id)
+    } catch {
+      // Swallow: the row may already be gone, or RLS rejected. Either way
+      // the hook is muted now so no zombie will be re-created.
+    }
     setDraftId(null)
     latestRef.current.draftId = null
   }, [])
 
-  return { draftId, wasRestored, lastSaved, isSaving, clearDraft }
+  return { draftId, wasRestored, lastSaved, isSaving, clearDraft, finalize }
 }

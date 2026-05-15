@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
+import { applyAntiHallucination } from '@clyro/shared'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -24,6 +27,14 @@ const STYLE_PREFIXES: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: calls fal.ai flux/schnell. Auth required to keep the
+    // FAL_KEY balance from being burned by anonymous loops.
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json() as { prompt: string; style: string }
     const { prompt, style } = body
 
@@ -36,9 +47,14 @@ export async function POST(request: NextRequest) {
     }
 
     const prefix = STYLE_PREFIXES[style] ?? STYLE_PREFIXES['cinematique']
+    // Apply the anti-hallucination safety net (no-text suffix + style
+    // lock) BEFORE the per-style prefix is appended — guarantees the
+    // negatives reach Flux even when this endpoint is called directly
+    // from the wizard's "regenerate scene" button.
+    const safePrompt = applyAntiHallucination(prompt, style)
     // Scene description leads — Flux weights the beginning of the prompt most.
     // Style is a suffix so the aesthetic is applied without overriding composition.
-    const fullPrompt = `${prompt}, ${prefix}`
+    const fullPrompt = `${safePrompt}, ${prefix}`
 
     // Random seed so each call varies — caller can supply their own seed later if needed.
     const seed = Math.floor(Math.random() * 1_000_000_000)

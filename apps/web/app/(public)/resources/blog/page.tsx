@@ -3,6 +3,7 @@
 
 import { Calendar, ArrowRight } from 'lucide-react'
 import { PublicShell, DocTitle } from '@/components/public/PublicShell'
+import { decodeEntities } from '@/lib/safe-text'
 
 type Lang = 'en' | 'fr'
 
@@ -78,14 +79,12 @@ function BlogBody({ lang }: { lang: Lang }) {
               <span>·</span>
               <span>{t.minutes(post.minutes)}</span>
             </div>
-            <h2
-              className="font-display text-lg sm:text-xl font-semibold text-foreground mb-2 leading-snug group-hover:text-blue-500 transition-colors"
-              dangerouslySetInnerHTML={{ __html: post.title }}
-            />
-            <p
-              className="font-body text-sm text-[--text-secondary] leading-relaxed mb-3"
-              dangerouslySetInnerHTML={{ __html: post.summary }}
-            />
+            <h2 className="font-display text-lg sm:text-xl font-semibold text-foreground mb-2 leading-snug group-hover:text-blue-500 transition-colors">
+              {decodeEntities(post.title)}
+            </h2>
+            <p className="font-body text-sm text-[--text-secondary] leading-relaxed mb-3">
+              {decodeEntities(post.summary)}
+            </p>
             <span className="inline-flex items-center gap-1 text-xs font-display font-semibold text-blue-500">
               {t.readMore}
               <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
@@ -94,10 +93,9 @@ function BlogBody({ lang }: { lang: Lang }) {
         ))}
       </div>
 
-      <p
-        className="font-body text-sm text-[--text-muted] text-center"
-        dangerouslySetInnerHTML={{ __html: t.soon }}
-      />
+      <p className="font-body text-sm text-[--text-muted] text-center">
+        {decodeEntities(t.soon)}
+      </p>
     </>
   )
 }
