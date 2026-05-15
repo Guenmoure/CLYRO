@@ -58,8 +58,11 @@ export function AvatarCard({ avatar, isFavorite, onClick, onFavorite, onUse }: A
         )}
       </div>
 
-      {/* Badge — personal avatar */}
-      {avatar.avatar_type === 'personal' && (
+      {/* Badge — personal (user-uploaded) avatar. HeyGen returns 'private'
+          for Instant-Avatar uploads, sometimes 'custom' on older entries.
+          Previously this checked 'personal' which HeyGen never emits, so
+          the badge was always hidden. */}
+      {(avatar.avatar_type === 'private' || avatar.avatar_type === 'custom') && (
         <div className="absolute top-2 left-2">
           <Badge variant="purple">{t('ac_my_avatar')}</Badge>
         </div>

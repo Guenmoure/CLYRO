@@ -135,25 +135,63 @@ export async function getVideoStatus(videoId: string): Promise<HeyGenVideoStatus
   return data.data
 }
 
-// ── Category inference from avatar tags / type / name ──────────────────
+// ── Category inference ────────────────────────────────────────────────
+//
+// Previous version matched HeyGen `tags` against keyword lists like
+// ['professional','business',...]. In practice HeyGen's `tags` field rarely
+// contains those literal words — it's mostly style/ethnicity/pose tags —
+// so 95 % of avatars fell through to `'other'` and the category filter
+// pills were dead.
+//
+// New strategy: rank signals by reliability and use the FIRST that fires.
+//   1. avatar_type → community (HeyGen guarantees private/custom labelling)
+//   2. avatar_name parsing → HeyGen uses descriptive names like
+//      "Annie in Black Suit" / "Tyler Casual Home" / "Sarah on Phone" —
+//      these patterns are FAR more discriminating than tags.
+//   3. premium flag → professional (HeyGen premium tier is curated
+//      high-end personas, almost always business-friendly).
+//   4. legacy tag keyword match — kept as a safety net so future API
+//      additions still benefit if HeyGen ever populates tags richly.
+//   5. looks_count fallback (lowered from 5 → 4)
+//   6. 'other' default.
 
-const PROFESSIONAL_KEYWORDS = ['professional', 'business', 'corporate', 'formal', 'office']
-const LIFESTYLE_KEYWORDS = ['lifestyle', 'casual', 'everyday', 'friendly']
-const UGC_KEYWORDS = ['ugc', 'creator', 'influencer', 'selfie', 'content']
+// Compiled once at module init — these regexes run on every avatar so
+// hoisting them out of the function matters.
+const PRO_NAME_RX       = /\b(suit|blazer|tie|office|exec|business|formal|corporate|ceo|doctor|nurse|lawyer|presenter|news|anchor|teacher|coach|consultant|interview)\b/i
+const LIFESTYLE_NAME_RX = /\b(casual|home|kitchen|cafe|coffee|park|beach|outdoor|t-?shirt|tshirt|hoodie|jeans|sweater|cozy|relax|leisure)\b/i
+const UGC_NAME_RX       = /\b(phone|selfie|vlog|vlogger|creator|youtube|tiktok|handheld|webcam|talking[-_ ]?head|reel)\b/i
+
+const PROFESSIONAL_TAG_KEYWORDS = ['professional', 'business', 'corporate', 'formal', 'office', 'pro']
+const LIFESTYLE_TAG_KEYWORDS    = ['lifestyle', 'casual', 'everyday', 'friendly', 'home']
+const UGC_TAG_KEYWORDS          = ['ugc', 'creator', 'influencer', 'selfie', 'content', 'social']
 
 function inferCategory(raw: HeyGenAvatarRaw): HeyGenAvatar['category'] {
-  // 1. Check tags first
-  const tags = (raw.tags ?? []).map((t) => t.toLowerCase())
-  if (tags.some((t) => PROFESSIONAL_KEYWORDS.includes(t))) return 'professional'
-  if (tags.some((t) => LIFESTYLE_KEYWORDS.includes(t))) return 'lifestyle'
-  if (tags.some((t) => UGC_KEYWORDS.includes(t))) return 'ugc'
-
-  // 2. Check avatar_type from HeyGen
+  // 1) avatar_type — the only signal HeyGen guarantees. Private/custom
+  //    avatars are user-uploaded twins; they belong in the community bucket
+  //    regardless of how their name reads.
   const type = (raw.avatar_type ?? '').toLowerCase()
   if (type === 'private' || type === 'custom') return 'community'
 
-  // 3. Fallback: if it has multiple looks → likely professional
-  if ((raw.looks ?? []).length >= 5) return 'professional'
+  // 2) name parsing — HeyGen names are descriptive enough to be the
+  //    primary classifier for public avatars.
+  const name = raw.avatar_name ?? ''
+  if (PRO_NAME_RX.test(name))       return 'professional'
+  if (LIFESTYLE_NAME_RX.test(name)) return 'lifestyle'
+  if (UGC_NAME_RX.test(name))       return 'ugc'
+
+  // 3) premium tier — curated, almost always business-ready.
+  if (raw.premium === true) return 'professional'
+
+  // 4) legacy tag keyword check — kept in case HeyGen later populates tags.
+  const tags = (raw.tags ?? []).map((t) => t.toLowerCase())
+  if (tags.some((t) => PROFESSIONAL_TAG_KEYWORDS.includes(t))) return 'professional'
+  if (tags.some((t) => LIFESTYLE_TAG_KEYWORDS.includes(t)))    return 'lifestyle'
+  if (tags.some((t) => UGC_TAG_KEYWORDS.includes(t)))          return 'ugc'
+
+  // 5) looks count fallback — many poses usually = a flagship persona.
+  //    Lowered from 5 → 4 since the more reliable signals above now run
+  //    first; this only fires for unnamed/un-tagged personas.
+  if ((raw.looks ?? []).length >= 4) return 'professional'
 
   return 'other'
 }

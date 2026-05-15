@@ -9,11 +9,34 @@ export interface AvatarGroup {
   category: StudioAvatar['category']
 }
 
-/** Strip common look/version suffixes to derive the base name of an avatar. */
+/**
+ * Strip common look/version suffixes to derive the base name of an avatar.
+ *
+ * Handles the HeyGen naming conventions actually observed in production :
+ *   "Annie - Look 2"       → "Annie"
+ *   "Annie_Look_2"         → "Annie"
+ *   "Annie (v3)"           → "Annie"
+ *   "Annie in Black Suit"  → "Annie"
+ *   "Tyler Sitting"        → "Tyler"
+ *   "Sarah Casual Home"    → "Sarah"
+ *   "Marcus_Pro_v2"        → "Marcus"
+ *
+ * Conservative on purpose : we only strip RECOGNISED outfit/pose suffix
+ * patterns, never multi-word last names. "Anna Smith" stays "Anna Smith"
+ * so it never accidentally bundles with "Anna Johnson".
+ */
 export function getAvatarBaseName(name: string): string {
   return name
-    .replace(/\s*[-–]\s*(look|style|outfit|version|v)\s*\d*/i, '')
-    .replace(/\s*\(.*\)\s*$/, '')
+    // 1) trailing parens — "(v3)", "(2024)", "(US English)"
+    .replace(/\s*\([^)]*\)\s*$/, '')
+    // 2) "in <outfit>" — "Annie in Black Suit" / "Tyler in Casual Wear"
+    .replace(/\s+in\s+.+$/i, '')
+    // 3) "- look N" / "_look_N" — handles both dash and underscore separators
+    .replace(/[\s_-]+(?:look|style|outfit|version|pose|variant|v)[\s_-]*\d*\s*$/i, '')
+    // 4) Trailing single pose/outfit keyword without separator — "Tyler Sitting"
+    .replace(/\s+(?:casual|professional|formal|sitting|standing|walking|talking|phone|selfie|home|office|outdoor)\s*\d*\s*$/i, '')
+    // 5) Trailing pure digits — "Sarah 3"
+    .replace(/[\s_-]+\d+\s*$/, '')
     .trim()
 }
 
