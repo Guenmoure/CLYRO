@@ -11,11 +11,23 @@ const fal = createFalClient({
 
 const MAX_RETRIES = 1             // 1 retry avant fallback schnell (fail fast)
 
-// Models that use aspect_ratio instead of image_size
+// Models that use aspect_ratio instead of image_size.
+// Verified against @fal-ai/client typed input schemas:
+//   - flux-pro/v1.x : aspect_ratio ✓
+//   - ideogram v2/v3 : aspect_ratio ✓
+//   - nano-banana-pro : aspect_ratio ✓
+//   - flux-2-pro : image_size only (not aspect_ratio — stays out)
+//   - recraft v3 + seedream v4 : image_size {width,height}
 const ASPECT_RATIO_MODELS = new Set([
+  // Legacy
   'fal-ai/flux-pro/v1.1-ultra',
   'fal-ai/flux-pro',
+  'fal-ai/flux-pro/v1.1',
   'fal-ai/ideogram/v2',
+  // 2026 SOTA
+  'fal-ai/nano-banana-pro',
+  'fal-ai/nano-banana-2',
+  'fal-ai/ideogram/v3',
 ])
 
 const IMAGE_SIZE_TO_ASPECT_RATIO: Record<string, string> = {
@@ -208,8 +220,13 @@ export async function generateSceneImage(
 
   const useAspectRatio = ASPECT_RATIO_MODELS.has(model)
   const isIdeogram    = model.startsWith('fal-ai/ideogram/')
+  const isIdeogramV3  = model === 'fal-ai/ideogram/v3'
   const isFluxPro     = model.startsWith('fal-ai/flux-pro/')
+  const isFlux2Pro    = model === 'fal-ai/flux-2-pro'
   const isFluxSchnell = model === 'fal-ai/flux/schnell'
+  const isNanoBanana  = model.startsWith('fal-ai/nano-banana')
+  const isRecraft     = model.startsWith('fal-ai/recraft/')
+  const isSeedream    = model.includes('/seedream/')
 
   let lastError: Error | null = null
 
@@ -235,15 +252,38 @@ export async function generateSceneImage(
         // 8 is the max useful inference steps for flux/schnell — visibly
         // sharper than the default 4, still under ~5s per image.
         input.num_inference_steps = 8
-      } else if (isFluxPro) {
-        // flux-pro v1.1 has a fixed internal step count; expose safety_tolerance instead.
+      } else if (isFlux2Pro) {
+        // FLUX.2 [pro] — newer than flux-pro v1.x. Same param surface:
+        // fixed internal step count, expose safety_tolerance + output_format.
         input.safety_tolerance = '2'
         input.output_format   = 'jpeg'
+      } else if (isFluxPro) {
+        // Legacy flux-pro v1.x kept for backward compat.
+        input.safety_tolerance = '2'
+        input.output_format   = 'jpeg'
+      } else if (isIdeogramV3) {
+        // Ideogram V3 — same "design" style register as v2 but renamed
+        // params: `rendering_speed` (TURBO/BALANCED/QUALITY) controls cost.
+        // BALANCED gives the best quality/cost ratio for storyboard frames.
+        input.rendering_speed = 'BALANCED'
+        input.style           = 'DESIGN'
+        input.expand_prompt   = false
       } else if (isIdeogram) {
-        // Ideogram: "design" style matches our flat/motion-graphics aesthetic best;
-        // expand_prompt=false keeps our carefully-crafted prompt intact.
+        // Legacy Ideogram v2 fallback.
         input.style          = 'design'
         input.expand_prompt  = false
+      } else if (isNanoBanana) {
+        // Nano Banana (Google DM) — SynthID watermark is auto-applied,
+        // commercial use is enabled via fal. No extra knobs needed at
+        // this surface; quality is fixed Pro tier.
+      } else if (isRecraft) {
+        // Recraft V3 — `style` controls the brand register. "digital_illustration"
+        // matches flat-design / minimaliste; "vector_illustration" is also valid
+        // for harder geometric pieces. Output is always PNG, no overrides needed.
+        input.style = 'digital_illustration'
+      } else if (isSeedream) {
+        // Seedream V4.5 — `image_size` accepts the same width/height object
+        // as flux. No extra knobs at the value tier.
       }
 
       // Seed fixe = character consistency entre scènes (PDF: cref pattern)
@@ -396,9 +436,16 @@ export async function generateLogo(
 
   const fullPrompt = `professional logo design, vector style, clean minimal branding, ${prompt}${colorContext}, white background, centered composition, no text unless specified, commercial quality`
 
+  // Recraft V3 — purpose-built for brand/design work, beats flux/dev on
+  // logo composition + colour palette adherence (2026 fal.ai SOTA pick).
+  // Recraft generates 1 image per call by default — no num_images knob.
   const result = await Promise.race([
-    fal.subscribe('fal-ai/flux/dev', {
-      input: { prompt: fullPrompt, image_size: 'square_hd', num_inference_steps: 28, num_images: 1 },
+    fal.subscribe('fal-ai/recraft/v3/text-to-image', {
+      input: {
+        prompt: fullPrompt,
+        image_size: { width: 1024, height: 1024 },
+        style: 'vector_illustration',
+      },
     }),
     new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Logo generation timeout')), TIMEOUT_IMAGE_MS)
@@ -428,9 +475,18 @@ export async function generateSocialAsset(
 
   const fullPrompt = `professional social media visual, ${platform.replace('_', ' ')} format, modern graphic design, ${prompt}${colorContext}, high quality, commercial advertising style`
 
+  // FLUX.2 [pro] — photorealism SOTA on fal.ai in 2026.
+  // FLUX.2 [pro] uses the `image_size` preset string (square_hd /
+  // portrait_16_9 / landscape_16_9 / etc.) — same vocabulary as the
+  // legacy SOCIAL_FORMAT_MAP, so we can pass `imageSize` through directly.
   const result = await Promise.race([
-    fal.subscribe('fal-ai/flux/dev', {
-      input: { prompt: fullPrompt, image_size: imageSize as 'landscape_16_9' | 'square_hd' | 'portrait_16_9', num_inference_steps: 25, num_images: 1 },
+    fal.subscribe('fal-ai/flux-2-pro', {
+      input: {
+        prompt: fullPrompt,
+        image_size: imageSize as 'landscape_16_9' | 'square_hd' | 'portrait_16_9',
+        safety_tolerance: '2',
+        output_format: 'jpeg',
+      },
     }),
     new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Social asset generation timeout')), TIMEOUT_IMAGE_MS)
@@ -451,70 +507,81 @@ export async function generateSocialAsset(
 const HIGH_QUALITY_VIDEO_STYLES = new Set(['cinematique', 'stock-vo', 'luxe', '3d-pixar'])
 
 /**
- * Kling v2.5 Turbo Standard — variante turbo du modèle Kling (~20-40 s).
- * ~2× plus rapide que Kling v1 Standard tout en gardant une qualité comparable
- * sur les styles d'animation/illustration. Utilisé pour la majorité des styles.
+ * Kling 3.0 Standard — base tier of the Kling v3 family (~30-60 s).
+ * Replaces v2.5-turbo Standard. Same I/O surface (image_url + prompt +
+ * duration + cfg_scale). 2026 SOTA standard-tier video model.
+ *
+ * NOTE: `fal-ai/kling-video/o3/standard/image-to-video` is documented
+ * on fal.ai's catalog page (March 2026) but not yet in @fal-ai/client
+ * typed endpoint map — we cast the options arg to bypass the lag.
  */
 async function generateSceneVideoKlingStandard(
   imageUrl: string,
   animationPrompt: string,
   duration: '5' | '10' = '5'
 ): Promise<{ videoUrl: string }> {
-  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v2.5-turbo Standard')
+  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v3 Standard')
 
   const result = await Promise.race([
-    fal.subscribe('fal-ai/kling-video/v2.5-turbo/standard/image-to-video', {
+    fal.subscribe('fal-ai/kling-video/o3/standard/image-to-video', {
       input: {
         image_url: imageUrl,
         prompt: animationPrompt,
         duration,
         cfg_scale: 0.5,
       },
-    }),
+    } as any),
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Kling v2.5-turbo Standard timeout')), TIMEOUT_VIDEO_MS)
+      setTimeout(() => reject(new Error('Kling v3 Standard timeout')), TIMEOUT_VIDEO_MS)
     ),
   ])
 
   const output = ((result as any).data ?? result) as { video?: { url: string } }
   const videoUrl = output.video?.url
-  if (!videoUrl) throw new Error('No video URL in Kling v2.5-turbo Standard response')
+  if (!videoUrl) throw new Error('No video URL in Kling v3 Standard response')
 
-  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling v2.5-turbo Standard complete')
+  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling v3 Standard complete')
   return { videoUrl }
 }
 
 /**
- * Kling v2.5 Turbo Pro — variante turbo premium (~40-90 s).
- * ~2× plus rapide que Kling v1.5 Pro, avec qualité photoréaliste conservée.
- * Réservé aux styles photoréalistes (cinematique, stock-vo, luxe, 3d-pixar).
+ * Kling 3.0 Pro — top-tier image-to-video (~60-180 s, ~$0.112/sec).
+ * Motion-fluidity SOTA on fal.ai in 2026 (per fal's March 2026 ranking),
+ * with native audio + voice ID support upstream. Replaces v2.5-turbo Pro
+ * — quality bump on motion-heavy + cinematic shots is the rationale.
+ * Reserved for premium-style content (cinematique, stock-vo, luxe, 3d-pixar)
+ * and any prompt with a "complex" motion verb (orbit, crane, dolly, …).
+ *
+ * NOTE: `fal-ai/kling-video/v3/pro/image-to-video` is documented on
+ * fal.ai's catalog page (March 2026) but not yet in @fal-ai/client
+ * typed endpoint map — we cast to bypass the lag.
  */
 async function generateSceneVideoKlingPro(
   imageUrl: string,
   animationPrompt: string,
   duration: '5' | '10' = '5'
 ): Promise<{ videoUrl: string }> {
-  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v2.5-turbo Pro')
+  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Kling v3 Pro')
 
   const result = await Promise.race([
-    fal.subscribe('fal-ai/kling-video/v2.5-turbo/pro/image-to-video', {
+    fal.subscribe('fal-ai/kling-video/v3/pro/image-to-video', {
       input: {
         image_url: imageUrl,
         prompt: animationPrompt,
         duration,
         cfg_scale: 0.5,
       },
-    }),
+    } as any),
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Kling v2.5-turbo Pro timeout')), TIMEOUT_VIDEO_MS * 2)
+      setTimeout(() => reject(new Error('Kling v3 Pro timeout')), TIMEOUT_VIDEO_MS * 2)
     ),
   ])
 
   const output = ((result as any).data ?? result) as { video?: { url: string } }
   const videoUrl = output.video?.url
-  if (!videoUrl) throw new Error('No video URL in Kling v2.5-turbo Pro response')
+  if (!videoUrl) throw new Error('No video URL in Kling v3 Pro response')
 
-  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling v2.5-turbo Pro complete')
+  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Kling v3 Pro complete')
   return { videoUrl }
 }
 
@@ -587,15 +654,15 @@ export async function generateSceneVideoAuto(
   const usePro = (styleAllowsPro && complexity !== 'static') || complexity === 'complex'
 
   if (usePro) {
-    logger.info({ style, duration, complexity }, 'Kling router → v2.5-turbo Pro')
+    logger.info({ style, duration, complexity }, 'Kling router → v3 Pro')
     const result = await generateSceneVideoKlingPro(imageUrl, animationPrompt, duration)
-    return { ...result, model: 'kling-v2.5-turbo-pro' }
+    return { ...result, model: 'kling-v3-pro' }
   }
 
   // Standard uniquement — pas de fallback Pro (économie de crédits)
-  logger.info({ style, duration, complexity }, 'Kling router → v2.5-turbo Standard')
+  logger.info({ style, duration, complexity }, 'Kling router → v3 Standard')
   const result = await generateSceneVideoKlingStandard(imageUrl, animationPrompt, duration)
-  return { ...result, model: 'kling-v2.5-turbo-standard' }
+  return { ...result, model: 'kling-v3-standard' }
 }
 
 /**
@@ -632,25 +699,28 @@ export async function generateLipSync(
 }
 
 /**
- * Wan i2v — modèle rapide image-to-video (~30-60 s, 5 s clip).
- * Utilisé pour le mode 'fast' de l'Animation Mode Selector.
+ * Hailuo 2.3 Standard — fast image-to-video (~30-60 s, 768p, 5-10 s clip).
+ * MiniMax's standard tier — better motion + adherence than wan-i2v while
+ * keeping the budget-friendly profile that justifies the 'fast' Animation
+ * Mode. Replaces wan-i2v as of the 2026 SOTA curation.
  */
-export async function generateSceneVideoWan(
+export async function generateSceneVideoHailuoStandard(
   imageUrl: string,
-  animationPrompt: string
+  animationPrompt: string,
+  duration: '5' | '10' = '5'
 ): Promise<{ videoUrl: string }> {
-  logger.info({ imageUrl: imageUrl.slice(0, 60) }, 'fal.ai: starting Wan i2v')
+  logger.info({ imageUrl: imageUrl.slice(0, 60), duration }, 'fal.ai: starting Hailuo 2.3 Standard')
 
   const result = await Promise.race([
-    fal.subscribe('fal-ai/wan-i2v', {
+    fal.subscribe('fal-ai/minimax/hailuo-2.3/standard/image-to-video', {
       input: {
         image_url: imageUrl,
         prompt: animationPrompt,
-        num_frames: 81, // ~5s at 16fps
+        duration,
       },
     } as any),
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Wan i2v timeout')), TIMEOUT_VIDEO_MS)
+      setTimeout(() => reject(new Error('Hailuo 2.3 Standard timeout')), TIMEOUT_VIDEO_MS)
     ),
   ])
 
@@ -659,11 +729,19 @@ export async function generateSceneVideoWan(
     (typeof output.video === 'string' ? output.video : output.video?.url) ??
     output.video_url
 
-  if (!videoUrl) throw new Error('No video URL in Wan i2v response')
+  if (!videoUrl) throw new Error('No video URL in Hailuo 2.3 Standard response')
 
-  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Wan i2v complete')
+  logger.info({ videoUrl: videoUrl.slice(0, 60) }, 'fal.ai: Hailuo 2.3 Standard complete')
   return { videoUrl }
 }
+
+/**
+ * @deprecated Use `generateSceneVideoHailuoStandard` instead.
+ * Back-compat alias retained while callers migrate off the wan-i2v name.
+ * Will be removed once `pipeline/faceless.ts` is updated to call Hailuo
+ * directly.
+ */
+export const generateSceneVideoWan = generateSceneVideoHailuoStandard
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))

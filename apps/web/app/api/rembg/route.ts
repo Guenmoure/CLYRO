@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
     if (!imageUrl) return NextResponse.json({ error: 'imageUrl required' }, { status: 400 })
     if (!process.env.FAL_KEY) return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
 
-    const result = await fal.subscribe('fal-ai/birefnet', {
+    // BiRefNet v2 — drop-in upgrade over v1 with sharper edge detection
+    // for fine hair, semi-transparent objects, and motion-blur subjects.
+    // Same I/O surface as v1.
+    const result = await fal.subscribe('fal-ai/birefnet/v2', {
       input: { image_url: imageUrl },
     }) as any
 

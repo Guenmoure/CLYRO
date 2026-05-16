@@ -29,20 +29,23 @@ export const ANIMATION_MODES: Record<AnimationMode, AnimationModeConfig> = {
   fast: {
     mode:           'fast',
     label:          'Fast Animation',
-    description:    'Clips animés 5 s en boucle. Meilleur rapport qualité/crédits.',
+    description:    'Clips Hailuo 2.3 Standard 5–10 s. Meilleur rapport qualité/crédits.',
     clipDuration:   5,
-    model:          'fal-ai/wan-i2v',
-    creditsPerMin:  25,
+    // Hailuo 2.3 Standard — MiniMax 768p tier, replaces wan-i2v.
+    model:          'fal-ai/minimax/hailuo-2.3/standard/image-to-video',
+    creditsPerMin:  30,    // slight bump from 25 — Hailuo ~$0.07/sec vs wan ~$0.05/sec
     generationTime: '~5 min',
     availablePlans: ['pro', 'creator', 'studio'],
   },
   pro: {
     mode:           'pro',
     label:          'Pro Animation',
-    description:    'Clips Kling v1.5 8 s. Qualité maximale pour le contenu premium.',
+    description:    'Clips Kling v3 Pro 8 s. Motion-fluidity SOTA, qualité photoréaliste max.',
     clipDuration:   8,
-    model:          'fal-ai/kling-video/v1.5/pro/image-to-video',
-    creditsPerMin:  80,
+    // Kling 3.0 Pro — motion-fluidity SOTA on fal.ai (March 2026 ranking).
+    // Replaces Kling v1.5 / v2.5-turbo Pro.
+    model:          'fal-ai/kling-video/v3/pro/image-to-video',
+    creditsPerMin:  130,   // bump from 80 — Kling v3 Pro is ~$0.112/sec vs v2.5-turbo ~$0.07/sec (+60%)
     generationTime: '~15 min',
     availablePlans: ['pro', 'creator', 'studio'],
   },

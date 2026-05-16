@@ -23,7 +23,7 @@ import { renderQueue, isRedisReady } from '../../queues/renderQueue'
 import { runFacelessPipeline } from '../../pipelines/faceless'
 import { getMusicTrackUrl } from '../../lib/music'
 import { checkScriptWpm, condenseScript } from '../../services/claude'
-import { uploadFalUrlToStorage, generateSceneVideoAuto, generateSceneVideoWan } from '../../services/fal'
+import { uploadFalUrlToStorage, generateSceneVideoAuto, generateSceneVideoHailuoStandard } from '../../services/fal'
 import { assembleVideoFromVideoClips } from '../../services/ffmpeg'
 import { writeFile, unlink, rm } from 'fs/promises'
 import { createReadStream } from 'fs'
@@ -712,8 +712,8 @@ const animateSchema = z.object({
  * POST /api/v1/pipeline/faceless/animate
  * Génère des clips vidéo pour chaque scène selon le mode d'animation choisi.
  * - storyboard → pas de GPU (Ken Burns géré côté Remotion)
- * - fast        → fal-ai/wan-i2v 5s
- * - pro         → fal-ai/kling-video/v1.5/pro 8s
+ * - fast       → fal-ai/minimax/hailuo-2.3/standard/image-to-video (5-10s)
+ * - pro        → fal-ai/kling-video/v3/pro/image-to-video (5-10s)
  */
 pipelineFacelessRouter.post('/faceless/animate', authMiddleware, async (req, res) => {
   const parsed = animateSchema.safeParse(req.body)
@@ -754,10 +754,10 @@ pipelineFacelessRouter.post('/faceless/animate', authMiddleware, async (req, res
       const storagePath = `${req.userId}/${projectId}/clips/scene-${sceneId}.mp4`
 
       if (mode === 'fast') {
-        const r = await generateSceneVideoWan(imageUrl, prompt)
+        const r = await generateSceneVideoHailuoStandard(imageUrl, prompt)
         videoUrl = r.videoUrl
       } else {
-        // pro → Kling v1.5
+        // pro → Kling v3 Pro (motion-fluidity SOTA on fal.ai in 2026)
         const r = await generateSceneVideoAuto(imageUrl, prompt, '5', 'cinematique')
         videoUrl = r.videoUrl
       }
