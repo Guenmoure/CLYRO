@@ -124,6 +124,12 @@ const F1_STYLE_MODEL_MAP: Record<string, string> = {
   'flat-design':    'fal-ai/recraft/v3/text-to-image',
   minimaliste:      'fal-ai/recraft/v3/text-to-image',
 
+  // Doodle (hand-drawn explainer) → Recraft V3 with the
+  // `digital_illustration/hand_drawn` sub-style (configured per-call
+  // in services/fal.ts). Recraft is the only model in the curated set
+  // with a dedicated sketch sub-style enum value.
+  'doodle':         'fal-ai/recraft/v3/text-to-image',
+
   // Text-heavy → Ideogram V3 (best legible-typography model in 2026)
   infographie:      'fal-ai/ideogram/v3',
   'motion-graphics':'fal-ai/ideogram/v3',

@@ -46,6 +46,8 @@ const FACELESS_STYLES = [
   'infographie',
   'motion-graphics',
   'animation-2d',
+  // Doodle — hand-drawn explainer
+  'doodle',
 ] as const
 
 const VIDEO_FORMATS  = ['9:16', '1:1', '16:9'] as const

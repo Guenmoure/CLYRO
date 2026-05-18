@@ -26,7 +26,8 @@ export type StyleLockId =
   | 'motion-design'   // cool tech blue on dark, geometric, glowing accents
   | '3d-render'       // bright neutral, soft ambient occlusion, Pixar
   | 'webcomic'        // vivid, comic art, bold outlines, manga-cel
-  | 'character-story'  // dark bg, warm rim light, violet tech glow, cel-shaded
+  | 'character-story' // dark bg, warm rim light, violet tech glow, cel-shaded
+  | 'doodle'          // clean white bg, black ink outline, marker pen, 4 spot colours
 
 export interface StyleLock {
   id:               StyleLockId
@@ -125,6 +126,21 @@ export const STYLE_LOCKS: Record<StyleLockId, StyleLock> = {
       + 'violet tech accent glow (#7C5CFC), stylized semi-realistic cartoon, '
       + 'Artstation quality, cinematic single-subject composition, 8K',
   },
+  doodle: {
+    id: 'doodle',
+    // Palette: coral red + sky blue + sunny yellow (the spec's 4 spot colours,
+    // truncated to 3 to fit the existing tuple shape). Soft purple #A78BFA can
+    // be re-introduced by Claude per scene if needed.
+    palette: ['#FF6B6B', '#4ECDC4', '#FFE66D'],
+    temperature: 'flat neutral on bright white',
+    consistencySuffix:
+      'hand-drawn doodle illustration on clean white background, '
+      + 'black ink outline sketch style, marker pen aesthetic, '
+      + 'limited flat spot colour palette of coral red #FF6B6B, sky blue #4ECDC4, '
+      + 'sunny yellow #FFE66D, soft purple #A78BFA — no gradients, no shadows, '
+      + 'no photorealism, simple clean linework, sketch notebook aesthetic, '
+      + 'flat even lighting, playful educational whiteboard explainer visual, 8K',
+  },
 }
 
 /**
@@ -146,6 +162,8 @@ const LOCK_BY_STYLE_ID: Record<string, StyleLockId> = {
   'motion-graphics':  'motion-design',
   // Character story
   'character-story':  'character-story',
+  // Doodle — hand-drawn explainer (Canva Doodlepedia-inspired)
+  'doodle':           'doodle',
   // Motion styles
   'corporate':        'documentary',
   'dynamique':        'dark-narrative',

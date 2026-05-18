@@ -96,6 +96,8 @@ export type FacelessStyle =
   | 'motion-graphics'
   | 'animation-2d'
   | 'character-story'
+  // Doodle — hand-drawn explainer style, marker pen aesthetic on white
+  | 'doodle'
 
 export type MotionStyle = 'corporate' | 'dynamique' | 'luxe' | 'fun'
 export type VideoFormat = '9:16' | '1:1' | '16:9'

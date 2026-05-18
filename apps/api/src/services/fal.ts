@@ -139,6 +139,16 @@ const STYLE_CONFIGS: Record<string, StyleConfig> = {
     image_size: 'landscape_16_9',
     num_inference_steps: 28,
   },
+  // Doodle — hand-drawn marker pen on clean white, Canva Doodlepedia look.
+  // Prompt is positive-framed (no "no X" stacking) because Recraft V3 weights
+  // explicit positive descriptors much more than negatives. The lock suffix +
+  // anti-hallucination layer handle the no-text / no-photoreal negatives.
+  doodle: {
+    prompt_prefix: 'hand-drawn doodle illustration on clean white background, black ink outline sketch style, simple flat color fills, marker pen aesthetic, playful educational drawing, whiteboard explainer visual,',
+    prompt_suffix: 'simple clean linework, sketch notebook aesthetic, minimal detail maximum clarity, flat spot colours of coral red, sky blue, sunny yellow, soft purple',
+    image_size: 'landscape_16_9',
+    num_inference_steps: 25,
+  },
   // Motion Graphics styles
   corporate: {
     prompt_prefix: 'clean corporate business illustration, navy blue and white palette, professional office setting, minimal geometric shapes, modern UI elements,',
@@ -277,10 +287,13 @@ export async function generateSceneImage(
         // commercial use is enabled via fal. No extra knobs needed at
         // this surface; quality is fixed Pro tier.
       } else if (isRecraft) {
-        // Recraft V3 — `style` controls the brand register. "digital_illustration"
-        // matches flat-design / minimaliste; "vector_illustration" is also valid
-        // for harder geometric pieces. Output is always PNG, no overrides needed.
-        input.style = 'digital_illustration'
+        // Recraft V3 — `style` controls the brand register. The "doodle"
+        // F1 style maps to the hand-drawn sub-style for sketch notebook
+        // aesthetic; everything else uses the generic digital_illustration.
+        // "vector_illustration" stays available for the logo helper.
+        input.style = style === 'doodle'
+          ? 'digital_illustration/hand_drawn'
+          : 'digital_illustration'
       } else if (isSeedream) {
         // Seedream V4.5 — `image_size` accepts the same width/height object
         // as flux. No extra knobs at the value tier.

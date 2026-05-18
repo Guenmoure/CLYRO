@@ -223,6 +223,32 @@ function PreviewAnimation2d({ selected: _s }: { selected: boolean }) {
   )
 }
 
+// Doodle — clean white bg, sketched lightbulb with marker arrow and a couple
+// of spot-colour fills. Matches the style's "marker on whiteboard" identity.
+function PreviewDoodle({ selected: _s }: { selected: boolean }) {
+  return (
+    <div className="relative w-full h-full bg-white dark:bg-zinc-100 overflow-hidden">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+        <svg viewBox="0 0 80 56" className="w-20 h-14" fill="none">
+          {/* Lightbulb sketched outline */}
+          <path d="M30 10 C30 4, 40 4, 40 4 C50 4, 50 10, 50 14 C50 19, 46 22, 44 25 L36 25 C34 22, 30 19, 30 14 Z"
+                stroke="#111827" strokeWidth="1.4" strokeLinecap="round" fill="#FFE66D" fillOpacity="0.85"/>
+          <line x1="36" y1="28" x2="44" y2="28" stroke="#111827" strokeWidth="1.4" strokeLinecap="round"/>
+          <line x1="37" y1="31" x2="43" y2="31" stroke="#111827" strokeWidth="1.4" strokeLinecap="round"/>
+          {/* Marker arrow */}
+          <path d="M14 42 Q24 36, 36 40" stroke="#FF6B6B" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+          <path d="M32 38 L36 40 L33 43" stroke="#FF6B6B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          {/* Spark dots */}
+          <circle cx="56" cy="14" r="1.4" fill="#4ECDC4"/>
+          <circle cx="60" cy="22" r="1.2" fill="#A78BFA"/>
+          <circle cx="22" cy="18" r="1.2" fill="#4ECDC4"/>
+        </svg>
+        <p className="font-mono text-[8px] text-gray-500 tracking-wider uppercase">Doodle</p>
+      </div>
+    </div>
+  )
+}
+
 // 2026 trend labels from FACELESS_STYLES_META, preserving pipeline IDs.
 // Short French descriptions focused on the 2026 repositioning; full bilingual
 // copy + best-for lists live in FACELESS_STYLES_META.
@@ -235,6 +261,7 @@ const STYLE_TEMPLATES: StyleTemplate[] = [
   { id: '3d-pixar',        label: FACELESS_STYLES_META['3d-pixar'].label_fr,        desc: 'Rendu 3D ludique, ambient occlusion doux, perspective isométrique', category: '3d',      preview: Preview3dPixar     },
   { id: 'motion-graphics', label: FACELESS_STYLES_META['motion-graphics'].label_fr, desc: 'Formes animées, typographie cinétique, data-viz corporate',      category: '3d',        preview: PreviewMotionGraphics },
   { id: 'animation-2d',    label: FACELESS_STYLES_META['animation-2d'].label_fr,    desc: 'Illustrations chaleureuses aquarelle, personnages amicaux, cosy', category: 'animation', badge: 'Nouveau', preview: PreviewAnimation2d  },
+  { id: 'doodle',          label: FACELESS_STYLES_META['doodle'].label_fr,          desc: "Doodle dessiné main, marker noir + couleurs spot, parfait pour les explainers", category: 'handmade',  badge: 'Nouveau', preview: PreviewDoodle       },
 ]
 
 // ── Pipeline types ─────────────────────────────────────────────────────────────

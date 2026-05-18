@@ -40,6 +40,7 @@ export type ContentTemplateStyle =
   | 'motion-graphics'
   | 'stickman'
   | '3d-pixar'
+  | 'doodle'
 
 /**
  * Bilingual content template — every textual field exists in both EN and FR.
@@ -286,6 +287,22 @@ export const FACELESS_STYLES_META: Record<ContentTemplateStyle, FacelessStyleMet
     fal_model: 'fal-ai/flux-pro/v1.1',
   },
 
+  // 9. Doodle — hand-drawn explainer (Canva Doodlepedia-inspired)
+  'doodle': {
+    pipeline_id: 'doodle',
+    display_id: 'doodle',
+    label_en: 'Doodle',
+    label_fr: 'Doodle',
+    description_en: 'Hand-drawn doodle illustrations on a clean background. Simple, playful, and educational — like a teacher explaining on a whiteboard but with personality. Perfect for explainers, storytelling, and making complex ideas feel simple.',
+    description_fr: "Illustrations doodle dessinées à la main sur fond clair. Simple, ludique et éducatif — comme un prof qui explique au tableau mais avec du style. Parfait pour les explainers, le storytelling et simplifier les idées complexes.",
+    prompt_style: 'hand-drawn doodle illustration, black ink outline, marker pen aesthetic, simple flat color fills, sketch notebook style',
+    badge_color: '#FF6B6B',
+    gradient: 'from-rose-300/35 via-amber-200/25 to-sky-300/30',
+    best_for_en: ['education', 'explainers', 'storytelling', 'psychology', 'kids content'],
+    best_for_fr: ['éducation', 'explainers', 'storytelling', 'psychologie', 'contenu jeune'],
+    fal_model: 'fal-ai/recraft/v3/text-to-image',
+  },
+
   // Legacy slots — not surfaced in the 2026 UI, kept for backwards compat with
   // older templates/DB rows. Fall back to neutral styling if referenced.
   'minimaliste': {
@@ -318,7 +335,7 @@ export const FACELESS_STYLES_META: Record<ContentTemplateStyle, FacelessStyleMet
   },
 }
 
-/** Ordered list of the 8 styles we surface in 2026 UI (pipeline IDs). */
+/** Ordered list of the 9 styles we surface in 2026 UI (pipeline IDs). */
 export const SURFACED_STYLES: ContentTemplateStyle[] = [
   'cinematique',
   'stock-vo',
@@ -328,6 +345,7 @@ export const SURFACED_STYLES: ContentTemplateStyle[] = [
   '3d-pixar',
   'motion-graphics',
   'animation-2d',
+  'doodle',
 ]
 
 /** Resolve display label for a pipeline style ID. */
@@ -391,6 +409,10 @@ const STYLE_VISUAL_DESCRIPTORS: Record<ContentTemplateStyle, { en: string; fr: s
   'infographie': {
     en: 'animated infographic, charts and icons, blue/cyan data-viz palette',
     fr: 'infographie animée, graphiques et icônes, palette bleu/cyan',
+  },
+  'doodle': {
+    en: 'hand-drawn doodle illustrations on clean white, black ink outline, marker pen aesthetic, 4 flat spot colours, sketch notebook feel',
+    fr: 'illustrations doodle dessinées main sur fond blanc, traits noirs, esthétique marker, 4 couleurs spot plates, ambiance carnet de croquis',
   },
 }
 
