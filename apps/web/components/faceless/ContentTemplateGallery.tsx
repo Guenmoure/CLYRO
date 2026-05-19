@@ -6,15 +6,30 @@ import {
   CONTENT_TEMPLATES,
   type ContentTemplate,
   type ContentLang,
+  type TemplateCategory,
   getNicheLabel,
   getStyleGradient,
   getStyleLabel,
+  getTemplateCategory,
   tName,
+  tDescription,
   tTags,
   tTone,
   tScript,
 } from '@/lib/faceless-content-templates'
 import { cn } from '@/lib/utils'
+
+// Same vocabulary as the Style gallery (see faceless-hub.tsx STYLE_TEMPLATES).
+// Bilingual labels for the category filter pills surfaced above the niche row.
+const CATEGORY_LABELS: Record<TemplateCategory, { en: string; fr: string }> = {
+  all:        { en: 'All styles',  fr: 'Tous styles' },
+  cinematic:  { en: 'Cinematic',   fr: 'Cinéma' },
+  animation:  { en: 'Animation',   fr: 'Animation' },
+  handmade:   { en: 'Handmade',    fr: 'Dessin main' },
+  '3d':       { en: '3D',          fr: '3D' },
+  typography: { en: 'Typography',  fr: 'Typographie' },
+  retro:      { en: 'Retro',       fr: 'Rétro' },
+}
 
 interface ContentTemplateGalleryProps {
   selectedTemplateId?: string | null
@@ -33,6 +48,7 @@ export function ContentTemplateGallery({
   defaultLanguage = 'fr',
 }: ContentTemplateGalleryProps) {
   const [lang, setLang] = useState<ContentLang>(defaultLanguage)
+  const [activeCategory, setActiveCategory] = useState<TemplateCategory>('all')
   const [activeNiche, setActiveNiche] = useState<string>('all')
   const [search, setSearch] = useState('')
 
@@ -44,6 +60,8 @@ export function ContentTemplateGallery({
           'Des formats éprouvés, inspirés des chaînes YouTube faceless qui cartonnent en 2026. Sélectionne-en un et la description, le style et la structure se remplissent tout seuls.',
         searchPlaceholder: 'Cherche un template, un tag, une niche…',
         allNiches: 'Toutes les niches',
+        categoryHeader: 'Style visuel',
+        nicheHeader: 'Niche',
         noResults: 'Aucun template ne correspond à ces critères.',
         scenes: 'scènes',
         selectedTag: '✓ Template sélectionné',
@@ -56,26 +74,52 @@ export function ContentTemplateGallery({
           'Battle-tested formats inspired by the faceless YouTube channels trending in 2026. Pick one and the description, style, and structure fill themselves in.',
         searchPlaceholder: 'Search by template, tag, or niche…',
         allNiches: 'All niches',
+        categoryHeader: 'Visual style',
+        nicheHeader: 'Niche',
         noResults: 'No template matches these filters.',
         scenes: 'scenes',
         selectedTag: '✓ Template selected',
         selectCta: 'Click to use →',
       }
 
-  // Build niche list from data (sorted by template count desc)
-  const niches = useMemo(() => {
-    const counts = new Map<string, number>()
+  // Build category list — only show categories that have at least one template.
+  // 'all' is always first; the rest are sorted by template count desc.
+  const categories = useMemo<Array<{ id: TemplateCategory; label: string; count: number }>>(() => {
+    const counts = new Map<TemplateCategory, number>()
+    counts.set('all', CONTENT_TEMPLATES.length)
     for (const t of CONTENT_TEMPLATES) {
+      const cat = getTemplateCategory(t)
+      counts.set(cat, (counts.get(cat) ?? 0) + 1)
+    }
+    const populated = Array.from(counts.entries())
+      .filter(([id]) => id !== 'all')
+      .sort((a, b) => b[1] - a[1])
+      .map(([id, count]) => ({ id, label: CATEGORY_LABELS[id][lang], count }))
+    return [{ id: 'all' as TemplateCategory, label: CATEGORY_LABELS.all[lang], count: counts.get('all') ?? 0 }, ...populated]
+  }, [lang])
+
+  // Build niche list from data (sorted by template count desc).
+  // When a visual category is active, recompute niche counts on the filtered
+  // subset so the niche row reflects what's actually pickable.
+  const niches = useMemo(() => {
+    const subset = activeCategory === 'all'
+      ? CONTENT_TEMPLATES
+      : CONTENT_TEMPLATES.filter((t) => getTemplateCategory(t) === activeCategory)
+    const counts = new Map<string, number>()
+    for (const t of subset) {
       counts.set(t.niche, (counts.get(t.niche) ?? 0) + 1)
     }
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([niche, count]) => ({ ...getNicheLabel(niche, lang), count }))
-  }, [lang])
+  }, [lang, activeCategory])
 
-  // Filter templates (all templates are bilingual, so we only filter by niche + search)
+  // Filter templates — combine category ∩ niche ∩ search (all AND).
   const filtered = useMemo(() => {
     let result = CONTENT_TEMPLATES
+    if (activeCategory !== 'all') {
+      result = result.filter((t) => getTemplateCategory(t) === activeCategory)
+    }
     if (activeNiche !== 'all') {
       result = result.filter((t) => t.niche === activeNiche)
     }
@@ -88,7 +132,7 @@ export function ContentTemplateGallery({
       )
     }
     return result
-  }, [activeNiche, search, lang])
+  }, [activeCategory, activeNiche, search, lang])
 
   return (
     <div className="border-t border-border px-6 py-10 bg-muted/30">
@@ -155,37 +199,72 @@ export function ContentTemplateGallery({
             )}
           </div>
 
+          {/* Visual category filter — same vocabulary as the Style gallery */}
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2">
+              {copy.categoryHeader}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(cat.id)
+                    // Reset niche when changing category so we don't end up
+                    // with a niche that has zero templates in the new subset.
+                    setActiveNiche('all')
+                  }}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
+                    activeCategory === cat.id
+                      ? 'bg-blue-500/10 border-blue-500/50 text-blue-500'
+                      : 'bg-card border-border text-[--text-muted] hover:border-border hover:text-foreground',
+                  )}
+                >
+                  {cat.label}
+                  <span className="font-mono text-[10px] opacity-60">{cat.count}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Niche filter pills */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveNiche('all')}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
-                activeNiche === 'all'
-                  ? 'bg-blue-500/10 border-blue-500/50 text-blue-500'
-                  : 'bg-card border-border text-[--text-muted] hover:border-border hover:text-foreground',
-              )}
-            >
-              {copy.allNiches}
-            </button>
-            {niches.map((n) => (
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2">
+              {copy.nicheHeader}
+            </p>
+            <div className="flex flex-wrap gap-2">
               <button
-                key={n.id}
                 type="button"
-                onClick={() => setActiveNiche(n.id)}
+                onClick={() => setActiveNiche('all')}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
-                  activeNiche === n.id
+                  'px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
+                  activeNiche === 'all'
                     ? 'bg-blue-500/10 border-blue-500/50 text-blue-500'
                     : 'bg-card border-border text-[--text-muted] hover:border-border hover:text-foreground',
                 )}
               >
-                <span>{n.emoji}</span>
-                {n.label}
-                <span className="font-mono text-[10px] opacity-60">{n.count}</span>
+                {copy.allNiches}
               </button>
-            ))}
+              {niches.map((n) => (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => setActiveNiche(n.id)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
+                    activeNiche === n.id
+                      ? 'bg-blue-500/10 border-blue-500/50 text-blue-500'
+                      : 'bg-card border-border text-[--text-muted] hover:border-border hover:text-foreground',
+                  )}
+                >
+                  <span>{n.emoji}</span>
+                  {n.label}
+                  <span className="font-mono text-[10px] opacity-60">{n.count}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -290,8 +369,15 @@ function TemplateCard({
           </p>
         </div>
 
+        {/* Template pitch — the optimized description that tells the viewer what
+            this template IS and when to pick it. Sits ABOVE the script preview
+            so the editorial intent comes first, the example output second. */}
+        <p className="font-body text-xs text-[--text-secondary] line-clamp-3 leading-snug">
+          {tDescription(template, lang)}
+        </p>
+
         {/* Script preview */}
-        <p className="font-body text-xs text-[--text-secondary] line-clamp-3 italic">
+        <p className="font-body text-xs text-[--text-muted]/80 line-clamp-2 italic">
           &ldquo;{tScript(template, lang)}&rdquo;
         </p>
 

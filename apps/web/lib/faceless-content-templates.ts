@@ -335,6 +335,41 @@ export const FACELESS_STYLES_META: Record<ContentTemplateStyle, FacelessStyleMet
   },
 }
 
+// ── Visual category (shared with the Style gallery) ─────────────────────────
+//
+// Both the Style gallery (faceless-hub.tsx) and the Content Template gallery
+// (ContentTemplateGallery.tsx) filter their cards by the same set of broad
+// visual categories. Defined here once so the two surfaces stay in sync.
+
+export type TemplateCategory =
+  | 'all'
+  | 'cinematic'
+  | 'animation'
+  | 'typography'
+  | 'handmade'
+  | '3d'
+  | 'retro'
+
+/** Maps every visual style ID to its broad category. */
+export const STYLE_CATEGORY: Record<ContentTemplateStyle, Exclude<TemplateCategory, 'all'>> = {
+  'cinematique':     'cinematic',
+  'stock-vo':        'cinematic',
+  'whiteboard':      'cinematic',
+  'stickman':        'handmade',
+  'flat-design':     'animation',
+  '3d-pixar':        '3d',
+  'motion-graphics': '3d',
+  'animation-2d':    'animation',
+  'doodle':          'handmade',
+  'minimaliste':     'animation',
+  'infographie':     '3d',
+}
+
+/** Resolve the broad visual category of a content template (via its fal_style). */
+export function getTemplateCategory(t: ContentTemplate): Exclude<TemplateCategory, 'all'> {
+  return STYLE_CATEGORY[t.fal_style]
+}
+
 /** Ordered list of the 9 styles we surface in 2026 UI (pipeline IDs). */
 export const SURFACED_STYLES: ContentTemplateStyle[] = [
   'cinematique',

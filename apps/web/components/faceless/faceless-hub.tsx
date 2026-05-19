@@ -22,6 +22,7 @@ import {
   tName,
   FACELESS_STYLES_META,
   type ContentTemplate,
+  type TemplateCategory,
 } from '@/lib/faceless-content-templates'
 
 // ── fal.ai concurrency control ─────────────────────────────────────────────
@@ -70,8 +71,6 @@ async function runWithConcurrency<T>(
 }
 
 // ── Template catalogue ─────────────────────────────────────────────────────────
-
-type TemplateCategory = 'all' | 'cinematic' | 'animation' | 'typography' | 'handmade' | '3d' | 'retro'
 
 interface StyleTemplate {
   id: FacelessStyle
