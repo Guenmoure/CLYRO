@@ -14,6 +14,8 @@ import { supabaseAdmin } from '../lib/supabase'
 
 const RUN_E2E = process.env.RUN_E2E === 'true'
 const SKIP = !RUN_E2E
+// Jest (unlike Vitest) has no `it.skipIf` — resolve the skip variant up front.
+const itE2E = SKIP ? it.skip : it
 
 const TEST_USER_ID    = process.env.TEST_USER_ID    ?? 'test-user-e2e'
 const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL ?? 'test@clyro.app'
@@ -62,7 +64,7 @@ describe('Motion Pipeline E2E', () => {
     await cleanupVideo(videoId)
   })
 
-  it.skipIf(SKIP)('completes full motion pipeline and produces a video URL', async () => {
+  itE2E('completes full motion pipeline and produces a video URL', async () => {
     await runMotionPipeline({
       videoId,
       userId:      TEST_USER_ID,
@@ -110,13 +112,15 @@ describe('Faceless Pipeline E2E', () => {
     await cleanupVideo(videoId)
   })
 
-  it.skipIf(SKIP)('completes full faceless pipeline and produces a video URL', async () => {
+  itE2E('completes full faceless pipeline and produces a video URL', async () => {
     await runFacelessPipeline({
       videoId,
       userId:    TEST_USER_ID,
       userEmail: TEST_USER_EMAIL,
       title:     'E2E Faceless Test',
       style:     'minimaliste',
+      format:    '9:16',
+      duration:  'auto',
       script:    'Bienvenue dans le futur de la création vidéo. Avec CLYRO, générez des vidéos professionnelles en quelques minutes grâce à l\'intelligence artificielle.',
       voiceId:   process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '21m00Tcm4TlvDq8ikWAM',
     })
