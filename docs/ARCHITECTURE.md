@@ -544,7 +544,7 @@ import { renderMediaOnLambda, getRenderProgress } from '@remotion/lambda/client'
 
 // Lancer le rendu
 const { renderId, bucketName } = await renderMediaOnLambda({
-  region: process.env.AWS_REGION,
+  region: process.env.REMOTION_AWS_REGION,
   functionName: process.env.REMOTION_FUNCTION_NAME,
   serveUrl: process.env.REMOTION_SERVE_URL,
   composition: 'FacelessVideo',          // ou 'MotionVideo'
@@ -563,7 +563,7 @@ await supabase.from('projects').update({ metadata: { renderId, bucketName } }).e
 const progress = await getRenderProgress({
   renderId, bucketName,
   functionName: process.env.REMOTION_FUNCTION_NAME,
-  region: process.env.AWS_REGION,
+  region: process.env.REMOTION_AWS_REGION,
 })
 
 if (progress.done) {
@@ -817,10 +817,10 @@ FAL_KEY=...
 FAL_KEY_ID=...
 FAL_KEY_SECRET=...
 
-# AWS / Remotion
-AWS_ACCESS_KEY_ID=AKIA...
-AWS_SECRET_ACCESS_KEY=...
-AWS_REGION=eu-west-1
+# AWS / Remotion (forme REMOTION_AWS_* recommandée par la doc Remotion)
+REMOTION_AWS_ACCESS_KEY_ID=AKIA...
+REMOTION_AWS_SECRET_ACCESS_KEY=...
+REMOTION_AWS_REGION=eu-central-1
 REMOTION_FUNCTION_NAME=remotion-render-4-0-0-mem2048mb-disk2048mb-240sec
 REMOTION_SERVE_URL=https://s3.eu-west-1.amazonaws.com/...
 
