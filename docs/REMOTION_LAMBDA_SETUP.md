@@ -11,10 +11,11 @@ The pipeline is already wired to use Lambda automatically when `USE_REMOTION_LAM
 ## TL;DR (the lazy path)
 
 ```bash
-# 1. Set your AWS credentials in your shell
-export AWS_REGION=eu-central-1
-export AWS_ACCESS_KEY_ID=AKIA…
-export AWS_SECRET_ACCESS_KEY=…
+# 1. Set your Remotion AWS credentials in your shell. Remotion reads the
+#    REMOTION_AWS_* variables (not the plain AWS_* ones) — see Step 5.
+export REMOTION_AWS_REGION=eu-central-1
+export REMOTION_AWS_ACCESS_KEY_ID=AKIA…
+export REMOTION_AWS_SECRET_ACCESS_KEY=…
 
 # 2. From the repo root, run the setup script (does steps 3-6 below)
 ./scripts/setup-lambda.sh
@@ -120,9 +121,9 @@ Go to Render Dashboard → `clyro-worker` service → **Environment** tab → ad
 | Variable | Value |
 |---|---|
 | `USE_REMOTION_LAMBDA` | `true` |
-| `AWS_REGION` | `eu-central-1` |
-| `AWS_ACCESS_KEY_ID` | `AKIA…` (from Step 1) |
-| `AWS_SECRET_ACCESS_KEY` | `…` (from Step 1) |
+| `REMOTION_AWS_REGION` | `eu-central-1` |
+| `REMOTION_AWS_ACCESS_KEY_ID` | `AKIA…` (from Step 1) |
+| `REMOTION_AWS_SECRET_ACCESS_KEY` | `…` (from Step 1) |
 | `REMOTION_LAMBDA_FUNCTION_NAME` | `remotion-render-4-0-448-…` (from Step 3) |
 | `REMOTION_LAMBDA_SERVE_URL` | `https://remotionlambda-…/index.html` (from Step 4) |
 

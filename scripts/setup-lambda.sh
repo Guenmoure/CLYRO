@@ -28,7 +28,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 # ─── Defaults ────────────────────────────────────────────────────────────────
-REGION="${AWS_REGION:-eu-central-1}"
+REGION="${REMOTION_AWS_REGION:-eu-central-1}"
 SITE_NAME="clyro-motion"
 # AWS basic-tier accounts cap Lambda memory at 3008 MB. Remotion's docs
 # recommend 3009 MB but it requires a Service Quotas increase request.
@@ -58,7 +58,7 @@ CLYRO Remotion Lambda setup
 Options:
   --region=<aws-region>        AWS region to deploy in (default: eu-central-1)
   --site-name=<name>           Remotion site name (default: clyro-motion)
-  --memory=<mb>                Lambda memory in MB (default: 3009)
+  --memory=<mb>                Lambda memory in MB (default: 3008)
   --disk=<mb>                  Lambda ephemeral disk in MB (default: 2048)
   --timeout=<sec>              Lambda timeout in seconds (default: 240)
   --redeploy-site-only         Skip policies+function deploy, only update site
@@ -129,7 +129,7 @@ log "@remotion/lambda installed"
 if [[ "$REDEPLOY_SITE_ONLY" == "false" && "$SKIP_VALIDATE" == "false" ]]; then
   header "Step 1/3 — Validate IAM policies"
   log "Running: npx remotion lambda policies validate"
-  (cd apps/api && AWS_REGION="$REGION" npx remotion lambda policies validate) || {
+  (cd apps/api && REMOTION_AWS_REGION="$REGION" npx remotion lambda policies validate) || {
     error "Policy validation failed — fix the missing IAM permissions and re-run."
     exit 1
   }
@@ -142,7 +142,7 @@ if [[ "$REDEPLOY_SITE_ONLY" == "false" ]]; then
   header "Step 2/3 — Deploy Lambda function (region: $REGION, memory: ${MEMORY}MB)"
   log "Running: npx remotion lambda functions deploy --memory=$MEMORY --timeout=$TIMEOUT --disk=$DISK"
 
-  DEPLOY_OUTPUT=$(cd apps/api && AWS_REGION="$REGION" npx remotion lambda functions deploy \
+  DEPLOY_OUTPUT=$(cd apps/api && REMOTION_AWS_REGION="$REGION" npx remotion lambda functions deploy \
     --memory="$MEMORY" \
     --timeout="$TIMEOUT" \
     --disk="$DISK" \
@@ -155,11 +155,11 @@ if [[ "$REDEPLOY_SITE_ONLY" == "false" ]]; then
   echo "$DEPLOY_OUTPUT"
 
   # Extract the function name from the output. Remotion prints it as a line like:
-  #   Function name: remotion-render-4-0-448-mem3009mb-disk2048mb-240sec
+  #   Function name: remotion-render-4-0-448-mem3008mb-disk2048mb-240sec
   FUNCTION_NAME=$(echo "$DEPLOY_OUTPUT" | grep -oE 'remotion-render-[0-9a-z\-]+' | head -1)
   if [[ -z "$FUNCTION_NAME" ]]; then
     # Fallback: list deployed functions and pick the one matching our specs
-    FUNCTION_NAME=$(cd apps/api && AWS_REGION="$REGION" npx remotion lambda functions ls --region="$REGION" --quiet 2>/dev/null | grep -E "mem${MEMORY}mb-disk${DISK}mb-${TIMEOUT}sec" | head -1 | awk '{print $1}')
+    FUNCTION_NAME=$(cd apps/api && REMOTION_AWS_REGION="$REGION" npx remotion lambda functions ls --region="$REGION" --quiet 2>/dev/null | grep -E "mem${MEMORY}mb-disk${DISK}mb-${TIMEOUT}sec" | head -1 | awk '{print $1}')
   fi
 
   if [[ -z "$FUNCTION_NAME" ]]; then
@@ -175,7 +175,7 @@ fi
 header "Step 3/3 — Deploy site bundle (name: $SITE_NAME)"
 log "Running: npx remotion lambda sites create src/remotion/Root.tsx --site-name=$SITE_NAME"
 
-SITE_OUTPUT=$(cd apps/api && AWS_REGION="$REGION" npx remotion lambda sites create \
+SITE_OUTPUT=$(cd apps/api && REMOTION_AWS_REGION="$REGION" npx remotion lambda sites create \
   src/remotion/Root.tsx \
   --site-name="$SITE_NAME" \
   --region="$REGION" 2>&1) || {
@@ -201,9 +201,9 @@ header "✅ Setup complete — copy these env vars to Render's clyro-worker serv
 cat <<ENV
 
 USE_REMOTION_LAMBDA=true
-AWS_REGION=$REGION
-AWS_ACCESS_KEY_ID=<your-iam-access-key-id>
-AWS_SECRET_ACCESS_KEY=<your-iam-secret-access-key>
+REMOTION_AWS_REGION=$REGION
+REMOTION_AWS_ACCESS_KEY_ID=<your-iam-access-key-id>
+REMOTION_AWS_SECRET_ACCESS_KEY=<your-iam-secret-access-key>
 REMOTION_LAMBDA_FUNCTION_NAME=${FUNCTION_NAME:-<copy-from-output-above>}
 REMOTION_LAMBDA_SERVE_URL=${SERVE_URL:-<copy-from-output-above>}
 

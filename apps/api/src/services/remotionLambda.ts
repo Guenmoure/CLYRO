@@ -11,9 +11,9 @@
  *
  * Variables d'env nécessaires (à définir sur clyro-worker dans Render) :
  *   USE_REMOTION_LAMBDA=true
- *   AWS_REGION (ex: eu-central-1)
- *   AWS_ACCESS_KEY_ID
- *   AWS_SECRET_ACCESS_KEY
+ *   REMOTION_AWS_REGION (ex: eu-central-1)
+ *   REMOTION_AWS_ACCESS_KEY_ID
+ *   REMOTION_AWS_SECRET_ACCESS_KEY
  *   REMOTION_LAMBDA_FUNCTION_NAME (ex: remotion-render-4-0-448-mem3008mb-disk2048mb-240sec)
  *   REMOTION_LAMBDA_SERVE_URL     (ex: https://xxxxx.s3.eu-central-1.amazonaws.com/sites/clyro-motion/index.html)
  *
@@ -41,7 +41,7 @@ export function isLambdaEnabled(): boolean {
     process.env.USE_REMOTION_LAMBDA === 'true' &&
     !!process.env.REMOTION_LAMBDA_FUNCTION_NAME &&
     !!process.env.REMOTION_LAMBDA_SERVE_URL &&
-    !!process.env.AWS_REGION
+    !!process.env.REMOTION_AWS_REGION
 
   if (!enabled && process.env.USE_REMOTION_LAMBDA === 'true') {
     // Opted-in but missing variables — warn once so it's visible in logs
@@ -49,7 +49,7 @@ export function isLambdaEnabled(): boolean {
       {
         hasFunction: !!process.env.REMOTION_LAMBDA_FUNCTION_NAME,
         hasServeUrl: !!process.env.REMOTION_LAMBDA_SERVE_URL,
-        hasRegion:   !!process.env.AWS_REGION,
+        hasRegion:   !!process.env.REMOTION_AWS_REGION,
       },
       'Remotion Lambda: USE_REMOTION_LAMBDA=true but missing credentials — falling back to local renderer'
     )
@@ -275,7 +275,7 @@ export async function renderMotionVideoLambda(
 
   const functionName = process.env.REMOTION_LAMBDA_FUNCTION_NAME!
   const serveUrl     = process.env.REMOTION_LAMBDA_SERVE_URL!
-  const region       = (process.env.AWS_REGION ?? 'eu-central-1') as Parameters<typeof renderMediaOnLambda>[0]['region']
+  const region       = process.env.REMOTION_AWS_REGION! as Parameters<typeof renderMediaOnLambda>[0]['region']
   const framesPerLambda = getFramesPerLambda()
 
   const durationInFrames = Math.max(
@@ -316,6 +316,10 @@ export async function renderMotionVideoLambda(
       musicSrc,
     },
     codec: 'h264',
+    // Auto-expire the S3 render output: CLYRO re-downloads the MP4 and
+    // re-uploads it to Supabase Storage, so the copy on Remotion's bucket
+    // is only needed transiently. Without this it accumulates forever.
+    deleteAfter: '1-day',
     framesPerLambda,
     concurrencyPerLambda: 1,
     forceWidth: width,
@@ -361,7 +365,7 @@ export async function renderMotionDesignVideoLambda(
 
   const functionName = process.env.REMOTION_LAMBDA_FUNCTION_NAME!
   const serveUrl     = process.env.REMOTION_LAMBDA_SERVE_URL!
-  const region       = (process.env.AWS_REGION ?? 'eu-central-1') as Parameters<typeof renderMediaOnLambda>[0]['region']
+  const region       = process.env.REMOTION_AWS_REGION! as Parameters<typeof renderMediaOnLambda>[0]['region']
   const framesPerLambda = getFramesPerLambda()
 
   const durationInFrames = Math.max(
@@ -398,6 +402,8 @@ export async function renderMotionDesignVideoLambda(
     composition: compositionId,
     inputProps: inputProps as unknown as Record<string, unknown>,
     codec: 'h264',
+    // Auto-expire the S3 render output (see renderMotionVideoLambda above).
+    deleteAfter: '1-day',
     framesPerLambda,
     concurrencyPerLambda: 1,
     forceWidth: width,
