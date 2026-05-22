@@ -75,6 +75,7 @@ async function main(): Promise<void> {
   let runMotionPipeline: typeof import('../pipelines/motion').runMotionPipeline
   let runFacelessPipeline: typeof import('../pipelines/faceless').runFacelessPipeline
   let runMotionDesignPipeline: typeof import('../pipelines/motion-design').runMotionDesignPipeline
+  let runMotionAuto: typeof import('../pipelines/motion-router').runMotionAuto
 
   try {
     const queueMod = await import('../queues/renderQueue')
@@ -88,6 +89,8 @@ async function main(): Promise<void> {
     runFacelessPipeline = facelessMod.runFacelessPipeline
     const motionDesignMod = await import('../pipelines/motion-design')
     runMotionDesignPipeline = motionDesignMod.runMotionDesignPipeline
+    const motionRouterMod = await import('../pipelines/motion-router')
+    runMotionAuto = motionRouterMod.runMotionAuto
   } catch (err) {
     Sentry.captureException(err)
     logger.error({ err }, 'Failed to load worker modules (likely missing env var or broken import)')
@@ -112,6 +115,8 @@ async function main(): Promise<void> {
         await runFacelessPipeline!(job.data)
       } else if (job.data.type === 'motion_design') {
         await runMotionDesignPipeline!(job.data)
+      } else if (job.data.type === 'motion_auto') {
+        await runMotionAuto!(job.data)
       } else {
         throw new Error(`Unknown job type: ${(job.data as { type: string }).type}`)
       }

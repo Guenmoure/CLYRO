@@ -106,7 +106,37 @@ export interface MotionDesignJobData {
   musicUrl?: string
 }
 
-export type RenderJobData = MotionJobData | FacelessJobData | MotionDesignJobData
+// Unified motion entry point. The route enqueues this WITHOUT knowing which
+// engine will run; the worker's auto-router (pipelines/motion-router.ts)
+// classifies the brief, then delegates to the motion or motion_design
+// pipeline. `format` is kept in the canonical colon form ('9:16' | '1:1' |
+// '16:9') — the router converts it to the underscore form when delegating
+// to Motion Design.
+export interface MotionAutoJobData {
+  type: 'motion_auto'
+  videoId: string
+  userId: string
+  userEmail: string
+  title: string
+  brief: string
+  script?: string
+  format: string
+  duration: string
+  style: string
+  brandConfig: {
+    primary_color: string
+    secondary_color?: string
+    font_family?: string
+    logo_url?: string
+  }
+  voiceId: string
+  musicTrackUrl?: string
+  /** Credits already deducted by the route — threaded through so the
+   *  delegated pipeline can refund the exact amount on error. */
+  creditCost?: number
+}
+
+export type RenderJobData = MotionJobData | FacelessJobData | MotionDesignJobData | MotionAutoJobData
 
 // ── Queue instance (null si Redis indisponible) ───────────────────────────
 export let renderQueue: Queue<RenderJobData> | null = null

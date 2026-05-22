@@ -951,6 +951,95 @@ Reply ONLY with this valid JSON:
   throw new Error(`Motion design scene generation failed: ${lastError?.message ?? 'Unknown error'}`)
 }
 
+// ── Motion brief classifier (auto-router) ──────────────────────────────────────
+// CLYRO has two motion engines:
+//   - "graphics" → runMotionPipeline : storyboard + AI-generated images
+//     (fal.ai) animated by Remotion's DynamicComposition. Use when the
+//     video needs real imagery — photos, scenes, illustrated backgrounds,
+//     characters, places, products shown as pictures.
+//   - "design"   → runMotionDesignPipeline : agency-quality scenes rendered
+//     100 % in code (typography, data counters, icons, logo reveals). Use
+//     when the video is carried by animated text / graphics, no generated
+//     photos needed.
+// This classifier reads the brief and picks ONE engine for the whole video.
+// It runs as step 0 inside the worker (see pipelines/motion-router.ts) so it
+// never adds latency to the HTTP response.
+
+export type MotionRenderKind = 'graphics' | 'design'
+
+export interface MotionClassification {
+  render: MotionRenderKind
+  /** One-sentence rationale — logged for observability, not shown to users. */
+  reason: string
+}
+
+/**
+ * Classifies a motion brief into the engine that fits it best.
+ * Cheap call (max_tokens 200). Retries MAX_RETRIES times, then falls back to
+ * "design" — the lower-cost path (no fal.ai image spend) and the safer
+ * default when intent is ambiguous.
+ */
+export async function classifyMotionBrief(
+  brief: string,
+  script?: string,
+): Promise<MotionClassification> {
+  const source = script && script.trim().length > 0
+    ? `${brief}\n\n--- Script ---\n${script}`
+    : brief
+
+  const systemPrompt = `You route a video brief to one of two render engines. You reply ONLY with valid JSON, no markdown, no comments.`
+
+  const userPrompt = `Pick the render engine that fits this video brief.
+
+"""
+${source.slice(0, 4000)}
+"""
+
+Two engines:
+- "graphics": the brief NEEDS AI-generated imagery — photos, realistic scenes, illustrated backgrounds, characters, places, or products shown as pictures. Choose this when the video would look empty or generic without generated images.
+- "design": the brief is carried by animated TEXT, data, numbers, icons, logos, UI mockups — pure motion design. No generated photos needed.
+
+If the intent is ambiguous, choose "design".
+
+Reply ONLY with this valid JSON:
+{ "render": "graphics" | "design", "reason": "<one short sentence>" }`
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const message = await client.messages.create({
+        model: MODEL,
+        max_tokens: 200,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      })
+
+      const content = message.content[0]
+      if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
+
+      const jsonText = content.text
+        .replace(/^```json\s*/m, '')
+        .replace(/^```\s*/m, '')
+        .replace(/\s*```$/m, '')
+        .trim()
+
+      const parsed = JSON.parse(jsonText) as { render?: unknown; reason?: unknown }
+      const render: MotionRenderKind = parsed.render === 'graphics' ? 'graphics' : 'design'
+      const reason = typeof parsed.reason === 'string' ? parsed.reason : ''
+      logger.info({ render, reason, attempt }, 'Motion brief classified')
+      return { render, reason }
+    } catch (err) {
+      logger.warn(
+        { attempt, maxRetries: MAX_RETRIES, error: err instanceof Error ? err.message : String(err) },
+        'Motion brief classification attempt failed',
+      )
+      if (attempt < MAX_RETRIES) await sleep(RETRY_DELAY_MS * attempt)
+    }
+  }
+
+  logger.warn('Motion brief classification failed after retries — defaulting to design')
+  return { render: 'design', reason: 'classification failed; defaulted to design' }
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }

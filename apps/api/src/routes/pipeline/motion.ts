@@ -6,7 +6,7 @@ import { deductCredits, refundCredits, creditCostForVideo, InsufficientCreditsEr
 import { supabaseAdmin } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
 import { renderQueue, isRedisReady } from '../../queues/renderQueue'
-import { runMotionPipeline } from '../../pipelines/motion'
+import { runMotionAuto } from '../../pipelines/motion-router'
 import { runMotionDesignPipeline } from '../../pipelines/motion-design'
 import { getMusicTrackUrl } from '../../lib/music'
 import { uploadFalUrlToStorage } from '../../services/fal'
@@ -59,8 +59,12 @@ const createMotionSchema = z.object({
 
 /**
  * POST /api/v1/pipeline/motion
- * Lance le pipeline Motion Graphics
- * Retourne immédiatement { video_id } — génération en arrière-plan
+ * Point d'entrée UNIFIÉ du produit Motion.
+ * La route ne décide PAS quel moteur utiliser : elle enfile un job
+ * `motion_auto`. Le worker (pipelines/motion-router.ts) classifie le brief
+ * via Claude — "graphics" (images IA + DynamicComposition) ou "design"
+ * (scènes codées + MotionComposition) — puis délègue au bon pipeline.
+ * Retourne immédiatement { video_id } — génération en arrière-plan.
  */
 pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req, res) => {
   const parsed = createMotionSchema.safeParse(req.body)
@@ -153,7 +157,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
     const creditCost = creditCostForVideo(durationSeconds, MOTION_DEFAULT_MODE)
 
     const jobData = {
-      type: 'motion' as const,
+      type: 'motion_auto' as const,
       videoId:       video.id,
       userId:        req.userId,
       userEmail:     req.userEmail,
@@ -177,9 +181,9 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
     let enqueued = false
     if (renderQueue && isRedisReady()) {
       try {
-        await renderQueue.add('motion', jobData)
+        await renderQueue.add('motion_auto', jobData)
         enqueued = true
-        logger.info({ videoId: video.id }, 'Job enqueued to BullMQ')
+        logger.info({ videoId: video.id }, 'Motion auto job enqueued to BullMQ')
       } catch (err) {
         logger.warn({ err, videoId: video.id }, 'Queue add failed')
       }
@@ -220,8 +224,8 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
         { videoId: video.id },
         'Falling back to inline motion pipeline (ALLOW_INLINE_FALLBACK=true) — this will block the event loop',
       )
-      runMotionPipeline(jobData).catch(async (err) => {
-        logger.error({ err, videoId: video.id }, 'Motion pipeline failed')
+      runMotionAuto(jobData).catch(async (err) => {
+        logger.error({ err, videoId: video.id }, 'Motion auto pipeline failed')
         try {
           await supabaseAdmin
             .from('videos')

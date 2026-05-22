@@ -13,7 +13,7 @@ import { ResultModal } from '@/components/creation/ResultModal'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toast'
 import {
-  startMotionDesignGeneration,
+  startMotionGeneration,
   getPublicVoices,
   subscribeToVideoStatus,
 } from '@/lib/api'
@@ -503,26 +503,23 @@ function MotionNewPageInner() {
     setCompletedSteps([])
 
     try {
-      // F2 Motion Design pipeline (MotionComposition) — produit des sc&egrave;nes
-      // agency-quality : 3d_cards, hero_typo (word-by-word/scale_bounce),
-      // floating_icons, dark_light_switch, mockup_zoom, stats_counter,
-      // logo_reveal. Le `style` biaise la s&eacute;lection des sc&egrave;nes c&ocirc;t&eacute; Claude
-      // pour que corporate/dynamique/luxe/fun produisent des vid&eacute;os
-      // visuellement distinctes.
-      //
-      // Format mapping : F2 utilise '16_9' (underscore) au lieu de '16:9'
-      // (deux-points) pour matcher les compositionId Remotion.
-      const f2Format = format.replace(':', '_') as '16_9' | '9_16' | '1_1'
-      const result = await startMotionDesignGeneration({
+      // Unified Motion entry point — POST /api/v1/pipeline/motion.
+      // The brief is sent as-is (colon format form, no conversion). The
+      // backend auto-router classifies it and picks the engine: Motion
+      // Graphics (AI-generated imagery) when the brief needs real visuals,
+      // Motion Design (code-rendered scenes) when it's animated text/graphics.
+      // See apps/api/src/pipelines/motion-router.ts.
+      const result = await startMotionGeneration({
         title: projectName,
         brief,
-        format: f2Format,
+        format,
         duration,
         style,
         brand_config: {
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           font_family: fontFamily,
+          style,
         },
         voice_id: selectedVoice?.id,
         // Promote the draft row in place instead of creating a fresh
