@@ -326,6 +326,10 @@ export async function getBrandKits() {
   return apiFetch<{ data: BrandKit[] }>('/api/v1/brand-kits')
 }
 
+export async function getBrandKit(id: string) {
+  return apiFetch<{ data: BrandKit }>(`/api/v1/brand-kits/${id}`)
+}
+
 export async function createBrandKit(payload: CreateBrandKitPayload) {
   return apiFetch<{ data: BrandKit }>('/api/v1/brand-kits', {
     method: 'POST',

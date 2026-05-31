@@ -760,11 +760,60 @@ const motionStoryboardZ = z.object({
   scenes: z.array(sceneZ).min(1).max(30),
 })
 
+/**
+ * Sous-ensemble enrichi du Brand Kit (« Business DNA ») exploité par les
+ * prompts Claude. Tous les champs sont optionnels : un kit qui n'a que
+ * primary_color reste valide, mais plus le DNA est riche plus la vidéo
+ * générée sera on-brand. Cf. supabase/migrations/20260601000000_brand_dna_extension.sql
+ * et docs/POMELLI_BRAND_KIT_PLAN.md (Phase 1).
+ */
+export interface BrandConfigForPrompt {
+  primary_color: string
+  secondary_color?: string
+  logo_url?:        string
+  font_family?:     string
+  // — Business DNA injecté dans le brandLine du prompt —
+  tagline?:             string
+  brand_values?:        string[]
+  brand_aesthetic?:     string[]
+  brand_tone_of_voice?: string[]
+  business_overview?:   string
+}
+
+/**
+ * Construit les lignes de « brand DNA » à injecter dans le system/user
+ * prompt. Chaque ligne est conditionnelle : on n'ajoute la ligne que si
+ * la donnée est présente et non vide. Utilisé par generateMotionDesignScenes
+ * et generateMotionStoryboard pour produire des vidéos réellement on-brand.
+ */
+function buildBrandDnaPromptLines(brand: BrandConfigForPrompt): string[] {
+  const lines: string[] = []
+  if (brand.tagline && brand.tagline.trim().length > 0) {
+    lines.push(`Brand tagline: "${brand.tagline.trim()}"`)
+  }
+  if (brand.brand_tone_of_voice && brand.brand_tone_of_voice.length > 0) {
+    lines.push(`Brand tone of voice: ${brand.brand_tone_of_voice.join(', ')}. Match this tone in every text field, voiceover, headline.`)
+  }
+  if (brand.brand_values && brand.brand_values.length > 0) {
+    lines.push(`Brand values to convey: ${brand.brand_values.join(', ')}.`)
+  }
+  if (brand.brand_aesthetic && brand.brand_aesthetic.length > 0) {
+    lines.push(`Visual aesthetic to honor: ${brand.brand_aesthetic.join(', ')}.`)
+  }
+  if (brand.business_overview && brand.business_overview.trim().length > 0) {
+    // Tronqué à 600 caractères pour ne pas exploser le budget de tokens
+    // sur des descriptions longues — l'essence du business suffit.
+    const overview = brand.business_overview.trim()
+    lines.push(`Business context: ${overview.length > 600 ? overview.slice(0, 600) + '…' : overview}`)
+  }
+  return lines
+}
+
 export async function generateMotionDesignScenes(
   brief: string,
   format: string,
   duration: string,
-  brandConfig: { primary_color: string; secondary_color?: string; logo_url?: string; font_family?: string },
+  brandConfig: BrandConfigForPrompt,
   language?: DetectedLanguage,
   /** Visual register hint — biases Claude's scene-type picks toward the right
    *  feel. Optional; when missing Claude picks a balanced mix. */
@@ -799,11 +848,16 @@ You reply ONLY with valid JSON, no markdown, no comments.`
     fun:       'STYLE = FUN: playful, colorful, expressive. ALLOWED scene types: 3d_cards (layout: scatter), floating_icons (5-8 emoji icons), hero_typo (animations: split_reveal OR scale_bounce only), dark_light_switch (style: flash). Mode bias: "light" with vibrant accents. FORBIDDEN: hero_typo 3d_rotate, logo_reveal assemble, mockup_zoom.',
   }
   const styleLine = styleHint ? `\n${styleRegister[styleHint]}\n` : ''
+  // brandLine : couleurs / fonte / logo (visuel) + DNA enrichi (sémantique).
+  // Le DNA (tagline, ton, valeurs, esthétique, contexte business) est ce qui
+  // permet à Claude de produire des scènes vraiment on-brand au lieu de scènes
+  // « génériques avec la bonne couleur ». Cf. docs/POMELLI_BRAND_KIT_PLAN.md §1.
   const brandLine = [
     `Brand primary color: ${color}`,
     secondary ? `Brand secondary color: ${secondary} (use for stats counters second highlight, particles, accents)` : null,
     fontFamily ? `Brand font hint: ${fontFamily} (the frontend loads it via Remotion; you only need to keep text concise and well-spaced)` : null,
     logoUrl ? `Logo URL: ${logoUrl}` : null,
+    ...buildBrandDnaPromptLines(brandConfig),
   ].filter(Boolean).join('\n')
 
   // Hard WPM ceiling — used by the prompt to bound voiceover length per

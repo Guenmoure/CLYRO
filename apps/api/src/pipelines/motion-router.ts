@@ -86,7 +86,9 @@ export async function runMotionAuto(job: MotionAutoJobData): Promise<void> {
   // ── Step 2 — delegate ────────────────────────────────────────────────────
   try {
     if (render === 'graphics') {
-      // Motion Graphics expects the colon format form as-is.
+      // Motion Graphics expects the colon format form as-is. brandKitId
+      // est passé pour le suivi métier mais Motion Graphics ne consomme
+      // pas encore le DNA enrichi (Phase 2+).
       await runMotionPipeline({
         videoId:       job.videoId,
         userId:        job.userId,
@@ -108,6 +110,8 @@ export async function runMotionAuto(job: MotionAutoJobData): Promise<void> {
     // render === 'design' — Motion Design needs the underscore format form
     // and a narrowed style enum. `script` is intentionally NOT forwarded:
     // the design pipeline derives narration from the brief only.
+    // brandKitId est forwardé : Motion Design fetch le kit et enrichit le
+    // prompt Claude avec le DNA (tagline, valeurs, ton, esthétique).
     await runMotionDesignPipeline({
       videoId:    job.videoId,
       userId:     job.userId,
@@ -126,6 +130,7 @@ export async function runMotionAuto(job: MotionAutoJobData): Promise<void> {
       voiceId:    job.voiceId || undefined,
       musicUrl:   job.musicTrackUrl,
       creditCost: job.creditCost,
+      brandKitId: job.brandKitId,
     })
   } catch (err) {
     // Both pipelines already mark the row as 'error' + refund on their own

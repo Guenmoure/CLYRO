@@ -205,7 +205,32 @@ export interface BrandConfig {
   style: MotionStyle
 }
 
-// Identité visuelle persistante (Brand Kit)
+// ── Brand Kit Business DNA (Pomelli-inspired) ────────────────────────────────
+// Champs ajoutés par la migration 20260601000000_brand_dna_extension.sql.
+// Chaque champ est optionnel côté API (POST/PUT acceptent les anciens payloads
+// minimaux) ; côté DB les arrays ont un défaut '{}', les jsonb '{}'/'[]', les
+// text scalaires sont NULL si non fournis.
+
+/** Liens vers les comptes sociaux de la marque. Toutes les clés sont
+ *  optionnelles ; chaque valeur doit être une URL valide. */
+export interface SocialLinks {
+  facebook?:  string
+  instagram?: string
+  linkedin?:  string
+  twitter?:   string
+  youtube?:   string
+  tiktok?:    string
+  pinterest?: string
+}
+
+/** Call-to-action affiché dans les compositions (ex. "Visit our store",
+ *  "Book a demo"). Stocké en jsonb comme `CtaLink[]`. */
+export interface CtaLink {
+  label: string
+  url:   string
+}
+
+// Identité visuelle persistante (Brand Kit) — étendu Business DNA
 export interface BrandKit {
   id: string
   user_id: string
@@ -215,6 +240,22 @@ export interface BrandKit {
   secondary_color: string | null
   font_family: string | null
   is_default: boolean
+  // — Brand Overview —
+  url:                  string | null
+  tagline:              string | null
+  brand_values:         string[]
+  brand_aesthetic:      string[]
+  brand_tone_of_voice:  string[]
+  business_overview:    string | null
+  // — Business Details —
+  location:             string | null
+  phone:                string | null
+  business_hours:       string | null
+  keywords:             string[]
+  social_links:         SocialLinks
+  cta_links:            CtaLink[]
+  testimonials:         string | null
+  // — Audit —
   created_at: string
   updated_at: string
 }
@@ -226,6 +267,21 @@ export interface CreateBrandKitPayload {
   font_family?: string
   logo_url?: string
   is_default?: boolean
+  // — Brand Overview (tous optionnels à la création) —
+  url?:                  string
+  tagline?:              string
+  brand_values?:         string[]
+  brand_aesthetic?:      string[]
+  brand_tone_of_voice?:  string[]
+  business_overview?:    string
+  // — Business Details (tous optionnels) —
+  location?:             string
+  phone?:                string
+  business_hours?:       string
+  keywords?:             string[]
+  social_links?:         SocialLinks
+  cta_links?:            CtaLink[]
+  testimonials?:         string
 }
 
 export interface UpdateBrandKitPayload extends Partial<CreateBrandKitPayload> {

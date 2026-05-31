@@ -104,6 +104,8 @@ export interface MotionDesignJobData {
   }
   voiceId?:  string
   musicUrl?: string
+  /** Optional Brand Kit id — pipeline fetches DNA and merges into prompts. */
+  brandKitId?: string
 }
 
 // Unified motion entry point. The route enqueues this WITHOUT knowing which
@@ -134,6 +136,9 @@ export interface MotionAutoJobData {
   /** Credits already deducted by the route — threaded through so the
    *  delegated pipeline can refund the exact amount on error. */
   creditCost?: number
+  /** Optional Brand Kit id — propagated to the delegated pipeline so its
+   *  DNA fields enrich the Claude prompt. See POMELLI_BRAND_KIT_PLAN.md §1. */
+  brandKitId?: string
 }
 
 export type RenderJobData = MotionJobData | FacelessJobData | MotionDesignJobData | MotionAutoJobData

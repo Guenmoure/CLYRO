@@ -46,6 +46,11 @@ const createMotionSchema = z.object({
   }),
   voice_id:       z.string().optional(),
   music_track_id: z.string().optional(),
+  /** Optional Brand Kit id. Passé tel quel à l'aiguilleur (motion_auto) puis
+   *  au pipeline délégué : si présent, le pipeline lit le DNA enrichi du kit
+   *  (tagline, valeurs, ton, esthétique) et l'injecte dans le prompt Claude.
+   *  Cf. POMELLI_BRAND_KIT_PLAN.md §1 — c'est ce qui rend la vidéo on-brand. */
+  brand_kit_id:   z.string().uuid().optional(),
   /**
    * When the user finishes a draft, the wizard sends this id so the
    * existing `videos` row (status='draft') is promoted in place to
@@ -73,7 +78,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
     return
   }
 
-  const { title, brief, script, format, duration, style, brand_config, voice_id, music_track_id, draft_id } = parsed.data
+  const { title, brief, script, format, duration, style, brand_config, voice_id, music_track_id, draft_id, brand_kit_id } = parsed.data
 
   try {
     // userProfile is set by quotaMiddleware (currently unused beyond the
@@ -171,6 +176,7 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
       voiceId:       voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
       musicTrackUrl: music_track_id ? getMusicTrackUrl(music_track_id) : undefined,
       creditCost,
+      brandKitId:    brand_kit_id,
     }
 
     // Enqueue si Redis est dispo ET qu'un worker consomme la queue.
@@ -471,6 +477,8 @@ const createMotionDesignSchema = z.object({
   }),
   voice_id:  z.string().optional(),
   music_url: z.string().url().optional(),
+  /** Optional Brand Kit id — pipeline lit le DNA et enrichit les prompts. */
+  brand_kit_id: z.string().uuid().optional(),
   /** Optional draft id to promote in place — see /motion route for full rationale. */
   draft_id:  z.string().uuid().optional(),
 })
@@ -487,7 +495,7 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
     return
   }
 
-  const { title, brief, format, duration, brand_config, voice_id, music_url, draft_id } = parsed.data
+  const { title, brief, format, duration, brand_config, voice_id, music_url, draft_id, brand_kit_id } = parsed.data
 
   try {
     // userProfile is set by quotaMiddleware (currently unused beyond the
@@ -571,6 +579,7 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
       voiceId:    voice_id,
       musicUrl:   music_url,
       creditCost,
+      brandKitId: brand_kit_id,
     }
 
     const allowInlineFallback = process.env.ALLOW_INLINE_FALLBACK === 'true'

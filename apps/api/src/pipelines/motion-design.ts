@@ -4,7 +4,7 @@
  */
 import * as Sentry from '@sentry/node'
 import { supabaseAdmin } from '../lib/supabase'
-import { generateMotionDesignScenes } from '../services/claude'
+import { generateMotionDesignScenes, type BrandConfigForPrompt } from '../services/claude'
 import { detectLanguage } from '../lib/detect-language'
 import { refundCredits } from '../services/credits'
 import { generateVoiceoverWithTimestamps } from '../services/elevenlabs'
@@ -37,10 +37,56 @@ export interface MotionDesignPipelineParams {
   musicUrl?:   string
   /** Number of credits the route already deducted; refunded on error. */
   creditCost?: number
+  /** Optional Brand Kit id : when fourni, le pipeline lit le DNA enrichi
+   *  (tagline, valeurs, ton, esthétique, business overview) et le passe à
+   *  Claude pour produire des scènes vraiment on-brand. Sans ça, seules les
+   *  couleurs/fonte/logo sont injectées dans le prompt — la génération reste
+   *  fonctionnelle mais moins identitaire. Cf. POMELLI_BRAND_KIT_PLAN.md §1. */
+  brandKitId?: string
+}
+
+/**
+ * Charge le Brand Kit complet depuis Supabase et fusionne ses champs Business
+ * DNA (tagline, valeurs, ton, esthétique, business overview) dans le
+ * brandConfig passé à Claude. Best-effort : si le kit n'existe pas ou n'est
+ * pas owned, on retombe sur le brandConfig brut sans bloquer la génération.
+ */
+async function enrichBrandConfigFromKit(
+  brandConfig: MotionDesignPipelineParams['brandConfig'],
+  brandKitId: string | undefined,
+  userId: string,
+  videoId: string,
+): Promise<BrandConfigForPrompt> {
+  if (!brandKitId) return brandConfig
+  try {
+    const { data: kit } = await supabaseAdmin
+      .from('brand_kits')
+      .select('tagline, brand_values, brand_aesthetic, brand_tone_of_voice, business_overview, logo_url, font_family')
+      .eq('id', brandKitId)
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (!kit) {
+      logger.warn({ videoId, brandKitId }, 'Brand kit not found or not owned — falling back to bare brandConfig')
+      return brandConfig
+    }
+    return {
+      ...brandConfig,
+      logo_url:    brandConfig.logo_url    ?? kit.logo_url    ?? undefined,
+      font_family: brandConfig.font_family ?? kit.font_family ?? undefined,
+      tagline:             kit.tagline             ?? undefined,
+      brand_values:        kit.brand_values         ?? [],
+      brand_aesthetic:     kit.brand_aesthetic      ?? [],
+      brand_tone_of_voice: kit.brand_tone_of_voice  ?? [],
+      business_overview:   kit.business_overview    ?? undefined,
+    }
+  } catch (err) {
+    logger.warn({ err, videoId, brandKitId }, 'Brand kit fetch failed — falling back to bare brandConfig')
+    return brandConfig
+  }
 }
 
 export async function runMotionDesignPipeline(params: MotionDesignPipelineParams): Promise<void> {
-  const { videoId, userId, userEmail, title, brief, format, duration, style, brandConfig, voiceId, musicUrl, creditCost } = params
+  const { videoId, userId, userEmail, title, brief, format, duration, style, brandConfig, voiceId, musicUrl, creditCost, brandKitId } = params
 
   // Status enum is fixed to 4 values: draft | generating | done | error.
   // The granular pipeline phase (storyboard / audio / assembly / etc.)
@@ -60,8 +106,12 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
     await updateStatus('storyboard', 10)
     const language = detectLanguage(brief)
     logger.info({ videoId, language: language.code }, 'Brief language detected')
+    // Enrichit brandConfig avec le DNA du Brand Kit si fourni — c'est ce qui
+    // fait passer la génération de « générique avec la bonne couleur » à
+    // « vraiment on-brand ». Best-effort, non bloquant.
+    const enrichedBrand = await enrichBrandConfigFromKit(brandConfig, brandKitId, userId, videoId)
     const { scenes, voiceovers, voiceoverScript, totalFrames } = await generateMotionDesignScenes(
-      brief, format, duration, brandConfig, language, style,
+      brief, format, duration, enrichedBrand, language, style,
     )
     await updateStatus('storyboard', 25, { scenes })
     logger.info({ videoId, sceneCount: scenes.length, voiceoverWords: voiceoverScript.split(/\s+/).filter(Boolean).length, claudeTotalFrames: totalFrames, styleHint: style }, 'MotionDesign scenes generated')
