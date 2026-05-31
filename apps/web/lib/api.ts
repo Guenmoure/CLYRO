@@ -461,6 +461,19 @@ export async function deleteBrandCreative(id: string) {
   return apiFetch<{ success: boolean }>(`/api/v1/brand/creatives/${id}`, { method: 'DELETE' })
 }
 
+export interface CampaignSuggestion {
+  title:       string
+  description: string
+  prompt:      string
+}
+
+export async function suggestBrandCampaigns(brandKitId: string, count?: number) {
+  return apiFetch<{ data: CampaignSuggestion[] }>('/api/v1/brand/campaigns/suggest', {
+    method: 'POST',
+    body: JSON.stringify({ brand_kit_id: brandKitId, count }),
+  })
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'

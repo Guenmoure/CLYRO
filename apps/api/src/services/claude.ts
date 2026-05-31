@@ -1098,6 +1098,79 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+// ── Brand Campaign suggestions (Phase 3.2) ──────────────────────────────────
+// 3 idées de campagne dérivées du seul DNA — pas de prompt utilisateur, pas
+// de génération d'image. Sert d'amorce dans la box (« Suggestions based on
+// Business DNA »). Appel court (max_tokens 800), pas de retry agressif.
+
+export interface CampaignSuggestion {
+  title:       string
+  description: string
+  /** Prompt prêt à l'emploi pour pré-remplir la box de création. */
+  prompt:      string
+}
+
+export async function generateCampaignSuggestions(
+  brand: BrandConfigForPrompt & { name?: string },
+  count = 3,
+): Promise<CampaignSuggestion[]> {
+  const lang: DetectedLanguage = brand.business_overview
+    ? detectLanguage(brand.business_overview)
+    : { code: 'en', name: 'English', nativeName: 'English' }
+
+  const dnaLines = buildBrandDnaPromptLines(brand)
+  const brandName = brand.name ?? 'the brand'
+
+  const systemPrompt = `You are a senior creative director. You reply ONLY with valid JSON. No markdown, no comments.`
+
+  const userPrompt = `Propose ${count} campaign ideas for "${brandName}" derived from its brand DNA.
+
+BRAND DNA:
+Primary color: ${brand.primary_color}
+${dnaLines.join('\n')}
+
+Each idea has:
+- title: short campaign name (≤ 50 chars), in ${lang.name}.
+- description: 1-sentence pitch (≤ 140 chars), in ${lang.name}.
+- prompt: a starter prompt that a marketer could feed back to the campaign
+  generator to actually produce it. 2-3 sentences, descriptive. In ${lang.name}.
+
+Each idea must feel meaningfully different from the others.
+
+Reply ONLY with this JSON:
+{ "suggestions": [ { "title": "...", "description": "...", "prompt": "..." } ] }`
+
+  try {
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 800,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    })
+    const content = message.content[0]
+    if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
+    const jsonText = content.text
+      .replace(/^```json\s*/m, '')
+      .replace(/^```\s*/m, '')
+      .replace(/\s*```$/m, '')
+      .trim()
+    const parsed = JSON.parse(jsonText) as { suggestions?: CampaignSuggestion[] }
+    const list = Array.isArray(parsed.suggestions) ? parsed.suggestions : []
+    return list.slice(0, count)
+      .filter((s): s is CampaignSuggestion =>
+        !!s && typeof s.title === 'string' && typeof s.description === 'string' && typeof s.prompt === 'string',
+      )
+      .map((s) => ({
+        title:       s.title.trim().slice(0, 60),
+        description: s.description.trim().slice(0, 240),
+        prompt:      s.prompt.trim().slice(0, 600),
+      }))
+  } catch (err) {
+    logger.warn({ err: err instanceof Error ? err.message : String(err) }, 'Campaign suggestions failed')
+    return []
+  }
+}
+
 // ── Brand Campaign brief (Phase 3.1 du portage Pomelli) ─────────────────────
 // Génère un brief structuré pour une campagne : titre, description, et 3
 // créatives (image prompt + header + description + CTA). Le DNA du Brand

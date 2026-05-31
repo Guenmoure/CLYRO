@@ -6,6 +6,7 @@ import { logger } from '../lib/logger'
 import { generateSocialAsset } from '../services/fal'
 import { deductCredits, refundCredits, InsufficientCreditsError } from '../services/credits'
 import { runBrandCampaignPipeline } from '../pipelines/brand-campaign'
+import { generateCampaignSuggestions, type BrandConfigForPrompt } from '../services/claude'
 import Anthropic from '@anthropic-ai/sdk'
 
 export const brandCampaignsRouter = Router()
@@ -40,6 +41,54 @@ const updateCreativeSchema = z.object({
     cta:         z.boolean().optional(),
   }).optional(),
   position:         z.number().int().min(0).max(99).optional(),
+})
+
+/**
+ * POST /api/v1/brand/campaigns/suggest
+ * 3 idées de campagne dérivées du DNA — pas de persistence, pas d'image, pas
+ * de crédit. Utile pour amorcer la prompt box côté front. Soumis au quota
+ * Claude implicite (1 appel Sonnet, max_tokens 800).
+ */
+const suggestSchema = z.object({
+  brand_kit_id: z.string().uuid(),
+  count:        z.number().int().min(1).max(6).optional(),
+})
+
+brandCampaignsRouter.post('/brand/campaigns/suggest', authMiddleware, async (req, res) => {
+  const parsed = suggestSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
+    return
+  }
+  const { brand_kit_id, count } = parsed.data
+  try {
+    const { data: kit } = await supabaseAdmin
+      .from('brand_kits')
+      .select('name, primary_color, secondary_color, font_family, tagline, brand_values, brand_aesthetic, brand_tone_of_voice, business_overview')
+      .eq('id', brand_kit_id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!kit) {
+      res.status(404).json({ error: 'Brand kit not found', code: 'NOT_FOUND' })
+      return
+    }
+    const brandForPrompt: BrandConfigForPrompt & { name?: string } = {
+      name:                kit.name,
+      primary_color:       kit.primary_color,
+      secondary_color:     kit.secondary_color ?? undefined,
+      font_family:         kit.font_family ?? undefined,
+      tagline:             kit.tagline ?? undefined,
+      brand_values:        kit.brand_values ?? [],
+      brand_aesthetic:     kit.brand_aesthetic ?? [],
+      brand_tone_of_voice: kit.brand_tone_of_voice ?? [],
+      business_overview:   kit.business_overview ?? undefined,
+    }
+    const suggestions = await generateCampaignSuggestions(brandForPrompt, count ?? 3)
+    res.json({ data: suggestions })
+  } catch (err) {
+    logger.error({ err, userId: req.userId }, 'brand/campaigns/suggest error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
 })
 
 /**
