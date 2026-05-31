@@ -488,6 +488,34 @@ export async function animateBrandCreative(creativeId: string) {
   )
 }
 
+// ---- Creative Editor — Phase 3.4 ----
+import type { BrandCreativeVersion } from '@clyro/shared'
+export type { BrandCreativeVersion }
+
+export async function getBrandCreative(id: string) {
+  return apiFetch<{ data: { creative: BrandCreative; campaign: BrandCampaign } }>(
+    `/api/v1/brand/creatives/${id}`,
+  )
+}
+
+export async function listBrandCreativeVersions(creativeId: string) {
+  return apiFetch<{ data: BrandCreativeVersion[] }>(`/api/v1/brand/creatives/${creativeId}/versions`)
+}
+
+export async function saveBrandCreativeVersion(creativeId: string) {
+  return apiFetch<{ data: BrandCreativeVersion }>(`/api/v1/brand/creatives/${creativeId}/versions`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export async function restoreBrandCreativeVersion(creativeId: string, versionNum: number) {
+  return apiFetch<{ data: BrandCreative }>(`/api/v1/brand/creatives/${creativeId}/restore`, {
+    method: 'POST',
+    body: JSON.stringify({ version_num: versionNum }),
+  })
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'

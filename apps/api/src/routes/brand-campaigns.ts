@@ -568,6 +568,187 @@ brandCampaignsRouter.post('/brand/creatives/:id/animate', authMiddleware, async 
 })
 
 /**
+ * GET /api/v1/brand/creatives/:id
+ * Détail d'une créative + la campagne parente — utilisé par l'éditeur
+ * (Phase 3.4) qui charge directement la créative depuis son URL sans
+ * passer par le détail campagne.
+ */
+brandCampaignsRouter.get('/brand/creatives/:id', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  try {
+    const { data: creative } = await supabaseAdmin
+      .from('brand_creatives')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!creative) {
+      res.status(404).json({ error: 'Creative not found', code: 'NOT_FOUND' })
+      return
+    }
+    const { data: campaign } = await supabaseAdmin
+      .from('brand_campaigns')
+      .select('*')
+      .eq('id', creative.campaign_id)
+      .eq('user_id', req.userId)
+      .single()
+    res.json({ data: { creative, campaign } })
+  } catch (err) {
+    logger.error({ err, id }, 'brand/creatives GET error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * GET /api/v1/brand/creatives/:id/versions
+ * Historique append-only des éditions, le plus récent en premier.
+ */
+brandCampaignsRouter.get('/brand/creatives/:id/versions', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  try {
+    // Ownership via la créative
+    const { data: creative } = await supabaseAdmin
+      .from('brand_creatives')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!creative) {
+      res.status(404).json({ error: 'Creative not found', code: 'NOT_FOUND' })
+      return
+    }
+    const { data, error } = await supabaseAdmin
+      .from('brand_creative_versions')
+      .select('*')
+      .eq('creative_id', id)
+      .eq('user_id', req.userId)
+      .order('version_num', { ascending: false })
+      .limit(50)
+    if (error) throw error
+    res.json({ data: data ?? [] })
+  } catch (err) {
+    logger.error({ err, id }, 'brand/creatives/:id/versions GET error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * POST /api/v1/brand/creatives/:id/versions
+ * Crée un snapshot de l'état courant de la créative. Append-only — ne
+ * touche pas l'état de la créative, juste enregistre la photo. Bumpé
+ * `current_version` pour pointer vers le nouveau snapshot.
+ */
+brandCampaignsRouter.post('/brand/creatives/:id/versions', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  try {
+    const { data: creative } = await supabaseAdmin
+      .from('brand_creatives')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!creative) {
+      res.status(404).json({ error: 'Creative not found', code: 'NOT_FOUND' })
+      return
+    }
+    // Numéro de version = max(version_num) + 1
+    const { data: last } = await supabaseAdmin
+      .from('brand_creative_versions')
+      .select('version_num')
+      .eq('creative_id', id)
+      .order('version_num', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const nextVersion = (last?.version_num ?? 0) + 1
+
+    const snapshot = {
+      image_url:        creative.image_url,
+      prompt:           creative.prompt,
+      header_text:      creative.header_text,
+      description_text: creative.description_text,
+      cta_text:         creative.cta_text,
+      blocks_visible:   creative.blocks_visible,
+    }
+
+    const { data: inserted, error } = await supabaseAdmin
+      .from('brand_creative_versions')
+      .insert({
+        creative_id: id,
+        user_id:     req.userId,
+        version_num: nextVersion,
+        snapshot,
+      })
+      .select()
+      .single()
+    if (error) throw error
+
+    // Bumpe current_version sur la créative
+    await supabaseAdmin
+      .from('brand_creatives')
+      .update({ current_version: nextVersion })
+      .eq('id', id)
+
+    res.status(201).json({ data: inserted })
+  } catch (err) {
+    logger.error({ err, id }, 'brand/creatives/:id/versions POST error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * POST /api/v1/brand/creatives/:id/restore
+ * Restaure une créative à l'état d'une version donnée. Le snapshot
+ * d'origine reste intact (append-only) — on ne fait que recopier ses
+ * champs dans la créative.
+ */
+const restoreSchema = z.object({
+  version_num: z.number().int().min(1),
+})
+
+brandCampaignsRouter.post('/brand/creatives/:id/restore', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  const parsed = restoreSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
+    return
+  }
+  try {
+    const { data: version } = await supabaseAdmin
+      .from('brand_creative_versions')
+      .select('*')
+      .eq('creative_id', id)
+      .eq('user_id', req.userId)
+      .eq('version_num', parsed.data.version_num)
+      .maybeSingle()
+    if (!version) {
+      res.status(404).json({ error: 'Version not found', code: 'NOT_FOUND' })
+      return
+    }
+    const snap = version.snapshot as Record<string, unknown>
+    const { data: updated, error } = await supabaseAdmin
+      .from('brand_creatives')
+      .update({
+        image_url:        snap.image_url        ?? '',
+        prompt:           snap.prompt           ?? null,
+        header_text:      snap.header_text      ?? null,
+        description_text: snap.description_text ?? null,
+        cta_text:         snap.cta_text         ?? null,
+        blocks_visible:   snap.blocks_visible   ?? { header: true, description: true, cta: true },
+        current_version:  parsed.data.version_num,
+      })
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .select()
+      .single()
+    if (error) throw error
+    res.json({ data: updated })
+  } catch (err) {
+    logger.error({ err, id }, 'brand/creatives/:id/restore error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
  * DELETE /api/v1/brand/creatives/:id
  */
 brandCampaignsRouter.delete('/brand/creatives/:id', authMiddleware, async (req, res) => {

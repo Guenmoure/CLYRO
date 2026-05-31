@@ -260,6 +260,7 @@ export default function BrandCampaignDetailPage() {
                   key={c.id}
                   creative={c}
                   aspectRatio={campaign.aspect_ratio}
+                  editHref={`/brand/${kitId}/campaigns/${campaignId}/${c.id}`}
                   onToggleBlock={(block, visible) => void handleToggleBlock(c, block, visible)}
                   onAnimate={() => void handleAnimate(c.id)}
                   onShare={() => void handleShare(c.id)}

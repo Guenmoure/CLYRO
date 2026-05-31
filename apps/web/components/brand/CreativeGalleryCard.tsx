@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Eye, EyeOff, Type, Sparkles, Share2, Loader2, MoreHorizontal, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, Type, Sparkles, Share2, Loader2, MoreHorizontal, Trash2, Pencil } from 'lucide-react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { BrandCreative, CreativeBlocksVisible, CampaignAspectRatio } from '@clyro/shared'
 
@@ -12,6 +13,9 @@ interface CreativeGalleryCardProps {
   onAnimate: () => void
   onShare: () => void
   onDelete: () => void
+  /** URL de l'éditeur (Phase 3.4). Si fournie, l'image devient cliquable et
+   *  un item "Edit" apparaît dans le menu more. */
+  editHref?: string
   /** Pendant l'appel à Animate, désactive et affiche un loader. */
   animating?: boolean
 }
@@ -30,7 +34,7 @@ const ASPECT_STYLES: Record<CampaignAspectRatio, { width: number; height: number
  * en dessous.
  */
 export function CreativeGalleryCard({
-  creative, aspectRatio, onToggleBlock, onAnimate, onShare, onDelete, animating,
+  creative, aspectRatio, onToggleBlock, onAnimate, onShare, onDelete, editHref, animating,
 }: CreativeGalleryCardProps) {
   const dim = ASPECT_STYLES[aspectRatio]
   const blocks = creative.blocks_visible
@@ -52,19 +56,38 @@ export function CreativeGalleryCard({
 
   return (
     <div className="shrink-0 flex flex-col gap-2" style={{ width: dim.width }}>
-      {/* Image + overlay */}
-      <div
-        className="relative rounded-2xl overflow-hidden border border-border bg-muted"
-        style={{ width: dim.width, height: dim.height }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={creative.image_url} alt="" className="w-full h-full object-cover" />
-        {/* gradient pour lisibilité du texte */}
-        <div className="absolute inset-0 bg-gradient-to-b from-foreground/30 via-transparent to-foreground/40 pointer-events-none" />
-        {block('header',      creative.header_text)}
-        {block('description', creative.description_text)}
-        {block('cta',         creative.cta_text)}
-      </div>
+      {/* Image + overlay — cliquable vers l'éditeur si editHref fourni. */}
+      {editHref ? (
+        <Link
+          href={editHref}
+          className="group/img relative rounded-2xl overflow-hidden border border-border bg-muted block"
+          style={{ width: dim.width, height: dim.height }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={creative.image_url} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-foreground/30 via-transparent to-foreground/40 pointer-events-none" />
+          {block('header',      creative.header_text)}
+          {block('description', creative.description_text)}
+          {block('cta',         creative.cta_text)}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity bg-foreground/30">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-background text-foreground px-3 py-1.5 font-display text-xs font-medium shadow">
+              <Pencil size={12} /> Edit
+            </span>
+          </div>
+        </Link>
+      ) : (
+        <div
+          className="relative rounded-2xl overflow-hidden border border-border bg-muted"
+          style={{ width: dim.width, height: dim.height }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={creative.image_url} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-foreground/30 via-transparent to-foreground/40 pointer-events-none" />
+          {block('header',      creative.header_text)}
+          {block('description', creative.description_text)}
+          {block('cta',         creative.cta_text)}
+        </div>
+      )}
 
       {/* Toggles visibility (eye) */}
       <div className="flex items-center gap-1.5 px-1">
