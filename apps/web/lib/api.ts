@@ -453,6 +453,171 @@ export async function deleteBrandAsset(assetId: string) {
   return apiFetch<{ success: boolean }>(`/api/v1/brand/assets/${assetId}`, { method: 'DELETE' })
 }
 
+// ---- Product Catalog ----
+
+export interface CatalogItem {
+  id: string
+  brand_kit_id: string
+  user_id: string
+  name: string
+  description: string | null
+  image_url: string
+  category: string | null
+  created_at: string
+}
+
+export async function getCatalogItems(brandKitId: string) {
+  return apiFetch<{ data: CatalogItem[] }>(`/api/v1/brand/${brandKitId}/catalog`)
+}
+
+export async function addCatalogItem(payload: {
+  brand_kit_id: string
+  name: string
+  description?: string
+  image_url: string
+  category?: string
+}) {
+  return apiFetch<{ data: CatalogItem }>('/api/v1/brand/catalog', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateCatalogItem(itemId: string, payload: Partial<{ name: string; description: string; image_url: string; category: string }>) {
+  return apiFetch<{ data: CatalogItem }>(`/api/v1/brand/catalog/${itemId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteCatalogItem(itemId: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/catalog/${itemId}`, { method: 'DELETE' })
+}
+
+// ---- Campaigns ----
+
+export interface CampaignConcept {
+  name: string
+  tagline: string
+  description: string
+  platforms: string[]
+  suggested_posts: Array<{ platform: string; copy: string; visual_direction: string }>
+}
+
+export interface CampaignAsset {
+  platform: string
+  image_url: string
+  copy: string
+}
+
+export async function generateCampaignIdeas(payload: {
+  brand_kit_id: string
+  goal: string
+  catalog_item_ids?: string[]
+  platforms: string[]
+}) {
+  return apiFetch<{ campaigns: CampaignConcept[] }>('/api/v1/brand/campaigns/ideate', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function generateCampaignAssets(payload: {
+  brand_kit_id: string
+  campaign: { name: string; posts: Array<{ platform: string; copy: string; visual_direction: string; catalog_item_id?: string }> }
+}) {
+  return apiFetch<{ assets: CampaignAsset[] }>('/api/v1/brand/campaigns/generate', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ---- Photoshoot ----
+
+export type PhotoshootTemplate = 'studio' | 'floating' | 'ingredient' | 'in_use'
+
+export async function generatePhotoshoot(payload: {
+  brand_kit_id: string
+  source_image_url: string
+  template: PhotoshootTemplate
+  custom_prompt?: string
+  catalog_item_id?: string
+}) {
+  return apiFetch<{ data: { id: string; image_url: string; template: string; prompt_used: string } }>('/api/v1/brand/photoshoot', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ---- Animate ----
+
+export type MotionType = 'zoom_in' | 'pan_left' | 'pan_right' | 'zoom_out' | 'orbit' | 'pulse'
+
+export async function animateAsset(payload: {
+  brand_kit_id: string
+  source_image_url: string
+  motion_type: MotionType
+  duration?: '3' | '5'
+}) {
+  return apiFetch<{ data: { id: string; video_url: string; motion_type: string } }>('/api/v1/brand/animate', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ---- Brand Agent Chat ----
+
+export interface BrandAgentMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface BrandSuggestions {
+  name?: string
+  primary_color?: string
+  secondary_color?: string
+  font_heading?: string
+  font_body?: string
+  tagline?: string
+  tone?: string
+}
+
+export async function chatWithBrandAgent(payload: {
+  brand_kit_id?: string
+  messages: BrandAgentMessage[]
+  context?: {
+    name?: string
+    industry?: string
+    target_audience?: string
+    values?: string
+    existing_colors?: { primary?: string; secondary?: string }
+  }
+}) {
+  return apiFetch<{ reply: string; suggestions?: BrandSuggestions }>('/api/v1/brand/agent/chat', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ---- Background Editor ----
+
+export async function editBackground(payload: {
+  source_image_url: string
+  background_prompt: string
+  brand_kit_id?: string
+}) {
+  const res = await fetch('/api/brand-background', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Background edit failed' }))
+    throw new Error(err.error)
+  }
+  return res.json() as Promise<{ foreground_url: string; background_url: string; composite_prompt: string }>
+}
+
 // ---- Brand Asset Upload ----
 
 export async function uploadBrandLogo(file: File, userId: string): Promise<string> {

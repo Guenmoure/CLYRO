@@ -17,6 +17,10 @@ import { voicesRouter } from './routes/voices'
 import { checkoutRouter } from './routes/checkout'
 import { brandKitsRouter } from './routes/brand-kits'
 import { brandGenerateRouter } from './routes/brand-generate'
+import { brandCatalogRouter } from './routes/brand-catalog'
+import { brandCampaignsRouter } from './routes/brand-campaigns'
+import { brandPhotoshootRouter } from './routes/brand-photoshoot'
+import { brandAgentRouter } from './routes/brand-agent'
 import { autopilotRouter } from './routes/autopilot'
 import { mixAudioRouter } from './routes/mix-audio'
 import { generatePdfRouter } from './routes/generate-pdf'
@@ -184,6 +188,10 @@ app.use('/api/v1', voicesRouter)
 app.use('/api/v1', checkoutRouter)
 app.use('/api/v1', brandKitsRouter)
 app.use('/api/v1', brandGenerateRouter)
+app.use('/api/v1', brandCatalogRouter)
+app.use('/api/v1', brandCampaignsRouter)
+app.use('/api/v1', brandPhotoshootRouter)
+app.use('/api/v1', brandAgentRouter)
 app.use('/api/v1', autopilotRouter)
 app.use('/api/v1', mixAudioRouter)
 app.use('/api/v1', generatePdfRouter)
