@@ -474,6 +474,20 @@ export async function suggestBrandCampaigns(brandKitId: string, count?: number) 
   })
 }
 
+export async function addCreativeToBrandCampaign(campaignId: string) {
+  return apiFetch<{ data: { creative: BrandCreative } }>(`/api/v1/brand/campaigns/${campaignId}/creatives`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export async function animateBrandCreative(creativeId: string) {
+  return apiFetch<{ data: { video_id: string; status: string; credits_deducted: number } }>(
+    `/api/v1/brand/creatives/${creativeId}/animate`,
+    { method: 'POST', body: JSON.stringify({}) },
+  )
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'

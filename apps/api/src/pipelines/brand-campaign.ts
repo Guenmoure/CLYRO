@@ -29,6 +29,31 @@ import {
 } from '../services/claude'
 import { generateSocialAsset } from '../services/fal'
 
+// ── Helper : produit le brandConfig (DNA enrichi) pour un kit donné ────────
+// Réutilisé par le pipeline principal et par addCreativeToCampaign — évite
+// d'écrire le mapping kit row → BrandConfigForPrompt deux fois.
+async function loadBrandForPrompt(brandKitId: string, userId: string): Promise<(BrandConfigForPrompt & { name?: string }) | null> {
+  const { data: kit } = await supabaseAdmin
+    .from('brand_kits')
+    .select('name, primary_color, secondary_color, font_family, logo_url, tagline, brand_values, brand_aesthetic, brand_tone_of_voice, business_overview')
+    .eq('id', brandKitId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (!kit) return null
+  return {
+    name:                kit.name,
+    primary_color:       kit.primary_color,
+    secondary_color:     kit.secondary_color ?? undefined,
+    font_family:         kit.font_family ?? undefined,
+    logo_url:            kit.logo_url ?? undefined,
+    tagline:             kit.tagline ?? undefined,
+    brand_values:        kit.brand_values ?? [],
+    brand_aesthetic:     kit.brand_aesthetic ?? [],
+    brand_tone_of_voice: kit.brand_tone_of_voice ?? [],
+    business_overview:   kit.business_overview ?? undefined,
+  }
+}
+
 export interface BrandCampaignPipelineParams {
   campaignId:   string
   userId:       string
@@ -105,6 +130,8 @@ export async function runBrandCampaignPipeline(
       brand_tone_of_voice: brandKit.brand_tone_of_voice ?? [],
       business_overview:   brandKit.business_overview ?? undefined,
     }
+    // Note : loadBrandForPrompt fait exactement ce mapping ; ici on l'inline
+    // pour éviter un second hit DB (on a déjà fetché kit en haut).
 
     const brief = await generateCampaignBrief({
       prompt,
@@ -227,4 +254,113 @@ export async function runBrandCampaignPipeline(
       .eq('id', campaignId)
       .then(() => null, () => null)
   }
+}
+
+// ── Phase 3.3 — addCreativeToCampaign : génère UNE créative supplémentaire ──
+// Utilisée par POST /brand/campaigns/:id/creatives (« + Add Creative » côté
+// front). Run INLINE — bloque ~15-20 s. Le client affiche un loader sur le
+// bouton ; à la fin la nouvelle créative est insérée dans la galerie.
+
+export interface AddCreativeResult {
+  creativeId: string
+  imageUrl:   string
+  position:   number
+}
+
+export async function addCreativeToCampaign(params: {
+  campaignId: string
+  userId:     string
+}): Promise<AddCreativeResult> {
+  const { campaignId, userId } = params
+
+  // Charge la campagne + valide ownership
+  const { data: campaign } = await supabaseAdmin
+    .from('brand_campaigns')
+    .select('id, brand_kit_id, prompt, aspect_ratio, product_id')
+    .eq('id', campaignId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (!campaign) throw new Error('Campaign not found')
+
+  // Brand context
+  const brandForPrompt = await loadBrandForPrompt(campaign.brand_kit_id, userId)
+  if (!brandForPrompt) throw new Error('Brand kit not found')
+
+  // Produit éventuel
+  let product: CampaignBriefInput['product'] = null
+  if (campaign.product_id) {
+    const { data } = await supabaseAdmin
+      .from('brand_catalog_items')
+      .select('name, description, category')
+      .eq('id', campaign.product_id)
+      .eq('user_id', userId)
+      .maybeSingle()
+    product = data ?? null
+  }
+
+  // Demande à Claude UNE créative
+  const brief = await generateCampaignBrief({
+    prompt:   campaign.prompt,
+    brandKit: brandForPrompt,
+    product,
+    count:    1,
+  })
+  const c = brief.creatives[0]
+  if (!c) throw new Error('Claude returned no creative')
+
+  // Génère l'image
+  const platform = campaign.aspect_ratio === '9:16' ? 'instagram_story' : 'instagram_post'
+  const brandColors = {
+    primary_color:   brandForPrompt.primary_color,
+    secondary_color: brandForPrompt.secondary_color,
+  }
+  const { imageUrl } = await generateSocialAsset(c.visual_prompt, platform, brandColors)
+
+  // Position = max(existing) + 1
+  const { data: positions } = await supabaseAdmin
+    .from('brand_creatives')
+    .select('position')
+    .eq('campaign_id', campaignId)
+    .order('position', { ascending: false })
+    .limit(1)
+  const nextPosition = positions && positions.length > 0 ? (positions[0].position ?? 0) + 1 : 0
+
+  // Insère la créative
+  const { data: inserted, error: insertErr } = await supabaseAdmin
+    .from('brand_creatives')
+    .insert({
+      campaign_id:      campaignId,
+      user_id:          userId,
+      image_url:        imageUrl,
+      prompt:           c.visual_prompt,
+      header_text:      c.header,
+      description_text: c.description,
+      cta_text:         c.cta,
+      current_version:  1,
+      position:         nextPosition,
+    })
+    .select('id')
+    .single()
+  if (insertErr || !inserted) throw new Error(`Creative insert failed: ${insertErr?.message ?? 'unknown'}`)
+
+  // Snapshot V1
+  await supabaseAdmin
+    .from('brand_creative_versions')
+    .insert({
+      creative_id: inserted.id,
+      user_id:     userId,
+      version_num: 1,
+      snapshot: {
+        image_url:        imageUrl,
+        prompt:           c.visual_prompt,
+        header_text:      c.header,
+        description_text: c.description,
+        cta_text:         c.cta,
+        blocks_visible:   { header: true, description: true, cta: true },
+      },
+    })
+    .then(() => null, () => null)
+
+  logger.info({ campaignId, creativeId: inserted.id }, 'Single creative added to campaign')
+  return { creativeId: inserted.id, imageUrl, position: nextPosition }
 }

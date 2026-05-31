@@ -5,8 +5,11 @@ import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { generateSocialAsset } from '../services/fal'
 import { deductCredits, refundCredits, InsufficientCreditsError } from '../services/credits'
-import { runBrandCampaignPipeline } from '../pipelines/brand-campaign'
+import { runBrandCampaignPipeline, addCreativeToCampaign } from '../pipelines/brand-campaign'
 import { generateCampaignSuggestions, type BrandConfigForPrompt } from '../services/claude'
+import { creditCostForVideo } from '../services/credits'
+import { renderQueue, isRedisReady } from '../queues/renderQueue'
+import { runMotionAuto } from '../pipelines/motion-router'
 import Anthropic from '@anthropic-ai/sdk'
 
 export const brandCampaignsRouter = Router()
@@ -326,6 +329,240 @@ brandCampaignsRouter.put('/brand/creatives/:id', authMiddleware, async (req, res
     res.json({ data })
   } catch (err) {
     logger.error({ err, id }, 'brand/creatives PUT error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * POST /api/v1/brand/campaigns/:id/creatives
+ * Ajoute UNE créative supplémentaire à une campagne existante (bouton
+ * « + Add Creative » côté front). Exécute le mini-pipeline INLINE — la
+ * requête bloque ~15-20 s (Claude + fal.ai). Le front affiche un loader
+ * sur le bouton.
+ */
+brandCampaignsRouter.post('/brand/campaigns/:id/creatives', authMiddleware, async (req, res) => {
+  // Normalise vers string — la signature stricte de addCreativeToCampaign
+  // refuse l'union string | string[] qu'Express renvoie pour req.params.
+  const id = String(req.params.id ?? '')
+  try {
+    // Ownership check + récupère brand_kit_id pour le contexte
+    const { data: campaign } = await supabaseAdmin
+      .from('brand_campaigns')
+      .select('id, status')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!campaign) {
+      res.status(404).json({ error: 'Campaign not found', code: 'NOT_FOUND' })
+      return
+    }
+    if (campaign.status === 'generating') {
+      res.status(409).json({ error: 'Campaign still generating, please wait', code: 'CAMPAIGN_BUSY' })
+      return
+    }
+
+    // Déduit 1 crédit AVANT l'appel upstream (cf. .claude/rules/security.md
+    // § cost-amplification). Refund en cas d'erreur.
+    try {
+      await deductCredits(req.userId, CREDIT_PER_CREATIVE, `brand_campaign:${id}:add_creative`, {
+        kind: 'brand_campaign_add_creative',
+      })
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        res.status(402).json({
+          error: 'Insufficient credits', code: 'INSUFFICIENT_CREDITS',
+          required: err.required, available: err.available,
+        })
+        return
+      }
+      throw err
+    }
+
+    try {
+      const result = await addCreativeToCampaign({ campaignId: id, userId: req.userId })
+      // Renvoie la nouvelle créative complète pour que le front l'insère
+      // directement dans son state sans refetch.
+      const { data: creative } = await supabaseAdmin
+        .from('brand_creatives')
+        .select('*')
+        .eq('id', result.creativeId)
+        .single()
+      res.status(201).json({ data: { creative } })
+    } catch (err) {
+      // Refund sur échec de génération (Claude ou fal.ai)
+      await refundCredits(req.userId, CREDIT_PER_CREATIVE, `brand_campaign:${id}:add_creative`, { reason: 'generation_failed' })
+        .catch(() => null)
+      throw err
+    }
+  } catch (err) {
+    logger.error({ err, campaignId: id }, 'brand/campaigns add creative error')
+    res.status(500).json({ error: 'Failed to add creative', code: 'GENERATION_ERROR' })
+  }
+})
+
+/**
+ * POST /api/v1/brand/creatives/:id/animate
+ * Pont Brand Kit → Motion : la créative devient le brief d'une vidéo
+ * motion design. V1 simple — pas d'injection de l'image en scène cover,
+ * juste un brief composé depuis header/description/cta qui part dans le
+ * pipeline motion_auto existant. Retourne `video_id` ; le front
+ * redirige vers le player Motion.
+ */
+brandCampaignsRouter.post('/brand/creatives/:id/animate', authMiddleware, async (req, res) => {
+  const { id } = req.params
+  try {
+    // Charge la créative + la campagne parente
+    const { data: creative } = await supabaseAdmin
+      .from('brand_creatives')
+      .select('id, campaign_id, header_text, description_text, cta_text, image_url')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!creative) {
+      res.status(404).json({ error: 'Creative not found', code: 'NOT_FOUND' })
+      return
+    }
+    const { data: campaign } = await supabaseAdmin
+      .from('brand_campaigns')
+      .select('id, brand_kit_id, title, description, aspect_ratio')
+      .eq('id', creative.campaign_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!campaign) {
+      res.status(404).json({ error: 'Campaign not found', code: 'NOT_FOUND' })
+      return
+    }
+    const { data: kit } = await supabaseAdmin
+      .from('brand_kits')
+      .select('primary_color, secondary_color, font_family, logo_url')
+      .eq('id', campaign.brand_kit_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!kit) {
+      res.status(404).json({ error: 'Brand kit not found', code: 'NOT_FOUND' })
+      return
+    }
+
+    // Aspect ratio mapping vers Motion (4:5 retombe sur 9:16 — Motion ne
+    // supporte pas 4:5)
+    const motionFormat: '9:16' | '1:1' | '16:9' =
+      campaign.aspect_ratio === '1:1' ? '1:1' :
+      campaign.aspect_ratio === '4:5' ? '9:16' : '9:16'
+
+    // Brief composé
+    const lines: string[] = []
+    lines.push(`Promote: ${campaign.title}`)
+    if (campaign.description) lines.push(campaign.description)
+    if (creative.header_text)      lines.push(`Hero message: "${creative.header_text}"`)
+    if (creative.description_text) lines.push(creative.description_text)
+    if (creative.cta_text)         lines.push(`Call to action: ${creative.cta_text}`)
+    const brief = lines.join('\n').slice(0, 1900)
+    const title = (campaign.title || 'Brand animation').slice(0, 200)
+    const durationSeconds = 6
+    const creditCost = creditCostForVideo(durationSeconds, 'fast')
+    const motionStyle = 'corporate'
+
+    // Crée la ligne videos
+    const { data: video, error: insertErr } = await supabaseAdmin
+      .from('videos')
+      .insert({
+        user_id: req.userId,
+        module:  'motion',
+        style:   motionStyle,
+        title,
+        status:  'generating',
+        metadata: {
+          brief,
+          format: motionFormat,
+          duration: '6s',
+          brand_config: kit,
+          progress: 0,
+          source_creative_id: creative.id,
+          source_campaign_id: campaign.id,
+        },
+      })
+      .select('id')
+      .single()
+    if (insertErr || !video) {
+      logger.error({ err: insertErr }, 'animate video insert failed')
+      res.status(500).json({ error: 'Failed to create video', code: 'DB_ERROR' })
+      return
+    }
+
+    // Job data motion_auto — mêmes champs que la route /motion classique
+    const jobData = {
+      type: 'motion_auto' as const,
+      videoId:       video.id,
+      userId:        req.userId,
+      userEmail:     req.userEmail,
+      title,
+      brief,
+      style:         motionStyle,
+      format:        motionFormat,
+      duration:      '6s',
+      brandConfig:   { ...kit, style: motionStyle },
+      voiceId:       process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
+      creditCost,
+      brandKitId:    campaign.brand_kit_id,
+    }
+
+    let enqueued = false
+    if (renderQueue && isRedisReady()) {
+      try {
+        await renderQueue.add('motion_auto', jobData)
+        enqueued = true
+      } catch (err) {
+        logger.warn({ err, videoId: video.id }, 'Animate enqueue failed')
+      }
+    }
+    if (!enqueued) {
+      // Fallback inline (cf. /motion route — accepté si ALLOW_INLINE_FALLBACK=true)
+      if (process.env.ALLOW_INLINE_FALLBACK !== 'true') {
+        await supabaseAdmin
+          .from('videos')
+          .update({ status: 'error', metadata: { error_message: 'Worker unavailable', error_at: new Date().toISOString() } })
+          .eq('id', video.id)
+        res.status(503).json({ error: 'Worker unavailable', code: 'WORKER_UNAVAILABLE', video_id: video.id })
+        return
+      }
+      runMotionAuto(jobData).catch(async (err: unknown) => {
+        logger.error({ err, videoId: video.id }, 'Animate inline pipeline failed')
+        await supabaseAdmin
+          .from('videos')
+          .update({ status: 'error', metadata: { error_message: err instanceof Error ? err.message : String(err), error_at: new Date().toISOString() } })
+          .eq('id', video.id)
+          .then(() => null, () => null)
+      })
+    }
+
+    // Déduction crédits
+    try {
+      await deductCredits(req.userId, creditCost, `video:${video.id}`, {
+        kind: 'motion',
+        source: 'brand_animate',
+        creative_id: creative.id,
+      })
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        // Mark video as error (le worker tournera quand même si on était
+        // déjà enqueued — c'est le risque connu, identique au /motion route).
+        await supabaseAdmin.from('videos').update({
+          status: 'error',
+          metadata: { error_message: 'Insufficient credits', error_at: new Date().toISOString() },
+        }).eq('id', video.id).then(() => null, () => null)
+        res.status(402).json({
+          error: 'Insufficient credits', code: 'INSUFFICIENT_CREDITS',
+          required: err.required, available: err.available, video_id: video.id,
+        })
+        return
+      }
+      throw err
+    }
+
+    logger.info({ userId: req.userId, videoId: video.id, creativeId: creative.id }, 'Brand creative animated → motion video launched')
+    res.status(202).json({ data: { video_id: video.id, status: 'generating', credits_deducted: creditCost } })
+  } catch (err) {
+    logger.error({ err, creativeId: id }, 'brand/creatives/:id/animate error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
   }
 })
