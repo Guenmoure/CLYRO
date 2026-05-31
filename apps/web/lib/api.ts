@@ -350,6 +350,74 @@ export async function deleteBrandKit(id: string) {
   })
 }
 
+// ---- Brand Catalog (Phase 2) ----
+
+import type { CatalogItem as SharedCatalogItem, CatalogScrapeDraft, BrandMediaItem } from '@clyro/shared'
+
+export type BrandCatalogItem = SharedCatalogItem
+export type { CatalogScrapeDraft, BrandMediaItem }
+
+export async function listBrandCatalog(brandKitId: string) {
+  return apiFetch<{ data: SharedCatalogItem[] }>(`/api/v1/brand/${brandKitId}/catalog`)
+}
+
+export async function createBrandCatalogItem(payload: {
+  brand_kit_id: string
+  name: string
+  image_url: string
+  description?: string
+  category?: string
+}) {
+  return apiFetch<{ data: SharedCatalogItem }>('/api/v1/brand/catalog', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function scrapeBrandCatalogFromUrl(payload: { brand_kit_id: string; url: string }) {
+  return apiFetch<{ data: CatalogScrapeDraft }>('/api/v1/brand/catalog/from-url', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandCatalogItem(itemId: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/catalog/${itemId}`, { method: 'DELETE' })
+}
+
+// ---- Brand Media Library (Phase 2) ----
+
+export async function listBrandMedia(brandKitId: string) {
+  return apiFetch<{ data: BrandMediaItem[] }>(`/api/v1/brand/${brandKitId}/media`)
+}
+
+export async function registerBrandMedia(payload: {
+  brand_kit_id: string
+  storage_path: string
+  filename: string
+  mime_type: BrandMediaItem['mime_type']
+  size_bytes: number
+  tags?: string[]
+  width?: number
+  height?: number
+}) {
+  return apiFetch<{ data: BrandMediaItem }>('/api/v1/brand/media/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function importBrandMediaFromUrl(payload: { brand_kit_id: string; url: string; tags?: string[] }) {
+  return apiFetch<{ data: BrandMediaItem }>('/api/v1/brand/media/from-url', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandMedia(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/media/${id}`, { method: 'DELETE' })
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'

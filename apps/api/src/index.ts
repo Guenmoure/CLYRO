@@ -18,6 +18,7 @@ import { checkoutRouter } from './routes/checkout'
 import { brandKitsRouter } from './routes/brand-kits'
 import { brandGenerateRouter } from './routes/brand-generate'
 import { brandCatalogRouter } from './routes/brand-catalog'
+import { brandMediaRouter } from './routes/brand-media'
 import { brandCampaignsRouter } from './routes/brand-campaigns'
 import { brandPhotoshootRouter } from './routes/brand-photoshoot'
 import { brandAgentRouter } from './routes/brand-agent'
@@ -189,6 +190,7 @@ app.use('/api/v1', checkoutRouter)
 app.use('/api/v1', brandKitsRouter)
 app.use('/api/v1', brandGenerateRouter)
 app.use('/api/v1', brandCatalogRouter)
+app.use('/api/v1', brandMediaRouter)
 app.use('/api/v1', brandCampaignsRouter)
 app.use('/api/v1', brandPhotoshootRouter)
 app.use('/api/v1', brandAgentRouter)
