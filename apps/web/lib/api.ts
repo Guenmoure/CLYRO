@@ -418,6 +418,49 @@ export async function deleteBrandMedia(id: string) {
   return apiFetch<{ success: boolean }>(`/api/v1/brand/media/${id}`, { method: 'DELETE' })
 }
 
+// ---- Brand Campaigns persistant (Phase 3.1) ----
+
+import type {
+  BrandCampaign,
+  BrandCreative,
+  CampaignAspectRatio,
+  CampaignWithCreatives,
+  CreateCampaignPayload,
+  UpdateCreativePayload,
+} from '@clyro/shared'
+
+export type { BrandCampaign, BrandCreative, CampaignAspectRatio, CampaignWithCreatives, CreateCampaignPayload, UpdateCreativePayload }
+
+export async function listBrandCampaigns(brandKitId: string) {
+  return apiFetch<{ data: BrandCampaign[] }>(`/api/v1/brand/campaigns?brand_kit_id=${encodeURIComponent(brandKitId)}`)
+}
+
+export async function getBrandCampaign(id: string) {
+  return apiFetch<{ data: CampaignWithCreatives }>(`/api/v1/brand/campaigns/${id}`)
+}
+
+export async function createBrandCampaign(payload: CreateCampaignPayload) {
+  return apiFetch<{ data: { campaign: BrandCampaign } }>('/api/v1/brand/campaigns', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandCampaign(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/campaigns/${id}`, { method: 'DELETE' })
+}
+
+export async function updateBrandCreative(id: string, payload: UpdateCreativePayload) {
+  return apiFetch<{ data: BrandCreative }>(`/api/v1/brand/creatives/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandCreative(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/creatives/${id}`, { method: 'DELETE' })
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'

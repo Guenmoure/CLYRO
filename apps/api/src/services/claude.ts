@@ -12,7 +12,7 @@ import {
   getStyleLockSuffix,
   applyAntiHallucination,
 } from '@clyro/shared'
-import type { DetectedLanguage } from '../lib/detect-language'
+import { detectLanguage, type DetectedLanguage } from '../lib/detect-language'
 
 // Helper used by every prompt: inject an unambiguous "output language"
 // header at the very top of the user prompt. Empirically, when the rest
@@ -1096,6 +1096,166 @@ Reply ONLY with this valid JSON:
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// ── Brand Campaign brief (Phase 3.1 du portage Pomelli) ─────────────────────
+// Génère un brief structuré pour une campagne : titre, description, et 3
+// créatives (image prompt + header + description + CTA). Le DNA du Brand
+// Kit guide tout : tagline, ton, valeurs, esthétique. Plus le DNA est
+// riche, plus les créatives sont vraiment on-brand.
+
+export interface CampaignBriefInput {
+  /** Prompt brut de l'utilisateur (ce qu'il a écrit dans la box). */
+  prompt:    string
+  brandKit:  BrandConfigForPrompt & { name?: string }
+  product?:  { name: string; description?: string | null; category?: string | null } | null
+  /** Description courte d'assets de référence (max 5 prises en compte). */
+  assetHints?: string[]
+  /** Nombre de créatives à générer. Défaut 3 — limite haute 6. */
+  count?:    number
+}
+
+export interface CampaignCreativeBrief {
+  visual_prompt: string
+  header:        string
+  description:   string
+  cta:           string
+}
+
+export interface CampaignBriefResult {
+  campaign_title:       string
+  campaign_description: string
+  creatives:            CampaignCreativeBrief[]
+}
+
+/**
+ * Demande à Claude un brief structuré pour la campagne. Renvoie 3 (ou N)
+ * créatives prêtes à être envoyées à fal.ai pour la génération d'image,
+ * + un titre / description pour la campagne elle-même.
+ *
+ * Retry MAX_RETRIES sur erreur de parsing JSON, puis throw — le pipeline
+ * appelant capture et passe la campagne en `status='error'`.
+ */
+export async function generateCampaignBrief(
+  input: CampaignBriefInput,
+): Promise<CampaignBriefResult> {
+  const count = Math.max(1, Math.min(6, input.count ?? 3))
+  const lang: DetectedLanguage = detectLanguage(input.prompt)
+
+  const dnaLines = buildBrandDnaPromptLines(input.brandKit)
+  const brandName = input.brandKit.name ?? 'the brand'
+  const colorLine = `Primary brand color: ${input.brandKit.primary_color}${
+    input.brandKit.secondary_color ? `, secondary ${input.brandKit.secondary_color}` : ''
+  }`
+
+  const productBlock = input.product
+    ? `\nFEATURED PRODUCT:\n- Name: ${input.product.name}${
+        input.product.description ? `\n- Description: ${input.product.description}` : ''
+      }${input.product.category ? `\n- Category: ${input.product.category}` : ''}\nEvery creative MUST relate to this product.`
+    : ''
+
+  const assetBlock = input.assetHints && input.assetHints.length > 0
+    ? `\nREFERENCE ASSETS (visual mood hints):\n${input.assetHints.slice(0, 5).map((h) => `- ${h}`).join('\n')}`
+    : ''
+
+  const systemPrompt = `You are a senior creative director crafting on-brand social media campaign briefs. You reply ONLY with valid JSON. No markdown, no comments.`
+
+  const userPrompt = `Build a campaign brief for "${brandName}".
+
+USER PROMPT:
+"""
+${input.prompt}
+"""
+
+BRAND CONTEXT:
+${colorLine}
+${dnaLines.join('\n')}${productBlock}${assetBlock}
+
+Produce exactly ${count} creative variations. Each must be visually distinct
+yet on-brand. Use the brand's tone of voice in every copy field — header,
+description, CTA. Honor the brand aesthetic in every visual_prompt.
+
+Rules:
+1. LANGUAGE: every text-facing field (campaign_title, campaign_description,
+   header, description, cta) MUST be written in ${lang.name}.
+2. The visual_prompt is a detailed instruction for an AI image generator
+   (FLUX-class). Always in English, very descriptive (composition, palette,
+   light, mood, focal point, style).
+3. header is ≤ 60 chars, description is ≤ 140 chars, cta is ≤ 30 chars.
+4. campaign_title ≤ 60 chars, campaign_description 1-2 sentences ≤ 240 chars.
+5. NEVER mention CLYRO or any other agency in any field — this is the
+   brand's campaign, not an ad for the platform.
+
+Reply ONLY with this valid JSON:
+{
+  "campaign_title": "...",
+  "campaign_description": "...",
+  "creatives": [
+    { "visual_prompt": "...", "header": "...", "description": "...", "cta": "..." }
+  ]
+}`
+
+  let lastError: Error | null = null
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const startTime = Date.now()
+      const message = await client.messages.create({
+        model: MODEL,
+        max_tokens: 3000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      })
+
+      logger.info(
+        { model: MODEL, inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens, durationMs: Date.now() - startTime, attempt, creativeCount: count },
+        'Claude campaign brief generated',
+      )
+
+      const content = message.content[0]
+      if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
+
+      const jsonText = content.text
+        .replace(/^```json\s*/m, '')
+        .replace(/^```\s*/m, '')
+        .replace(/\s*```$/m, '')
+        .trim()
+
+      const parsed = JSON.parse(jsonText) as Partial<CampaignBriefResult>
+      if (!parsed.campaign_title || !parsed.campaign_description || !Array.isArray(parsed.creatives)) {
+        throw new Error('Invalid campaign brief shape')
+      }
+
+      // Normalise + cap : tronque chaque texte aux limites prévues côté DB
+      // pour éviter qu'un dépassement Claude fasse échouer l'insert.
+      const creatives: CampaignCreativeBrief[] = parsed.creatives
+        .slice(0, count)
+        .filter((c): c is CampaignCreativeBrief =>
+          !!c && typeof c.visual_prompt === 'string' && typeof c.header === 'string' &&
+          typeof c.description === 'string' && typeof c.cta === 'string',
+        )
+        .map((c) => ({
+          visual_prompt: c.visual_prompt.trim().slice(0, 1500),
+          header:        c.header.trim().slice(0, 200),
+          description:   c.description.trim().slice(0, 500),
+          cta:           c.cta.trim().slice(0, 60),
+        }))
+
+      if (creatives.length === 0) throw new Error('Empty creatives array')
+
+      return {
+        campaign_title:       parsed.campaign_title.trim().slice(0, 160),
+        campaign_description: parsed.campaign_description.trim().slice(0, 1000),
+        creatives,
+      }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err))
+      logger.warn({ attempt, maxRetries: MAX_RETRIES, error: lastError.message }, 'Claude campaign brief attempt failed, retrying')
+      if (attempt < MAX_RETRIES) await sleep(RETRY_DELAY_MS * attempt)
+    }
+  }
+
+  throw new Error(`Campaign brief generation failed: ${lastError?.message ?? 'Unknown error'}`)
 }
 
 // ── WPM / Script duration check ────────────────────────────────────────────────
