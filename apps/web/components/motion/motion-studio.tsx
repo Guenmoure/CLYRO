@@ -756,7 +756,7 @@ export function MotionStudio({
   // ── Storyboard generation ──────────────────────────────────────────────────
 
   const generateStoryboard = useCallback(async () => {
-    if (!brief.trim() || !script.trim()) return
+    if (!brief.trim()) return
     setGenLoading(true)
     setGenError(null)
     try {
@@ -971,8 +971,8 @@ export function MotionStudio({
               <div className="rounded-2xl border border-border bg-muted overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
                   <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">VOICEOVER SCRIPT</p>
-                  <span className="text-red-400 text-[10px]">·</span>
-                  <span className="font-mono text-[10px] text-[--text-muted] opacity-60">The exact text that will be split into scenes</span>
+                  <span className="font-mono text-[10px] text-[--text-muted] opacity-60">(optionnel)</span>
+                  <span className="font-mono text-[10px] text-[--text-muted] opacity-60">— The text that will be split into scenes</span>
                 </div>
                 <textarea
                   value={script}
@@ -1086,7 +1086,7 @@ export function MotionStudio({
               <button
                 type="button"
                 onClick={generateStoryboard}
-                disabled={!brief.trim() || script.trim().length < 20 || genLoading}
+                disabled={!brief.trim() || genLoading}
                 className="w-full flex items-center justify-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-5 py-3.5 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
               >
                 {genLoading
