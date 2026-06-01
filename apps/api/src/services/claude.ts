@@ -1098,6 +1098,89 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+// ── Fix Layout vision (Phase 3.4 V2.5) ──────────────────────────────────────
+// Demande à Claude d'analyser l'image d'une créative et de proposer de
+// meilleures positions pour les blocs visibles afin d'éviter les zones
+// chargées (visages, ciels uniformes, contrastes faibles). Multimodal :
+// envoie l'URL d'image + un prompt structuré, attend des coords en %.
+
+export interface FixLayoutPositions {
+  header?:      { x: number; y: number }
+  description?: { x: number; y: number }
+  cta?:         { x: number; y: number }
+}
+
+export async function fixCreativeLayout(input: {
+  imageUrl:    string
+  visible:     { header: boolean; description: boolean; cta: boolean }
+  current?:    FixLayoutPositions
+}): Promise<FixLayoutPositions> {
+  const askBlocks = Object.entries(input.visible)
+    .filter(([, on]) => on)
+    .map(([k]) => k)
+  if (askBlocks.length === 0) return {}
+
+  const systemPrompt = `You are a senior art director optimizing the layout of social-media creative text overlays. You reply ONLY with valid JSON.`
+  const userPrompt = `Examine the image and suggest where to place these text blocks so they are LEGIBLE and DON'T cover faces, logos in the picture, or busy/high-contrast areas.
+
+VISIBLE BLOCKS: ${askBlocks.join(', ')}
+${input.current ? `CURRENT POSITIONS (for context): ${JSON.stringify(input.current)}` : ''}
+
+Coordinates are the CENTER of each block, in percent of the image (x=0 left, x=100 right, y=0 top, y=100 bottom). Keep each x,y within [5..95] so blocks stay inside the frame.
+
+Reply ONLY with this JSON:
+{
+${askBlocks.map((k) => `  "${k}": { "x": <num>, "y": <num> }`).join(',\n')}
+}`
+
+  try {
+    // L'Anthropic SDK ne supporte que source: 'base64' (pas 'url'). On
+    // télécharge l'image côté serveur (plafond 5 MB) puis on l'encode.
+    const imgRes = await fetch(input.imageUrl)
+    if (!imgRes.ok) throw new Error(`Image fetch ${imgRes.status}`)
+    const buf = Buffer.from(await imgRes.arrayBuffer())
+    if (buf.byteLength > 5 * 1024 * 1024) throw new Error('Image too large for vision call')
+    const ctype = (imgRes.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim().toLowerCase()
+    const mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' =
+      ctype === 'image/png'  ? 'image/png'  :
+      ctype === 'image/webp' ? 'image/webp' :
+      ctype === 'image/gif'  ? 'image/gif'  : 'image/jpeg'
+
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 200,
+      system: systemPrompt,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: buf.toString('base64') } },
+          { type: 'text',  text:   userPrompt },
+        ],
+      }],
+    })
+    const content = message.content[0]
+    if (content.type !== 'text') return {}
+    const jsonText = content.text
+      .replace(/^```json\s*/m, '')
+      .replace(/^```\s*/m, '')
+      .replace(/\s*```$/m, '')
+      .trim()
+    const parsed = JSON.parse(jsonText) as Record<string, unknown>
+    const out: FixLayoutPositions = {}
+    for (const key of askBlocks as Array<'header' | 'description' | 'cta'>) {
+      const v = parsed[key] as { x?: unknown; y?: unknown } | undefined
+      if (!v) continue
+      const x = typeof v.x === 'number' ? Math.max(0, Math.min(100, v.x)) : null
+      const y = typeof v.y === 'number' ? Math.max(0, Math.min(100, v.y)) : null
+      if (x !== null && y !== null) out[key] = { x, y }
+    }
+    return out
+  } catch (err) {
+    logger.warn({ err: err instanceof Error ? err.message : String(err) }, 'Fix layout vision call failed')
+    return {}
+  }
+}
+
 // ── CTA variants (Phase 3.4 V2) ──────────────────────────────────────────────
 // Petit appel Claude (max_tokens 300) qui propose 3 CTA on-brand depuis le
 // contexte d'une créative et le DNA. Pas de retry — l'utilisateur peut

@@ -18,7 +18,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, Loader2, AlertCircle, Eye, EyeOff, Check, Save, History, Palette,
-  Sparkles, ImageIcon as ImageIconLucide, X,
+  Sparkles, ImageIcon as ImageIconLucide, X, Download, Wand2, Pencil,
 } from 'lucide-react'
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { DraggableBlock } from '@/components/brand/DraggableBlock'
@@ -31,6 +31,8 @@ import {
   saveBrandCreativeVersion,
   restoreBrandCreativeVersion,
   generateCtaVariants,
+  regenerateBrandCreativeImage,
+  fixBrandCreativeLayout,
   listBrandMedia,
   type BrandCreative,
   type BrandCampaign,
@@ -41,6 +43,7 @@ import type {
   BrandKit, CreativeBlocksVisible, CampaignAspectRatio,
   CreativeBlockPositions, CreativeBlockSizes, BlockPosition,
 } from '@clyro/shared'
+import { downloadCreativeAsPng } from '@/lib/canvas-creative'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -83,6 +86,10 @@ export default function CreativeEditorPage() {
   const [ctaVariants, setCtaVariants] = useState<string[]>([])
   const [ctaLoading, setCtaLoading] = useState(false)
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
+  const [editPromptOpen, setEditPromptOpen] = useState(false)
+  const [regenLoading, setRegenLoading] = useState(false)
+  const [fixLayoutLoading, setFixLayoutLoading] = useState(false)
+  const [downloadLoading, setDownloadLoading] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -219,6 +226,55 @@ export default function CreativeEditorPage() {
     setMediaPickerOpen(false)
   }
 
+  async function handleRegenerateImage(prompt: string) {
+    if (regenLoading) return
+    setRegenLoading(true)
+    try {
+      const res = await regenerateBrandCreativeImage(creativeId, prompt)
+      setCreative(res.data)
+      setEditPromptOpen(false)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Regeneration failed')
+    } finally {
+      setRegenLoading(false)
+    }
+  }
+
+  async function handleFixLayout() {
+    if (fixLayoutLoading) return
+    setFixLayoutLoading(true)
+    try {
+      const res = await fixBrandCreativeLayout(creativeId)
+      setCreative(res.data)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Fix layout failed')
+    } finally {
+      setFixLayoutLoading(false)
+    }
+  }
+
+  async function handleDownload() {
+    if (downloadLoading || !creative || !campaign) return
+    setDownloadLoading(true)
+    try {
+      const previewWidth = ASPECT_PREVIEW[campaign.aspect_ratio].width
+      const safeTitle = campaign.title.replace(/[^a-z0-9-]+/gi, '_').slice(0, 40) || 'creative'
+      await downloadCreativeAsPng({
+        creative,
+        aspectRatio: campaign.aspect_ratio,
+        positions:   positions,
+        sizes:       sizes,
+        baseFontPx:  BASE_FONT_PX,
+        previewWidth,
+        filename:    `${safeTitle}-v${creative.current_version}.png`,
+      })
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Download failed')
+    } finally {
+      setDownloadLoading(false)
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -265,10 +321,35 @@ export default function CreativeEditorPage() {
           >
             <ArrowLeft size={12} /> Back to {campaign.title.slice(0, 40)}
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">
               v{creative.current_version}
             </span>
+            <button
+              type="button"
+              onClick={handleFixLayout}
+              disabled={fixLayoutLoading}
+              title="Ask Claude to reposition text overlay"
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted',
+                fixLayoutLoading && 'opacity-50 cursor-not-allowed',
+              )}
+            >
+              {fixLayoutLoading ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+              Fix layout
+            </button>
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={downloadLoading}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted',
+                downloadLoading && 'opacity-50 cursor-not-allowed',
+              )}
+            >
+              {downloadLoading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+              Download
+            </button>
             <button
               type="button"
               onClick={handleSaveVersion}
@@ -300,7 +381,7 @@ export default function CreativeEditorPage() {
 
           {/* Block editor — col 7-9 */}
           <section className="col-span-12 lg:col-span-4 space-y-3">
-            <BlockSection title="Image" hint="Swap from your media library.">
+            <BlockSection title="Image" hint="Swap from library or regenerate with a new prompt.">
               <div className="flex items-center gap-3 rounded-xl border border-border bg-muted p-2 relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={creative.image_url} alt="" className="w-16 h-16 rounded-lg object-cover border border-border" />
@@ -308,13 +389,22 @@ export default function CreativeEditorPage() {
                   <p className="font-mono text-[10px] text-[--text-muted] truncate" title={creative.prompt ?? ''}>
                     {creative.prompt ?? 'No prompt recorded'}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setMediaPickerOpen(true)}
-                    className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[10px] text-foreground hover:bg-muted"
-                  >
-                    <ImageIconLucide size={11} /> Swap
-                  </button>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setMediaPickerOpen(true)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[10px] text-foreground hover:bg-muted"
+                    >
+                      <ImageIconLucide size={11} /> Swap
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditPromptOpen(true)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[10px] text-foreground hover:bg-muted"
+                    >
+                      <Pencil size={11} /> Edit prompt
+                    </button>
+                  </div>
                 </div>
               </div>
             </BlockSection>
@@ -416,7 +506,76 @@ export default function CreativeEditorPage() {
           onClose={() => setMediaPickerOpen(false)}
         />
       )}
+
+      {/* Edit prompt modal */}
+      {editPromptOpen && (
+        <EditPromptModal
+          initial={creative.prompt ?? ''}
+          loading={regenLoading}
+          onRegenerate={handleRegenerateImage}
+          onClose={() => setEditPromptOpen(false)}
+        />
+      )}
     </BrandKitLayout>
+  )
+}
+
+// ── Edit prompt modal ──────────────────────────────────────────────────────
+
+function EditPromptModal({
+  initial, loading, onRegenerate, onClose,
+}: {
+  initial:      string
+  loading:      boolean
+  onRegenerate: (prompt: string) => void | Promise<void>
+  onClose:      () => void
+}) {
+  const [prompt, setPrompt] = useState(initial)
+  const valid = prompt.trim().length >= 10
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h3 className="font-display text-base font-semibold text-foreground">Edit image prompt</h3>
+          <button type="button" onClick={onClose} aria-label="Close" disabled={loading} className="text-[--text-muted] hover:text-foreground disabled:opacity-50">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="p-5 space-y-3">
+          <p className="font-body text-xs text-[--text-muted]">
+            Rewrite the visual instructions. The brand palette is applied automatically. Costs 1 credit.
+          </p>
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value.slice(0, 1500))}
+            rows={6}
+            disabled={loading}
+            placeholder="Describe the visual you want…"
+            className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none"
+          />
+          <p className="font-mono text-[10px] text-[--text-muted] text-right">
+            {prompt.trim().length}/1500 · minimum 10 chars
+          </p>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={onClose} disabled={loading} className="font-mono text-xs text-[--text-muted] hover:text-foreground px-3 py-1.5 disabled:opacity-50">
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void onRegenerate(prompt.trim())}
+              disabled={!valid || loading}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg bg-foreground text-background font-display text-xs font-medium px-3 py-1.5',
+                (!valid || loading) && 'opacity-50 cursor-not-allowed',
+              )}
+            >
+              {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+              Regenerate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

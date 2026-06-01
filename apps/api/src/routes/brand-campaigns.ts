@@ -3,10 +3,10 @@ import { z } from 'zod'
 import { authMiddleware } from '../middleware/auth'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
-import { generateSocialAsset } from '../services/fal'
 import { deductCredits, refundCredits, InsufficientCreditsError } from '../services/credits'
 import { runBrandCampaignPipeline, addCreativeToCampaign } from '../pipelines/brand-campaign'
-import { generateCampaignSuggestions, generateCtaVariants, type BrandConfigForPrompt } from '../services/claude'
+import { generateCampaignSuggestions, generateCtaVariants, fixCreativeLayout, type BrandConfigForPrompt } from '../services/claude'
+import { generateSocialAsset } from '../services/fal'
 import { creditCostForVideo } from '../services/credits'
 import { renderQueue, isRedisReady } from '../queues/renderQueue'
 import { runMotionAuto } from '../pipelines/motion-router'
@@ -775,6 +775,156 @@ brandCampaignsRouter.post('/brand/creatives/:id/restore', authMiddleware, async 
   } catch (err) {
     logger.error({ err, id }, 'brand/creatives/:id/restore error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * POST /api/v1/brand/creatives/:id/regenerate-image
+ * Phase 3.4 V2.5 — relance fal.ai avec un nouveau prompt et remplace
+ * l'image de la créative. L'ancien prompt et l'ancien image_url ne sont
+ * pas conservés ici — l'utilisateur peut faire un Save Version avant
+ * pour garder l'historique. Coût : 1 crédit.
+ */
+const regenerateImageSchema = z.object({
+  prompt: z.string().min(10).max(1500),
+})
+
+brandCampaignsRouter.post('/brand/creatives/:id/regenerate-image', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  const parsed = regenerateImageSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
+    return
+  }
+  const { prompt } = parsed.data
+  try {
+    const { data: creative } = await supabaseAdmin
+      .from('brand_creatives')
+      .select('id, campaign_id')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!creative) {
+      res.status(404).json({ error: 'Creative not found', code: 'NOT_FOUND' })
+      return
+    }
+    const { data: campaign } = await supabaseAdmin
+      .from('brand_campaigns')
+      .select('aspect_ratio, brand_kit_id')
+      .eq('id', creative.campaign_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!campaign) {
+      res.status(404).json({ error: 'Campaign not found', code: 'NOT_FOUND' })
+      return
+    }
+    const { data: kit } = await supabaseAdmin
+      .from('brand_kits')
+      .select('primary_color, secondary_color')
+      .eq('id', campaign.brand_kit_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!kit) {
+      res.status(404).json({ error: 'Brand kit not found', code: 'NOT_FOUND' })
+      return
+    }
+
+    // Déduit AVANT l'appel fal.ai. Refund si la génération échoue.
+    try {
+      await deductCredits(req.userId, CREDIT_PER_CREATIVE, `brand_creative:${id}:regen`, {
+        kind: 'brand_creative_regen',
+      })
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        res.status(402).json({
+          error: 'Insufficient credits', code: 'INSUFFICIENT_CREDITS',
+          required: err.required, available: err.available,
+        })
+        return
+      }
+      throw err
+    }
+
+    try {
+      const platform = campaign.aspect_ratio === '9:16' ? 'instagram_story' : 'instagram_post'
+      const { imageUrl } = await generateSocialAsset(prompt, platform, {
+        primary_color:   kit.primary_color,
+        secondary_color: kit.secondary_color ?? undefined,
+      })
+      const { data: updated, error } = await supabaseAdmin
+        .from('brand_creatives')
+        .update({ image_url: imageUrl, prompt })
+        .eq('id', id)
+        .eq('user_id', req.userId)
+        .select()
+        .single()
+      if (error) throw error
+      res.json({ data: updated })
+    } catch (err) {
+      await refundCredits(req.userId, CREDIT_PER_CREATIVE, `brand_creative:${id}:regen`, { reason: 'regen_failed' })
+        .catch(() => null)
+      throw err
+    }
+  } catch (err) {
+    logger.error({ err, id }, 'brand/creatives/:id/regenerate-image error')
+    res.status(500).json({ error: 'Image regeneration failed', code: 'GENERATION_ERROR' })
+  }
+})
+
+/**
+ * POST /api/v1/brand/creatives/:id/fix-layout
+ * Phase 3.4 V2.5 — Claude vision regarde l'image et propose des positions
+ * optimales pour les blocs visibles (éviter visages, ciels, etc.). Pas de
+ * crédit déduit (appel court multimodal).
+ */
+brandCampaignsRouter.post('/brand/creatives/:id/fix-layout', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  try {
+    const { data: creative } = await supabaseAdmin
+      .from('brand_creatives')
+      .select('image_url, blocks_visible, block_positions')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!creative) {
+      res.status(404).json({ error: 'Creative not found', code: 'NOT_FOUND' })
+      return
+    }
+    const visible = creative.blocks_visible as { header: boolean; description: boolean; cta: boolean }
+    const current = (creative.block_positions ?? undefined) as
+      | { header?: { x: number; y: number }; description?: { x: number; y: number }; cta?: { x: number; y: number } }
+      | undefined
+
+    const suggestion = await fixCreativeLayout({
+      imageUrl: creative.image_url,
+      visible,
+      current,
+    })
+    if (Object.keys(suggestion).length === 0) {
+      res.status(422).json({ error: 'Layout suggestion empty', code: 'NO_SUGGESTION' })
+      return
+    }
+
+    // Fusion : on garde les positions courantes pour les blocs absents de la
+    // suggestion (typiquement les blocs non visibles).
+    const merged = {
+      header:      suggestion.header      ?? current?.header      ?? { x: 50, y: 12 },
+      description: suggestion.description ?? current?.description ?? { x: 50, y: 50 },
+      cta:         suggestion.cta         ?? current?.cta         ?? { x: 50, y: 90 },
+    }
+
+    const { data: updated, error } = await supabaseAdmin
+      .from('brand_creatives')
+      .update({ block_positions: merged })
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .select()
+      .single()
+    if (error) throw error
+    res.json({ data: updated })
+  } catch (err) {
+    logger.error({ err, id }, 'brand/creatives/:id/fix-layout error')
+    res.status(500).json({ error: 'Fix layout failed', code: 'VISION_ERROR' })
   }
 })
 

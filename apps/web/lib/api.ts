@@ -523,6 +523,20 @@ export async function generateCtaVariants(creativeId: string) {
   })
 }
 
+export async function regenerateBrandCreativeImage(creativeId: string, prompt: string) {
+  return apiFetch<{ data: BrandCreative }>(`/api/v1/brand/creatives/${creativeId}/regenerate-image`, {
+    method: 'POST',
+    body: JSON.stringify({ prompt }),
+  })
+}
+
+export async function fixBrandCreativeLayout(creativeId: string) {
+  return apiFetch<{ data: BrandCreative }>(`/api/v1/brand/creatives/${creativeId}/fix-layout`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'
