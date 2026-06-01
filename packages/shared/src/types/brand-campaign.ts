@@ -112,6 +112,20 @@ export interface CampaignWithCreatives {
   creatives: BrandCreative[]
 }
 
+// ── Brand Books (Pomelli Phase 5) ────────────────────────────────────────────
+
+export interface BrandBook {
+  id:            string
+  brand_kit_id:  string
+  user_id:       string
+  version:       number
+  html_snapshot: string
+  is_published:  boolean
+  public_token:  string | null
+  generated_at:  string
+  updated_at:    string
+}
+
 export interface UpdateCreativePayload {
   header_text?:      string | null
   description_text?: string | null

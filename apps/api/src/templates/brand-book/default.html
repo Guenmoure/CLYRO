@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{name}} — Brand Book</title>
+<style>
+  :root {
+    --primary: {{primary_color}};
+    --secondary: {{secondary_color}};
+    --bg: #fafaf7;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --line: rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: {{font_family_css}};
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 64px 48px;
+    page-break-after: always;
+  }
+  .page:last-child { page-break-after: auto; }
+
+  /* ── Cover ────────────────────────────────────────────────────────────── */
+  .cover {
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--primary);
+    color: #fff;
+    padding: 80px 56px;
+  }
+  .cover .eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    margin-bottom: 24px;
+    opacity: 0.85;
+  }
+  .cover h1 {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 96px;
+    line-height: 1.05;
+    font-weight: 400;
+    margin: 0 0 24px 0;
+    letter-spacing: -0.02em;
+  }
+  .cover .tagline {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-style: italic;
+    font-size: 28px;
+    max-width: 540px;
+    opacity: 0.9;
+  }
+
+  /* ── Generic sections ─────────────────────────────────────────────────── */
+  .section h2 {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 48px;
+    line-height: 1.1;
+    font-weight: 400;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.015em;
+  }
+  .section .eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .section p {
+    margin: 0 0 16px 0;
+    color: var(--ink);
+  }
+  .divider {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 32px 0;
+  }
+
+  /* ── Logo grid ────────────────────────────────────────────────────────── */
+  .logo-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .logo-cell {
+    aspect-ratio: 4 / 3;
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+  }
+  .logo-cell.dark { background: #111; color: #fff; }
+  .logo-cell.brand { background: var(--primary); color: #fff; }
+  .logo-cell img {
+    max-width: 60%;
+    max-height: 60%;
+    object-fit: contain;
+  }
+  .logo-cell .placeholder {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    opacity: 0.7;
+  }
+  .logo-spec {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  /* ── Palette ──────────────────────────────────────────────────────────── */
+  .palette-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .swatch {
+    aspect-ratio: 16 / 7;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-end;
+    padding: 16px;
+    color: #fff;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    letter-spacing: 0.05em;
+  }
+  .swatch.light {
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+
+  /* ── Tags ─────────────────────────────────────────────────────────────── */
+  .tag-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .tag {
+    display: inline-block;
+    padding: 6px 14px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    font-size: 13px;
+  }
+  .tag.muted {
+    border-color: var(--line);
+    color: var(--muted);
+  }
+
+  /* ── Footer ───────────────────────────────────────────────────────────── */
+  .footer {
+    border-top: 1px solid var(--line);
+    margin-top: 80px;
+    padding-top: 32px;
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .footer a { color: inherit; text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* ── Print ────────────────────────────────────────────────────────────── */
+  @media print {
+    html, body { background: #fff; }
+    .page { padding: 32px 24px; max-width: none; }
+    .cover { min-height: auto; padding: 48px 32px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page cover">
+  <div class="eyebrow">Brand Book — v{{version}}</div>
+  <h1>{{name}}</h1>
+  {{#tagline}}<div class="tagline">“{{tagline}}”</div>{{/tagline}}
+</section>
+
+<!-- LOGO -->
+<section class="page section">
+  <div class="eyebrow">01 — Logo</div>
+  <h2>Mark &amp; clear space</h2>
+  <p>The brand mark is the keystone of {{name}}'s visual identity. Always preserve a clear space equal to the height of the mark on every side, and never reproduce it at less than 24 px tall.</p>
+  <div class="logo-row">
+    <div>
+      <div class="logo-cell">{{logo_html_light}}</div>
+      <div class="logo-spec">On light surfaces</div>
+    </div>
+    <div>
+      <div class="logo-cell dark">{{logo_html_dark}}</div>
+      <div class="logo-spec">On dark surfaces</div>
+    </div>
+    <div>
+      <div class="logo-cell brand">{{logo_html_brand}}</div>
+      <div class="logo-spec">On the brand colour</div>
+    </div>
+    {{#secondary_color}}
+    <div>
+      <div class="logo-cell" style="background: {{secondary_color}}; color: #fff;">{{logo_html_secondary}}</div>
+      <div class="logo-spec">On the secondary colour</div>
+    </div>
+    {{/secondary_color}}
+  </div>
+</section>
+
+<!-- PALETTE -->
+<section class="page section">
+  <div class="eyebrow">02 — Palette</div>
+  <h2>Colour</h2>
+  <p>Use {{name}}'s primary colour for the dominant brand surface, accents and CTA buttons. The secondary is for supporting moments and never as a primary background.</p>
+  <div class="palette-row">
+    <div class="swatch" style="background: {{primary_color}};">{{primary_color}}</div>
+    {{#secondary_color}}<div class="swatch" style="background: {{secondary_color}};">{{secondary_color}}</div>{{/secondary_color}}
+    <div class="swatch light" style="background: #fafaf7;">#FAFAF7 · Surface</div>
+    <div class="swatch" style="background: #1a1a1a;">#1A1A1A · Ink</div>
+  </div>
+</section>
+
+<!-- TAGLINE -->
+{{#tagline}}
+<section class="page section">
+  <div class="eyebrow">03 — Tagline</div>
+  <h2 style="font-size: 64px; max-width: 720px;">“{{tagline}}”</h2>
+  <p style="margin-top: 32px;">The tagline appears on the cover, hero placements and any key brand moment. Keep it spaced and never break the line.</p>
+</section>
+{{/tagline}}
+
+<!-- VALUES -->
+{{#has_values}}
+<section class="page section">
+  <div class="eyebrow">04 — Values</div>
+  <h2>What we stand for</h2>
+  <div class="tag-grid">{{brand_values_html}}</div>
+</section>
+{{/has_values}}
+
+<!-- AESTHETIC -->
+{{#has_aesthetic}}
+<section class="page section">
+  <div class="eyebrow">05 — Aesthetic</div>
+  <h2>Visual register</h2>
+  <p>The aesthetic guides every visual decision — palette beyond the primary, type pairing, image direction, animation feel.</p>
+  <div class="tag-grid">{{brand_aesthetic_html}}</div>
+</section>
+{{/has_aesthetic}}
+
+<!-- TONE OF VOICE -->
+{{#has_tone}}
+<section class="page section">
+  <div class="eyebrow">06 — Tone of voice</div>
+  <h2>How we sound</h2>
+  <p>Whether it's a button, an email, a video script or a press release — the writing carries the same posture.</p>
+  <div class="tag-grid">{{brand_tone_html}}</div>
+</section>
+{{/has_tone}}
+
+<!-- BUSINESS OVERVIEW -->
+{{#has_overview}}
+<section class="page section">
+  <div class="eyebrow">07 — Business overview</div>
+  <h2>The company in a paragraph</h2>
+  <p style="font-size: 18px; line-height: 1.65; max-width: 720px;">{{business_overview}}</p>
+</section>
+{{/has_overview}}
+
+<!-- FOOTER -->
+<div class="page" style="padding-top: 0;">
+  <div class="footer">
+    <div>
+      {{#url}}<a href="{{url}}">{{url}}</a> · {{/url}}{{name}}
+    </div>
+    <div>Brand Book v{{version}} · Generated with CLYRO</div>
+  </div>
+</div>
+
+</body>
+</html>

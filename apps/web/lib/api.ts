@@ -537,6 +537,35 @@ export async function fixBrandCreativeLayout(creativeId: string) {
   })
 }
 
+// ---- Brand Book (Phase 5) ----
+import type { BrandBook } from '@clyro/shared'
+export type { BrandBook }
+
+export async function getBrandBook(brandKitId: string) {
+  return apiFetch<{ data: BrandBook }>(`/api/v1/brand/book?brand_kit_id=${encodeURIComponent(brandKitId)}`)
+}
+
+export async function generateBrandBook(brandKitId: string) {
+  return apiFetch<{ data: BrandBook }>('/api/v1/brand/book', {
+    method: 'POST',
+    body: JSON.stringify({ brand_kit_id: brandKitId }),
+  })
+}
+
+export async function publishBrandBook(bookId: string) {
+  return apiFetch<{ data: BrandBook }>(`/api/v1/brand/book/${bookId}/publish`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export async function unpublishBrandBook(bookId: string) {
+  return apiFetch<{ data: BrandBook }>(`/api/v1/brand/book/${bookId}/unpublish`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'

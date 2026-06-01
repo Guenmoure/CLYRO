@@ -26,7 +26,7 @@ export function BrandSidebar({ kitId }: BrandSidebarProps) {
     { label: 'Assets',       href: `/brand/${kitId}/assets`,     Icon: ImageIcon,  enabled: true  },
     { label: 'Campaigns',    href: `/brand/${kitId}/campaigns`,  Icon: Megaphone,  enabled: true  },
     { label: 'Photoshoot',   href: `/brand/${kitId}/photoshoot`, Icon: Camera,     enabled: false },
-    { label: 'Brand Book',   href: `/brand/${kitId}/book`,       Icon: BookOpen,   enabled: false },
+    { label: 'Brand Book',   href: `/brand/${kitId}/book`,       Icon: BookOpen,   enabled: true  },
   ]
 
   return (
