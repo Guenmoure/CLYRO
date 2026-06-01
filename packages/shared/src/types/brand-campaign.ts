@@ -35,6 +35,27 @@ export interface CreativeBlocksVisible {
   cta:          boolean
 }
 
+/** Coordonnées x,y du centre d'un bloc en pourcent du preview (0..100). */
+export interface BlockPosition {
+  x: number
+  y: number
+}
+
+/** Positions libres des 3 blocs. NULL côté DB = presets V1
+ *  (header en haut, description au centre, CTA en bas). */
+export interface CreativeBlockPositions {
+  header:      BlockPosition
+  description: BlockPosition
+  cta:         BlockPosition
+}
+
+/** Multiplicateur de taille de police par bloc. 1.0 = défaut. */
+export interface CreativeBlockSizes {
+  header:      number
+  description: number
+  cta:         number
+}
+
 export interface BrandCreative {
   id:               string
   campaign_id:      string
@@ -45,6 +66,10 @@ export interface BrandCreative {
   description_text: string | null
   cta_text:         string | null
   blocks_visible:   CreativeBlocksVisible
+  /** Positions libres des blocs. NULL = presets V1. */
+  block_positions:  CreativeBlockPositions | null
+  /** Multiplicateurs de taille de police. NULL = 1.0 partout. */
+  block_sizes:      CreativeBlockSizes | null
   current_version:  number
   position:         number
   created_at:       string
@@ -92,5 +117,9 @@ export interface UpdateCreativePayload {
   description_text?: string | null
   cta_text?:         string | null
   blocks_visible?:   Partial<CreativeBlocksVisible>
+  /** Remplace COMPLÈTEMENT les positions (pas de merge — front envoie les 3). */
+  block_positions?:  CreativeBlockPositions | null
+  block_sizes?:      CreativeBlockSizes | null
+  image_url?:        string
   position?:         number
 }

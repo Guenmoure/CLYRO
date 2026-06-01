@@ -1098,6 +1098,72 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+// ── CTA variants (Phase 3.4 V2) ──────────────────────────────────────────────
+// Petit appel Claude (max_tokens 300) qui propose 3 CTA on-brand depuis le
+// contexte d'une créative et le DNA. Pas de retry — l'utilisateur peut
+// re-cliquer si besoin.
+
+export interface CtaVariantsInput {
+  /** Contexte de la créative pour orienter le ton. */
+  header?:      string
+  description?: string
+  /** CTA courant — sert d'amorce, à varier. */
+  current?:     string
+  brand:        BrandConfigForPrompt & { name?: string }
+  /** Nombre de variantes. Défaut 3, max 6. */
+  count?:       number
+}
+
+export async function generateCtaVariants(input: CtaVariantsInput): Promise<string[]> {
+  const count = Math.max(1, Math.min(6, input.count ?? 3))
+  const sourceText = `${input.header ?? ''} ${input.description ?? ''}`.trim() || input.current || 'the campaign'
+  const lang: DetectedLanguage = detectLanguage(sourceText)
+  const dnaLines = buildBrandDnaPromptLines(input.brand)
+
+  const systemPrompt = `You write call-to-action copy. You reply ONLY with valid JSON.`
+  const userPrompt = `Propose ${count} distinct call-to-action options for this creative.
+
+CREATIVE CONTEXT:
+${input.header      ? `Header: ${input.header}\n` : ''}${input.description ? `Description: ${input.description}\n` : ''}${input.current ? `Current CTA: ${input.current}\n` : ''}
+BRAND:
+Primary color: ${input.brand.primary_color}
+${dnaLines.join('\n')}
+
+Rules:
+- ≤ 30 characters each. Imperative. In ${lang.name}.
+- Each variant feels distinct (different angle: urgency / curiosity /
+  warmth / value).
+- NEVER include any agency or platform name.
+
+Reply ONLY with this JSON: { "variants": ["...", "...", "..."] }`
+
+  try {
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    })
+    const content = message.content[0]
+    if (content.type !== 'text') return []
+    const jsonText = content.text
+      .replace(/^```json\s*/m, '')
+      .replace(/^```\s*/m, '')
+      .replace(/\s*```$/m, '')
+      .trim()
+    const parsed = JSON.parse(jsonText) as { variants?: unknown }
+    if (!Array.isArray(parsed.variants)) return []
+    return parsed.variants
+      .filter((v): v is string => typeof v === 'string')
+      .map((v) => v.trim().slice(0, 60))
+      .filter((v) => v.length > 0)
+      .slice(0, count)
+  } catch (err) {
+    logger.warn({ err: err instanceof Error ? err.message : String(err) }, 'CTA variants generation failed')
+    return []
+  }
+}
+
 // ── Brand Campaign suggestions (Phase 3.2) ──────────────────────────────────
 // 3 idées de campagne dérivées du seul DNA — pas de prompt utilisateur, pas
 // de génération d'image. Sert d'amorce dans la box (« Suggestions based on

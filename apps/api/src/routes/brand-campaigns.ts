@@ -6,7 +6,7 @@ import { logger } from '../lib/logger'
 import { generateSocialAsset } from '../services/fal'
 import { deductCredits, refundCredits, InsufficientCreditsError } from '../services/credits'
 import { runBrandCampaignPipeline, addCreativeToCampaign } from '../pipelines/brand-campaign'
-import { generateCampaignSuggestions, type BrandConfigForPrompt } from '../services/claude'
+import { generateCampaignSuggestions, generateCtaVariants, type BrandConfigForPrompt } from '../services/claude'
 import { creditCostForVideo } from '../services/credits'
 import { renderQueue, isRedisReady } from '../queues/renderQueue'
 import { runMotionAuto } from '../pipelines/motion-router'
@@ -34,6 +34,27 @@ const createCampaignSchema = z.object({
   aspect_ratio: z.enum(['9:16', '1:1', '4:5']).optional(),
 })
 
+// Position d'un bloc : x,y exprimés en % du preview, clampés sur [0..100]
+// pour empêcher un client malveillant de stocker des coordonnées hors-cadre.
+const blockPositionSchema = z.object({
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+})
+
+const blockPositionsSchema = z.object({
+  header:      blockPositionSchema,
+  description: blockPositionSchema,
+  cta:         blockPositionSchema,
+}).nullable()
+
+// Multiplicateur de taille : plage raisonnable 0.5-2.5 (au-delà ça déborde
+// trop souvent du cadre, et trop petit ça devient illisible)
+const blockSizesSchema = z.object({
+  header:      z.number().min(0.5).max(2.5),
+  description: z.number().min(0.5).max(2.5),
+  cta:         z.number().min(0.5).max(2.5),
+}).nullable()
+
 const updateCreativeSchema = z.object({
   header_text:      z.string().max(200).nullable().optional(),
   description_text: z.string().max(500).nullable().optional(),
@@ -43,6 +64,12 @@ const updateCreativeSchema = z.object({
     description: z.boolean().optional(),
     cta:         z.boolean().optional(),
   }).optional(),
+  block_positions:  blockPositionsSchema.optional(),
+  block_sizes:      blockSizesSchema.optional(),
+  /** Asset swap depuis la médiathèque — accepte une URL signée Storage du
+   *  bucket brand-assets de l'utilisateur. La vérif d'appartenance se fait
+   *  côté front en piochant uniquement dans `listBrandMedia(brand_kit_id)`. */
+  image_url:        z.string().url().max(2000).optional(),
   position:         z.number().int().min(0).max(99).optional(),
 })
 
@@ -314,6 +341,9 @@ brandCampaignsRouter.put('/brand/creatives/:id', authMiddleware, async (req, res
     if ('description_text' in parsed.data) updates.description_text = parsed.data.description_text
     if ('cta_text'         in parsed.data) updates.cta_text         = parsed.data.cta_text
     if ('position'         in parsed.data) updates.position         = parsed.data.position
+    if ('block_positions'  in parsed.data) updates.block_positions  = parsed.data.block_positions
+    if ('block_sizes'      in parsed.data) updates.block_sizes      = parsed.data.block_sizes
+    if ('image_url'        in parsed.data) updates.image_url        = parsed.data.image_url
     if (parsed.data.blocks_visible) {
       updates.blocks_visible = { ...(existing.blocks_visible as object), ...parsed.data.blocks_visible }
     }
@@ -744,6 +774,69 @@ brandCampaignsRouter.post('/brand/creatives/:id/restore', authMiddleware, async 
     res.json({ data: updated })
   } catch (err) {
     logger.error({ err, id }, 'brand/creatives/:id/restore error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * POST /api/v1/brand/creatives/:id/cta-variants
+ * Phase 3.4 V2 — Claude propose N variantes de CTA on-brand. Pas de
+ * persistence, pas de crédit déduit (appel court).
+ */
+brandCampaignsRouter.post('/brand/creatives/:id/cta-variants', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  try {
+    const { data: creative } = await supabaseAdmin
+      .from('brand_creatives')
+      .select('header_text, description_text, cta_text, campaign_id')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!creative) {
+      res.status(404).json({ error: 'Creative not found', code: 'NOT_FOUND' })
+      return
+    }
+    const { data: campaign } = await supabaseAdmin
+      .from('brand_campaigns')
+      .select('brand_kit_id')
+      .eq('id', creative.campaign_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!campaign) {
+      res.status(404).json({ error: 'Campaign not found', code: 'NOT_FOUND' })
+      return
+    }
+    const { data: kit } = await supabaseAdmin
+      .from('brand_kits')
+      .select('name, primary_color, secondary_color, font_family, tagline, brand_values, brand_aesthetic, brand_tone_of_voice, business_overview')
+      .eq('id', campaign.brand_kit_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!kit) {
+      res.status(404).json({ error: 'Brand kit not found', code: 'NOT_FOUND' })
+      return
+    }
+    const brand: BrandConfigForPrompt & { name?: string } = {
+      name:                kit.name,
+      primary_color:       kit.primary_color,
+      secondary_color:     kit.secondary_color ?? undefined,
+      font_family:         kit.font_family ?? undefined,
+      tagline:             kit.tagline ?? undefined,
+      brand_values:        kit.brand_values ?? [],
+      brand_aesthetic:     kit.brand_aesthetic ?? [],
+      brand_tone_of_voice: kit.brand_tone_of_voice ?? [],
+      business_overview:   kit.business_overview ?? undefined,
+    }
+    const variants = await generateCtaVariants({
+      header:      creative.header_text ?? undefined,
+      description: creative.description_text ?? undefined,
+      current:     creative.cta_text ?? undefined,
+      brand,
+      count:       3,
+    })
+    res.json({ data: variants })
+  } catch (err) {
+    logger.error({ err, id }, 'brand/creatives/:id/cta-variants error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
   }
 })

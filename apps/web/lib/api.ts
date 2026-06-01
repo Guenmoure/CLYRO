@@ -516,6 +516,13 @@ export async function restoreBrandCreativeVersion(creativeId: string, versionNum
   })
 }
 
+export async function generateCtaVariants(creativeId: string) {
+  return apiFetch<{ data: string[] }>(`/api/v1/brand/creatives/${creativeId}/cta-variants`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'
