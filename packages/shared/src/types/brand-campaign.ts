@@ -112,6 +112,40 @@ export interface CampaignWithCreatives {
   creatives: BrandCreative[]
 }
 
+// ── Brand Photoshoots (Pomelli Phase 4) ──────────────────────────────────────
+
+export type PhotoshootMode = 'product_template' | 'generate_edit'
+export type PhotoshootStatus = 'pending' | 'generating' | 'done' | 'error'
+export type PhotoshootAspectRatio = '9:16' | '1:1' | '4:5' | '16:9'
+
+export interface BrandPhotoshoot {
+  id:              string
+  brand_kit_id:    string
+  user_id:         string
+  mode:            PhotoshootMode
+  input_image_url: string | null
+  reference_urls:  string[]
+  prompt:          string | null
+  template_id:     string | null
+  aspect_ratio:    PhotoshootAspectRatio
+  output_urls:     string[]
+  status:          PhotoshootStatus
+  metadata:        Record<string, unknown>
+  created_at:      string
+  updated_at:      string
+}
+
+/** Description publique d'un template — exposée par GET /brand/photoshoots/templates.
+ *  Préfixé pour éviter la collision avec le type `PhotoshootTemplate` (string
+ *  union des id) déjà déclaré dans `apps/web/lib/api.ts` pour brand-hub. */
+export interface BrandPhotoshootTemplateInfo {
+  id:        string
+  name:      string
+  category:  string
+  /** Description courte affichée dans la grille. */
+  description: string
+}
+
 // ── Brand Books (Pomelli Phase 5) ────────────────────────────────────────────
 
 export interface BrandBook {

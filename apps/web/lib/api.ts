@@ -566,6 +566,43 @@ export async function unpublishBrandBook(bookId: string) {
   })
 }
 
+// ---- Brand Photoshoots (Phase 4) ----
+import type {
+  BrandPhotoshoot, BrandPhotoshootTemplateInfo, PhotoshootMode, PhotoshootAspectRatio,
+} from '@clyro/shared'
+export type { BrandPhotoshoot, BrandPhotoshootTemplateInfo, PhotoshootMode, PhotoshootAspectRatio }
+
+export async function listBrandPhotoshootTemplates() {
+  return apiFetch<{ data: BrandPhotoshootTemplateInfo[] }>('/api/v1/brand/photoshoots/templates')
+}
+
+export async function listBrandPhotoshoots(brandKitId: string) {
+  return apiFetch<{ data: BrandPhotoshoot[] }>(`/api/v1/brand/${brandKitId}/photoshoots`)
+}
+
+export async function getBrandPhotoshoot(id: string) {
+  return apiFetch<{ data: BrandPhotoshoot }>(`/api/v1/brand/photoshoots/${id}`)
+}
+
+export async function createBrandPhotoshoot(payload: {
+  brand_kit_id:    string
+  mode:            PhotoshootMode
+  input_image_url?: string
+  reference_urls?: string[]
+  template_id?:    string
+  prompt?:         string
+  aspect_ratio?:   PhotoshootAspectRatio
+}) {
+  return apiFetch<{ data: BrandPhotoshoot }>('/api/v1/brand/photoshoots', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandPhotoshoot(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/photoshoots/${id}`, { method: 'DELETE' })
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'

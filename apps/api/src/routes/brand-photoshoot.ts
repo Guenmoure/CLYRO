@@ -4,12 +4,16 @@ import { authMiddleware } from '../middleware/auth'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { createFalClient } from '@fal-ai/client'
+import { deductCredits, refundCredits, InsufficientCreditsError } from '../services/credits'
+import { PHOTOSHOOT_TEMPLATES, PHOTOSHOOT_TEMPLATE_MAP, publicTemplate } from '../config/photoshoot-templates'
 
 export const brandPhotoshootRouter = Router()
 
 const fal = createFalClient({ credentials: process.env.FAL_KEY })
 
 const TIMEOUT_MS = 180_000
+const VARIATIONS_PER_PHOTOSHOOT = 4
+const CREDITS_PER_VARIATION     = 1
 
 const TEMPLATE_PROMPTS: Record<string, string> = {
   studio: 'Professional product photography on seamless white to gray gradient backdrop, soft studio lighting, 3-point light setup, commercial catalog shot, clean reflections on surface, shot on Phase One, 80mm, 8K',
@@ -41,6 +45,302 @@ const animateSchema = z.object({
   motion_type:      z.enum(['zoom_in', 'pan_left', 'pan_right', 'zoom_out', 'orbit', 'pulse']),
   duration:         z.enum(['3', '5']).default('5'),
 })
+
+// ── Persistent Photoshoots — Phase 4 du portage Pomelli ─────────────────────
+// L'ancienne route stateless POST /brand/photoshoot reste en place pour la
+// rétro-compat. Les endpoints ci-dessous (POST /brand/photoshoots et amis)
+// utilisent la table brand_photoshoots et génèrent 4 variations en parallèle.
+
+const createPhotoshootSchema = z.object({
+  brand_kit_id:     z.string().uuid(),
+  mode:             z.enum(['product_template', 'generate_edit']),
+  input_image_url:  z.string().url().optional(),
+  reference_urls:   z.array(z.string().url()).max(10).optional(),
+  template_id:      z.string().min(1).max(60).optional(),
+  prompt:           z.string().max(1500).optional(),
+  aspect_ratio:     z.enum(['9:16', '1:1', '4:5', '16:9']).optional(),
+})
+
+const ASPECT_TO_FAL: Record<'9:16' | '1:1' | '4:5' | '16:9', string> = {
+  '9:16': '9:16',
+  '1:1':  '1:1',
+  '4:5':  '4:5',
+  '16:9': '16:9',
+}
+
+/**
+ * GET /api/v1/brand/photoshoots/templates
+ * Liste publique des templates système (sans le prompt interne).
+ */
+brandPhotoshootRouter.get('/brand/photoshoots/templates', authMiddleware, async (_req, res) => {
+  res.json({ data: PHOTOSHOOT_TEMPLATES.map(publicTemplate) })
+})
+
+/**
+ * POST /api/v1/brand/photoshoots
+ * Crée une session de photoshoot, lance 4 générations fal.ai en parallèle,
+ * met à jour la ligne avec les URLs. Exécution INLINE (~30-60 s) car les 4
+ * calls fal.ai courent en Promise.allSettled. Le front affiche un loader.
+ *
+ * V1 : ne supporte que `mode='product_template'`. Le mode `generate_edit`
+ * (prompt libre + reference images) est posé dans le schéma mais le pipeline
+ * V2 le branchera.
+ */
+brandPhotoshootRouter.post('/brand/photoshoots', authMiddleware, async (req, res) => {
+  const parsed = createPhotoshootSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
+    return
+  }
+  const { brand_kit_id, mode, input_image_url, reference_urls, template_id, prompt, aspect_ratio } = parsed.data
+
+  if (mode === 'product_template') {
+    if (!input_image_url) {
+      res.status(400).json({ error: 'input_image_url required for product_template', code: 'VALIDATION_ERROR' })
+      return
+    }
+    if (!template_id || !PHOTOSHOOT_TEMPLATE_MAP[template_id]) {
+      res.status(400).json({ error: 'Unknown template_id', code: 'UNKNOWN_TEMPLATE' })
+      return
+    }
+  } else if (mode === 'generate_edit') {
+    // V1 V2-deferred — on accepte la création mais le pipeline saute la
+    // génération avec un status error explicite.
+    if (!prompt || prompt.trim().length < 10) {
+      res.status(400).json({ error: 'prompt required for generate_edit', code: 'VALIDATION_ERROR' })
+      return
+    }
+  }
+
+  try {
+    // Ownership du kit
+    const { data: kit } = await supabaseAdmin
+      .from('brand_kits')
+      .select('primary_color, secondary_color, name')
+      .eq('id', brand_kit_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!kit) {
+      res.status(404).json({ error: 'Brand kit not found', code: 'NOT_FOUND' })
+      return
+    }
+
+    // Crée la ligne en `generating`
+    const { data: shoot, error: insertErr } = await supabaseAdmin
+      .from('brand_photoshoots')
+      .insert({
+        brand_kit_id,
+        user_id:         req.userId,
+        mode,
+        input_image_url: input_image_url ?? null,
+        reference_urls:  reference_urls ?? [],
+        prompt:          prompt ?? null,
+        template_id:     template_id ?? null,
+        aspect_ratio:    aspect_ratio ?? '9:16',
+        status:          'generating',
+      })
+      .select()
+      .single()
+    if (insertErr || !shoot) {
+      logger.error({ err: insertErr }, 'brand/photoshoots insert failed')
+      res.status(500).json({ error: 'Failed to create photoshoot', code: 'DB_ERROR' })
+      return
+    }
+
+    // Coût total = 4 variations × 1 crédit. Refund proportionnel au nombre
+    // de variations qui échouent.
+    const totalCost = VARIATIONS_PER_PHOTOSHOOT * CREDITS_PER_VARIATION
+    try {
+      await deductCredits(req.userId, totalCost, `brand_photoshoot:${shoot.id}`, {
+        kind: 'brand_photoshoot',
+        brand_kit_id,
+        mode,
+      })
+    } catch (err) {
+      await supabaseAdmin.from('brand_photoshoots').delete().eq('id', shoot.id)
+      if (err instanceof InsufficientCreditsError) {
+        res.status(402).json({
+          error: 'Insufficient credits', code: 'INSUFFICIENT_CREDITS',
+          required: err.required, available: err.available,
+        })
+        return
+      }
+      throw err
+    }
+
+    // Mode generate_edit n'a pas encore de pipeline V2 — on marque la ligne
+    // en error et on rembourse. Le front affiche un message explicite.
+    if (mode === 'generate_edit') {
+      await refundCredits(req.userId, totalCost, `brand_photoshoot:${shoot.id}`, { reason: 'mode_not_implemented' })
+        .catch(() => null)
+      const { data: updated } = await supabaseAdmin
+        .from('brand_photoshoots')
+        .update({
+          status: 'error',
+          metadata: { error_message: 'Generate/Edit mode not yet implemented in V1', error_code: 'NOT_IMPLEMENTED' },
+        })
+        .eq('id', shoot.id)
+        .select()
+        .single()
+      res.status(202).json({ data: updated ?? shoot })
+      return
+    }
+
+    // Lance les 4 générations en parallèle (Promise.allSettled — un échec
+    // d'une variation n'invalide pas les autres). Le client reçoit la ligne
+    // en `generating` et poll pour le statut final.
+    void (async () => {
+      try {
+        const template = PHOTOSHOOT_TEMPLATE_MAP[template_id!]
+        const brandSuffix = `, brand accent color ${kit.primary_color}${kit.secondary_color ? ` and ${kit.secondary_color}` : ''}`
+        const fullPrompt = prompt && prompt.trim().length > 0
+          ? `${template.prompt_template}, ${prompt.trim()}${brandSuffix}`
+          : `${template.prompt_template}${brandSuffix}`
+        const aspect = ASPECT_TO_FAL[aspect_ratio ?? '9:16']
+
+        const results = await Promise.allSettled(
+          Array.from({ length: VARIATIONS_PER_PHOTOSHOOT }).map((_, idx) =>
+            Promise.race([
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              fal.subscribe('fal-ai/flux-pro/v1.1-ultra', {
+                input: {
+                  prompt:           fullPrompt,
+                  image_prompt:     { url: input_image_url!, weight: 0.85 },
+                  aspect_ratio:     aspect,
+                  safety_tolerance: '2',
+                  output_format:    'jpeg',
+                  // Variation through seed → distinct outputs même prompt
+                  seed:             Date.now() + idx * 7919,
+                },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              } as any),
+              new Promise<never>((_, reject) => setTimeout(() => reject(new Error('fal.ai timeout')), TIMEOUT_MS)),
+            ]),
+          ),
+        )
+
+        const urls: string[] = []
+        let failures = 0
+        for (const r of results) {
+          if (r.status === 'fulfilled') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const out = ((r.value as any).data ?? r.value) as { images?: Array<{ url: string }> }
+            const u = out.images?.[0]?.url
+            if (u) urls.push(u); else failures++
+          } else {
+            failures++
+            logger.warn({ photoshootId: shoot.id, reason: r.reason }, 'photoshoot variation failed')
+          }
+        }
+
+        // Rembourse les variations ratées
+        if (failures > 0) {
+          await refundCredits(req.userId, failures * CREDITS_PER_VARIATION, `brand_photoshoot:${shoot.id}`, { reason: `${failures}_variations_failed` })
+            .catch(() => null)
+        }
+
+        await supabaseAdmin
+          .from('brand_photoshoots')
+          .update({
+            output_urls: urls,
+            status:      urls.length > 0 ? 'done' : 'error',
+            metadata: {
+              requested:  VARIATIONS_PER_PHOTOSHOOT,
+              succeeded:  urls.length,
+              failed:     failures,
+              prompt_used: fullPrompt,
+            },
+          })
+          .eq('id', shoot.id)
+
+        logger.info({ photoshootId: shoot.id, succeeded: urls.length, failed: failures }, 'Photoshoot pipeline done')
+      } catch (err) {
+        logger.error({ err, photoshootId: shoot.id }, 'Photoshoot pipeline crashed')
+        await refundCredits(req.userId, totalCost, `brand_photoshoot:${shoot.id}`, { reason: 'pipeline_crash' })
+          .catch(() => null)
+        await supabaseAdmin
+          .from('brand_photoshoots')
+          .update({
+            status:   'error',
+            metadata: { error_message: err instanceof Error ? err.message : String(err) },
+          })
+          .eq('id', shoot.id)
+          .then(() => null, () => null)
+      }
+    })()
+
+    res.status(202).json({ data: shoot })
+  } catch (err) {
+    logger.error({ err, userId: req.userId }, 'brand/photoshoots POST error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * GET /api/v1/brand/:brand_kit_id/photoshoots
+ */
+brandPhotoshootRouter.get('/brand/:brand_kit_id/photoshoots', authMiddleware, async (req, res) => {
+  const brand_kit_id = String(req.params.brand_kit_id ?? '')
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('brand_photoshoots')
+      .select('*')
+      .eq('brand_kit_id', brand_kit_id)
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false })
+      .limit(60)
+    if (error) throw error
+    res.json({ data: data ?? [] })
+  } catch (err) {
+    logger.error({ err, brand_kit_id }, 'brand/photoshoots GET list error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * GET /api/v1/brand/photoshoots/:id
+ */
+brandPhotoshootRouter.get('/brand/photoshoots/:id', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('brand_photoshoots')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (error) throw error
+    if (!data) {
+      res.status(404).json({ error: 'Photoshoot not found', code: 'NOT_FOUND' })
+      return
+    }
+    res.json({ data })
+  } catch (err) {
+    logger.error({ err, id }, 'brand/photoshoots/:id error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * DELETE /api/v1/brand/photoshoots/:id
+ */
+brandPhotoshootRouter.delete('/brand/photoshoots/:id', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  try {
+    const { error } = await supabaseAdmin
+      .from('brand_photoshoots')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', req.userId)
+    if (error) throw error
+    res.json({ success: true })
+  } catch (err) {
+    logger.error({ err, id }, 'brand/photoshoots DELETE error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+// ── Legacy stateless endpoint (Phase pre-4) ─────────────────────────────────
 
 /**
  * POST /api/v1/brand/photoshoot
