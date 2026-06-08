@@ -1110,27 +1110,44 @@ export interface FixLayoutPositions {
   cta?:         { x: number; y: number }
 }
 
+/** Couleur de texte suggérée pour chaque bloc selon le fond de l'image
+ *  derrière ce bloc. Permet d'afficher du noir sur des images très claires
+ *  et du blanc sur des images très sombres — point central de la V3
+ *  Phase 3.4. */
+export interface FixLayoutColors {
+  header?:      'white' | 'black'
+  description?: 'white' | 'black'
+  cta?:         'white' | 'black'
+}
+
+export interface FixLayoutResult {
+  positions: FixLayoutPositions
+  colors:    FixLayoutColors
+}
+
 export async function fixCreativeLayout(input: {
   imageUrl:    string
   visible:     { header: boolean; description: boolean; cta: boolean }
   current?:    FixLayoutPositions
-}): Promise<FixLayoutPositions> {
+}): Promise<FixLayoutResult> {
   const askBlocks = Object.entries(input.visible)
     .filter(([, on]) => on)
     .map(([k]) => k)
-  if (askBlocks.length === 0) return {}
+  if (askBlocks.length === 0) return { positions: {}, colors: {} }
 
-  const systemPrompt = `You are a senior art director optimizing the layout of social-media creative text overlays. You reply ONLY with valid JSON.`
-  const userPrompt = `Examine the image and suggest where to place these text blocks so they are LEGIBLE and DON'T cover faces, logos in the picture, or busy/high-contrast areas.
+  const systemPrompt = `You are a senior art director optimizing the layout AND legibility of social-media creative text overlays. You reply ONLY with valid JSON.`
+  const userPrompt = `Examine the image and suggest, for each visible text block:
+1. WHERE to place it so it is LEGIBLE and DOESN'T cover faces, logos in the picture, or busy/high-contrast areas.
+2. WHAT TEXT COLOR to use ("white" or "black") so the block is readable against the background it sits on. Choose black if the area behind the block is bright (sky, snow, light wall…) and white if the area is dark or saturated.
 
 VISIBLE BLOCKS: ${askBlocks.join(', ')}
 ${input.current ? `CURRENT POSITIONS (for context): ${JSON.stringify(input.current)}` : ''}
 
-Coordinates are the CENTER of each block, in percent of the image (x=0 left, x=100 right, y=0 top, y=100 bottom). Keep each x,y within [5..95] so blocks stay inside the frame.
+Position coordinates are the CENTER of each block, in percent of the image (x=0 left, x=100 right, y=0 top, y=100 bottom). Keep each x,y within [5..95] so blocks stay inside the frame.
 
 Reply ONLY with this JSON:
 {
-${askBlocks.map((k) => `  "${k}": { "x": <num>, "y": <num> }`).join(',\n')}
+${askBlocks.map((k) => `  "${k}": { "x": <num>, "y": <num>, "color": "white" | "black" }`).join(',\n')}
 }`
 
   try {
@@ -1159,25 +1176,27 @@ ${askBlocks.map((k) => `  "${k}": { "x": <num>, "y": <num> }`).join(',\n')}
       }],
     })
     const content = message.content[0]
-    if (content.type !== 'text') return {}
+    if (content.type !== 'text') return { positions: {}, colors: {} }
     const jsonText = content.text
       .replace(/^```json\s*/m, '')
       .replace(/^```\s*/m, '')
       .replace(/\s*```$/m, '')
       .trim()
     const parsed = JSON.parse(jsonText) as Record<string, unknown>
-    const out: FixLayoutPositions = {}
+    const positions: FixLayoutPositions = {}
+    const colors:    FixLayoutColors    = {}
     for (const key of askBlocks as Array<'header' | 'description' | 'cta'>) {
-      const v = parsed[key] as { x?: unknown; y?: unknown } | undefined
+      const v = parsed[key] as { x?: unknown; y?: unknown; color?: unknown } | undefined
       if (!v) continue
       const x = typeof v.x === 'number' ? Math.max(0, Math.min(100, v.x)) : null
       const y = typeof v.y === 'number' ? Math.max(0, Math.min(100, v.y)) : null
-      if (x !== null && y !== null) out[key] = { x, y }
+      if (x !== null && y !== null) positions[key] = { x, y }
+      if (v.color === 'white' || v.color === 'black') colors[key] = v.color
     }
-    return out
+    return { positions, colors }
   } catch (err) {
     logger.warn({ err: err instanceof Error ? err.message : String(err) }, 'Fix layout vision call failed')
-    return {}
+    return { positions: {}, colors: {} }
   }
 }
 

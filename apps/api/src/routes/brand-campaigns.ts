@@ -36,9 +36,12 @@ const createCampaignSchema = z.object({
 
 // Position d'un bloc : x,y exprimés en % du preview, clampés sur [0..100]
 // pour empêcher un client malveillant de stocker des coordonnées hors-cadre.
+// V3 : `color` optionnelle ('white' | 'black') — suggérée par Fix Layout
+// selon le fond, appliquée au rendu front.
 const blockPositionSchema = z.object({
-  x: z.number().min(0).max(100),
-  y: z.number().min(0).max(100),
+  x:      z.number().min(0).max(100),
+  y:      z.number().min(0).max(100),
+  color:  z.enum(['white', 'black']).optional(),
 })
 
 const blockPositionsSchema = z.object({
@@ -781,9 +784,16 @@ brandCampaignsRouter.post('/brand/creatives/:id/restore', authMiddleware, async 
 /**
  * POST /api/v1/brand/creatives/:id/regenerate-image
  * Phase 3.4 V2.5 — relance fal.ai avec un nouveau prompt et remplace
- * l'image de la créative. L'ancien prompt et l'ancien image_url ne sont
- * pas conservés ici — l'utilisateur peut faire un Save Version avant
- * pour garder l'historique. Coût : 1 crédit.
+ * l'image de la créative.
+ *
+ * Phase 3.4 V3 (image history) : avant chaque regen on snapshot l'état
+ * courant complet (image + texte + positions + tailles) dans
+ * brand_creative_versions. La V3 du restore (route existante) ramène
+ * ainsi l'ancienne image AVEC le texte d'époque — rollback total.
+ *
+ * Coût : 1 crédit. Refund si la génération échoue. Le snapshot est créé
+ * AVANT la déduction crédit pour qu'on garde la trace même si la regen
+ * plante (les versions ne coûtent rien).
  */
 const regenerateImageSchema = z.object({
   prompt: z.string().min(10).max(1500),
@@ -798,9 +808,10 @@ brandCampaignsRouter.post('/brand/creatives/:id/regenerate-image', authMiddlewar
   }
   const { prompt } = parsed.data
   try {
+    // Fetch COMPLET — on a besoin de tout pour snapshot avant regen.
     const { data: creative } = await supabaseAdmin
       .from('brand_creatives')
-      .select('id, campaign_id')
+      .select('*')
       .eq('id', id)
       .eq('user_id', req.userId)
       .maybeSingle()
@@ -829,6 +840,39 @@ brandCampaignsRouter.post('/brand/creatives/:id/regenerate-image', authMiddlewar
       return
     }
 
+    // ── V3 snapshot : capture l'état courant AVANT toute modification ─────
+    // Numéro de version = max(version_num) + 1 (même logique que POST
+    // /creatives/:id/versions). Append-only — pas d'écrasement possible.
+    const { data: lastVersion } = await supabaseAdmin
+      .from('brand_creative_versions')
+      .select('version_num')
+      .eq('creative_id', id)
+      .order('version_num', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const snapshotVersion = (lastVersion?.version_num ?? 0) + 1
+    const snapshotPayload = {
+      image_url:        creative.image_url,
+      prompt:           creative.prompt,
+      header_text:      creative.header_text,
+      description_text: creative.description_text,
+      cta_text:         creative.cta_text,
+      blocks_visible:   creative.blocks_visible,
+      block_positions:  creative.block_positions,
+      block_sizes:      creative.block_sizes,
+      // Marque la nature de la version pour l'UI : « avant regen image »
+      _reason:          'pre_regenerate_image',
+    }
+    await supabaseAdmin
+      .from('brand_creative_versions')
+      .insert({
+        creative_id: id,
+        user_id:     req.userId,
+        version_num: snapshotVersion,
+        snapshot:    snapshotPayload,
+      })
+      .then(() => null, (err) => logger.warn({ err, id }, 'Pre-regen snapshot failed (non-blocking)'))
+
     // Déduit AVANT l'appel fal.ai. Refund si la génération échoue.
     try {
       await deductCredits(req.userId, CREDIT_PER_CREATIVE, `brand_creative:${id}:regen`, {
@@ -853,12 +897,42 @@ brandCampaignsRouter.post('/brand/creatives/:id/regenerate-image', authMiddlewar
       })
       const { data: updated, error } = await supabaseAdmin
         .from('brand_creatives')
-        .update({ image_url: imageUrl, prompt })
+        .update({
+          image_url:       imageUrl,
+          prompt,
+          // Bump current_version pour pointer vers la NOUVELLE génération.
+          // La V précédente reste accessible via Restore.
+          current_version: snapshotVersion + 1,
+        })
         .eq('id', id)
         .eq('user_id', req.userId)
         .select()
         .single()
       if (error) throw error
+
+      // Snapshot POST-regen (la nouvelle image) pour que current_version
+      // pointe vers un snapshot append-only complet. Permet le « tour de
+      // versions » complet et l'aller-retour.
+      await supabaseAdmin
+        .from('brand_creative_versions')
+        .insert({
+          creative_id: id,
+          user_id:     req.userId,
+          version_num: snapshotVersion + 1,
+          snapshot: {
+            image_url:        imageUrl,
+            prompt,
+            header_text:      creative.header_text,
+            description_text: creative.description_text,
+            cta_text:         creative.cta_text,
+            blocks_visible:   creative.blocks_visible,
+            block_positions:  creative.block_positions,
+            block_sizes:      creative.block_sizes,
+            _reason:          'post_regenerate_image',
+          },
+        })
+        .then(() => null, () => null)
+
       res.json({ data: updated })
     } catch (err) {
       await refundCredits(req.userId, CREDIT_PER_CREATIVE, `brand_creative:${id}:regen`, { reason: 'regen_failed' })
@@ -895,22 +969,28 @@ brandCampaignsRouter.post('/brand/creatives/:id/fix-layout', authMiddleware, asy
       | { header?: { x: number; y: number }; description?: { x: number; y: number }; cta?: { x: number; y: number } }
       | undefined
 
-    const suggestion = await fixCreativeLayout({
+    const { positions: posSuggestion, colors: colorSuggestion } = await fixCreativeLayout({
       imageUrl: creative.image_url,
       visible,
       current,
     })
-    if (Object.keys(suggestion).length === 0) {
+    if (Object.keys(posSuggestion).length === 0 && Object.keys(colorSuggestion).length === 0) {
       res.status(422).json({ error: 'Layout suggestion empty', code: 'NO_SUGGESTION' })
       return
     }
 
-    // Fusion : on garde les positions courantes pour les blocs absents de la
-    // suggestion (typiquement les blocs non visibles).
+    // Fusion : pour chaque bloc on prend la position suggérée (ou la courante,
+    // ou le defaut), et on attache la couleur suggérée (ou la courante si pas
+    // de nouvelle suggestion).
+    function merge(key: 'header' | 'description' | 'cta', fallback: { x: number; y: number }) {
+      const pos = posSuggestion[key]   ?? current?.[key]   ?? fallback
+      const col = colorSuggestion[key] ?? (current?.[key] as { color?: 'white' | 'black' } | undefined)?.color
+      return col ? { x: pos.x, y: pos.y, color: col } : { x: pos.x, y: pos.y }
+    }
     const merged = {
-      header:      suggestion.header      ?? current?.header      ?? { x: 50, y: 12 },
-      description: suggestion.description ?? current?.description ?? { x: 50, y: 50 },
-      cta:         suggestion.cta         ?? current?.cta         ?? { x: 50, y: 90 },
+      header:      merge('header',      { x: 50, y: 12 }),
+      description: merge('description', { x: 50, y: 50 }),
+      cta:         merge('cta',         { x: 50, y: 90 }),
     }
 
     const { data: updated, error } = await supabaseAdmin

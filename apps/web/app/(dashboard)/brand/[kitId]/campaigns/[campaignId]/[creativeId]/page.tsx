@@ -66,6 +66,21 @@ const DEFAULT_SIZES: CreativeBlockSizes = { header: 1, description: 1, cta: 1 }
 /** Tailles de base en px par bloc, multipliées ensuite par block_sizes. */
 const BASE_FONT_PX = { header: 22, description: 14, cta: 14 }
 
+/** Style inline pour un bloc texte overlay. La couleur peut être surchargée
+ *  par Fix Layout V3 ('white' | 'black') ; sans surcharge on garde le blanc
+ *  historique. Le shadow s'inverse aussi pour rester lisible. */
+function textOverlayStyle(color: 'white' | 'black' | undefined, fontPx: number): React.CSSProperties {
+  const c = color === 'black' ? '#000' : '#fff'
+  const shadow = color === 'black'
+    ? '0 1px 3px rgba(255, 255, 255, 0.6)'
+    : '0 2px 4px rgba(0, 0, 0, 0.7)'
+  return {
+    color:      c,
+    fontSize:   `${fontPx}px`,
+    textShadow: shadow,
+  }
+}
+
 export default function CreativeEditorPage() {
   const params = useParams<{ kitId: string; campaignId: string; creativeId: string }>()
   const kitId       = params?.kitId       ?? ''
@@ -613,8 +628,8 @@ function InteractivePreview({
           onCommit={onCommit}
         >
           <div
-            className="font-display text-white font-semibold leading-tight text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] px-1"
-            style={{ fontSize: `${BASE_FONT_PX.header * sizes.header}px` }}
+            className="font-display font-semibold leading-tight text-center px-1"
+            style={textOverlayStyle(positions.header.color, BASE_FONT_PX.header * sizes.header)}
           >
             {creative.header_text}
           </div>
@@ -629,8 +644,8 @@ function InteractivePreview({
           onCommit={onCommit}
         >
           <div
-            className="font-display text-white leading-snug text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] px-1"
-            style={{ fontSize: `${BASE_FONT_PX.description * sizes.description}px` }}
+            className="font-display leading-snug text-center px-1"
+            style={textOverlayStyle(positions.description.color, BASE_FONT_PX.description * sizes.description)}
           >
             {creative.description_text}
           </div>
@@ -645,8 +660,8 @@ function InteractivePreview({
           onCommit={onCommit}
         >
           <div
-            className="font-display text-white font-medium uppercase tracking-widest text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] px-1"
-            style={{ fontSize: `${BASE_FONT_PX.cta * sizes.cta}px` }}
+            className="font-display font-medium uppercase tracking-widest text-center px-1"
+            style={textOverlayStyle(positions.cta.color, BASE_FONT_PX.cta * sizes.cta)}
           >
             {creative.cta_text}
           </div>

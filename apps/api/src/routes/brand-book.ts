@@ -22,6 +22,7 @@ import { authMiddleware } from '../middleware/auth'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { renderBrandBookHtml } from '../services/brand-book-renderer'
+import { renderBrandBookPdf } from '../services/brand-book-pdf-renderer'
 
 export const brandBookRouter = Router()
 
@@ -154,6 +155,71 @@ brandBookRouter.get('/brand/book/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     logger.error({ err, id }, 'brand/book/:id GET error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * GET /api/v1/brand/book/:id/pdf
+ * Phase 5 V2 — version server-side PDF via pdfkit. Plus déterministe que
+ * le print-to-PDF du navigateur (fonts, marges, sauts de page stables).
+ * Régénère le PDF à la demande depuis le Brand Kit courant (et pas depuis
+ * le html_snapshot) pour éviter de stocker un binaire qui dérive du
+ * snapshot HTML stocké.
+ *
+ * Si l'utilisateur veut figer le PDF, il peut le télécharger et l'archiver.
+ */
+brandBookRouter.get('/brand/book/:id/pdf', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  try {
+    // On charge le BOOK pour vérifier ownership + récupérer brand_kit_id +
+    // version, mais on RE-LIT le kit pour avoir le DNA frais. Le snapshot
+    // HTML reste authoritative pour l'affichage iframe ; le PDF est une
+    // vue alternative.
+    const { data: book } = await supabaseAdmin
+      .from('brand_books')
+      .select('id, brand_kit_id, version')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!book) {
+      res.status(404).json({ error: 'Brand book not found', code: 'NOT_FOUND' })
+      return
+    }
+    const { data: kit } = await supabaseAdmin
+      .from('brand_kits')
+      .select('name, url, tagline, primary_color, secondary_color, font_family, logo_url, brand_values, brand_aesthetic, brand_tone_of_voice, business_overview')
+      .eq('id', book.brand_kit_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!kit) {
+      res.status(404).json({ error: 'Brand kit not found', code: 'NOT_FOUND' })
+      return
+    }
+
+    const pdf = await renderBrandBookPdf({
+      name:                kit.name,
+      url:                 kit.url,
+      tagline:             kit.tagline,
+      primary_color:       kit.primary_color,
+      secondary_color:     kit.secondary_color,
+      font_family:         kit.font_family,
+      logo_url:            kit.logo_url,
+      brand_values:        kit.brand_values,
+      brand_aesthetic:     kit.brand_aesthetic,
+      brand_tone_of_voice: kit.brand_tone_of_voice,
+      business_overview:   kit.business_overview,
+      version:             book.version,
+    })
+
+    const safeName = kit.name.replace(/[^a-z0-9-]+/gi, '_').slice(0, 40) || 'brand-book'
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}-v${book.version}.pdf"`)
+    res.setHeader('Content-Length', String(pdf.byteLength))
+    res.setHeader('Cache-Control', 'no-store')
+    res.end(pdf)
+  } catch (err) {
+    logger.error({ err, id }, 'brand/book/:id/pdf error')
+    res.status(500).json({ error: 'PDF generation failed', code: 'PDF_ERROR' })
   }
 })
 

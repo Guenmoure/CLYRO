@@ -49,14 +49,17 @@ function drawCenteredText(
   x: number, y: number,
   fontSize: number,
   fontWeight: number,
-  options: { uppercase?: boolean; letterSpacing?: number } = {},
+  options: { uppercase?: boolean; letterSpacing?: number; color?: 'white' | 'black' } = {},
 ) {
   const renderText = options.uppercase ? text.toUpperCase() : text
   ctx.font = `${fontWeight} ${fontSize}px Inter, "Plus Jakarta Sans", system-ui, sans-serif`
-  ctx.fillStyle = '#ffffff'
+  // V3 : honore la couleur suggérée par Fix Layout ('white' | 'black').
+  // Sans valeur, fallback blanc historique.
+  const isBlack = options.color === 'black'
+  ctx.fillStyle = isBlack ? '#000000' : '#ffffff'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
+  ctx.shadowColor = isBlack ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.7)'
   ctx.shadowBlur = fontSize * 0.35
   ctx.shadowOffsetX = 0
   ctx.shadowOffsetY = fontSize * 0.08
@@ -126,6 +129,7 @@ export async function rasterizeCreativeToPng(opts: RasterizeOptions): Promise<st
       (positions.header.y / 100) * canvas.height,
       baseFontPx.header * sizes.header * scale,
       600,
+      { color: positions.header.color },
     )
   }
   if (blocks.description && creative.description_text) {
@@ -136,6 +140,7 @@ export async function rasterizeCreativeToPng(opts: RasterizeOptions): Promise<st
       (positions.description.y / 100) * canvas.height,
       baseFontPx.description * sizes.description * scale,
       400,
+      { color: positions.description.color },
     )
   }
   if (blocks.cta && creative.cta_text) {
@@ -146,7 +151,7 @@ export async function rasterizeCreativeToPng(opts: RasterizeOptions): Promise<st
       (positions.cta.y / 100) * canvas.height,
       baseFontPx.cta * sizes.cta * scale,
       500,
-      { uppercase: true },
+      { uppercase: true, color: positions.cta.color },
     )
   }
 

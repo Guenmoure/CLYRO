@@ -35,10 +35,14 @@ export interface CreativeBlocksVisible {
   cta:          boolean
 }
 
-/** Coordonnées x,y du centre d'un bloc en pourcent du preview (0..100). */
+/** Coordonnées x,y du centre d'un bloc en pourcent du preview (0..100).
+ *  Phase 3.4 V3 : `color` (optionnelle) — couleur de texte suggérée par
+ *  Fix Layout selon le fond derrière ce bloc. NULL/undefined = blanc par
+ *  défaut comme avant V3. */
 export interface BlockPosition {
-  x: number
-  y: number
+  x:      number
+  y:      number
+  color?: 'white' | 'black'
 }
 
 /** Positions libres des 3 blocs. NULL côté DB = presets V1

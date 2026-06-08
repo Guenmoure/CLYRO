@@ -18,7 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import {
   Loader2, AlertCircle, RefreshCw, Printer, Link2, Globe, Lock,
-  ExternalLink, Check,
+  ExternalLink, Check, FileDown,
 } from 'lucide-react'
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { cn } from '@/lib/utils'
@@ -183,9 +183,19 @@ export default function BrandBookPage() {
         type="button"
         onClick={handlePrint}
         className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted"
+        title="Render the iframe via the browser print dialog (browser-side rendering)"
       >
-        <Printer size={12} /> Print to PDF
+        <Printer size={12} /> Print
       </button>
+      <a
+        href={`${API_BASE}/api/v1/brand/book/${book.id}/pdf`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted"
+        title="Server-side PDF generated with pdfkit (deterministic fonts and layout)"
+      >
+        <FileDown size={12} /> Download PDF
+      </a>
       <button
         type="button"
         onClick={togglePublish}
