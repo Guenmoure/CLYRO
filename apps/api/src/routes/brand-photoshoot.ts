@@ -4,8 +4,10 @@ import { authMiddleware } from '../middleware/auth'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { createFalClient } from '@fal-ai/client'
-import { deductCredits, refundCredits, InsufficientCreditsError } from '../services/credits'
+import { deductCredits, refundCredits, InsufficientCreditsError, creditCostForVideo } from '../services/credits'
 import { PHOTOSHOOT_TEMPLATES, PHOTOSHOOT_TEMPLATE_MAP, publicTemplate } from '../config/photoshoot-templates'
+import { renderQueue, isRedisReady } from '../queues/renderQueue'
+import { runMotionAuto } from '../pipelines/motion-router'
 
 export const brandPhotoshootRouter = Router()
 
@@ -168,55 +170,55 @@ brandPhotoshootRouter.post('/brand/photoshoots', authMiddleware, async (req, res
       throw err
     }
 
-    // Mode generate_edit n'a pas encore de pipeline V2 — on marque la ligne
-    // en error et on rembourse. Le front affiche un message explicite.
-    if (mode === 'generate_edit') {
-      await refundCredits(req.userId, totalCost, `brand_photoshoot:${shoot.id}`, { reason: 'mode_not_implemented' })
-        .catch(() => null)
-      const { data: updated } = await supabaseAdmin
-        .from('brand_photoshoots')
-        .update({
-          status: 'error',
-          metadata: { error_message: 'Generate/Edit mode not yet implemented in V1', error_code: 'NOT_IMPLEMENTED' },
-        })
-        .eq('id', shoot.id)
-        .select()
-        .single()
-      res.status(202).json({ data: updated ?? shoot })
-      return
-    }
-
     // Lance les 4 générations en parallèle (Promise.allSettled — un échec
     // d'une variation n'invalide pas les autres). Le client reçoit la ligne
     // en `generating` et poll pour le statut final.
     void (async () => {
       try {
-        const template = PHOTOSHOOT_TEMPLATE_MAP[template_id!]
         const brandSuffix = `, brand accent color ${kit.primary_color}${kit.secondary_color ? ` and ${kit.secondary_color}` : ''}`
-        const fullPrompt = prompt && prompt.trim().length > 0
-          ? `${template.prompt_template}, ${prompt.trim()}${brandSuffix}`
-          : `${template.prompt_template}${brandSuffix}`
         const aspect = ASPECT_TO_FAL[aspect_ratio ?? '9:16']
 
+        // Construction du prompt + input fal selon le mode. En product_template
+        // on garde le prompt curé du template + image_prompt sur la photo
+        // produit. En generate_edit on prend le prompt libre de l'utilisateur,
+        // et la PREMIÈRE reference URL si présente sert d'image_prompt
+        // (FLUX-pro accepte une seule image de référence).
+        let fullPrompt: string
+        let imagePromptUrl: string | undefined
+        if (mode === 'product_template') {
+          const template = PHOTOSHOOT_TEMPLATE_MAP[template_id!]
+          fullPrompt = prompt && prompt.trim().length > 0
+            ? `${template.prompt_template}, ${prompt.trim()}${brandSuffix}`
+            : `${template.prompt_template}${brandSuffix}`
+          imagePromptUrl = input_image_url!
+        } else {
+          // generate_edit
+          fullPrompt = `${prompt!.trim()}${brandSuffix}`
+          imagePromptUrl = (reference_urls && reference_urls.length > 0) ? reference_urls[0] : undefined
+        }
+
         const results = await Promise.allSettled(
-          Array.from({ length: VARIATIONS_PER_PHOTOSHOOT }).map((_, idx) =>
-            Promise.race([
+          Array.from({ length: VARIATIONS_PER_PHOTOSHOOT }).map((_, idx) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const input: any = {
+              prompt:           fullPrompt,
+              aspect_ratio:     aspect,
+              safety_tolerance: '2',
+              output_format:    'jpeg',
+              seed:             Date.now() + idx * 7919,
+            }
+            if (imagePromptUrl) {
+              // Weight 0.85 pour product_template (très fidèle au produit) /
+              // 0.55 pour generate_edit (la référence guide le style sans
+              // dominer le prompt).
+              input.image_prompt = { url: imagePromptUrl, weight: mode === 'product_template' ? 0.85 : 0.55 }
+            }
+            return Promise.race([
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              fal.subscribe('fal-ai/flux-pro/v1.1-ultra', {
-                input: {
-                  prompt:           fullPrompt,
-                  image_prompt:     { url: input_image_url!, weight: 0.85 },
-                  aspect_ratio:     aspect,
-                  safety_tolerance: '2',
-                  output_format:    'jpeg',
-                  // Variation through seed → distinct outputs même prompt
-                  seed:             Date.now() + idx * 7919,
-                },
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              } as any),
+              fal.subscribe('fal-ai/flux-pro/v1.1-ultra', { input } as any),
               new Promise<never>((_, reject) => setTimeout(() => reject(new Error('fal.ai timeout')), TIMEOUT_MS)),
-            ]),
-          ),
+            ])
+          }),
         )
 
         const urls: string[] = []
@@ -317,6 +319,174 @@ brandPhotoshootRouter.get('/brand/photoshoots/:id', authMiddleware, async (req, 
     res.json({ data })
   } catch (err) {
     logger.error({ err, id }, 'brand/photoshoots/:id error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * POST /api/v1/brand/photoshoots/:id/animate/:index
+ * Phase 4 V2 — pont Photoshoot → Motion. La variation `output_urls[index]`
+ * devient le brief d'une vidéo motion design de 6 s lancée via motion_auto.
+ * Même pattern que /brand/creatives/:id/animate (Phase 3.3).
+ */
+brandPhotoshootRouter.post('/brand/photoshoots/:id/animate/:index', authMiddleware, async (req, res) => {
+  const id = String(req.params.id ?? '')
+  const indexNum = Number(req.params.index ?? '-1')
+  if (!Number.isInteger(indexNum) || indexNum < 0 || indexNum > 3) {
+    res.status(400).json({ error: 'index must be 0..3', code: 'VALIDATION_ERROR' })
+    return
+  }
+  try {
+    // Load photoshoot + kit
+    const { data: shoot } = await supabaseAdmin
+      .from('brand_photoshoots')
+      .select('id, brand_kit_id, output_urls, prompt, template_id, aspect_ratio, metadata, status')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .maybeSingle()
+    if (!shoot) {
+      res.status(404).json({ error: 'Photoshoot not found', code: 'NOT_FOUND' })
+      return
+    }
+    if (shoot.status !== 'done') {
+      res.status(409).json({ error: 'Photoshoot not ready yet', code: 'NOT_READY' })
+      return
+    }
+    const variation = (shoot.output_urls as string[])[indexNum]
+    if (!variation) {
+      res.status(404).json({ error: 'Variation not found at index', code: 'NOT_FOUND' })
+      return
+    }
+    const { data: kit } = await supabaseAdmin
+      .from('brand_kits')
+      .select('name, primary_color, secondary_color, font_family, logo_url')
+      .eq('id', shoot.brand_kit_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!kit) {
+      res.status(404).json({ error: 'Brand kit not found', code: 'NOT_FOUND' })
+      return
+    }
+
+    // Aspect mapping vers Motion (Motion ne supporte pas 4:5)
+    const motionFormat: '9:16' | '1:1' | '16:9' =
+      shoot.aspect_ratio === '1:1'  ? '1:1'  :
+      shoot.aspect_ratio === '16:9' ? '16:9' :
+      shoot.aspect_ratio === '4:5'  ? '9:16' :
+                                       '9:16'
+
+    // Brief composé
+    const templateName = shoot.template_id ? PHOTOSHOOT_TEMPLATE_MAP[shoot.template_id]?.name ?? shoot.template_id : 'custom'
+    const lines: string[] = []
+    lines.push(`Animate this ${templateName} product visual for ${kit.name}.`)
+    if (shoot.prompt) lines.push(shoot.prompt)
+    const promptUsed = ((shoot.metadata as { prompt_used?: string } | null)?.prompt_used) ?? null
+    if (promptUsed) lines.push(`Visual reference: ${promptUsed.slice(0, 600)}`)
+    const brief = lines.join('\n').slice(0, 1900)
+    const title = `${kit.name} · ${templateName} animation`
+    const durationSeconds = 6
+    const creditCost = creditCostForVideo(durationSeconds, 'fast')
+    const motionStyle = 'corporate'
+
+    // Crée la ligne videos
+    const { data: video, error: insertErr } = await supabaseAdmin
+      .from('videos')
+      .insert({
+        user_id: req.userId,
+        module:  'motion',
+        style:   motionStyle,
+        title,
+        status:  'generating',
+        metadata: {
+          brief,
+          format: motionFormat,
+          duration: '6s',
+          brand_config: kit,
+          progress: 0,
+          source_photoshoot_id: shoot.id,
+          source_variation_url: variation,
+          source_variation_index: indexNum,
+        },
+      })
+      .select('id')
+      .single()
+    if (insertErr || !video) {
+      logger.error({ err: insertErr }, 'photoshoot animate video insert failed')
+      res.status(500).json({ error: 'Failed to create video', code: 'DB_ERROR' })
+      return
+    }
+
+    const jobData = {
+      type: 'motion_auto' as const,
+      videoId:       video.id,
+      userId:        req.userId,
+      userEmail:     req.userEmail,
+      title,
+      brief,
+      style:         motionStyle,
+      format:        motionFormat,
+      duration:      '6s',
+      brandConfig:   { ...kit, style: motionStyle },
+      voiceId:       process.env.ELEVENLABS_DEFAULT_VOICE_ID ?? '',
+      creditCost,
+      brandKitId:    shoot.brand_kit_id,
+    }
+
+    let enqueued = false
+    if (renderQueue && isRedisReady()) {
+      try {
+        await renderQueue.add('motion_auto', jobData)
+        enqueued = true
+      } catch (err) {
+        logger.warn({ err, videoId: video.id }, 'Photoshoot animate enqueue failed')
+      }
+    }
+    if (!enqueued) {
+      if (process.env.ALLOW_INLINE_FALLBACK !== 'true') {
+        await supabaseAdmin
+          .from('videos')
+          .update({ status: 'error', metadata: { error_message: 'Worker unavailable', error_at: new Date().toISOString() } })
+          .eq('id', video.id)
+        res.status(503).json({ error: 'Worker unavailable', code: 'WORKER_UNAVAILABLE', video_id: video.id })
+        return
+      }
+      runMotionAuto(jobData).catch(async (err: unknown) => {
+        logger.error({ err, videoId: video.id }, 'Photoshoot animate inline failed')
+        await supabaseAdmin
+          .from('videos')
+          .update({ status: 'error', metadata: { error_message: err instanceof Error ? err.message : String(err), error_at: new Date().toISOString() } })
+          .eq('id', video.id)
+          .then(() => null, () => null)
+      })
+    }
+
+    // Déduit les crédits motion
+    try {
+      await deductCredits(req.userId, creditCost, `video:${video.id}`, {
+        kind: 'motion',
+        source: 'brand_photoshoot_animate',
+        photoshoot_id: shoot.id,
+        variation_index: indexNum,
+      })
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        await supabaseAdmin.from('videos').update({
+          status: 'error',
+          metadata: { error_message: 'Insufficient credits', error_at: new Date().toISOString() },
+        }).eq('id', video.id).then(() => null, () => null)
+        res.status(402).json({
+          error: 'Insufficient credits', code: 'INSUFFICIENT_CREDITS',
+          required: err.required, available: err.available, video_id: video.id,
+        })
+        return
+      }
+      throw err
+    }
+
+    logger.info({ userId: req.userId, videoId: video.id, photoshootId: shoot.id, variation: indexNum }, 'Photoshoot variation animated')
+    res.status(202).json({ data: { video_id: video.id, status: 'generating', credits_deducted: creditCost } })
+  } catch (err) {
+    logger.error({ err, id, index: indexNum }, 'brand/photoshoots/:id/animate error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
   }
 })

@@ -81,9 +81,8 @@ export default function BrandPhotoshootLandingPage() {
             href={`/brand/${kitId}/photoshoot/generate`}
             Icon={Wand2}
             title="Generate or edit an image"
-            description="Describe what you want, optionally attach reference images. Coming in V2."
+            description="Describe what you want, optionally attach a reference image. The brand palette is applied automatically."
             cta="Open generator"
-            disabled
           />
         </section>
 
@@ -96,7 +95,7 @@ export default function BrandPhotoshootLandingPage() {
           ) : (
             <ul className="space-y-2">
               {photoshoots.map((p) => (
-                <PhotoshootRow key={p.id} shoot={p} />
+                <PhotoshootRow key={p.id} shoot={p} kitId={kitId} />
               ))}
             </ul>
           )}
@@ -135,7 +134,7 @@ function ModeCard({
   return <Link href={href}>{content}</Link>
 }
 
-function PhotoshootRow({ shoot }: { shoot: BrandPhotoshoot }) {
+function PhotoshootRow({ shoot, kitId }: { shoot: BrandPhotoshoot; kitId: string }) {
   const meta = {
     pending:    { label: 'Pending',    cls: 'text-[--text-muted] bg-muted',     Icon: Loader2 },
     generating: { label: 'Generating', cls: 'text-blue-700 bg-blue-100',         Icon: Loader2 },
@@ -145,7 +144,10 @@ function PhotoshootRow({ shoot }: { shoot: BrandPhotoshoot }) {
   const Icon = meta.Icon
   return (
     <li>
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+      <Link
+        href={`/brand/${kitId}/photoshoot/${shoot.id}`}
+        className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-foreground/30 transition-colors"
+      >
         {shoot.output_urls.length > 0 ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={shoot.output_urls[0]} alt="" className="w-12 h-12 rounded-md object-cover border border-border" />
@@ -172,7 +174,7 @@ function PhotoshootRow({ shoot }: { shoot: BrandPhotoshoot }) {
             {shoot.output_urls.length}/4 variations · {new Date(shoot.created_at).toLocaleString()}
           </p>
         </div>
-      </div>
+      </Link>
     </li>
   )
 }

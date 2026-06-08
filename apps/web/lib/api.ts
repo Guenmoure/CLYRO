@@ -603,6 +603,13 @@ export async function deleteBrandPhotoshoot(id: string) {
   return apiFetch<{ success: boolean }>(`/api/v1/brand/photoshoots/${id}`, { method: 'DELETE' })
 }
 
+export async function animateBrandPhotoshoot(photoshootId: string, index: number) {
+  return apiFetch<{ data: { video_id: string; status: string; credits_deducted: number } }>(
+    `/api/v1/brand/photoshoots/${photoshootId}/animate/${index}`,
+    { method: 'POST', body: JSON.stringify({}) },
+  )
+}
+
 // ---- Autopilot series ----
 
 export type AutopilotCadence = 'daily' | 'weekly' | 'manual'
