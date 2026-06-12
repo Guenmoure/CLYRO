@@ -26,7 +26,7 @@ export function AvatarFilters({ search, activeFilter, onSearch, onFilter }: Avat
   const { t } = useLanguage()
 
   return (
-    <div className="px-6 py-4 space-y-3 border-b border-border/30">
+    <div className="px-4 sm:px-6 py-4 space-y-3 border-b border-border/30">
       {/* Search bar */}
       <div className="relative">
         <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />

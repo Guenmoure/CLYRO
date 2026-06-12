@@ -192,7 +192,7 @@ function StepBrand({
             {brand.logo_url ? (
               <div className="relative w-16 h-16 rounded-xl border border-border bg-muted overflow-hidden flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={brand.logo_url} alt="Logo" className="max-w-full max-h-full object-contain p-1" />
+                <img src={brand.logo_url} alt="Logo" loading="lazy" decoding="async" className="max-w-full max-h-full object-contain p-1" />
               </div>
             ) : (
               <div className="w-16 h-16 rounded-xl border-2 border-dashed border-border bg-muted flex items-center justify-center text-muted-foreground text-xs text-center leading-tight p-1">

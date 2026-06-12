@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import {
   Plus, Video, Mic2, Loader2, ChevronDown, X, Upload, Check, Wand2,
   RefreshCw, RotateCcw, Download, Edit3, ArrowLeft, ArrowRight, Sparkles,
@@ -16,7 +17,6 @@ import { startFacelessGeneration, getPublicVoices, updateVideoMetadata, regenera
 import { useVideoStatus } from '@/hooks/use-video-status'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
-import { ContentTemplateGallery } from './ContentTemplateGallery'
 import {
   buildTemplateDescription,
   tName,
@@ -24,6 +24,21 @@ import {
   type ContentTemplate,
   type TemplateCategory,
 } from '@/lib/faceless-content-templates'
+
+// Below-the-fold gallery — code-split so the 400-line template browser doesn't
+// weigh down the hub's first paint. ssr:false is safe: it renders under the
+// setup form and has no SEO value.
+const ContentTemplateGallery = dynamic(
+  () => import('./ContentTemplateGallery').then((m) => m.ContentTemplateGallery),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="border-t border-border px-4 sm:px-6 py-10">
+        <div className="max-w-5xl mx-auto h-48 rounded-2xl bg-muted animate-pulse" />
+      </div>
+    ),
+  },
+)
 
 // ── fal.ai concurrency control ─────────────────────────────────────────────
 // fal.ai caps accounts at 10 concurrent requests. Each scene fires 2 calls
@@ -427,7 +442,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
     : 0
   return (
     <div
-      className="bg-card border-b border-border relative flex items-center gap-1 px-6 py-3 shrink-0 z-20 rounded-b-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+      className="bg-card border-b border-border relative flex items-center gap-1 overflow-x-auto px-4 sm:px-6 py-3 shrink-0 z-20 rounded-b-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
       role="progressbar"
       aria-valuenow={progressPct}
       aria-valuemin={0}
@@ -444,9 +459,9 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
         const done   = i < currentIdx
         const active = i === currentIdx
         return (
-          <div key={step.id} className="flex items-center gap-1">
+          <div key={step.id} className="flex items-center gap-1 shrink-0">
             <div className={cn(
-              'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-body font-medium transition-all',
+              'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-body font-medium whitespace-nowrap transition-all',
               active ? 'bg-blue-500 text-white shadow-sm' :
               done   ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
                        'text-[--text-muted]'
@@ -466,7 +481,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
       {/* Auto-save indicator */}
       {savedState && (
         <div className={cn(
-          'ml-auto flex items-center gap-1 text-[11px] font-mono transition-all',
+          'ml-auto flex items-center gap-1 shrink-0 whitespace-nowrap text-[11px] font-mono transition-all',
           savedState === 'saving' ? 'text-[--text-muted]' : 'text-emerald-600'
         )}>
           {savedState === 'saving'
@@ -487,12 +502,12 @@ function StylePickerDropdown({ value, onChange, onClose }: {
   onClose: () => void
 }) {
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-[480px] bg-card border border-border rounded-2xl shadow-xl p-4 animate-fade-in">
+    <div className="absolute left-0 top-full mt-2 z-50 w-[min(480px,calc(100vw-2.5rem))] bg-card border border-border rounded-2xl shadow-xl p-4 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
         <p className="font-display text-sm font-semibold text-foreground">Style visuel</p>
         <button type="button" onClick={onClose} aria-label="Fermer" className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {STYLE_TEMPLATES.map((s) => {
           const Preview = s.preview
           return (
@@ -539,7 +554,7 @@ function VoicePickerDropdown({ value, voices, onChange, onClose }: {
   }
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-card border border-border rounded-2xl shadow-xl p-3 animate-fade-in">
+    <div className="absolute left-0 top-full mt-2 z-50 w-72 max-w-[calc(100vw-2.5rem)] bg-card border border-border rounded-2xl shadow-xl p-3 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <p className="font-display text-sm font-semibold text-foreground">Voix off</p>
         <button type="button" onClick={onClose} aria-label="Fermer" className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
@@ -583,7 +598,7 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
   const filtered = activeCategory === 'all' ? STYLE_TEMPLATES : STYLE_TEMPLATES.filter((t) => t.category === activeCategory)
 
   return (
-    <div className="border-t border-border px-6 py-8 bg-muted/50">
+    <div className="border-t border-border px-4 sm:px-6 py-8 bg-muted/50">
       <div className="max-w-2xl mx-auto">
         <p className="font-display text-base font-semibold text-foreground mb-4">Styles disponibles</p>
         <div className="flex flex-wrap gap-2 mb-5">
@@ -597,7 +612,7 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {filtered.map((t) => {
             const Preview = t.preview
             const isSelected = selected === t.id
@@ -678,7 +693,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      <div className="flex flex-col items-center justify-start px-6 pt-12 pb-8">
+      <div className="flex flex-col items-center justify-start px-4 sm:px-6 pt-8 sm:pt-12 pb-8">
         <div className="w-full max-w-2xl space-y-6">
 
           {/* Headline */}
@@ -759,7 +774,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
 
             {project.inputType === 'script' && (
               <>
-                <div className="px-4 pb-3 flex items-center justify-between gap-2">
+                <div className="px-4 pb-3 flex flex-wrap items-center justify-between gap-2">
                   {(() => {
                     const s = project.script ?? ''
                     const words = s.trim() ? s.trim().split(/\s+/).length : 0
@@ -772,7 +787,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                     )
                   })()}
                   {!(project.script ?? '').trim() && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
                       {EXAMPLE_SCRIPTS.map((ex) => (
                         <button
                           key={ex.label}
@@ -847,7 +862,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             {/* Title */}
             <input type="text" value={project.title} onChange={(e) => onChange({ title: e.target.value })}
               placeholder={t('fh_titlePlaceholder')}
-              className="ml-auto hidden sm:block flex-1 max-w-xs bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors" />
+              className="w-full sm:w-auto sm:ml-auto sm:flex-1 sm:max-w-xs bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors" />
           </div>
 
           {/* Generate row — separate from dropdowns to avoid click interception (P0 fix) */}
@@ -1007,7 +1022,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b border-border shrink-0">
         <div>
           <h2 className="font-display text-base font-bold text-foreground">Scènes de ta vidéo</h2>
           <p className="font-body text-xs text-[--text-muted]">{scenes.length} scènes générées — modifie le script et les prompts avant de générer les images</p>
@@ -1020,7 +1035,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
       </div>
 
       {/* Scenes list */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3">
         {scenes.map((scene, i) => (
           <div
             key={scene.id}
@@ -1036,7 +1051,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
             )}
           >
             {/* Scene header */}
-            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border/60 bg-card/40">
+            <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-border/60 bg-card/40">
               {/* Drag handle */}
               <GripVertical size={14} className="text-[--text-muted]/40 cursor-grab active:cursor-grabbing shrink-0" />
               <div className="flex items-center gap-1.5">
@@ -1098,7 +1113,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               </div>
 
               {/* Prompts */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-card rounded-xl p-3 border border-border/60">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <div className="w-3 h-3 rounded bg-sky-200 flex items-center justify-center">
@@ -1143,7 +1158,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
       </div>
 
       {/* Footer navigation */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-t border-border bg-muted shrink-0">
         <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
@@ -1168,7 +1183,7 @@ function ComparisonSlider({ before, after, onClose }: { before: string; after: s
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-8"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-8"
       onClick={onClose}>
       <div className="relative max-w-3xl w-full rounded-2xl overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}>
@@ -1177,10 +1192,10 @@ function ComparisonSlider({ before, after, onClose }: { before: string; after: s
           onMouseMove={(e) => onMove(e.clientX)}
           onTouchMove={(e) => onMove(e.touches[0].clientX)}>
           {/* Before */}
-          <img src={before} alt="Version précédente" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={before} alt="Version précédente" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
           {/* After — clipped */}
           <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 0 0 ${pct}%)` }}>
-            <img src={after} alt="Nouvelle version" className="absolute inset-0 w-full h-full object-cover" />
+            <img src={after} alt="Nouvelle version" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
           </div>
           {/* Divider */}
           <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none"
@@ -1471,12 +1486,12 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b border-border shrink-0">
         <div>
           <h2 className="font-display text-base font-bold text-foreground">Génération des images</h2>
           <p className="font-body text-xs text-[--text-muted]">{doneCnt}/{scenes.length} images générées</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => { setBatchMode((v) => !v); setSelected(new Set()) }}
@@ -1503,7 +1518,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
       {/* Batch action bar */}
       {batchMode && selected.size > 0 && (
-        <div className="px-6 py-2.5 bg-blue-500/10 border-b border-blue-500/20 flex items-center gap-3 shrink-0">
+        <div className="px-4 sm:px-6 py-2.5 bg-blue-500/10 border-b border-blue-500/20 flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
           <p className="font-mono text-xs text-blue-500 flex-1">
             {selected.size} scène{selected.size > 1 ? 's' : ''} sélectionnée{selected.size > 1 ? 's' : ''}
           </p>
@@ -1520,7 +1535,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
       {/* Scene 0 validation gate banner */}
       {scene0Phase === 'pending_validation' && (
-        <div className="px-6 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-4 shrink-0">
+        <div className="px-4 sm:px-6 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center gap-3 shrink-0">
           <div className="flex-1">
             <p className="font-display font-semibold text-sm text-amber-800">Validez la direction visuelle</p>
             <p className="text-xs text-amber-600 mt-0.5">
@@ -1545,7 +1560,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       )}
 
       {scene0Phase === 'validated' && scenes.some((s) => s.index > 0 && s.imageStatus !== 'done') && (
-        <div className="px-6 py-2.5 bg-emerald-50 border-b border-emerald-200 flex items-center gap-3 shrink-0">
+        <div className="px-4 sm:px-6 py-2.5 bg-emerald-50 border-b border-emerald-200 flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
           <Check size={14} className="text-emerald-600" />
           <p className="text-xs text-emerald-700 flex-1">
             {t('fh_scene0ValidatedRef')}
@@ -1563,8 +1578,8 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       )}
 
       {/* Image grid */}
-      <div className="flex-1 overflow-y-auto px-6 py-5">
-        <div className="grid grid-cols-3 gap-4">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {scenes.map((scene, i) => (
             <div key={scene.id} className="rounded-2xl border border-border overflow-hidden bg-muted">
               {/* Image preview */}
@@ -1591,6 +1606,8 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                       <img
                         src={scene.imageUrl}
                         alt={`Scène ${i + 1}`}
+                        loading="lazy"
+                        decoding="async"
                         className="absolute inset-0 w-full h-full object-cover"
                         onError={() => {
                           // URL expirée ou inaccessible → remet la scène en état de régénération
@@ -1774,11 +1791,11 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-t border-border bg-muted shrink-0">
         <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {!allDone && (
             <p className="text-xs font-body text-[--text-muted]">{scenes.length - doneCnt} image(s) restante(s)</p>
           )}
@@ -1890,7 +1907,7 @@ function ScenePreviewLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={`Prévisualisation scène ${index + 1}`}
-      className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6"
+      className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
       onClick={onClose}
     >
       {/* Close */}
@@ -1910,7 +1927,7 @@ function ScenePreviewLightbox({
           type="button"
           aria-label={t('fh_prevScene')}
           onClick={(e) => { e.stopPropagation(); onNavigate(index - 1) }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
         >
           <ArrowLeft size={18} />
         </button>
@@ -1922,7 +1939,7 @@ function ScenePreviewLightbox({
           type="button"
           aria-label={t('fh_nextScene')}
           onClick={(e) => { e.stopPropagation(); onNavigate(index + 1) }}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
         >
           <ArrowRight size={18} />
         </button>
@@ -1992,6 +2009,7 @@ function ScenePreviewLightbox({
                 key={mediaUrl}
                 src={mediaUrl}
                 alt={`Scène ${index + 1}`}
+                decoding="async"
                 onError={() => { setMediaError(true); setMediaLoading(false) }}
                 onLoad={() => setMediaLoading(false)}
                 className="max-w-full max-h-full object-contain relative z-10 shadow-2xl"
@@ -2007,7 +2025,7 @@ function ScenePreviewLightbox({
         </div>
 
         {/* Info bar */}
-        <div className="flex items-start justify-between gap-4 px-2">
+        <div className="flex flex-wrap items-start justify-between gap-3 px-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-mono text-[11px] uppercase tracking-widest bg-white/10 text-white px-2 py-0.5 rounded-full">
@@ -2252,7 +2270,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b border-border shrink-0">
         <div>
           <h2 className="font-display text-base font-bold text-foreground">Génération des clips</h2>
           <p className="font-body text-xs text-[--text-muted]">
@@ -2270,7 +2288,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-6">
         {/* Animation mode selector — Storyboard (bypass) | Fast (Kling Std) | Pro (Kling Pro) */}
         <div className="rounded-2xl border border-border bg-muted p-4 space-y-3">
           <div className="flex items-center justify-between">
@@ -2281,7 +2299,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {([
               { id: 'storyboard', label: t('fh_stillImages'), sub: t('fh_stillImagesSub'), emoji: '🖼️' },
               { id: 'fast',       label: t('fh_fastAnim'), sub: t('fh_fastAnimSub'), emoji: '⚡' },
@@ -2318,7 +2336,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
 
         {/* Clips grid — same layout as the Images step. Hidden in storyboard mode. */}
         {animationMode !== 'storyboard' && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {scenes.map((scene, i) => (
             <div key={scene.id} className="rounded-2xl border border-border overflow-hidden bg-muted">
               {/* Clip preview */}
@@ -2366,6 +2384,8 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                       <img
                         src={scene.imageUrl}
                         alt={`Scène ${i + 1}`}
+                        loading="lazy"
+                        decoding="async"
                         className="absolute inset-0 w-full h-full object-cover"
                         onError={() => {
                           console.warn(`[image] Scene ${i + 1} thumb failed to load`)
@@ -2538,11 +2558,11 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-t border-border bg-muted shrink-0">
         <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {videoId && hasRegenerated && (
             <button type="button" onClick={handleReassemble} disabled={reassembling}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white font-display font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50">
@@ -2664,7 +2684,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-8 max-w-xl mx-auto gap-6">
+    <div className="flex flex-col items-center justify-center h-full px-4 sm:px-8 max-w-xl mx-auto gap-6">
       {!isDone && !isError ? (
         <div className="w-full text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto">
@@ -3320,10 +3340,10 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
   }
 
   return (
-    <div className="flex flex-1 h-full overflow-hidden">
+    <div className="flex flex-col lg:flex-row flex-1 h-full overflow-hidden">
 
-      {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside className="bg-card border-r border-border w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
+      {/* ── Sidebar — stacks above the main panel on mobile ───────── */}
+      <aside className="bg-card border border-border lg:border-y-0 lg:border-l-0 lg:border-r w-auto lg:w-52 m-3 lg:mr-0 max-h-48 lg:max-h-none rounded-2xl flex flex-col shrink-0 overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold text-foreground">Faceless Video</h2>
           <Wand2 size={14} className="text-[--text-muted]" />
@@ -3364,7 +3384,7 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
       {/* ── Main panel ──────────────────────────────────────────── */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {viewId && viewSession ? (
-          <div className="flex flex-col items-center justify-center h-full px-8 max-w-xl mx-auto gap-4">
+          <div className="flex flex-col items-center justify-center h-full px-4 sm:px-8 max-w-xl mx-auto gap-4">
             <div className="w-full">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-display text-lg font-bold text-foreground">{viewSession.title ?? 'Video'}</h2>
