@@ -10,6 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
 import { RealtimeProjects } from './RealtimeProjects'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { VideoProject } from './ProjectCard'
 
 interface RecentProjectsProps {
@@ -172,6 +173,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
 }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const isProcessing = PROCESSING_STATUSES.has(project.status)
   const isError = project.status === 'error'
   const isDone = project.status === 'done'
@@ -181,7 +183,6 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
   const moduleLabel = MODULE_LABELS[project.module ?? ''] ?? 'Projet'
 
   async function handleDelete() {
-    if (!confirm(t('confirmDelete'))) return
     setDeleting(true)
     try {
       const res = await fetch(`/api/videos/${project.id}`, { method: 'DELETE' })
@@ -305,7 +306,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
               <div className="border-t border-border" />
               <button
                 type="button"
-                onClick={() => { onMenuToggle(false); handleDelete() }}
+                onClick={() => { onMenuToggle(false); setConfirmOpen(true) }}
                 className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-body text-error hover:bg-error/10 transition-colors"
               >
                 <Trash2 size={13} /> {t('delete')}
@@ -314,6 +315,16 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
           )}
         </div>
       </div>
+
+      {/* Delete confirmation — hard-delete, no undo */}
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title={t('pc_deleteConfirmTitle')}
+        message={t('pc_deleteConfirmBody').replace('{name}', project.title ?? t('rp_untitled'))}
+        confirmLabel={t('delete')}
+      />
     </div>
   )
 }

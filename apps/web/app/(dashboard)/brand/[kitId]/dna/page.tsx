@@ -23,6 +23,7 @@ import { TagInput } from '@/components/brand/TagInput'
 import { SocialLinksEditor } from '@/components/brand/SocialLinksEditor'
 import { CtaLinkList } from '@/components/brand/CtaLinkList'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { getBrandKit, updateBrandKit } from '@/lib/api'
 import type { BrandKit, SocialLinks, CtaLink } from '@clyro/shared'
 
@@ -34,6 +35,7 @@ const DEBOUNCE_MS = 1500
 export default function BrandDnaPage() {
   const params = useParams<{ kitId: string }>()
   const router = useRouter()
+  const { t } = useLanguage()
   const kitId = params?.kitId ?? ''
 
   const [tab, setTab] = useState<Tab>('overview')
@@ -51,10 +53,11 @@ export default function BrandDnaPage() {
     getBrandKit(kitId)
       .then((r) => setKit(r.data))
       .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : 'Failed to load brand kit'
+        const msg = err instanceof Error ? err.message : t('bk_failedLoad')
         setLoadError(msg)
       })
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitId])
 
   // ── Patch + debounced save ────────────────────────────────────────────────
@@ -108,13 +111,13 @@ export default function BrandDnaPage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-3 py-20">
           <AlertCircle size={28} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{loadError ?? 'Brand kit not found'}</p>
+          <p className="font-body text-sm text-[--text-muted]">{loadError ?? t('bk_kitNotFound')}</p>
           <button
             type="button"
             onClick={() => router.push('/brand')}
             className="font-mono text-xs text-foreground underline"
           >
-            ← Back to Brand Kits
+            ← {t('bk_dna_backToKits')}
           </button>
         </div>
       </BrandKitLayout>
@@ -126,19 +129,19 @@ export default function BrandDnaPage() {
       {saveState === 'saving' && (
         <>
           <Loader2 size={11} className="animate-spin" />
-          Saving…
+          {t('bh_saving')}
         </>
       )}
       {saveState === 'saved' && (
         <>
           <Check size={11} className="text-emerald-600" />
-          Saved
+          {t('bk_ce_saved')}
         </>
       )}
       {saveState === 'error' && (
         <>
           <AlertCircle size={11} className="text-error" />
-          Failed
+          {t('bk_ce_saveFailedShort')}
         </>
       )}
     </span>
@@ -165,9 +168,10 @@ export default function BrandDnaPage() {
 // ── Tabs bar ────────────────────────────────────────────────────────────────
 
 function TabsBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
+  const { t } = useLanguage()
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'overview', label: 'Brand Overview' },
-    { id: 'business', label: 'Business Details' },
+    { id: 'overview', label: t('bk_dna_tabOverview') },
+    { id: 'business', label: t('bk_dna_tabBusiness') },
   ]
   return (
     <div className="flex gap-6 border-b border-border -mb-px">
@@ -224,9 +228,10 @@ function OverviewTab({
   kit: BrandKit
   updateField: <K extends keyof BrandKit>(key: K, value: BrandKit[K]) => void
 }) {
+  const { t } = useLanguage()
   return (
     <>
-      <Section title="Brand name" hint="The display name across all generated content.">
+      <Section title={t('bk_dna_nameTitle')} hint={t('bk_dna_nameHint')}>
         <input
           type="text"
           value={kit.name ?? ''}
@@ -236,27 +241,27 @@ function OverviewTab({
         />
       </Section>
 
-      <Section title="Brand URL" hint="The main website for this brand.">
+      <Section title={t('bk_dna_urlTitle')} hint={t('bk_dna_urlHint')}>
         <input
           type="url"
           value={kit.url ?? ''}
           onChange={(e) => updateField('url', e.target.value)}
-          placeholder="https://your-brand.example.com"
+          placeholder={t('bk_dna_urlPh')}
           maxLength={500}
           className={inputCls}
         />
       </Section>
 
-      <Section title="Logo" hint="Used in videos, brand book, social posts.">
+      <Section title={t('bk_dna_logoTitle')} hint={t('bk_dna_logoHint')}>
         {kit.logo_url ? (
           <div className="flex items-center gap-3 rounded-xl border border-border bg-muted p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={kit.logo_url} alt="Logo" className="w-12 h-12 object-contain rounded-md bg-card border border-border" />
+            <img src={kit.logo_url} alt={t('bk_dna_logoAlt')} className="w-12 h-12 object-contain rounded-md bg-card border border-border" />
             <input
               type="url"
               value={kit.logo_url ?? ''}
               onChange={(e) => updateField('logo_url', e.target.value)}
-              placeholder="Logo URL"
+              placeholder={t('bk_dna_logoUrlPh')}
               maxLength={500}
               className="flex-1 bg-transparent outline-none font-mono text-xs text-foreground"
             />
@@ -266,21 +271,21 @@ function OverviewTab({
             type="url"
             value={kit.logo_url ?? ''}
             onChange={(e) => updateField('logo_url', e.target.value)}
-            placeholder="Paste a logo URL (upload UI in Phase 2)"
+            placeholder={t('bk_dna_logoPastePh')}
             className={inputCls}
           />
         )}
       </Section>
 
-      <Section title="Colors" hint="Primary is required, secondary is optional.">
+      <Section title={t('bk_dna_colorsTitle')} hint={t('bk_dna_colorsHint')}>
         <div className="grid grid-cols-2 gap-3">
           <ColorField
-            label="Primary"
+            label={t('bk_dna_colorPrimary')}
             value={kit.primary_color}
             onChange={(v) => updateField('primary_color', v)}
           />
           <ColorField
-            label="Secondary"
+            label={t('bk_dna_colorSecondary')}
             value={kit.secondary_color ?? ''}
             onChange={(v) => updateField('secondary_color', v as BrandKit['secondary_color'])}
             allowEmpty
@@ -288,7 +293,7 @@ function OverviewTab({
         </div>
       </Section>
 
-      <Section title="Font family" hint="A Google Font name, e.g. Inter, Playfair Display.">
+      <Section title={t('bk_dna_fontTitle')} hint={t('bk_dna_fontHint')}>
         <input
           type="text"
           value={kit.font_family ?? ''}
@@ -299,49 +304,49 @@ function OverviewTab({
         />
       </Section>
 
-      <Section title="Tagline" hint="A short brand line (≤ 200 char).">
+      <Section title={t('bk_dna_taglineTitle')} hint={t('bk_dna_taglineHint')}>
         <input
           type="text"
           value={kit.tagline ?? ''}
           onChange={(e) => updateField('tagline', e.target.value)}
-          placeholder="Make it work. Then make it great."
+          placeholder={t('bk_dna_taglinePh')}
           maxLength={200}
           className={inputCls}
         />
       </Section>
 
-      <Section title="Brand values" hint="Tags that summarise what the brand stands for.">
+      <Section title={t('bk_dna_valuesTitle')} hint={t('bk_dna_valuesHint')}>
         <TagInput
           value={kit.brand_values}
           onChange={(next) => updateField('brand_values', next)}
-          placeholder="Senior-led teams, Strategy before pixels…"
+          placeholder={t('bk_dna_valuesPh')}
         />
       </Section>
 
-      <Section title="Brand aesthetic" hint="Visual mood keywords.">
+      <Section title={t('bk_dna_aestheticTitle')} hint={t('bk_dna_aestheticHint')}>
         <TagInput
           value={kit.brand_aesthetic}
           onChange={(next) => updateField('brand_aesthetic', next)}
-          placeholder="dark cinematic, sleek minimal, motion-rich…"
+          placeholder={t('bk_dna_aestheticPh')}
         />
       </Section>
 
-      <Section title="Brand tone of voice" hint="How the brand sounds in writing and voice over.">
+      <Section title={t('bk_dna_toneTitle')} hint={t('bk_dna_toneHint')}>
         <TagInput
           value={kit.brand_tone_of_voice}
           onChange={(next) => updateField('brand_tone_of_voice', next)}
-          placeholder="Confident, Direct, Quietly authoritative…"
+          placeholder={t('bk_dna_tonePh')}
         />
       </Section>
 
-      <Section title="Business overview" hint="A free-form description (≤ 2000 char).">
+      <Section title={t('bk_dna_overviewTitle')} hint={t('bk_dna_overviewHint')}>
         <textarea
           value={kit.business_overview ?? ''}
           onChange={(e) => updateField('business_overview', e.target.value)}
           rows={5}
           maxLength={2000}
           className={cn(inputCls, 'resize-y leading-relaxed')}
-          placeholder="What you do, who it's for, why it matters…"
+          placeholder={t('bk_dna_overviewPh')}
         />
       </Section>
     </>
@@ -359,6 +364,7 @@ function ColorField({
   onChange: (next: string) => void
   allowEmpty?: boolean
 }) {
+  const { t } = useLanguage()
   const display = value || '#6366f1'
   return (
     <div className="space-y-1">
@@ -375,7 +381,7 @@ function ColorField({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={allowEmpty ? '— optional —' : '#RRGGBB'}
+          placeholder={allowEmpty ? t('bk_dna_optionalPh') : '#RRGGBB'}
           maxLength={7}
           className="flex-1 bg-transparent outline-none font-mono text-xs text-foreground placeholder-[--text-muted]"
         />
@@ -393,9 +399,10 @@ function BusinessTab({
   kit: BrandKit
   updateField: <K extends keyof BrandKit>(key: K, value: BrandKit[K]) => void
 }) {
+  const { t } = useLanguage()
   return (
     <>
-      <Section title="Location" hint="City and country, or full address.">
+      <Section title={t('bk_dna_locationTitle')} hint={t('bk_dna_locationHint')}>
         <input
           type="text"
           value={kit.location ?? ''}
@@ -406,7 +413,7 @@ function BusinessTab({
         />
       </Section>
 
-      <Section title="Phone">
+      <Section title={t('bk_dna_phoneTitle')}>
         <input
           type="tel"
           value={kit.phone ?? ''}
@@ -417,48 +424,48 @@ function BusinessTab({
         />
       </Section>
 
-      <Section title="Business hours">
+      <Section title={t('bk_dna_hoursTitle')}>
         <input
           type="text"
           value={kit.business_hours ?? ''}
           onChange={(e) => updateField('business_hours', e.target.value)}
-          placeholder="Mon–Fri 9am–6pm"
+          placeholder={t('bk_dna_hoursPh')}
           maxLength={500}
           className={inputCls}
         />
       </Section>
 
-      <Section title="Keywords" hint="SEO / categorisation tags.">
+      <Section title={t('bk_dna_keywordsTitle')} hint={t('bk_dna_keywordsHint')}>
         <TagInput
           value={kit.keywords}
           onChange={(next) => updateField('keywords', next)}
           max={30}
-          placeholder="motion design, branding, video production…"
+          placeholder={t('bk_dna_keywordsPh')}
         />
       </Section>
 
-      <Section title="Social links" hint="Leave a field empty to remove that network.">
+      <Section title={t('bk_dna_socialTitle')} hint={t('bk_dna_socialHint')}>
         <SocialLinksEditor
           value={kit.social_links}
           onChange={(next: SocialLinks) => updateField('social_links', next)}
         />
       </Section>
 
-      <Section title="Call-to-action links" hint="Up to 8 buttons that compositions can reference.">
+      <Section title={t('bk_dna_ctaTitle')} hint={t('bk_dna_ctaHint')}>
         <CtaLinkList
           value={kit.cta_links}
           onChange={(next: CtaLink[]) => updateField('cta_links', next)}
         />
       </Section>
 
-      <Section title="Testimonials" hint="Free-text quotes from customers (≤ 4000 char).">
+      <Section title={t('bk_dna_testimonialsTitle')} hint={t('bk_dna_testimonialsHint')}>
         <textarea
           value={kit.testimonials ?? ''}
           onChange={(e) => updateField('testimonials', e.target.value)}
           rows={6}
           maxLength={4000}
           className={cn(inputCls, 'resize-y leading-relaxed')}
-          placeholder="“They shipped twice as fast as the previous agency.” — Sarah, Lead PM"
+          placeholder={t('bk_dna_testimonialsPh')}
         />
       </Section>
     </>

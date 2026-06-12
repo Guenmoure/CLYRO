@@ -293,7 +293,7 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
   }, [isDone, videoId, outputUrl, onDone, router])
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 px-8 max-w-lg mx-auto overflow-y-auto py-8">
+    <div className="flex flex-col items-center justify-center h-full gap-6 px-4 sm:px-8 max-w-lg mx-auto overflow-y-auto py-8">
       <div className="w-full">
         <h2 className="font-display text-xl font-bold text-foreground mb-1 text-center">
           {isError ? t('mh_genError') : isDone ? t('mh_adReady') : t('mh_generating')}
@@ -357,7 +357,7 @@ function GeneratingView({ videoId, title, onReset, onDone, onStatusChange }: {
 function DoneView({ session, onNew }: { session: VideoSession; onNew: () => void }) {
   const { t } = useLanguage()
   return (
-    <div className="flex flex-col items-center justify-center h-full px-8 max-w-lg mx-auto gap-4">
+    <div className="flex flex-col items-center justify-center h-full px-4 sm:px-8 max-w-lg mx-auto gap-4">
       <div className="w-full">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-lg font-bold text-foreground">{session.title ?? t('mh_advertisement')}</h2>
@@ -448,12 +448,12 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
     <div className="flex flex-col h-full overflow-y-auto">
 
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 border-b border-border">
+      <div className="px-4 sm:px-8 pt-8 pb-6 border-b border-border">
         <h1 className="font-display text-2xl font-bold text-foreground">{t('mh_newMotionAd')}</h1>
         <p className="text-[--text-muted] text-sm mt-1">{t('mh_motionSubtitle')}</p>
       </div>
 
-      <div className="flex-1 px-8 py-6 space-y-7">
+      <div className="flex-1 px-4 sm:px-8 py-6 space-y-7">
 
         {/* SECTION 1 — Style (le plus important, en premier) */}
         <div>
@@ -510,10 +510,10 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
           </div>
           <div className="flex-1 min-w-36">
             <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">{t('mh_duration')}</label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {DURATIONS.map((d) => (
                 <button key={d.id} type="button" onClick={() => setDuration(d.id)}
-                  className={cn('flex-1 py-2.5 rounded-xl border text-xs font-display font-semibold transition-all',
+                  className={cn('flex-1 min-w-14 py-2.5 rounded-xl border text-xs font-display font-semibold transition-all',
                     duration === d.id ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-card border-border text-[--text-muted] hover:border-blue-500/40'
                   )}>
                   {d.label}
@@ -588,7 +588,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
                 {logoUrl ? (
                   <div className="relative w-10 h-10 rounded-xl border border-border bg-card overflow-hidden flex items-center justify-center shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain p-1" />
+                    <img src={logoUrl} alt="Logo" loading="lazy" decoding="async" className="max-w-full max-h-full object-contain p-1" />
                     <button
                       type="button"
                       onClick={() => setLogoUrl('')}
@@ -700,10 +700,10 @@ export function MotionHub({ initialVideos }: { initialVideos: VideoSession[] }) 
   function handleSessionClick(session: VideoSession) { setViewId(session.id) }
 
   return (
-    <div className="flex flex-1 h-full overflow-hidden">
+    <div className="flex flex-col lg:flex-row flex-1 h-full overflow-hidden">
 
-      {/* Sidebar */}
-      <aside className="bg-card border-r border-border w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
+      {/* Sidebar — stacks above the main panel on mobile */}
+      <aside className="bg-card border border-border lg:border-y-0 lg:border-l-0 lg:border-r w-auto lg:w-52 m-3 lg:mr-0 max-h-48 lg:max-h-none rounded-2xl flex flex-col shrink-0 overflow-hidden">
         <div className="p-4 border-b border-border">
           <h2 className="font-display text-sm font-semibold text-foreground">{t('motionDesign')}</h2>
         </div>

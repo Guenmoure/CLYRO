@@ -12,7 +12,7 @@ import {
   getStyleLockSuffix,
   applyAntiHallucination,
 } from '@clyro/shared'
-import type { DetectedLanguage } from '../lib/detect-language'
+import { detectLanguage, type DetectedLanguage } from '../lib/detect-language'
 
 // Helper used by every prompt: inject an unambiguous "output language"
 // header at the very top of the user prompt. Empirically, when the rest
@@ -1096,6 +1096,407 @@ Reply ONLY with this valid JSON:
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// ── Fix Layout vision (Phase 3.4 V2.5) ──────────────────────────────────────
+// Demande à Claude d'analyser l'image d'une créative et de proposer de
+// meilleures positions pour les blocs visibles afin d'éviter les zones
+// chargées (visages, ciels uniformes, contrastes faibles). Multimodal :
+// envoie l'URL d'image + un prompt structuré, attend des coords en %.
+
+export interface FixLayoutPositions {
+  header?:      { x: number; y: number }
+  description?: { x: number; y: number }
+  cta?:         { x: number; y: number }
+}
+
+/** Couleur de texte suggérée pour chaque bloc selon le fond de l'image
+ *  derrière ce bloc. Permet d'afficher du noir sur des images très claires
+ *  et du blanc sur des images très sombres — point central de la V3
+ *  Phase 3.4. */
+export interface FixLayoutColors {
+  header?:      'white' | 'black'
+  description?: 'white' | 'black'
+  cta?:         'white' | 'black'
+}
+
+export interface FixLayoutResult {
+  positions: FixLayoutPositions
+  colors:    FixLayoutColors
+}
+
+export async function fixCreativeLayout(input: {
+  imageUrl:    string
+  visible:     { header: boolean; description: boolean; cta: boolean }
+  current?:    FixLayoutPositions
+}): Promise<FixLayoutResult> {
+  const askBlocks = Object.entries(input.visible)
+    .filter(([, on]) => on)
+    .map(([k]) => k)
+  if (askBlocks.length === 0) return { positions: {}, colors: {} }
+
+  const systemPrompt = `You are a senior art director optimizing the layout AND legibility of social-media creative text overlays. You reply ONLY with valid JSON.`
+  const userPrompt = `Examine the image and suggest, for each visible text block:
+1. WHERE to place it so it is LEGIBLE and DOESN'T cover faces, logos in the picture, or busy/high-contrast areas.
+2. WHAT TEXT COLOR to use ("white" or "black") so the block is readable against the background it sits on. Choose black if the area behind the block is bright (sky, snow, light wall…) and white if the area is dark or saturated.
+
+VISIBLE BLOCKS: ${askBlocks.join(', ')}
+${input.current ? `CURRENT POSITIONS (for context): ${JSON.stringify(input.current)}` : ''}
+
+Position coordinates are the CENTER of each block, in percent of the image (x=0 left, x=100 right, y=0 top, y=100 bottom). Keep each x,y within [5..95] so blocks stay inside the frame.
+
+Reply ONLY with this JSON:
+{
+${askBlocks.map((k) => `  "${k}": { "x": <num>, "y": <num>, "color": "white" | "black" }`).join(',\n')}
+}`
+
+  try {
+    // L'Anthropic SDK ne supporte que source: 'base64' (pas 'url'). On
+    // télécharge l'image côté serveur (plafond 5 MB) puis on l'encode.
+    const imgRes = await fetch(input.imageUrl)
+    if (!imgRes.ok) throw new Error(`Image fetch ${imgRes.status}`)
+    const buf = Buffer.from(await imgRes.arrayBuffer())
+    if (buf.byteLength > 5 * 1024 * 1024) throw new Error('Image too large for vision call')
+    const ctype = (imgRes.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim().toLowerCase()
+    const mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' =
+      ctype === 'image/png'  ? 'image/png'  :
+      ctype === 'image/webp' ? 'image/webp' :
+      ctype === 'image/gif'  ? 'image/gif'  : 'image/jpeg'
+
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 200,
+      system: systemPrompt,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: buf.toString('base64') } },
+          { type: 'text',  text:   userPrompt },
+        ],
+      }],
+    })
+    const content = message.content[0]
+    if (content.type !== 'text') return { positions: {}, colors: {} }
+    const jsonText = content.text
+      .replace(/^```json\s*/m, '')
+      .replace(/^```\s*/m, '')
+      .replace(/\s*```$/m, '')
+      .trim()
+    const parsed = JSON.parse(jsonText) as Record<string, unknown>
+    const positions: FixLayoutPositions = {}
+    const colors:    FixLayoutColors    = {}
+    for (const key of askBlocks as Array<'header' | 'description' | 'cta'>) {
+      const v = parsed[key] as { x?: unknown; y?: unknown; color?: unknown } | undefined
+      if (!v) continue
+      const x = typeof v.x === 'number' ? Math.max(0, Math.min(100, v.x)) : null
+      const y = typeof v.y === 'number' ? Math.max(0, Math.min(100, v.y)) : null
+      if (x !== null && y !== null) positions[key] = { x, y }
+      if (v.color === 'white' || v.color === 'black') colors[key] = v.color
+    }
+    return { positions, colors }
+  } catch (err) {
+    logger.warn({ err: err instanceof Error ? err.message : String(err) }, 'Fix layout vision call failed')
+    return { positions: {}, colors: {} }
+  }
+}
+
+// ── CTA variants (Phase 3.4 V2) ──────────────────────────────────────────────
+// Petit appel Claude (max_tokens 300) qui propose 3 CTA on-brand depuis le
+// contexte d'une créative et le DNA. Pas de retry — l'utilisateur peut
+// re-cliquer si besoin.
+
+export interface CtaVariantsInput {
+  /** Contexte de la créative pour orienter le ton. */
+  header?:      string
+  description?: string
+  /** CTA courant — sert d'amorce, à varier. */
+  current?:     string
+  brand:        BrandConfigForPrompt & { name?: string }
+  /** Nombre de variantes. Défaut 3, max 6. */
+  count?:       number
+}
+
+export async function generateCtaVariants(input: CtaVariantsInput): Promise<string[]> {
+  const count = Math.max(1, Math.min(6, input.count ?? 3))
+  const sourceText = `${input.header ?? ''} ${input.description ?? ''}`.trim() || input.current || 'the campaign'
+  const lang: DetectedLanguage = detectLanguage(sourceText)
+  const dnaLines = buildBrandDnaPromptLines(input.brand)
+
+  const systemPrompt = `You write call-to-action copy. You reply ONLY with valid JSON.`
+  const userPrompt = `Propose ${count} distinct call-to-action options for this creative.
+
+CREATIVE CONTEXT:
+${input.header      ? `Header: ${input.header}\n` : ''}${input.description ? `Description: ${input.description}\n` : ''}${input.current ? `Current CTA: ${input.current}\n` : ''}
+BRAND:
+Primary color: ${input.brand.primary_color}
+${dnaLines.join('\n')}
+
+Rules:
+- ≤ 30 characters each. Imperative. In ${lang.name}.
+- Each variant feels distinct (different angle: urgency / curiosity /
+  warmth / value).
+- NEVER include any agency or platform name.
+
+Reply ONLY with this JSON: { "variants": ["...", "...", "..."] }`
+
+  try {
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    })
+    const content = message.content[0]
+    if (content.type !== 'text') return []
+    const jsonText = content.text
+      .replace(/^```json\s*/m, '')
+      .replace(/^```\s*/m, '')
+      .replace(/\s*```$/m, '')
+      .trim()
+    const parsed = JSON.parse(jsonText) as { variants?: unknown }
+    if (!Array.isArray(parsed.variants)) return []
+    return parsed.variants
+      .filter((v): v is string => typeof v === 'string')
+      .map((v) => v.trim().slice(0, 60))
+      .filter((v) => v.length > 0)
+      .slice(0, count)
+  } catch (err) {
+    logger.warn({ err: err instanceof Error ? err.message : String(err) }, 'CTA variants generation failed')
+    return []
+  }
+}
+
+// ── Brand Campaign suggestions (Phase 3.2) ──────────────────────────────────
+// 3 idées de campagne dérivées du seul DNA — pas de prompt utilisateur, pas
+// de génération d'image. Sert d'amorce dans la box (« Suggestions based on
+// Business DNA »). Appel court (max_tokens 800), pas de retry agressif.
+
+export interface CampaignSuggestion {
+  title:       string
+  description: string
+  /** Prompt prêt à l'emploi pour pré-remplir la box de création. */
+  prompt:      string
+}
+
+export async function generateCampaignSuggestions(
+  brand: BrandConfigForPrompt & { name?: string },
+  count = 3,
+): Promise<CampaignSuggestion[]> {
+  const lang: DetectedLanguage = brand.business_overview
+    ? detectLanguage(brand.business_overview)
+    : { code: 'en', name: 'English', nativeName: 'English' }
+
+  const dnaLines = buildBrandDnaPromptLines(brand)
+  const brandName = brand.name ?? 'the brand'
+
+  const systemPrompt = `You are a senior creative director. You reply ONLY with valid JSON. No markdown, no comments.`
+
+  const userPrompt = `Propose ${count} campaign ideas for "${brandName}" derived from its brand DNA.
+
+BRAND DNA:
+Primary color: ${brand.primary_color}
+${dnaLines.join('\n')}
+
+Each idea has:
+- title: short campaign name (≤ 50 chars), in ${lang.name}.
+- description: 1-sentence pitch (≤ 140 chars), in ${lang.name}.
+- prompt: a starter prompt that a marketer could feed back to the campaign
+  generator to actually produce it. 2-3 sentences, descriptive. In ${lang.name}.
+
+Each idea must feel meaningfully different from the others.
+
+Reply ONLY with this JSON:
+{ "suggestions": [ { "title": "...", "description": "...", "prompt": "..." } ] }`
+
+  try {
+    const message = await client.messages.create({
+      model: MODEL,
+      max_tokens: 800,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    })
+    const content = message.content[0]
+    if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
+    const jsonText = content.text
+      .replace(/^```json\s*/m, '')
+      .replace(/^```\s*/m, '')
+      .replace(/\s*```$/m, '')
+      .trim()
+    const parsed = JSON.parse(jsonText) as { suggestions?: CampaignSuggestion[] }
+    const list = Array.isArray(parsed.suggestions) ? parsed.suggestions : []
+    return list.slice(0, count)
+      .filter((s): s is CampaignSuggestion =>
+        !!s && typeof s.title === 'string' && typeof s.description === 'string' && typeof s.prompt === 'string',
+      )
+      .map((s) => ({
+        title:       s.title.trim().slice(0, 60),
+        description: s.description.trim().slice(0, 240),
+        prompt:      s.prompt.trim().slice(0, 600),
+      }))
+  } catch (err) {
+    logger.warn({ err: err instanceof Error ? err.message : String(err) }, 'Campaign suggestions failed')
+    return []
+  }
+}
+
+// ── Brand Campaign brief (Phase 3.1 du portage Pomelli) ─────────────────────
+// Génère un brief structuré pour une campagne : titre, description, et 3
+// créatives (image prompt + header + description + CTA). Le DNA du Brand
+// Kit guide tout : tagline, ton, valeurs, esthétique. Plus le DNA est
+// riche, plus les créatives sont vraiment on-brand.
+
+export interface CampaignBriefInput {
+  /** Prompt brut de l'utilisateur (ce qu'il a écrit dans la box). */
+  prompt:    string
+  brandKit:  BrandConfigForPrompt & { name?: string }
+  product?:  { name: string; description?: string | null; category?: string | null } | null
+  /** Description courte d'assets de référence (max 5 prises en compte). */
+  assetHints?: string[]
+  /** Nombre de créatives à générer. Défaut 3 — limite haute 6. */
+  count?:    number
+}
+
+export interface CampaignCreativeBrief {
+  visual_prompt: string
+  header:        string
+  description:   string
+  cta:           string
+}
+
+export interface CampaignBriefResult {
+  campaign_title:       string
+  campaign_description: string
+  creatives:            CampaignCreativeBrief[]
+}
+
+/**
+ * Demande à Claude un brief structuré pour la campagne. Renvoie 3 (ou N)
+ * créatives prêtes à être envoyées à fal.ai pour la génération d'image,
+ * + un titre / description pour la campagne elle-même.
+ *
+ * Retry MAX_RETRIES sur erreur de parsing JSON, puis throw — le pipeline
+ * appelant capture et passe la campagne en `status='error'`.
+ */
+export async function generateCampaignBrief(
+  input: CampaignBriefInput,
+): Promise<CampaignBriefResult> {
+  const count = Math.max(1, Math.min(6, input.count ?? 3))
+  const lang: DetectedLanguage = detectLanguage(input.prompt)
+
+  const dnaLines = buildBrandDnaPromptLines(input.brandKit)
+  const brandName = input.brandKit.name ?? 'the brand'
+  const colorLine = `Primary brand color: ${input.brandKit.primary_color}${
+    input.brandKit.secondary_color ? `, secondary ${input.brandKit.secondary_color}` : ''
+  }`
+
+  const productBlock = input.product
+    ? `\nFEATURED PRODUCT:\n- Name: ${input.product.name}${
+        input.product.description ? `\n- Description: ${input.product.description}` : ''
+      }${input.product.category ? `\n- Category: ${input.product.category}` : ''}\nEvery creative MUST relate to this product.`
+    : ''
+
+  const assetBlock = input.assetHints && input.assetHints.length > 0
+    ? `\nREFERENCE ASSETS (visual mood hints):\n${input.assetHints.slice(0, 5).map((h) => `- ${h}`).join('\n')}`
+    : ''
+
+  const systemPrompt = `You are a senior creative director crafting on-brand social media campaign briefs. You reply ONLY with valid JSON. No markdown, no comments.`
+
+  const userPrompt = `Build a campaign brief for "${brandName}".
+
+USER PROMPT:
+"""
+${input.prompt}
+"""
+
+BRAND CONTEXT:
+${colorLine}
+${dnaLines.join('\n')}${productBlock}${assetBlock}
+
+Produce exactly ${count} creative variations. Each must be visually distinct
+yet on-brand. Use the brand's tone of voice in every copy field — header,
+description, CTA. Honor the brand aesthetic in every visual_prompt.
+
+Rules:
+1. LANGUAGE: every text-facing field (campaign_title, campaign_description,
+   header, description, cta) MUST be written in ${lang.name}.
+2. The visual_prompt is a detailed instruction for an AI image generator
+   (FLUX-class). Always in English, very descriptive (composition, palette,
+   light, mood, focal point, style).
+3. header is ≤ 60 chars, description is ≤ 140 chars, cta is ≤ 30 chars.
+4. campaign_title ≤ 60 chars, campaign_description 1-2 sentences ≤ 240 chars.
+5. NEVER mention CLYRO or any other agency in any field — this is the
+   brand's campaign, not an ad for the platform.
+
+Reply ONLY with this valid JSON:
+{
+  "campaign_title": "...",
+  "campaign_description": "...",
+  "creatives": [
+    { "visual_prompt": "...", "header": "...", "description": "...", "cta": "..." }
+  ]
+}`
+
+  let lastError: Error | null = null
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const startTime = Date.now()
+      const message = await client.messages.create({
+        model: MODEL,
+        max_tokens: 3000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      })
+
+      logger.info(
+        { model: MODEL, inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens, durationMs: Date.now() - startTime, attempt, creativeCount: count },
+        'Claude campaign brief generated',
+      )
+
+      const content = message.content[0]
+      if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
+
+      const jsonText = content.text
+        .replace(/^```json\s*/m, '')
+        .replace(/^```\s*/m, '')
+        .replace(/\s*```$/m, '')
+        .trim()
+
+      const parsed = JSON.parse(jsonText) as Partial<CampaignBriefResult>
+      if (!parsed.campaign_title || !parsed.campaign_description || !Array.isArray(parsed.creatives)) {
+        throw new Error('Invalid campaign brief shape')
+      }
+
+      // Normalise + cap : tronque chaque texte aux limites prévues côté DB
+      // pour éviter qu'un dépassement Claude fasse échouer l'insert.
+      const creatives: CampaignCreativeBrief[] = parsed.creatives
+        .slice(0, count)
+        .filter((c): c is CampaignCreativeBrief =>
+          !!c && typeof c.visual_prompt === 'string' && typeof c.header === 'string' &&
+          typeof c.description === 'string' && typeof c.cta === 'string',
+        )
+        .map((c) => ({
+          visual_prompt: c.visual_prompt.trim().slice(0, 1500),
+          header:        c.header.trim().slice(0, 200),
+          description:   c.description.trim().slice(0, 500),
+          cta:           c.cta.trim().slice(0, 60),
+        }))
+
+      if (creatives.length === 0) throw new Error('Empty creatives array')
+
+      return {
+        campaign_title:       parsed.campaign_title.trim().slice(0, 160),
+        campaign_description: parsed.campaign_description.trim().slice(0, 1000),
+        creatives,
+      }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err))
+      logger.warn({ attempt, maxRetries: MAX_RETRIES, error: lastError.message }, 'Claude campaign brief attempt failed, retrying')
+      if (attempt < MAX_RETRIES) await sleep(RETRY_DELAY_MS * attempt)
+    }
+  }
+
+  throw new Error(`Campaign brief generation failed: ${lastError?.message ?? 'Unknown error'}`)
 }
 
 // ── WPM / Script duration check ────────────────────────────────────────────────

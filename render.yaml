@@ -76,20 +76,18 @@ services:
 
       # — F5 Studio pipeline (optionnel, a des valeurs par défaut) —
       - key: PIPELINE_TIMEOUT_MS
-        sync: false        # watchdog du pipeline — défaut 1800000 (30 min)
+        sync: false        # watchdog du pipeline — défaut 2700000 (45 min, voir pipelines/faceless.ts)
 
       # — Fallback inline —
       # Si 'true' et aucun worker disponible, les pipelines s'exécutent dans
       # le process API (ancien comportement — peut faire timeout /health sur
       # les gros assemblages, mais l'app reste fonctionnelle).
       #
-      # ⚠️  TEMPORAIRE : laissé à 'true' tant que Redis + clyro-worker ne
-      # sont pas configurés en prod (voir RENDER_WORKER_SETUP.md).
-      # Une fois le worker opérationnel : flipper à 'false' pour fail-fast
-      # 503 si le worker tombe (au lieu de retomber sur l'inline et risquer
-      # un timeout /health).
+      # 'false' depuis le 2026-06-10 (audit) : worker Redis confirmé actif
+      # en prod → fail-fast 503 si le worker tombe, au lieu de retomber sur
+      # l'inline et risquer un timeout /health (voir RENDER_WORKER_SETUP.md).
       - key: ALLOW_INLINE_FALLBACK
-        value: 'true'
+        value: 'false'
 
       # — URLs (remplir après déploiement Vercel) —
       - key: FRONTEND_URL

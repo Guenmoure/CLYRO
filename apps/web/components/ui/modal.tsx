@@ -45,6 +45,9 @@ function XIcon() {
 
 // ── Composant ──────────────────────────────────────────────────────────────────
 
+const FOCUSABLE_SELECTOR =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+
 function Modal({
   isOpen,
   onClose,
@@ -58,27 +61,68 @@ function Modal({
   className,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  // Element that had focus when the modal opened — restored on close.
+  const triggerRef = useRef<HTMLElement | null>(null)
 
-  // Escape key
+  // Escape key + Tab/Shift+Tab focus cycling inside the dialog
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => { if (closeOnEscape && e.key === 'Escape') onClose() },
+    (e: KeyboardEvent) => {
+      if (closeOnEscape && e.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab') return
+      const dialog = dialogRef.current
+      if (!dialog) return
+
+      const focusables = Array.from(
+        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      ).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null)
+
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (!first || !last) {
+        e.preventDefault()
+        return
+      }
+
+      const active = document.activeElement as HTMLElement | null
+      const inside = active ? dialog.contains(active) : false
+
+      if (e.shiftKey) {
+        if (!inside || active === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (!inside || active === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    },
     [onClose, closeOnEscape]
   )
 
   useEffect(() => {
     if (!isOpen) return
+    // Remember the trigger so we can give focus back on close
+    triggerRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
     document.addEventListener('keydown', handleKeyDown)
     document.body.style.overflow = 'hidden'
     // Focus trap — focus premier élément focusable
     requestAnimationFrame(() => {
-      const el = dialogRef.current?.querySelector<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      )
+      const el = dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)
       el?.focus()
     })
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
+      // Restore focus to the element that opened the modal
+      triggerRef.current?.focus?.()
+      triggerRef.current = null
     }
   }, [isOpen, handleKeyDown])
 

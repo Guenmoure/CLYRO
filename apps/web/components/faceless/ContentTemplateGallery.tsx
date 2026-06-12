@@ -135,7 +135,7 @@ export function ContentTemplateGallery({
   }, [activeCategory, activeNiche, search, lang])
 
   return (
-    <div className="border-t border-border px-6 py-10 bg-muted/30">
+    <div className="border-t border-border px-4 sm:px-6 py-10 bg-muted/30">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}

@@ -161,6 +161,33 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
     const durationSeconds = parseDurationToSeconds(duration)
     const creditCost = creditCostForVideo(durationSeconds, MOTION_DEFAULT_MODE)
 
+    // Atomic deduction BEFORE the enqueue — a job must never start running
+    // for a user whose balance can't cover it.
+    try {
+      await deductCredits(req.userId, creditCost, `video:${video.id}`, {
+        mode: MOTION_DEFAULT_MODE,
+        duration,
+        durationSeconds,
+        kind: 'motion',
+      })
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        await supabaseAdmin.from('videos').update({
+          status: 'error',
+          metadata: { error_message: 'Insufficient credits', error_at: new Date().toISOString() },
+        }).eq('id', video.id).then(() => null, () => null)
+        res.status(402).json({
+          error: 'Insufficient credits',
+          code:  'INSUFFICIENT_CREDITS',
+          required: err.required,
+          available: err.available,
+          video_id: video.id,
+        })
+        return
+      }
+      throw err
+    }
+
     const jobData = {
       type: 'motion_auto' as const,
       videoId:       video.id,
@@ -187,7 +214,12 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
     let enqueued = false
     if (renderQueue && isRedisReady()) {
       try {
-        await renderQueue.add('motion_auto', jobData)
+        // jobId = videoId so /videos/:id/cancel can renderQueue.remove(videoId)
+        // while the job waits. BullMQ keeps the same id across retry attempts.
+        // Clear any stale finished job with this id first (relaunch after
+        // revert-to-draft reuses the same row id — add() would be a no-op).
+        await renderQueue.remove(video.id).catch(() => null)
+        await renderQueue.add('motion_auto', jobData, { jobId: video.id })
         enqueued = true
         logger.info({ videoId: video.id }, 'Motion auto job enqueued to BullMQ')
       } catch (err) {
@@ -203,6 +235,10 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
           { videoId: video.id },
           'No BullMQ worker available and ALLOW_INLINE_FALLBACK=false — refusing job to protect event loop',
         )
+        // Credits were deducted before the enqueue attempt — refund, the job
+        // will never run.
+        await refundCredits(req.userId, creditCost, `video:${video.id}`, { reason: 'worker_unavailable' })
+          .catch((refundErr) => logger.error({ refundErr, videoId: video.id }, 'Refund after enqueue failure failed'))
         try {
           await supabaseAdmin
             .from('videos')
@@ -247,32 +283,6 @@ pipelineMotionRouter.post('/motion', authMiddleware, quotaMiddleware, async (req
           logger.error({ dbErr, videoId: video.id }, 'Failed to update motion video error status')
         }
       })
-    }
-
-    // Atomic deduction (cost computed above when building jobData).
-    try {
-      await deductCredits(req.userId, creditCost, `video:${video.id}`, {
-        mode: MOTION_DEFAULT_MODE,
-        duration,
-        durationSeconds,
-        kind: 'motion',
-      })
-    } catch (err) {
-      if (err instanceof InsufficientCreditsError) {
-        await supabaseAdmin.from('videos').update({
-          status: 'error',
-          metadata: { error_message: 'Insufficient credits', error_at: new Date().toISOString() },
-        }).eq('id', video.id).then(() => null, () => null)
-        res.status(402).json({
-          error: 'Insufficient credits',
-          code:  'INSUFFICIENT_CREDITS',
-          required: err.required,
-          available: err.available,
-          video_id: video.id,
-        })
-        return
-      }
-      throw err
     }
 
     res.status(202).json({ video_id: video.id, status: 'generating', credits_deducted: creditCost })
@@ -566,56 +576,7 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
     const durationSeconds = parseDurationToSeconds(duration)
     const creditCost = creditCostForVideo(durationSeconds, MOTION_DEFAULT_MODE)
 
-    const jobData = {
-      type: 'motion_design' as const,
-      videoId:    video.id,
-      userId:     req.userId,
-      userEmail:  req.userEmail,
-      title,
-      brief,
-      format,
-      duration,
-      brandConfig: brand_config,
-      voiceId:    voice_id,
-      musicUrl:   music_url,
-      creditCost,
-      brandKitId: brand_kit_id,
-    }
-
-    const allowInlineFallback = process.env.ALLOW_INLINE_FALLBACK === 'true'
-    let enqueued = false
-
-    if (renderQueue && isRedisReady()) {
-      try {
-        await renderQueue.add('motion_design', jobData)
-        enqueued = true
-        logger.info({ videoId: video.id }, 'MotionDesign job enqueued to BullMQ')
-      } catch (err) {
-        logger.warn({ err, videoId: video.id }, 'MotionDesign queue add failed')
-      }
-    }
-
-    if (!enqueued) {
-      if (!allowInlineFallback) {
-        await supabaseAdmin
-          .from('videos')
-          .update({ status: 'error', metadata: { error_message: 'Video processing worker is currently unavailable', error_at: new Date().toISOString() } })
-          .eq('id', video.id)
-        res.status(503).json({ error: 'Video processing worker is currently unavailable. Please try again shortly.', code: 'WORKER_UNAVAILABLE', video_id: video.id })
-        return
-      }
-
-      logger.warn({ videoId: video.id }, 'MotionDesign: falling back to inline pipeline')
-      runMotionDesignPipeline(jobData).catch(async (err) => {
-        logger.error({ err, videoId: video.id }, 'MotionDesign pipeline inline failed')
-        await supabaseAdmin
-          .from('videos')
-          .update({ status: 'error', metadata: { error_message: err instanceof Error ? err.message : String(err), error_at: new Date().toISOString() } })
-          .eq('id', video.id)
-          .then(() => null, () => null)
-      })
-    }
-
+    // Atomic deduction BEFORE the enqueue — see /motion above.
     try {
       await deductCredits(req.userId, creditCost, `video:${video.id}`, {
         mode: MOTION_DEFAULT_MODE,
@@ -639,6 +600,62 @@ pipelineMotionRouter.post('/motion/design', authMiddleware, quotaMiddleware, asy
         return
       }
       throw err
+    }
+
+    const jobData = {
+      type: 'motion_design' as const,
+      videoId:    video.id,
+      userId:     req.userId,
+      userEmail:  req.userEmail,
+      title,
+      brief,
+      format,
+      duration,
+      brandConfig: brand_config,
+      voiceId:    voice_id,
+      musicUrl:   music_url,
+      creditCost,
+      brandKitId: brand_kit_id,
+    }
+
+    const allowInlineFallback = process.env.ALLOW_INLINE_FALLBACK === 'true'
+    let enqueued = false
+
+    if (renderQueue && isRedisReady()) {
+      try {
+        // jobId = videoId — see /motion above (cancel support + stale-id cleanup).
+        await renderQueue.remove(video.id).catch(() => null)
+        await renderQueue.add('motion_design', jobData, { jobId: video.id })
+        enqueued = true
+        logger.info({ videoId: video.id }, 'MotionDesign job enqueued to BullMQ')
+      } catch (err) {
+        logger.warn({ err, videoId: video.id }, 'MotionDesign queue add failed')
+      }
+    }
+
+    if (!enqueued) {
+      if (!allowInlineFallback) {
+        // Credits were deducted before the enqueue attempt — refund, the job
+        // will never run.
+        await refundCredits(req.userId, creditCost, `video:${video.id}`, { reason: 'worker_unavailable' })
+          .catch((refundErr) => logger.error({ refundErr, videoId: video.id }, 'Refund after enqueue failure failed'))
+        await supabaseAdmin
+          .from('videos')
+          .update({ status: 'error', metadata: { error_message: 'Video processing worker is currently unavailable', error_at: new Date().toISOString() } })
+          .eq('id', video.id)
+        res.status(503).json({ error: 'Video processing worker is currently unavailable. Please try again shortly.', code: 'WORKER_UNAVAILABLE', video_id: video.id })
+        return
+      }
+
+      logger.warn({ videoId: video.id }, 'MotionDesign: falling back to inline pipeline')
+      runMotionDesignPipeline(jobData).catch(async (err) => {
+        logger.error({ err, videoId: video.id }, 'MotionDesign pipeline inline failed')
+        await supabaseAdmin
+          .from('videos')
+          .update({ status: 'error', metadata: { error_message: err instanceof Error ? err.message : String(err), error_at: new Date().toISOString() } })
+          .eq('id', video.id)
+          .then(() => null, () => null)
+      })
     }
 
     res.status(202).json({ video_id: video.id, status: 'generating', credits_deducted: creditCost })

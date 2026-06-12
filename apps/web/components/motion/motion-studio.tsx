@@ -196,8 +196,17 @@ function SceneCard({
     <div className="border border-border rounded-xl overflow-hidden bg-muted">
       {/* Header */}
       <div
-        className="flex items-center gap-3 px-4 py-3 border-b border-border cursor-pointer select-none"
+        className="flex items-center gap-3 px-4 py-3 border-b border-border cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
         onClick={() => setExpanded((v) => !v)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setExpanded((v) => !v)
+          }
+        }}
       >
         <span
           className="text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
@@ -252,9 +261,9 @@ function SceneCard({
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Text */}
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Texte principal</label>
               <input
                 type="text"
@@ -264,7 +273,7 @@ function SceneCard({
               />
             </div>
             {/* Subtext */}
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Sous-titre</label>
               <input
                 type="text"
@@ -274,7 +283,7 @@ function SceneCard({
               />
             </div>
             {/* Visual description (image prompt used by /motion/scene image-regen endpoint) */}
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">
                 🖼 Description visuelle
                 <span className="ml-1.5 text-[10px] font-mono text-[--text-muted] opacity-60">
@@ -526,7 +535,7 @@ function GeneratingView({
   const step = PIPELINE_STEPS.find((p) => p.key === status) ?? PIPELINE_STEPS[0]
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 gap-6 py-12 px-6">
+    <div className="flex flex-col items-center justify-center flex-1 gap-6 py-12 px-4 sm:px-6">
       <div className={cn(
         'w-14 h-14 rounded-full flex items-center justify-center',
         isError ? 'bg-red-50' : isDone ? 'bg-emerald-50' : 'bg-blue-500/10'
@@ -879,10 +888,10 @@ export function MotionStudio({
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-1 h-full overflow-hidden">
+    <div className="flex flex-col lg:flex-row flex-1 h-full overflow-hidden">
 
-      {/* ── Sidebar ── */}
-      <aside className="bg-card border-r border-border w-52 m-3 mr-0 rounded-2xl flex flex-col shrink-0 overflow-hidden">
+      {/* ── Sidebar — stacks above the main panel on mobile ── */}
+      <aside className="bg-card border border-border lg:border-y-0 lg:border-l-0 lg:border-r w-auto lg:w-52 m-3 lg:mr-0 max-h-48 lg:max-h-none rounded-2xl flex flex-col shrink-0 overflow-hidden">
         <div className="p-4 border-b border-border">
           <h2 className="font-display text-sm font-semibold text-foreground">Motion Design</h2>
         </div>
@@ -941,7 +950,7 @@ export function MotionStudio({
         {/* Phase : input */}
         {phase === 'input' && (
           <div className="flex-1 overflow-y-auto">
-            <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+            <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
               {/* Header */}
               <div className="text-center">
@@ -989,7 +998,7 @@ export function MotionStudio({
               </div>
 
               {/* Format + Duration */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2 block">Format</label>
                   <div className="flex gap-2">
@@ -1012,14 +1021,14 @@ export function MotionStudio({
                 </div>
                 <div>
                   <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-2 block">Duration</label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {DURATIONS.map((d) => (
                       <button
                         key={d.id}
                         type="button"
                         onClick={() => setDuration(d.id)}
                         className={cn(
-                          'flex-1 py-2 rounded-xl border-2 text-xs font-body font-semibold transition-all',
+                          'flex-1 min-w-14 py-2 rounded-xl border-2 text-xs font-body font-semibold transition-all',
                           duration === d.id
                             ? 'border-blue-500 bg-blue-500/10 text-blue-500'
                             : 'border-border text-[--text-muted] hover:border-blue-500/40'
@@ -1052,7 +1061,7 @@ export function MotionStudio({
                 />
                 {logoPreview ? (
                   <div className="flex items-center gap-3 border border-border rounded-xl px-4 py-3 bg-muted">
-                    <img src={logoPreview} alt="Logo preview" className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-border" />
+                    <img src={logoPreview} alt="Logo preview" loading="lazy" decoding="async" className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-border" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-body text-foreground truncate">{logoFile?.name}</p>
                       <p className="text-xs text-[--text-muted]">{logoFile ? `${(logoFile.size / 1024).toFixed(0)} Ko` : ''}</p>
@@ -1102,7 +1111,7 @@ export function MotionStudio({
         {phase === 'board' && (
           <div className="flex flex-col h-full overflow-hidden">
             {/* Board topbar */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-border shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 border-b border-border shrink-0">
               <button
                 type="button"
                 onClick={() => setPhase('input')}
@@ -1111,7 +1120,7 @@ export function MotionStudio({
                 <ArrowLeft size={15} />
                 Edit brief
               </button>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={generateStoryboard}
@@ -1137,7 +1146,7 @@ export function MotionStudio({
             </div>
 
             {/* Scenes grid */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
               {genLoading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3">
                   <Sparkles size={28} className="text-blue-500 animate-pulse" />

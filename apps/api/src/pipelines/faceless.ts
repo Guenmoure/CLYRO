@@ -14,6 +14,7 @@ import { assembleVideo, assembleVideoFromVideoClips, generateKaraokeFromWords, r
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
 import { applyAntiHallucination } from '@clyro/shared'
+import { assertNotCancelled, CancelledError } from './cancellation'
 
 // AnimationMode: user-selectable global strategy for clip generation
 // - 'storyboard' → always Ken Burns (static images with smooth transitions, no GPU cost)
@@ -89,8 +90,20 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
    * Refund the credits the route deducted upfront, idempotent per video.
    * Used by both the watchdog (timeout path) and the catch (error path).
    * No-op when creditCost is missing (older callers pre-refund).
+   *
+   * Double-refund protection is layered:
+   *   1. `refundIssued` in-process flag — watchdog + catch can both fire.
+   *   2. DB-level partial unique index on credit_ledger(source) WHERE
+   *      type='refund' (migration 20260610000000) — survives process
+   *      restarts and concurrent workers; second refund is a no-op.
    */
+  let refundIssued = false
   const refundCreditsForFailure = async (reason: string): Promise<void> => {
+    if (refundIssued) {
+      logger.info({ videoId, reason }, 'Refund already issued for this video — skipping')
+      return
+    }
+    refundIssued = true
     if (!creditCost || creditCost <= 0) {
       // Legacy fallback for older callers — refund 1 credit via the
       // initial-schema RPC so we keep behaviour parity until callers update.
@@ -141,6 +154,9 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       .from('videos')
       .update({ status: 'generating', metadata: { phase, progress, ...extra } })
       .eq('id', videoId)
+      // Never resurrect a row the user just cancelled — progress writes
+      // racing with /videos/:id/cancel must lose.
+      .neq('status', 'cancelled')
     logger.info({ videoId, phase, progress }, 'Faceless pipeline status update')
   }
 
@@ -149,6 +165,10 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
   const hasPreClips  = preGeneratedScenes && preGeneratedScenes.every((s) => !!s.clip_url)
 
   try {
+    // Coopération annulation : abandon immédiat si l'utilisateur a annulé
+    // avant que le worker ne prenne le job.
+    await assertNotCancelled(videoId)
+
     // ÉTAPE 1 : Storyboard (Claude AI) — sauté si scènes pré-générées disponibles
     let storyboard: Awaited<ReturnType<typeof generateStoryboard>>
     if (preGeneratedScenes && preGeneratedScenes.length > 0) {
@@ -197,6 +217,9 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       storyboard.scenes = updatedScenes
       logger.info({ videoId, speakerCount: Object.keys(speakerVoices).length }, 'Speaker voices assigned to scenes')
     }
+
+    // Annulé pendant la génération du script ? Stop avant de payer fal.ai/ElevenLabs.
+    await assertNotCancelled(videoId)
 
     // ÉTAPES 2 + 3 en parallèle : Visuels (fal.ai) + Voix off (ElevenLabs avec timestamps)
     await updateStatus('visuals', 30)
@@ -319,6 +342,9 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       audioWarnings,
     })
     logger.info({ videoId, imageCount: sceneImages.length, hasAudio: !!combinedAudioBuffer, audioWarningCount: audioWarnings.length }, 'Visuals + voiceover generated')
+
+    // Annulé pendant images + audio ? Stop avant l'animation des clips (Kling GPU).
+    await assertNotCancelled(videoId)
 
     // ÉTAPE 3.5 : Animation Kling i2v — chaque image devient un clip animé
     // Durée calée sur la durée audio réelle de la scène (5s ou 10s selon Kling API)
@@ -624,6 +650,9 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       logger.info({ videoId, klingClips: sceneVideoUrls.length }, 'Kling i2v complete')
     }
 
+    // Annulé pendant les clips ? Stop avant le rendu/assemblage final.
+    await assertNotCancelled(videoId)
+
     // ÉTAPE 4 : Assemblage FFmpeg
     await updateStatus('assembly', 80)
 
@@ -768,6 +797,15 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
   } catch (err) {
     finished = true
     clearTimeout(watchdog)
+
+    // Annulation utilisateur : ne PAS marquer 'error', ne PAS refund (la
+    // route /cancel a déjà émis le refund idempotent). Return silencieux —
+    // le job BullMQ se termine sans retry.
+    if (err instanceof CancelledError) {
+      logger.info({ videoId }, 'Faceless pipeline halted — video cancelled by user')
+      return
+    }
+
     const errorMessage = err instanceof Error ? err.message : String(err)
     Sentry.captureException(err, { extra: { videoId, userId } })
     logger.error({ err, videoId }, 'Faceless pipeline error')
@@ -789,6 +827,9 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
         metadata: { ...existingMeta, error_message: errorMessage, progress: 0, error_at: new Date().toISOString() },
       })
       .eq('id', videoId)
+      // Une annulation peut faire échouer un appel upstream en vol : si la
+      // row est déjà 'cancelled', on ne l'écrase pas avec 'error'.
+      .neq('status', 'cancelled')
       .then(() => null, () => null)
 
     await refundCreditsForFailure('pipeline_error')

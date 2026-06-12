@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express'
+import { z } from 'zod'
 import { writeFile, readFile, unlink, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -7,9 +8,26 @@ import { mixAudio } from '../services/ffmpeg'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { authMiddleware } from '../middleware/auth'
+import { validatePublicUrl } from '../services/urlExtract'
 
 export const mixAudioRouter = Router()
 mixAudioRouter.use(authMiddleware)
+
+const mixAudioSchema = z.object({
+  videoUrl:           z.string().url(),
+  voiceoverUrl:       z.string().url(),
+  backgroundMusicUrl: z.string().url().optional(),
+})
+
+/** Anti-SSRF: reject private IPs / metadata hosts / non-http(s) schemes. */
+function isPublicUrl(input: string): boolean {
+  try {
+    validatePublicUrl(input)
+    return true
+  } catch {
+    return false
+  }
+}
 
 /**
  * POST /api/v1/mix-audio
@@ -26,14 +44,17 @@ mixAudioRouter.use(authMiddleware)
  *   { videoUrl: string }  — URL publique Supabase Storage ou fallback base64 data URI
  */
 mixAudioRouter.post('/mix-audio', async (req: Request, res: Response) => {
-  const { videoUrl, voiceoverUrl, backgroundMusicUrl } = req.body as {
-    videoUrl: string
-    voiceoverUrl: string
-    backgroundMusicUrl?: string
+  const parsed = mixAudioSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'videoUrl and voiceoverUrl are required (valid URLs)', code: 'VALIDATION_ERROR' })
+    return
   }
+  const { videoUrl, voiceoverUrl, backgroundMusicUrl } = parsed.data
 
-  if (!videoUrl || !voiceoverUrl) {
-    res.status(400).json({ error: 'videoUrl and voiceoverUrl are required' })
+  // Anti-SSRF — these URLs are fetched server-side; block private ranges.
+  const urlsToCheck = [videoUrl, voiceoverUrl, ...(backgroundMusicUrl ? [backgroundMusicUrl] : [])]
+  if (urlsToCheck.some((u) => !isPublicUrl(u))) {
+    res.status(400).json({ error: 'Invalid URL', code: 'INVALID_URL' })
     return
   }
 
@@ -97,7 +118,7 @@ mixAudioRouter.post('/mix-audio', async (req: Request, res: Response) => {
     res.json({ videoUrl: urlData.publicUrl })
   } catch (err) {
     logger.error({ err }, 'mix-audio: failed')
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Audio mix failed' })
+    res.status(500).json({ error: 'Audio mix failed', code: 'SERVICE_ERROR' })
   } finally {
     await Promise.all(tempFiles.map((f) => unlink(f).catch(() => null)))
     await mkdir(workDir).catch(() => null) // ensure cleanup attempt

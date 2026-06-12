@@ -78,7 +78,7 @@ function StyleCard({
           />
         ) : style.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={style.thumbnailUrl} alt={style.name} className="w-full h-full object-cover" />
+          <img src={style.thumbnailUrl} alt={style.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="font-display text-2xl text-[--text-muted]">

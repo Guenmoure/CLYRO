@@ -37,7 +37,7 @@ export function SceneBlock({
       )}
       style={{ width: `${width}px`, height: '80px', background: bg, minWidth: '64px' }}
       aria-pressed={selected}
-      aria-label={`Scene ${scene.index + 1} — ${SCENE_TYPE_LABELS[scene.type]}`}
+      aria-label={`${t('si_sceneLabel')} ${scene.index + 1} — ${SCENE_TYPE_LABELS[scene.type]}`}
     >
       {/* Thumbnail as background */}
       {scene.thumbnail_url && (

@@ -22,6 +22,7 @@ import { refundCredits } from '../services/credits'
 import { classifyMotionBrief } from '../services/claude'
 import { runMotionPipeline } from './motion'
 import { runMotionDesignPipeline } from './motion-design'
+import { isCancelled } from './cancellation'
 import type { MotionAutoJobData } from '../queues/renderQueue'
 
 /** Motion Design's Remotion compositions are keyed by the underscore form. */
@@ -51,6 +52,13 @@ function toMotionDesignStyle(style: string): MotionDesignStyle | undefined {
 export async function runMotionAuto(job: MotionAutoJobData): Promise<void> {
   const { videoId, userId, brief, script } = job
 
+  // Annulé avant le pickup du worker ? Stop avant la classification Claude
+  // (appel facturable). Le refund a déjà été émis par la route /cancel.
+  if (await isCancelled(videoId)) {
+    logger.info({ videoId }, 'Motion auto-router skipped — video cancelled by user')
+    return
+  }
+
   // ── Step 0 — classify ────────────────────────────────────────────────────
   // Surface a transient "classifying" phase so the progress UI shows motion
   // is alive. The delegated pipeline overwrites metadata on its first status
@@ -59,6 +67,8 @@ export async function runMotionAuto(job: MotionAutoJobData): Promise<void> {
     .from('videos')
     .update({ status: 'generating', metadata: { phase: 'classifying', progress: 3 } })
     .eq('id', videoId)
+    // Never resurrect a row the user just cancelled (race with /cancel).
+    .neq('status', 'cancelled')
     .then(() => null, () => null)
 
   let render: 'graphics' | 'design' = 'design'

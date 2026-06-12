@@ -94,7 +94,7 @@ export function AvatarPreviewModal({ group, isOpen, onClose, onUse }: AvatarPrev
             />
           ) : imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={group.baseName} className="w-full h-full object-cover" />
+            <img src={imageUrl} alt={group.baseName} decoding="async" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
               <span className="font-display text-6xl text-foreground/20">

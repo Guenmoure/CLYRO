@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -29,6 +32,18 @@ const STYLE_PREFIXES: Record<string, string> = {
  * /api/stream-image. Any new caller should use /api/stream-image directly.
  */
 export async function POST(request: NextRequest) {
+  // SECURITY: calls fal.ai flux/schnell (billable compute). Auth required.
+  const supabase = createRouteHandlerClient({ cookies })
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Route dépréciée (les nouveaux appels passent par stream-image) —
+  // quota plus serré, suffisant pour les anciens clients par-scène.
+  const limit = checkRateLimit('preview-image', user.id, 60)
+  if (!limit.allowed) return rateLimitResponse(limit)
+
   const falKey = process.env.FAL_KEY
   if (!falKey) {
     return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
@@ -84,9 +99,12 @@ export async function POST(request: NextRequest) {
     console.log(`[preview-image] fal.ai status=${falRes.status}, body=${responseText.slice(0, 300)}`)
 
     if (!falRes.ok) {
+      // Don't leak the upstream response body to the client — it can contain
+      // account/quota details. Full detail stays in the server logs above.
+      console.error(`[preview-image] fal.ai error status=${falRes.status}, body=${responseText.slice(0, 500)}`)
       return NextResponse.json(
-        { error: `fal.ai ${falRes.status}: ${responseText.slice(0, 200)}` },
-        { status: 500 }
+        { error: 'Image generation failed', code: 'UPSTREAM_ERROR' },
+        { status: 502 }
       )
     }
 
@@ -100,8 +118,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ imageUrl, quality: 'draft' })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Preview generation failed'
-    console.error('[preview-image] Exception:', message)
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[preview-image] Exception:', err)
+    return NextResponse.json({ error: 'Image generation failed', code: 'GENERATION_ERROR' }, { status: 500 })
   }
 }

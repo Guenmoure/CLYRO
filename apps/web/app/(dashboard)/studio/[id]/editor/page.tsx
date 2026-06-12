@@ -2,11 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { Loader2, Monitor } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 import { StudioTopBar } from '@/components/studio/StudioTopBar'
 import { PreviewPlayer } from '@/components/studio/PreviewPlayer'
 import { SceneInspector } from '@/components/studio/SceneInspector'
 import { TimelineEditor } from '@/components/studio/TimelineEditor'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { toast } from '@/components/ui/toast'
 import { createBrowserClient } from '@/lib/supabase'
 import {
@@ -22,6 +25,7 @@ export const dynamic = 'force-dynamic'
 export default function StudioEditorPage() {
   const params = useParams()
   const router = useRouter()
+  const { t } = useLanguage()
   const projectId = String(params?.id ?? '')
 
   const [project, setProject]   = useState<StudioProject | null>(null)
@@ -29,6 +33,7 @@ export default function StudioEditorPage() {
   const [loading, setLoading]   = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
+  const [sceneToDelete, setSceneToDelete] = useState<string | null>(null)
 
   // ── Initial fetch ─────────────────────────────────────────────────────
 
@@ -43,10 +48,11 @@ export default function StudioEditorPage() {
         }
       })
       .catch((err) => {
-        toast.error(err instanceof Error ? err.message : 'Failed to load project')
+        toast.error(err instanceof Error ? err.message : t('st_loadProjectFailed'))
         router.push('/dashboard')
       })
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, router])
 
   // ── Realtime: watch scene updates ─────────────────────────────────────
@@ -62,8 +68,8 @@ export default function StudioEditorPage() {
         (payload: { new: Record<string, unknown> }) => {
           const updated = payload.new as unknown as StudioScene
           setScenes((prev) => prev.map((s) => s.id === updated.id ? updated : s))
-          if (updated.status === 'done') toast.success(`Scene ${updated.index + 1} ready`)
-          if (updated.status === 'error') toast.error(`Scene ${updated.index + 1} failed`)
+          if (updated.status === 'done') toast.success(t('st_sceneReady').replace('{n}', String(updated.index + 1)))
+          if (updated.status === 'error') toast.error(t('st_sceneFailed').replace('{n}', String(updated.index + 1)))
         },
       )
       .on(
@@ -75,6 +81,7 @@ export default function StudioEditorPage() {
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
   // ── Actions ───────────────────────────────────────────────────────────
@@ -88,13 +95,13 @@ export default function StudioEditorPage() {
     setStarting(true)
     try {
       await generateAllStudioScenes(project.id)
-      toast.success('Generation started — scenes will appear as they finish')
+      toast.success(t('st_generationStarted'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start generation')
+      toast.error(err instanceof Error ? err.message : t('st_generationStartFailed'))
     } finally {
       setStarting(false)
     }
-  }, [project, starting])
+  }, [project, starting, t])
 
   const handleRegenerate = useCallback(async (payload: {
     sceneId: string; script?: string; feedback?: string; type?: StudioSceneType
@@ -108,11 +115,11 @@ export default function StudioEditorPage() {
         feedback:  payload.feedback,
         newType:   payload.type,
       })
-      toast.success('Regeneration queued')
+      toast.success(t('st_regenQueued'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Regeneration failed')
+      toast.error(err instanceof Error ? err.message : t('st_regenFailed'))
     }
-  }, [project])
+  }, [project, t])
 
   const handleAddScene = useCallback(async (afterIndex: number) => {
     if (!project) return
@@ -121,23 +128,26 @@ export default function StudioEditorPage() {
       // Refetch scenes
       const fresh = await getStudioProject(project.id)
       setScenes(fresh.scenes as StudioScene[])
-      toast.success('Scene added')
+      toast.success(t('st_sceneAdded'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add scene')
+      toast.error(err instanceof Error ? err.message : t('st_sceneAddFailed'))
     }
-  }, [project])
+  }, [project, t])
 
   const handleDeleteScene = useCallback(async (sceneId: string) => {
-    if (!confirm('Delete this scene?')) return
+    setSceneToDelete(sceneId)
+  }, [])
+
+  const confirmDeleteScene = useCallback(async (sceneId: string) => {
     try {
       await deleteStudioScene(sceneId)
       setScenes((prev) => prev.filter((s) => s.id !== sceneId))
       if (selectedId === sceneId) setSelectedId(null)
-      toast.success('Scene deleted')
+      toast.success(t('st_sceneDeleted'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete scene')
+      toast.error(err instanceof Error ? err.message : t('st_sceneDeleteFailed'))
     }
-  }, [selectedId])
+  }, [selectedId, t])
 
   // ── Render ────────────────────────────────────────────────────────────
 
@@ -153,6 +163,27 @@ export default function StudioEditorPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
+
+      {/* Mobile guard — the timeline editor is unusable below md, so show
+          a full-screen notice instead of a broken layout. */}
+      <div className="fixed inset-0 z-50 bg-background flex md:hidden flex-col items-center justify-center gap-4 px-8 text-center">
+        <div className="rounded-2xl bg-muted p-4">
+          <Monitor size={28} className="text-[--text-muted]" />
+        </div>
+        <h2 className="font-display text-lg font-semibold text-foreground">
+          {t('studio_mobileTitle')}
+        </h2>
+        <p className="font-body text-sm text-[--text-secondary] max-w-xs">
+          {t('studio_mobileDesc')}
+        </p>
+        <Link
+          href="/dashboard"
+          className="mt-2 inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 font-display text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+        >
+          {t('st_backToDashboard')}
+        </Link>
+      </div>
+
       <StudioTopBar
         projectId={project.id}
         title={project.title}
@@ -163,19 +194,15 @@ export default function StudioEditorPage() {
           // F5-011: all scenes must be 'done' before we can assemble.
           const notReady = scenes.filter((s) => s.status !== 'done' || !s.video_url)
           if (notReady.length > 0) {
-            toast.error(
-              `${notReady.length} scène(s) ne sont pas prêtes. Génère ou régénère-les avant d'exporter.`,
-            )
+            toast.error(t('st_scenesNotReady').replace('{n}', String(notReady.length)))
             return
           }
           try {
             const result = await renderStudioFinal(project.id, project.format as '16_9' | '9_16')
-            toast.success(
-              `Rendu lancé sur ${result.sceneCount} scènes. Tu seras notifié dès que la vidéo finale est prête.`,
-            )
+            toast.success(t('st_renderStarted').replace('{n}', String(result.sceneCount)))
             setProject((p) => (p ? { ...p, status: 'rendering' } : p))
           } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Échec du rendu'
+            const msg = err instanceof Error ? err.message : t('st_renderFailed')
             toast.error(msg)
           }
         }}
@@ -186,8 +213,8 @@ export default function StudioEditorPage() {
       {scenes.every((s) => s.status === 'pending') && (
         <div className="shrink-0 px-4 py-2.5 bg-blue-500/10 border-b border-blue-500/30 flex items-center justify-between gap-4">
           <p className="font-body text-sm text-foreground">
-            <span className="font-semibold">{scenes.length} scenes ready.</span>{' '}
-            <span className="text-[--text-secondary]">Click Generate to produce each video.</span>
+            <span className="font-semibold">{t('st_scenesReadyCount').replace('{n}', String(scenes.length))}</span>{' '}
+            <span className="text-[--text-secondary]">{t('st_clickGenerate')}</span>
           </p>
           <button
             type="button"
@@ -196,7 +223,7 @@ export default function StudioEditorPage() {
             className="inline-flex items-center gap-2 rounded-xl bg-blue-500 text-white px-4 py-1.5 font-display text-sm font-semibold hover:bg-blue-600 disabled:opacity-60 transition-colors"
           >
             {starting ? <Loader2 size={13} className="animate-spin" /> : '⚡'}
-            Generate all
+            {t('st_generateAll')}
           </button>
         </div>
       )}
@@ -224,6 +251,16 @@ export default function StudioEditorPage() {
         onAddScene={handleAddScene}
         projectDuration={totalDuration}
         musicTrackName={project.music_track ?? undefined}
+      />
+
+      <ConfirmDialog
+        isOpen={sceneToDelete !== null}
+        onClose={() => setSceneToDelete(null)}
+        onConfirm={async () => {
+          if (sceneToDelete) await confirmDeleteScene(sceneToDelete)
+        }}
+        title={t('si_deleteScene')}
+        message={t('st_deleteSceneConfirm')}
       />
     </div>
   )

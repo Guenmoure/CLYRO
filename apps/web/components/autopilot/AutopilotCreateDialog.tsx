@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { X, Rocket, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import type { CreateAutopilotPayload, AutopilotCadence } from '@/lib/api'
 
 interface Props {
@@ -12,21 +13,22 @@ interface Props {
   onCreate: (payload: CreateAutopilotPayload) => Promise<void>
 }
 
-const CADENCE_OPTIONS: Array<{ value: AutopilotCadence; label: string; desc: string }> = [
-  { value: 'daily',  label: 'Daily',  desc: 'A new video every ~24h' },
-  { value: 'weekly', label: 'Weekly', desc: 'A new video every ~7d' },
-  { value: 'manual', label: 'Manual', desc: 'Never auto-run — only "Run now"' },
+const CADENCE_OPTIONS: Array<{ value: AutopilotCadence; labelKey: string; descKey: string }> = [
+  { value: 'daily',  labelKey: 'auto_cadence_daily_label',  descKey: 'auto_cadence_daily_desc' },
+  { value: 'weekly', labelKey: 'auto_cadence_weekly_label', descKey: 'auto_cadence_weekly_desc' },
+  { value: 'manual', labelKey: 'auto_cadence_manual_label', descKey: 'auto_cadence_manual_desc' },
 ]
 
 const STYLE_OPTIONS = [
-  { value: 'cinematic',    label: 'Cinematic' },
-  { value: 'documentary',  label: 'Documentary' },
-  { value: 'educational',  label: 'Educational' },
-  { value: 'motivational', label: 'Motivational' },
-  { value: 'minimalist',   label: 'Minimalist' },
+  { value: 'cinematic',    labelKey: 'auto_style_cinematic' },
+  { value: 'documentary',  labelKey: 'auto_style_documentary' },
+  { value: 'educational',  labelKey: 'auto_style_educational' },
+  { value: 'motivational', labelKey: 'auto_style_motivational' },
+  { value: 'minimalist',   labelKey: 'auto_style_minimalist' },
 ]
 
 export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
+  const { t } = useLanguage()
   const [name, setName] = useState('')
   const [topic, setTopic] = useState('')
   const [cadence, setCadence] = useState<AutopilotCadence>('weekly')
@@ -103,7 +105,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
       })
       onClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Creation failed')
+      toast.error(err instanceof Error ? err.message : t('auto_dialog_creation_failed'))
     } finally {
       setSubmitting(false)
     }
@@ -127,17 +129,17 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
           </div>
           <div className="flex-1 min-w-0">
             <h2 id="autopilot-create-title" className="font-display text-base font-semibold text-foreground">
-              New Autopilot series
+              {t('auto_dialog_title')}
             </h2>
             <p className="font-body text-sm text-[--text-muted] mt-0.5">
-              Pick a topic and cadence — we'll auto-generate new videos on schedule.
+              {t('auto_dialog_subtitle')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            aria-label="Close dialog"
+            aria-label={t('auto_dialog_close')}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 disabled:opacity-50 shrink-0"
           >
             <X size={16} aria-hidden="true" />
@@ -148,7 +150,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
           {/* Name */}
           <div>
             <label htmlFor="ap-name" className="block font-display text-xs font-medium text-foreground mb-1.5">
-              Series name
+              {t('auto_dialog_series_name')}
             </label>
             <input
               id="ap-name"
@@ -156,7 +158,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Daily startup stories"
+              placeholder={t('auto_dialog_name_placeholder')}
               maxLength={120}
               disabled={submitting}
               className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50"
@@ -166,29 +168,29 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
           {/* Topic */}
           <div>
             <label htmlFor="ap-topic" className="block font-display text-xs font-medium text-foreground mb-1.5">
-              Topic
+              {t('auto_dialog_topic')}
             </label>
             <textarea
               id="ap-topic"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="Ex: Founders who failed before hitting $1M ARR — lessons, patterns, surprises."
+              placeholder={t('auto_dialog_topic_placeholder')}
               maxLength={500}
               rows={3}
               disabled={submitting}
               className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50 resize-none"
             />
             <p className="font-mono text-[10px] text-[--text-muted] mt-1">
-              {topic.length} / 500 · We'll pick a fresh angle each run.
+              {topic.length} {t('auto_dialog_chars_hint')}
             </p>
           </div>
 
           {/* Cadence */}
           <fieldset>
             <legend className="font-display text-xs font-medium text-foreground mb-2">
-              Cadence
+              {t('auto_dialog_cadence')}
             </legend>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Cadence">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label={t('auto_dialog_cadence')}>
               {CADENCE_OPTIONS.map(opt => {
                 const active = cadence === opt.value
                 return (
@@ -205,8 +207,8 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
                         : 'border-border bg-muted/30 hover:border-border hover:bg-muted/60'
                     }`}
                   >
-                    <p className="font-display text-xs font-semibold text-foreground">{opt.label}</p>
-                    <p className="font-body text-[11px] text-[--text-muted] mt-1">{opt.desc}</p>
+                    <p className="font-display text-xs font-semibold text-foreground">{t(opt.labelKey)}</p>
+                    <p className="font-body text-[11px] text-[--text-muted] mt-1">{t(opt.descKey)}</p>
                   </button>
                 )
               })}
@@ -217,7 +219,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="ap-style" className="block font-display text-xs font-medium text-foreground mb-1.5">
-                Style
+                {t('auto_dialog_style')}
               </label>
               <select
                 id="ap-style"
@@ -226,12 +228,12 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
                 disabled={submitting}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50"
               >
-                {STYLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                {STYLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
               </select>
             </div>
             <div>
               <label htmlFor="ap-lang" className="block font-display text-xs font-medium text-foreground mb-1.5">
-                Language
+                {t('auto_dialog_language')}
               </label>
               <select
                 id="ap-lang"
@@ -250,7 +252,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
             </div>
             <div>
               <label htmlFor="ap-format" className="block font-display text-xs font-medium text-foreground mb-1.5">
-                Format
+                {t('auto_dialog_format')}
               </label>
               <select
                 id="ap-format"
@@ -259,14 +261,14 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
                 disabled={submitting}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50"
               >
-                <option value="9:16">9:16 (Vertical)</option>
-                <option value="16:9">16:9 (Landscape)</option>
-                <option value="1:1">1:1 (Square)</option>
+                <option value="9:16">{t('auto_format_vertical')}</option>
+                <option value="16:9">{t('auto_format_landscape')}</option>
+                <option value="1:1">{t('auto_format_square')}</option>
               </select>
             </div>
             <div>
               <label htmlFor="ap-duration" className="block font-display text-xs font-medium text-foreground mb-1.5">
-                Duration
+                {t('auto_dialog_duration')}
               </label>
               <select
                 id="ap-duration"
@@ -291,7 +293,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
             disabled={submitting}
             className="flex-1"
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -301,10 +303,10 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
             {submitting ? (
               <>
                 <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                Creating…
+                {t('auto_dialog_creating')}
               </>
             ) : (
-              'Create series'
+              t('auto_dialog_create_series')
             )}
           </Button>
         </div>

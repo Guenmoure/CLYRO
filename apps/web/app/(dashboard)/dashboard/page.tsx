@@ -6,10 +6,10 @@ import type { Database } from '@/lib/database.types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-// Dashboard components
-import { HomeHero }           from '@/components/dashboard/HomeHero'
-import { HomeFeatureGrid }    from '@/components/dashboard/HomeFeatureGrid'
-import { NewProjectDropdown } from '@/components/dashboard/NewProjectDropdown'
+// Dashboard components — HeyGen-pattern home: greeting → create tiles → recent projects.
+// The "+ Create" dropdown now lives in the TopBar; HomeHero / HomeFeatureGrid were
+// replaced by CreateTiles (one large tile per module).
+import { CreateTiles }        from '@/components/dashboard/CreateTiles'
 import { CreditsBanner }      from '@/components/dashboard/CreditsBanner'
 import { EmptyDashboard }     from '@/components/dashboard/EmptyDashboard'
 import { ProjectsSection }    from '@/components/dashboard/ProjectsSection'
@@ -100,20 +100,14 @@ export default async function DashboardPage() {
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto space-y-8">
 
-      {/* ── 1. Hero — HeyGen-style centred banner with carousel ─── */}
-      <HomeHero />
+      {/* ── 1. Greeting — personalised salutation ─────────────── */}
+      <DashboardGreeting firstName={firstName} />
 
-      {/* ── 2. Greeting + New project button ────────────────── */}
-      <div className="flex items-center justify-between gap-4">
-        <DashboardGreeting firstName={firstName} />
-        <NewProjectDropdown />
-      </div>
+      {/* ── 2. Create tiles — one per module (HeyGen pattern) ──── */}
+      <CreateTiles />
 
-      {/* ── 3. Credits banner ────────────────────────────────── */}
+      {/* ── 3. Credits banner — low/empty credit warnings ──────── */}
       <CreditsBanner plan={plan} creditsLeft={credits} />
-
-      {/* ── 4. 6-card feature grid (3×2) ──────────────────────── */}
-      <HomeFeatureGrid />
 
       {/* ── Fetch error ──────────────────────────────────────── */}
       {errorMsg && (
@@ -131,10 +125,10 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      {/* ── 5. Projects grid or empty state ──────────────────── */}
+      {/* ── 4. Recent projects grid (realtime) or empty state ── */}
       {!errorMsg && (
         hasProjects ? (
-          <ProjectsSection videos={videos} draftCount={draftCount} />
+          <ProjectsSection videos={videos} draftCount={draftCount} userId={userId} />
         ) : (
           <EmptyDashboard firstName={firstName} />
         )

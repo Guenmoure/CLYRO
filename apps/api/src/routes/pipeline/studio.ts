@@ -665,13 +665,20 @@ studioRouter.post('/generate-all', authMiddleware, async (req, res) => {
 
             if (uploadErr) throw new Error(`Remotion video upload failed: ${uploadErr.message}`)
 
-            const { data: pub } = supabaseAdmin.storage
+            // studio-videos est privé (migration 20260611000001) — on persiste
+            // une signed URL longue durée (1 an, même convention que le bucket
+            // `videos`) car video_url est lue par le frontend ET re-téléchargée
+            // par render-final pour le concat.
+            const { data: signed, error: signErr } = await supabaseAdmin.storage
               .from('studio-videos')
-              .getPublicUrl(videoPath)
+              .createSignedUrl(videoPath, 60 * 60 * 24 * 365)
+            if (signErr || !signed?.signedUrl) {
+              throw new Error(`Failed to sign Remotion video URL: ${signErr?.message ?? 'no signedUrl'}`)
+            }
 
             await supabaseAdmin.from('studio_scenes').update({
               status:    'done',
-              video_url: pub.publicUrl,
+              video_url: signed.signedUrl,
             }).eq('id', scene.id)
 
             logger.info({ sceneId: scene.id, type: scene.type }, 'generate-all: Remotion render done')
@@ -812,13 +819,17 @@ studioRouter.post('/regenerate-scene', authMiddleware, async (req, res) => {
 
           if (uploadErr) throw new Error(`Remotion video upload failed: ${uploadErr.message}`)
 
-          const { data: pub } = supabaseAdmin.storage
+          // studio-videos est privé — signed URL 1 an (cf. generate-all).
+          const { data: signed, error: signErr } = await supabaseAdmin.storage
             .from('studio-videos')
-            .getPublicUrl(videoPath)
+            .createSignedUrl(videoPath, 60 * 60 * 24 * 365)
+          if (signErr || !signed?.signedUrl) {
+            throw new Error(`Failed to sign Remotion video URL: ${signErr?.message ?? 'no signedUrl'}`)
+          }
 
           await supabaseAdmin.from('studio_scenes').update({
             status:    'done',
-            video_url: pub.publicUrl,
+            video_url: signed.signedUrl,
           }).eq('id', sceneId)
 
           logger.info({ sceneId, sceneType }, 'regenerate-scene: Remotion render done')
@@ -1214,19 +1225,25 @@ async function runStudioFinalRender(
     }
     if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`)
 
-    const { data: pub } = supabaseAdmin.storage
+    // studio-videos est privé (migration 20260611000001) — signed URL 1 an,
+    // même convention que les output_url du bucket `videos` (l'URL est
+    // persistée en DB et lue par le frontend pour la lecture/téléchargement).
+    const { data: signedFinal, error: signFinalErr } = await supabaseAdmin.storage
       .from('studio-videos')
-      .getPublicUrl(storagePath)
-    const publicUrl = pub.publicUrl
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+    if (signFinalErr || !signedFinal?.signedUrl) {
+      throw new Error(`Failed to sign final video URL: ${signFinalErr?.message ?? 'no signedUrl'}`)
+    }
+    const finalUrl = signedFinal.signedUrl
 
     const urlColumn = format === '9_16' ? 'final_video_9_16_url' : 'final_video_url'
     await supabaseAdmin
       .from('studio_projects')
-      .update({ status: 'done', [urlColumn]: publicUrl })
+      .update({ status: 'done', [urlColumn]: finalUrl })
       .eq('id', projectId)
 
     logger.info(
-      { projectId, durationMs: Date.now() - startedAt, publicUrl },
+      { projectId, durationMs: Date.now() - startedAt, finalUrl },
       'studio.render-final: done',
     )
   } catch (err) {

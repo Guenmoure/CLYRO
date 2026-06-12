@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express'
+import { z } from 'zod'
 import PDFDocument from 'pdfkit'
 import { logger } from '../lib/logger'
 import { authMiddleware } from '../middleware/auth'
@@ -6,28 +7,49 @@ import { authMiddleware } from '../middleware/auth'
 export const generatePdfRouter = Router()
 generatePdfRouter.use(authMiddleware)
 
-interface CharteColor {
-  name: string
-  hex: string
-  usage: string
-  rgb?: { r: number; g: number; b: number }
-}
+const charteColorSchema = z.object({
+  name:  z.string(),
+  hex:   z.string().regex(/^#[0-9A-Fa-f]{3,8}$/, 'Must be a hex color'),
+  usage: z.string(),
+  rgb:   z.object({ r: z.number(), g: z.number(), b: z.number() }).optional(),
+})
 
-interface BrandCharte {
-  brandName?: string
-  tagline?: string
-  colors: CharteColor[]
-  typography: {
-    heading: { font: string; weight: string; size: string }
-    body: { font: string; weight: string; size: string }
-    accent: { font: string; weight: string; size: string }
-  }
-  layout: { gridSystem: string; spacing: string; borderRadius: string }
-  photography: { style: string; mood: string; filters: string[] }
-  voiceGuidelines?: string
-  doList?: string[]
-  dontList?: string[]
-}
+const typoEntrySchema = z.object({
+  font:   z.string(),
+  weight: z.string(),
+  size:   z.string(),
+})
+
+const brandCharteSchema = z.object({
+  brandName: z.string().optional(),
+  tagline:   z.string().optional(),
+  colors:    z.array(charteColorSchema),
+  typography: z.object({
+    heading: typoEntrySchema,
+    body:    typoEntrySchema,
+    accent:  typoEntrySchema,
+  }),
+  layout: z.object({
+    gridSystem:   z.string(),
+    spacing:      z.string(),
+    borderRadius: z.string(),
+  }),
+  photography: z.object({
+    style:   z.string(),
+    mood:    z.string(),
+    filters: z.array(z.string()).default([]),
+  }),
+  voiceGuidelines: z.string().optional(),
+  doList:          z.array(z.string()).optional(),
+  dontList:        z.array(z.string()).optional(),
+})
+
+const generatePdfSchema = z.object({
+  charte:    brandCharteSchema,
+  brandName: z.string().optional(),
+})
+
+type BrandCharte = z.infer<typeof brandCharteSchema>
 
 /**
  * POST /api/v1/generate-pdf
@@ -42,15 +64,13 @@ interface BrandCharte {
  */
 generatePdfRouter.post('/generate-pdf', async (req: Request, res: Response) => {
   try {
-    const { charte, brandName: namOverride } = req.body as {
-      charte: BrandCharte
-      brandName?: string
-    }
-
-    if (!charte) {
-      res.status(400).json({ error: 'charte is required' })
+    const parsed = generatePdfSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'charte is required', code: 'VALIDATION_ERROR' })
       return
     }
+    const charte: BrandCharte = parsed.data.charte
+    const namOverride = parsed.data.brandName
 
     const brand = namOverride ?? charte.brandName ?? 'Brand Guide'
 
@@ -244,7 +264,7 @@ generatePdfRouter.post('/generate-pdf', async (req: Request, res: Response) => {
     res.send(pdfBuffer)
   } catch (err) {
     logger.error({ err }, 'generate-pdf: failed')
-    res.status(500).json({ error: err instanceof Error ? err.message : 'PDF generation failed' })
+    res.status(500).json({ error: 'PDF generation failed', code: 'SERVICE_ERROR' })
   }
 })
 

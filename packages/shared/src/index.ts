@@ -1,6 +1,7 @@
 export * from './types/user'
 export * from './types/brand-identity'
 export * from './types/video'
+export * from './types/brand-campaign'
 export * from './types/voice'
 export * from './types/payment'
 export * from './types/pipeline'

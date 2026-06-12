@@ -32,9 +32,15 @@ heygenWebhookRouter.post('/heygen', async (req, res) => {
     const rawBody = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : JSON.stringify(req.body)
     const signature = (req.headers['x-signature'] as string) ?? (req.headers['signature'] as string) ?? ''
 
-    if (signature && !verifyHeyGenSignature(rawBody, signature)) {
+    if (!signature) {
+      logger.warn('HeyGen webhook: missing X-Signature header — rejecting')
+      res.status(401).json({ error: 'Missing signature', code: 'MISSING_SIGNATURE' })
+      return
+    }
+
+    if (!verifyHeyGenSignature(rawBody, signature)) {
       logger.warn({ signature: signature.slice(0, 16) }, 'HeyGen webhook signature mismatch')
-      res.status(401).json({ error: 'Invalid signature' })
+      res.status(401).json({ error: 'Invalid signature', code: 'INVALID_SIGNATURE' })
       return
     }
 

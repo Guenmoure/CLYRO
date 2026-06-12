@@ -12,6 +12,7 @@ import { renderMotionDesignVideo } from '../services/remotion'
 import { renderMotionDesignVideoLambda, isLambdaEnabled } from '../services/remotionLambda'
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
+import { assertNotCancelled, CancelledError } from './cancellation'
 
 export interface MotionDesignPipelineParams {
   videoId:   string
@@ -98,10 +99,15 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
       .from('videos')
       .update({ status: 'generating', metadata: { phase, progress, ...extra } })
       .eq('id', videoId)
+      // Never resurrect a row the user just cancelled.
+      .neq('status', 'cancelled')
     logger.info({ videoId, phase, progress }, 'MotionDesign pipeline status update')
   }
 
   try {
+    // Coopération annulation : abandon immédiat si annulé avant le pickup.
+    await assertNotCancelled(videoId)
+
     // ÉTAPE 1 — Claude génère les MotionScene[] + voiceovers[i] per scene
     await updateStatus('storyboard', 10)
     const language = detectLanguage(brief)
@@ -129,6 +135,9 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
     // back to that exact scene via voiceoverAudioUrl (data URL). Scenes
     // without voiceover (dark_light_switch, pure visual beats) keep
     // Claude's hint.
+    // Annulé pendant le storyboard ? Stop avant de payer ElevenLabs.
+    await assertNotCancelled(videoId)
+
     await updateStatus('audio', 30)
 
     const FPS = 30
@@ -178,6 +187,9 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
     }
 
     await updateStatus('audio', 50)
+
+    // Annulé pendant l'audio ? Stop avant le rendu Remotion.
+    await assertNotCancelled(videoId)
 
     // ÉTAPE 3 — Rendu Remotion MotionDesign (Lambda si configuré, sinon local)
     // Les deux renderers retournent { mp4: Buffer, thumbnail: Buffer | null }
@@ -275,6 +287,13 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
       try { global.gc() } catch { /* best-effort */ }
     }
   } catch (err) {
+    // Annulation utilisateur : ne PAS marquer 'error', ne PAS refund (la
+    // route /cancel a déjà émis le refund idempotent). Return silencieux.
+    if (err instanceof CancelledError) {
+      logger.info({ videoId }, 'MotionDesign pipeline halted — video cancelled by user')
+      return
+    }
+
     const errorMessage = err instanceof Error ? err.message : String(err)
     Sentry.captureException(err, { extra: { videoId, userId } })
     logger.error({ err, videoId }, 'MotionDesign pipeline error')
@@ -294,6 +313,8 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
         metadata: { ...existingMeta, error_message: errorMessage, progress: 0, error_at: new Date().toISOString() },
       })
       .eq('id', videoId)
+      // Ne pas écraser 'cancelled' si l'annulation a fait échouer un appel en vol.
+      .neq('status', 'cancelled')
       .then(() => null, () => null)
 
     if (creditCost && creditCost > 0) {

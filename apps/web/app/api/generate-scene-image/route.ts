@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
 import { applyAntiHallucination } from '@clyro/shared'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -34,6 +35,11 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // flux/schnell est bon marché mais ce bouton "régénérer" peut être
+    // spammé — quota intermédiaire.
+    const limit = checkRateLimit('generate-scene-image', user.id, 60)
+    if (!limit.allowed) return rateLimitResponse(limit)
 
     const body = await request.json() as { prompt: string; style: string }
     const { prompt, style } = body

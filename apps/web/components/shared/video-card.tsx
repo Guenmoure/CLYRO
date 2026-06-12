@@ -103,7 +103,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
 
   return (
     <div className="bg-muted border border-border rounded-xl p-4 hover:border-blue-500/30 transition-colors">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
         {/* Thumbnail / icon */}
         <div className="w-14 h-14 bg-card rounded-lg flex items-center justify-center shrink-0 text-2xl">
           {icon}

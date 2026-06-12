@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 export type ToastType = 'success' | 'error' | 'info'
 
@@ -17,28 +18,36 @@ type Listener = (toasts: Toast[]) => void
 let toasts: Toast[] = []
 const listeners = new Set<Listener>()
 
+// Errors stay visible longer so users have time to read them.
+const DEFAULT_DURATION = 4000
+const ERROR_DURATION = 8000
+
 function notify() {
   listeners.forEach((l) => l([...toasts]))
 }
 
-export function toast(message: string, type: ToastType = 'info', duration: number = 4000) {
+function dismiss(id: string) {
+  toasts = toasts.filter((t) => t.id !== id)
+  notify()
+}
+
+export function toast(message: string, type: ToastType = 'info', duration?: number) {
   const id = Math.random().toString(36).slice(2)
   toasts = [...toasts, { id, message, type }]
   notify()
 
-  setTimeout(() => {
-    toasts = toasts.filter((t) => t.id !== id)
-    notify()
-  }, duration)
+  const ms = duration ?? (type === 'error' ? ERROR_DURATION : DEFAULT_DURATION)
+  setTimeout(() => dismiss(id), ms)
 }
 
-toast.success = (msg: string, opts?: { duration?: number }) => toast(msg, 'success', opts?.duration ?? 4000)
-toast.error   = (msg: string, opts?: { duration?: number }) => toast(msg, 'error', opts?.duration ?? 4000)
-toast.info    = (msg: string, opts?: { duration?: number }) => toast(msg, 'info', opts?.duration ?? 4000)
+toast.success = (msg: string, opts?: { duration?: number }) => toast(msg, 'success', opts?.duration)
+toast.error   = (msg: string, opts?: { duration?: number }) => toast(msg, 'error', opts?.duration)
+toast.info    = (msg: string, opts?: { duration?: number }) => toast(msg, 'info', opts?.duration)
 
 // ── Composant Toaster ────────────────────────────────────────────────────────
 
 export function Toaster() {
+  const { t } = useLanguage()
   const [items, setItems] = useState<Toast[]>([])
 
   useEffect(() => {
@@ -50,22 +59,38 @@ export function Toaster() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm">
-      {items.map((t) => (
+      {items.map((item) => (
         <div
-          key={t.id}
+          key={item.id}
+          role={item.type === 'error' ? 'alert' : 'status'}
+          aria-live={item.type === 'error' ? 'assertive' : 'polite'}
           className={cn(
             'flex items-start gap-3 px-4 py-3 rounded-xl border text-sm font-body shadow-lg animate-fade-in',
-            t.type === 'success' && 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
-            t.type === 'error'   && 'bg-red-500/10 border-red-500/20 text-red-300',
-            t.type === 'info'    && 'bg-clyro-blue/10 border-clyro-blue/20 text-clyro-blue'
+            item.type === 'success' && 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
+            item.type === 'error'   && 'bg-red-500/10 border-red-500/20 text-red-300',
+            item.type === 'info'    && 'bg-clyro-blue/10 border-clyro-blue/20 text-clyro-blue'
           )}
         >
-          <span className="shrink-0 mt-0.5">
-            {t.type === 'success' && '✓'}
-            {t.type === 'error'   && '✕'}
-            {t.type === 'info'    && 'ℹ'}
+          <span className="shrink-0 mt-0.5" aria-hidden="true">
+            {item.type === 'success' && '✓'}
+            {item.type === 'error'   && '✕'}
+            {item.type === 'info'    && 'ℹ'}
           </span>
-          {t.message}
+          <span className="flex-1">{item.message}</span>
+          <button
+            type="button"
+            onClick={() => dismiss(item.id)}
+            aria-label={t('close')}
+            className="shrink-0 -mr-1 mt-0.5 w-5 h-5 rounded flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
       ))}
     </div>

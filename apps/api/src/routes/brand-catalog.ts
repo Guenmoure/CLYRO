@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { authMiddleware } from '../middleware/auth'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
+import { scrapeProductPage, ScrapeError } from '../services/product-scraper'
 
 export const brandCatalogRouter = Router()
 
@@ -15,6 +16,11 @@ const createSchema = z.object({
 })
 
 const updateSchema = createSchema.omit({ brand_kit_id: true }).partial()
+
+const fromUrlSchema = z.object({
+  brand_kit_id: z.string().uuid(),
+  url:          z.string().url().max(2000),
+})
 
 /**
  * POST /api/v1/brand/catalog
@@ -61,6 +67,55 @@ brandCatalogRouter.post('/brand/catalog', authMiddleware, async (req, res) => {
     res.status(201).json({ data })
   } catch (err) {
     logger.error({ err, userId: req.userId }, 'brand/catalog POST error')
+    res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
+  }
+})
+
+/**
+ * POST /api/v1/brand/catalog/from-url
+ * Phase 2 — scrape une URL e-commerce et renvoie un DRAFT de produit à
+ * confirmer côté front. N'insère RIEN en base : l'utilisateur révise les
+ * champs (le scraping rate ~20 % des cas), puis poste sur l'endpoint
+ * POST /brand/catalog standard pour créer la fiche.
+ *
+ * Ne consomme pas de crédit : c'est un appel local (fetch + parsing
+ * HTML). Protégé par authMiddleware + plafonds taille/timeout dans
+ * product-scraper.ts (10 s, 2 MB).
+ */
+brandCatalogRouter.post('/brand/catalog/from-url', authMiddleware, async (req, res) => {
+  const parsed = fromUrlSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message, code: 'VALIDATION_ERROR' })
+    return
+  }
+
+  const { brand_kit_id, url } = parsed.data
+
+  try {
+    // Vérifier que le kit appartient à l'utilisateur avant de scraper —
+    // évite que quelqu'un utilise notre serveur comme proxy de scraping
+    // sans même posséder de Brand Kit.
+    const { data: kit } = await supabaseAdmin
+      .from('brand_kits')
+      .select('id')
+      .eq('id', brand_kit_id)
+      .eq('user_id', req.userId)
+      .single()
+    if (!kit) {
+      res.status(404).json({ error: 'Brand kit not found', code: 'NOT_FOUND' })
+      return
+    }
+
+    const draft = await scrapeProductPage(url)
+    logger.info({ userId: req.userId, brand_kit_id, sourceUrl: url }, 'Catalog draft scraped from URL')
+    res.json({ data: draft })
+  } catch (err) {
+    if (err instanceof ScrapeError) {
+      logger.warn({ url, code: err.code }, 'Product scrape failed')
+      res.status(422).json({ error: err.message, code: err.code })
+      return
+    }
+    logger.error({ err, userId: req.userId }, 'brand/catalog/from-url error')
     res.status(500).json({ error: 'Internal error', code: 'INTERNAL_ERROR' })
   }
 })

@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
 import type { BrandBrief, BrandDirection } from '@clyro/shared'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -70,6 +71,10 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Un appel bulk = jusqu'à 10 images flux-pro/flux-dev/recraft → quota serré.
+    const limit = checkRateLimit('brand-visuals', user.id, 20)
+    if (!limit.allowed) return rateLimitResponse(limit)
 
     const body = await request.json() as {
       brief: BrandBrief
@@ -239,7 +244,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(allResults)
   } catch (err) {
+    // Generic message only — err.message can leak fal.ai account details.
     console.error('[brand-visuals]', err)
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Asset generation failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Asset generation failed', code: 'GENERATION_ERROR' }, { status: 500 })
   }
 }

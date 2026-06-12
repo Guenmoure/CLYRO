@@ -3,6 +3,7 @@
 import { useState, type KeyboardEvent } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 interface TagInputProps {
   value: string[]
@@ -27,12 +28,13 @@ interface TagInputProps {
 export function TagInput({
   value,
   onChange,
-  placeholder = 'Type and press Enter…',
+  placeholder,
   max = 20,
   maxTagLength = 60,
   disabled = false,
   className,
 }: TagInputProps) {
+  const { t } = useLanguage()
   const [draft, setDraft] = useState('')
   const full = value.length >= max
 
@@ -80,7 +82,7 @@ export function TagInput({
           <button
             type="button"
             onClick={() => removeAt(i)}
-            aria-label={`Remove ${tag}`}
+            aria-label={t('bk_tag_remove').replace('{tag}', tag)}
             className="text-[--text-muted] hover:text-foreground transition-colors"
           >
             <X size={12} />
@@ -93,7 +95,7 @@ export function TagInput({
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={handleKey}
         onBlur={commitDraft}
-        placeholder={full ? `Max ${max} tags` : placeholder}
+        placeholder={full ? t('bk_tag_max').replace('{max}', String(max)) : (placeholder ?? t('bk_tag_placeholder'))}
         disabled={full}
         maxLength={maxTagLength}
         className="flex-1 min-w-[120px] bg-transparent outline-none font-body text-sm text-foreground placeholder-[--text-muted]"

@@ -88,7 +88,7 @@ export function DashboardShell({
             hydrated && (collapsed ? 'md:ml-[72px]' : 'md:ml-[240px]'),
           )}
         >
-          <TopBar onMobileMenuToggle={() => setMobileOpen(v => !v)} />
+          <TopBar user={user} onMobileMenuToggle={() => setMobileOpen(v => !v)} />
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
             {children}
           </main>

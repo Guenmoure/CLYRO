@@ -18,6 +18,8 @@ import { checkoutRouter } from './routes/checkout'
 import { brandKitsRouter } from './routes/brand-kits'
 import { brandGenerateRouter } from './routes/brand-generate'
 import { brandCatalogRouter } from './routes/brand-catalog'
+import { brandMediaRouter } from './routes/brand-media'
+import { brandBookRouter } from './routes/brand-book'
 import { brandCampaignsRouter } from './routes/brand-campaigns'
 import { brandPhotoshootRouter } from './routes/brand-photoshoot'
 import { brandAgentRouter } from './routes/brand-agent'
@@ -42,6 +44,20 @@ if (process.env.SENTRY_DSN) {
   })
   logger.info('Sentry initialized')
 }
+
+// ── Global safety net ──────────────────────────────────────────────────────
+// Same pattern as workers/renderWorker.ts:34 — log + Sentry, do NOT exit.
+// An unhandled rejection from a fire-and-forget background task must not
+// take the whole API down; Render would restart-loop and drop in-flight
+// requests.
+process.on('unhandledRejection', (reason) => {
+  Sentry.captureException(reason)
+  logger.error({ reason }, 'Unhandled rejection in API process (kept alive)')
+})
+process.on('uncaughtException', (err) => {
+  Sentry.captureException(err)
+  logger.error({ err }, 'Uncaught exception in API process (kept alive)')
+})
 
 const app = express()
 const PORT = process.env.PORT ?? 4000
@@ -189,6 +205,8 @@ app.use('/api/v1', checkoutRouter)
 app.use('/api/v1', brandKitsRouter)
 app.use('/api/v1', brandGenerateRouter)
 app.use('/api/v1', brandCatalogRouter)
+app.use('/api/v1', brandMediaRouter)
+app.use('/api/v1', brandBookRouter)
 app.use('/api/v1', brandCampaignsRouter)
 app.use('/api/v1', brandPhotoshootRouter)
 app.use('/api/v1', brandAgentRouter)

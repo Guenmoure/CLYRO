@@ -288,6 +288,49 @@ export interface UpdateBrandKitPayload extends Partial<CreateBrandKitPayload> {
   id: string
 }
 
+// ── Brand Catalog (Pomelli Phase 2) ──────────────────────────────────────────
+// Une ligne par produit attaché à un Brand Kit. La table SQL est
+// brand_catalog_items (cf. migration 20260531000000_brand_catalog.sql).
+
+export interface CatalogItem {
+  id:           string
+  brand_kit_id: string
+  user_id:      string
+  name:         string
+  description:  string | null
+  image_url:    string
+  category:     string | null
+  created_at:   string
+  updated_at:   string
+}
+
+/** DRAFT renvoyé par POST /brand/catalog/from-url, à confirmer côté front
+ *  avant de créer l'item via POST /brand/catalog. */
+export interface CatalogScrapeDraft {
+  name:        string
+  image_url:   string
+  description?: string
+  source_url:  string
+}
+
+// ── Brand Media Library (Pomelli Phase 2 — onglet « Assets ») ────────────────
+
+export interface BrandMediaItem {
+  id:           string
+  brand_kit_id: string
+  user_id:      string
+  storage_path: string
+  url:          string | null
+  filename:     string
+  mime_type:    'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
+  size_bytes:   number
+  tags:         string[]
+  source_url:   string | null
+  width:        number | null
+  height:       number | null
+  created_at:   string
+}
+
 export interface Video {
   id: string
   user_id: string

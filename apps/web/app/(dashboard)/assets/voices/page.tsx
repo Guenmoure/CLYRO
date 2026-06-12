@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
-import { Plus, ChevronRight, TrendingUp, Sparkles, Mic2 } from 'lucide-react'
+import { Plus, ChevronRight, TrendingUp, Sparkles, Mic2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { VoiceCard } from '@/components/assets/VoiceCard'
 import { VoiceFilters } from '@/components/assets/VoiceFilters'
-import { VoicePreviewModal } from '@/components/assets/VoicePreviewModal'
-import { CloneVoiceModal, type UserPlan } from '@/components/assets/CloneVoiceModal'
+import dynamic from 'next/dynamic'
+import type { UserPlan } from '@/components/assets/CloneVoiceModal'
 import {
   getVoices, getPublicVoices, getVoiceFilters, toggleVoiceFavorite,
   type ClyroVoice,
@@ -15,6 +15,17 @@ import {
 import { useUser } from '@/hooks/use-user'
 import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+
+// Modals are only needed on user interaction — code-split them out of the
+// initial bundle so the voice list paints faster.
+const VoicePreviewModal = dynamic(
+  () => import('@/components/assets/VoicePreviewModal').then((m) => m.VoicePreviewModal),
+  { ssr: false },
+)
+const CloneVoiceModal = dynamic(
+  () => import('@/components/assets/CloneVoiceModal').then((m) => m.CloneVoiceModal),
+  { ssr: false },
+)
 
 type VoiceTab = 'explore' | 'my_voices' | 'default'
 
@@ -54,6 +65,9 @@ export default function VoicesAssetsPage() {
   const [allVoices, setAllVoices]   = useState<ClyroVoice[]>([])
   const [myVoices, setMyVoices]     = useState<ClyroVoice[]>([])
   const [loading, setLoading]       = useState(true)
+  // Set when the primary voices fetch fails — drives the error UI instead
+  // of a misleading empty state.
+  const [loadError, setLoadError]   = useState(false)
   const [activeTab, setActiveTab]   = useState<VoiceTab>('explore')
   const [cloneOpen, setCloneOpen]   = useState(false)
   const [search, setSearch]         = useState('')
@@ -85,6 +99,7 @@ export default function VoicesAssetsPage() {
   // voices don't accept filters so they're fetched once.
   const reload = useCallback(() => {
     setLoading(true)
+    setLoadError(false)
     const filters = {
       ...(gender   ? { gender }   : {}),
       ...(language ? { language } : {}),
@@ -95,7 +110,10 @@ export default function VoicesAssetsPage() {
         setAllVoices(pub.voices)
         setMyVoices((mine.personal ?? []) as ClyroVoice[])
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[assets/voices] failed to load voices:', err)
+        setLoadError(true)
+      })
       .finally(() => setLoading(false))
   }, [gender, language, useCase])
 
@@ -301,6 +319,19 @@ export default function VoicesAssetsPage() {
             <div className="space-y-2">
               {Array.from({ length: 8 }).map((_, i) => <VoiceSkeleton key={i} />)}
             </div>
+          ) : loadError ? (
+            <EmptyState
+              icon={AlertCircle}
+              title={t('err_loadTitle')}
+              description={t('err_loadDesc')}
+              accent="amber"
+              size="lg"
+              action={
+                <Button variant="secondary" size="sm" onClick={reload}>
+                  {t('retry')}
+                </Button>
+              }
+            />
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={Mic2}

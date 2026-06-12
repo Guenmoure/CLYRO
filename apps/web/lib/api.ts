@@ -236,6 +236,19 @@ export async function updateVideoMetadata(id: string, metadata: Record<string, u
   })
 }
 
+/**
+ * Annule une génération en cours. Le backend retire le job de la queue
+ * (ou laisse le pipeline coopérer s'il est déjà actif), passe la vidéo
+ * en status='cancelled' et rembourse la TOTALITÉ des crédits déduits
+ * (refund idempotent côté DB). 409 ALREADY_FINISHED si la vidéo est
+ * déjà terminée.
+ */
+export async function cancelVideo(videoId: string) {
+  return apiFetch<{ cancelled: boolean; credits_refunded: number }>(`/api/v1/videos/${videoId}/cancel`, {
+    method: 'POST',
+  })
+}
+
 // ---- Voices ----
 
 export interface ClyroVoice {
@@ -348,6 +361,266 @@ export async function deleteBrandKit(id: string) {
   return apiFetch<{ success: boolean }>(`/api/v1/brand-kits/${id}`, {
     method: 'DELETE',
   })
+}
+
+// ---- Brand Catalog (Phase 2) ----
+
+import type { CatalogItem as SharedCatalogItem, CatalogScrapeDraft, BrandMediaItem } from '@clyro/shared'
+
+export type BrandCatalogItem = SharedCatalogItem
+export type { CatalogScrapeDraft, BrandMediaItem }
+
+export async function listBrandCatalog(brandKitId: string) {
+  return apiFetch<{ data: SharedCatalogItem[] }>(`/api/v1/brand/${brandKitId}/catalog`)
+}
+
+export async function createBrandCatalogItem(payload: {
+  brand_kit_id: string
+  name: string
+  image_url: string
+  description?: string
+  category?: string
+}) {
+  return apiFetch<{ data: SharedCatalogItem }>('/api/v1/brand/catalog', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function scrapeBrandCatalogFromUrl(payload: { brand_kit_id: string; url: string }) {
+  return apiFetch<{ data: CatalogScrapeDraft }>('/api/v1/brand/catalog/from-url', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandCatalogItem(itemId: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/catalog/${itemId}`, { method: 'DELETE' })
+}
+
+// ---- Brand Media Library (Phase 2) ----
+
+export async function listBrandMedia(brandKitId: string) {
+  return apiFetch<{ data: BrandMediaItem[] }>(`/api/v1/brand/${brandKitId}/media`)
+}
+
+export async function registerBrandMedia(payload: {
+  brand_kit_id: string
+  storage_path: string
+  filename: string
+  mime_type: BrandMediaItem['mime_type']
+  size_bytes: number
+  tags?: string[]
+  width?: number
+  height?: number
+}) {
+  return apiFetch<{ data: BrandMediaItem }>('/api/v1/brand/media/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function importBrandMediaFromUrl(payload: { brand_kit_id: string; url: string; tags?: string[] }) {
+  return apiFetch<{ data: BrandMediaItem }>('/api/v1/brand/media/from-url', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandMedia(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/media/${id}`, { method: 'DELETE' })
+}
+
+// ---- Brand Campaigns persistant (Phase 3.1) ----
+
+import type {
+  BrandCampaign,
+  BrandCreative,
+  CampaignAspectRatio,
+  CampaignWithCreatives,
+  CreateCampaignPayload,
+  UpdateCreativePayload,
+} from '@clyro/shared'
+
+export type { BrandCampaign, BrandCreative, CampaignAspectRatio, CampaignWithCreatives, CreateCampaignPayload, UpdateCreativePayload }
+
+export async function listBrandCampaigns(brandKitId: string) {
+  return apiFetch<{ data: BrandCampaign[] }>(`/api/v1/brand/campaigns?brand_kit_id=${encodeURIComponent(brandKitId)}`)
+}
+
+export async function getBrandCampaign(id: string) {
+  return apiFetch<{ data: CampaignWithCreatives }>(`/api/v1/brand/campaigns/${id}`)
+}
+
+export async function createBrandCampaign(payload: CreateCampaignPayload) {
+  return apiFetch<{ data: { campaign: BrandCampaign } }>('/api/v1/brand/campaigns', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandCampaign(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/campaigns/${id}`, { method: 'DELETE' })
+}
+
+export async function updateBrandCreative(id: string, payload: UpdateCreativePayload) {
+  return apiFetch<{ data: BrandCreative }>(`/api/v1/brand/creatives/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandCreative(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/creatives/${id}`, { method: 'DELETE' })
+}
+
+export interface CampaignSuggestion {
+  title:       string
+  description: string
+  prompt:      string
+}
+
+export async function suggestBrandCampaigns(brandKitId: string, count?: number) {
+  return apiFetch<{ data: CampaignSuggestion[] }>('/api/v1/brand/campaigns/suggest', {
+    method: 'POST',
+    body: JSON.stringify({ brand_kit_id: brandKitId, count }),
+  })
+}
+
+export async function addCreativeToBrandCampaign(campaignId: string) {
+  return apiFetch<{ data: { creative: BrandCreative } }>(`/api/v1/brand/campaigns/${campaignId}/creatives`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export async function animateBrandCreative(creativeId: string) {
+  return apiFetch<{ data: { video_id: string; status: string; credits_deducted: number } }>(
+    `/api/v1/brand/creatives/${creativeId}/animate`,
+    { method: 'POST', body: JSON.stringify({}) },
+  )
+}
+
+// ---- Creative Editor — Phase 3.4 ----
+import type { BrandCreativeVersion } from '@clyro/shared'
+export type { BrandCreativeVersion }
+
+export async function getBrandCreative(id: string) {
+  return apiFetch<{ data: { creative: BrandCreative; campaign: BrandCampaign } }>(
+    `/api/v1/brand/creatives/${id}`,
+  )
+}
+
+export async function listBrandCreativeVersions(creativeId: string) {
+  return apiFetch<{ data: BrandCreativeVersion[] }>(`/api/v1/brand/creatives/${creativeId}/versions`)
+}
+
+export async function saveBrandCreativeVersion(creativeId: string) {
+  return apiFetch<{ data: BrandCreativeVersion }>(`/api/v1/brand/creatives/${creativeId}/versions`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export async function restoreBrandCreativeVersion(creativeId: string, versionNum: number) {
+  return apiFetch<{ data: BrandCreative }>(`/api/v1/brand/creatives/${creativeId}/restore`, {
+    method: 'POST',
+    body: JSON.stringify({ version_num: versionNum }),
+  })
+}
+
+export async function generateCtaVariants(creativeId: string) {
+  return apiFetch<{ data: string[] }>(`/api/v1/brand/creatives/${creativeId}/cta-variants`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export async function regenerateBrandCreativeImage(creativeId: string, prompt: string) {
+  return apiFetch<{ data: BrandCreative }>(`/api/v1/brand/creatives/${creativeId}/regenerate-image`, {
+    method: 'POST',
+    body: JSON.stringify({ prompt }),
+  })
+}
+
+export async function fixBrandCreativeLayout(creativeId: string) {
+  return apiFetch<{ data: BrandCreative }>(`/api/v1/brand/creatives/${creativeId}/fix-layout`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+// ---- Brand Book (Phase 5) ----
+import type { BrandBook } from '@clyro/shared'
+export type { BrandBook }
+
+export async function getBrandBook(brandKitId: string) {
+  return apiFetch<{ data: BrandBook }>(`/api/v1/brand/book?brand_kit_id=${encodeURIComponent(brandKitId)}`)
+}
+
+export async function generateBrandBook(brandKitId: string) {
+  return apiFetch<{ data: BrandBook }>('/api/v1/brand/book', {
+    method: 'POST',
+    body: JSON.stringify({ brand_kit_id: brandKitId }),
+  })
+}
+
+export async function publishBrandBook(bookId: string) {
+  return apiFetch<{ data: BrandBook }>(`/api/v1/brand/book/${bookId}/publish`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export async function unpublishBrandBook(bookId: string) {
+  return apiFetch<{ data: BrandBook }>(`/api/v1/brand/book/${bookId}/unpublish`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+// ---- Brand Photoshoots (Phase 4) ----
+import type {
+  BrandPhotoshoot, BrandPhotoshootTemplateInfo, PhotoshootMode, PhotoshootAspectRatio,
+} from '@clyro/shared'
+export type { BrandPhotoshoot, BrandPhotoshootTemplateInfo, PhotoshootMode, PhotoshootAspectRatio }
+
+export async function listBrandPhotoshootTemplates() {
+  return apiFetch<{ data: BrandPhotoshootTemplateInfo[] }>('/api/v1/brand/photoshoots/templates')
+}
+
+export async function listBrandPhotoshoots(brandKitId: string) {
+  return apiFetch<{ data: BrandPhotoshoot[] }>(`/api/v1/brand/${brandKitId}/photoshoots`)
+}
+
+export async function getBrandPhotoshoot(id: string) {
+  return apiFetch<{ data: BrandPhotoshoot }>(`/api/v1/brand/photoshoots/${id}`)
+}
+
+export async function createBrandPhotoshoot(payload: {
+  brand_kit_id:    string
+  mode:            PhotoshootMode
+  input_image_url?: string
+  reference_urls?: string[]
+  template_id?:    string
+  prompt?:         string
+  aspect_ratio?:   PhotoshootAspectRatio
+}) {
+  return apiFetch<{ data: BrandPhotoshoot }>('/api/v1/brand/photoshoots', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteBrandPhotoshoot(id: string) {
+  return apiFetch<{ success: boolean }>(`/api/v1/brand/photoshoots/${id}`, { method: 'DELETE' })
+}
+
+export async function animateBrandPhotoshoot(photoshootId: string, index: number) {
+  return apiFetch<{ data: { video_id: string; status: string; credits_deducted: number } }>(
+    `/api/v1/brand/photoshoots/${photoshootId}/animate/${index}`,
+    { method: 'POST', body: JSON.stringify({}) },
+  )
 }
 
 // ---- Autopilot series ----
@@ -646,10 +919,17 @@ export async function uploadBrandLogo(file: File, userId: string): Promise<strin
 
 // ---- SSE Video Status ----
 
+export interface VideoStatusEvent {
+  status: string
+  progress?: number
+  /** Human-readable failure reason emitted by the pipeline when status === 'error'. */
+  error_message?: string | null
+}
+
 export function subscribeToVideoStatus(
   videoId: string,
   token: string,
-  onUpdate: (data: { status: string; progress?: number }) => void,
+  onUpdate: (data: VideoStatusEvent) => void,
   onError?: (error: Event) => void
 ): EventSource {
   const url = `${API_URL}/api/v1/videos/${videoId}/status?token=${encodeURIComponent(token)}`
@@ -657,9 +937,11 @@ export function subscribeToVideoStatus(
 
   eventSource.onmessage = (e: MessageEvent) => {
     try {
-      const data = JSON.parse(e.data as string) as { status: string; progress?: number }
+      const data = JSON.parse(e.data as string) as VideoStatusEvent
       onUpdate(data)
-      if (data.status === 'done' || data.status === 'error') {
+      // 'cancelled' is terminal, like done/error — the server closes its
+      // side too, but closing here avoids a useless reconnect attempt.
+      if (data.status === 'done' || data.status === 'error' || data.status === 'cancelled') {
         eventSource.close()
       }
     } catch {

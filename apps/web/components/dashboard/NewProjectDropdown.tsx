@@ -1,20 +1,21 @@
 'use client'
 
 /**
- * NewProjectDropdown — "+ New" button that expands into a 4-item dropdown.
+ * NewProjectDropdown — "+ Create" button that expands into a 5-item dropdown.
  *
- * Project types:
+ * Project types (one per CLYRO module):
  *   1. Faceless Video  → /faceless/new
  *   2. AI Avatar       → /studio/new
  *   3. Motion Design   → /motion/new
  *   4. Brand Kit       → /brand
+ *   5. Autopilot       → /autopilot
  *
  * Closes on outside click, Escape, or item selection.
  */
 
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Video, Film, Sparkles, Palette, ChevronDown } from 'lucide-react'
+import { Plus, Video, Film, Sparkles, Palette, Rocket, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
 
@@ -35,32 +36,40 @@ const PROJECT_TYPES: ProjectType[] = [
     descKey:     'npd_faceless_desc',
     href:        '/faceless/new',
     icon:        Video,
-    iconColor:   'text-blue-400',
-    iconBg:      'bg-blue-500/10',
+    iconColor:   'text-feature-faceless',
+    iconBg:      'bg-feature-faceless/10',
   },
   {
     titleKey:    'npd_avatar_title',
     descKey:     'npd_avatar_desc',
     href:        '/studio/new',
     icon:        Film,
-    iconColor:   'text-rose-400',
-    iconBg:      'bg-rose-500/10',
+    iconColor:   'text-feature-avatar',
+    iconBg:      'bg-feature-avatar/10',
   },
   {
     titleKey:    'npd_motion_title',
     descKey:     'npd_motion_desc',
     href:        '/motion/new',
     icon:        Sparkles,
-    iconColor:   'text-purple-400',
-    iconBg:      'bg-purple-500/10',
+    iconColor:   'text-feature-motion',
+    iconBg:      'bg-feature-motion/10',
   },
   {
     titleKey:    'npd_brand_title',
     descKey:     'npd_brand_desc',
     href:        '/brand',
     icon:        Palette,
-    iconColor:   'text-teal-500',
-    iconBg:      'bg-teal-500/10',
+    iconColor:   'text-feature-brand',
+    iconBg:      'bg-feature-brand/10',
+  },
+  {
+    titleKey:    'npd_autopilot_title',
+    descKey:     'npd_autopilot_desc',
+    href:        '/autopilot',
+    icon:        Rocket,
+    iconColor:   'text-feature-autopilot',
+    iconBg:      'bg-feature-autopilot/10',
   },
 ]
 
@@ -104,16 +113,16 @@ export function NewProjectDropdown() {
         aria-expanded={open}
         className={cn(
           'inline-flex items-center gap-2 rounded-xl',
-          'bg-blue-500 hover:bg-blue-400 active:bg-blue-600',
+          'bg-primary hover:bg-brand-hover active:bg-brand-hover',
           'px-4 py-2 h-9',
-          'font-display text-sm font-semibold text-white',
+          'font-display text-sm font-semibold text-primary-foreground',
           'shadow-sm hover:shadow-md',
           'transition-all duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         )}
       >
         <Plus size={15} />
-        {t('npd_new')}
+        {t('tb_create')}
         <ChevronDown
           size={13}
           className={cn('transition-transform duration-200', open && 'rotate-180')}

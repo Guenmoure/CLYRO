@@ -157,6 +157,15 @@ export async function grantCredits(
   })
 
   if (error) {
+    // 23505 = unique_violation on idx_credit_ledger_refund_source (migration
+    // 20260610000000): a refund with this source was already recorded. The
+    // RPC normally absorbs duplicates via ON CONFLICT, but tolerate the raw
+    // violation too (e.g. concurrent refunds racing) — it's a benign no-op.
+    if (type === 'refund' && (error.code === '23505' || /idx_credit_ledger_refund_source|duplicate key/.test(error.message))) {
+      logger.info({ userId, amount, source }, 'Duplicate refund skipped (already refunded)')
+      const balance = await getBalance(userId)
+      return balance?.credits ?? 0
+    }
     logger.error({ err: error, userId, amount, type }, 'grant_credits RPC failed')
     throw new Error(`Credit grant failed: ${error.message}`)
   }
