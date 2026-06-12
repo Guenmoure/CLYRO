@@ -22,7 +22,7 @@ const SLIDES: Slide[] = [
     title: (
       <>
         One voice.{' '}
-        <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+        <span className="bg-gradient-to-r from-violet-400 to-purple-500 bg-clip-text text-transparent">
           Unlimited videos.
         </span>
       </>
@@ -30,8 +30,8 @@ const SLIDES: Slide[] = [
     description: 'Clone your voice once and generate unlimited faceless videos in minutes.',
     ctaLabel: 'Clone my voice',
     ctaHref: '/voices',
-    gradient: 'from-blue-500/20 via-purple-500/15 to-transparent',
-    glow: 'bg-gradient-to-br from-blue-500/30 to-purple-600/30',
+    gradient: 'from-brand/20 via-violet-500/15 to-transparent',
+    glow: 'bg-gradient-to-br from-brand/30 to-violet-600/30',
     icon: Mic2,
   },
   {
@@ -100,7 +100,7 @@ export function HeroBanner() {
 
       {/* Decorative glow blob */}
       <div className={cn('absolute -right-20 -top-20 h-80 w-80 rounded-full blur-3xl opacity-60 transition-all duration-1000', slide.glow)} />
-      <div className="absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-brand/10 blur-3xl" />
 
       {/* Subtle grid overlay */}
       <div className="absolute inset-0 grid-bg opacity-[0.04]" />

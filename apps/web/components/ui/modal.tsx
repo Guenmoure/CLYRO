@@ -166,7 +166,7 @@ function Modal({
                 'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
                 'text-[--text-muted] hover:text-foreground',
                 'hover:bg-muted border border-transparent hover:border-border',
-                'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50'
+                'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50'
               )}
             >
               <XIcon />
@@ -183,7 +183,7 @@ function Modal({
               'absolute top-4 right-4 z-10 w-8 h-8 rounded-lg flex items-center justify-center',
               'text-[--text-muted] hover:text-foreground',
               'hover:bg-muted border border-transparent hover:border-border',
-              'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50'
+              'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50'
             )}
           >
             <XIcon />

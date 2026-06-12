@@ -225,7 +225,7 @@ function Step1Welcome({ firstName, onNext }: Step1Props) {
         <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
           {firstName ? `Hey ${firstName},` : 'Hey there,'}{' '}
           <span
-            className="bg-gradient-to-r from-[#667EEA] via-[#A855F7] to-[#00B4FF] bg-clip-text text-transparent"
+            className="bg-gradient-to-r from-[#6D4AFF] via-[#A855F7] to-[#5B3BE0] bg-clip-text text-transparent"
           >
             let&apos;s get you set up
           </span>
@@ -566,7 +566,7 @@ function Step3Brand({
           </div>
           {/* Quick presets */}
           <div className="flex items-center gap-1.5 shrink-0">
-            {['#667EEA', '#10B981', '#F59E0B', '#EF4444', '#0F172A'].map((c) => (
+            {['#6D4AFF', '#10B981', '#F59E0B', '#EF4444', '#0F172A'].map((c) => (
               <button
                 key={c}
                 type="button"
@@ -748,7 +748,7 @@ export default function OnboardingPage() {
   // Step 3
   const [logoFile, setLogoFile]       = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [brandColor, setBrandColor]   = useState('#667EEA')
+  const [brandColor, setBrandColor]   = useState('#6D4AFF')
   const [savingBrand, setSavingBrand] = useState(false)
 
   // Step 4

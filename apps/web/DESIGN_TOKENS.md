@@ -2,6 +2,15 @@
 
 This document captures the standardized design tokens and patterns used across the CLYRO web app. Use it as the source of truth when building or auditing UI.
 
+## Visual identity (HeyGen-inspired, light-first)
+
+- **Default theme is LIGHT** (`defaultTheme="light"` in `theme-provider.tsx`); dark mode stays available via the toggle.
+- **App background** is soft neutral grey `#F7F7F8`; **surfaces (cards, sidebar, topbar, modals) are white** with 1px `#E5E7EB` borders and soft shadows (`shadow-sm` / `shadow-card`).
+- **Primary / accent is violet** `#6D4AFF` (`--primary`, `brand` in Tailwind). Hover `#5B3BE0` (`brand-hover`). Pale violet surface `#F0EDFF` (`--accent`, `brand-soft`) for active nav items and selections, paired with `--accent-foreground` `#5B3BE0`.
+- Primary buttons are solid violet with white text; secondary buttons are white with a thin border.
+- All UI text is sans-serif (Inter via `font-display` / `font-body`); JetBrains Mono only for technical micro-labels.
+- Contrast (light mode): `#6D4AFF` on white = 5.16:1 (AA normal text), `#5B3BE0` on `#F0EDFF` = 5.8:1, body `#111827` on white = 17.7:1, secondary `#4B5563` = 7.6:1, muted `#6B7280` = 4.8:1.
+
 ## Radius
 
 Use Tailwind's radius scale with the following intent per element class:
@@ -60,36 +69,49 @@ Every interactive element must show a visible focus ring when navigated via keyb
 Use the standardized pattern:
 
 ```ts
-'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500'
+'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary'
 ```
 
-Form inputs pair `focus-visible:border-blue-500` with the ring; icon buttons and
-nav items use just the ring. Never use `outline-none` without a replacement — it
-removes keyboard visibility and breaks WCAG 2.4.7.
+Form inputs pair `focus-visible:border-primary` with the ring; icon buttons and
+nav items use just the ring (`ring-brand/50` or `ring-[--ring]`). Never use
+`outline-none` without a replacement — it removes keyboard visibility and breaks
+WCAG 2.4.7.
 
 ## Color tokens
 
 CSS custom properties defined in `globals.css`:
 
-| Token               | Purpose                                    |
-| ------------------- | ------------------------------------------ |
-| `--foreground`      | Primary text                               |
-| `--text-secondary`  | De-emphasised text (headings, labels)      |
-| `--text-muted`      | Metadata, placeholders, disabled states    |
-| `--border`          | Default border, dividers                   |
-| `--muted`           | Subtle surface (cards within cards)        |
-| `--background`      | App background                             |
+| Token                 | Purpose                                    | Light value |
+| --------------------- | ------------------------------------------ | ----------- |
+| `--background`        | App background (soft grey)                 | `#F7F7F8`   |
+| `--card`              | Surfaces — cards, sidebar, topbar, modals  | `#FFFFFF`   |
+| `--foreground`        | Primary text                               | `#111827`   |
+| `--text-secondary`    | De-emphasised text (headings, labels)      | `#4B5563`   |
+| `--text-muted`        | Metadata, placeholders                     | `#6B7280`   |
+| `--border`            | Default border, dividers                   | `#E5E7EB`   |
+| `--muted`             | Subtle surface (hover, cards within cards) | `#F3F4F6`   |
+| `--primary` / `brand` | Violet primary — CTAs, active accents      | `#6D4AFF`   |
+| `--accent`            | Pale violet — active nav, selections       | `#F0EDFF`   |
+| `--accent-foreground` | Text/icon on pale violet                   | `#5B3BE0`   |
+| `--ring`              | Focus ring                                 | `#6D4AFF`   |
 
 Reach for these tokens rather than hardcoding `text-gray-500` / `border-zinc-200`.
-Dark mode is handled at the token level, so component code stays theme-neutral.
+Dark mode is handled at the token level (dark primary is `#7C5CFF`), so component
+code stays theme-neutral. When an opacity modifier is needed (`/10`, `/15`…), use
+the literal-hex `brand` scale (`bg-brand/10`) — CSS-var tokens ignore alpha
+modifiers.
 
 Accent gradients live in component code and follow this pattern (see `EmptyState`):
 
 ```ts
-'from-blue-500/15 to-purple-500/15 text-blue-500'
+'from-brand/15 to-violet-500/15 text-brand'
 'from-emerald-500/15 to-blue-500/15 text-emerald-500'
 'from-amber-500/15 to-orange-500/15 text-amber-500'
 ```
+
+Per-module feature colors (`feature.faceless` blue, `feature.motion` violet,
+`feature.avatar` pink, `feature.brand` teal, `feature.autopilot` amber) are kept
+for icon tiles and status chips — only generic chrome uses the violet brand.
 
 ## Accessibility requirements
 

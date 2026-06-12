@@ -53,7 +53,7 @@ export function LanguageSwitcher() {
                 className={cn(
                   'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-body transition-colors text-left border-b border-border/30 last:border-b-0',
                   lang === lang_item.code
-                    ? 'bg-blue-500/10 text-blue-500 font-semibold'
+                    ? 'bg-brand/10 text-primary font-semibold'
                     : 'text-[--text-secondary] hover:text-foreground hover:bg-muted/50',
                 )}
               >

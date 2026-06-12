@@ -145,7 +145,7 @@ function TabButton({ label, count, active, onClick }: {
       className={cn(
         'inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-body text-sm transition-all duration-200',
         active
-          ? 'bg-foreground text-gray-950 shadow-sm'
+          ? 'bg-foreground text-background shadow-sm'
           : 'text-[--text-muted] hover:text-foreground',
       )}
     >
@@ -153,7 +153,7 @@ function TabButton({ label, count, active, onClick }: {
       {count > 0 && (
         <span className={cn(
           'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-mono',
-          active ? 'bg-background/10 text-gray-950' : 'bg-muted text-[--text-muted]',
+          active ? 'bg-background/10 text-background' : 'bg-muted text-[--text-muted]',
         )}>
           {count}
         </span>
@@ -210,7 +210,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
       <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-muted shrink-0">
         <div className="absolute inset-0 flex items-center justify-center">
           {isProcessing ? (
-            <Loader2 size={20} className="text-blue-400 animate-spin" />
+            <Loader2 size={20} className="text-primary animate-spin" />
           ) : isError ? (
             <AlertCircle size={20} className="text-error" />
           ) : (
@@ -239,7 +239,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
           {isProcessing && (
             <>
               <span className="text-xs text-[--text-muted]">·</span>
-              <span className="text-xs font-mono text-blue-400">{t('rp_processing')}</span>
+              <span className="text-xs font-mono text-primary">{t('rp_processing')}</span>
             </>
           )}
           {isError && (
@@ -349,7 +349,7 @@ function EmptyState({ tab }: { tab: 'recent' | 'drafts' }) {
       {tab === 'recent' && (
         <Link
           href="/faceless/new"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-4 py-2 font-display text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand to-violet-500 px-4 py-2 font-display text-sm font-semibold text-white hover:opacity-90 transition-opacity"
         >
           {t('createMyFirstProject')}
         </Link>

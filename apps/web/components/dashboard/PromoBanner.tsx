@@ -33,7 +33,7 @@ export function PromoBanner() {
   if (!visible) return null
 
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl border bg-gradient-to-r from-blue-500/8 to-purple-500/8 border-blue-500/15 dark:from-blue-500/6 dark:to-purple-500/6 dark:border-blue-500/12">
+    <div className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl border bg-gradient-to-r from-brand/8 to-violet-500/8 border-brand/15 dark:from-brand/6 dark:to-violet-500/6 dark:border-brand/12">
       {/* Icon + text */}
       <div className="flex items-center gap-3 min-w-0">
         <div className="shrink-0 w-7 h-7 rounded-lg bg-purple-500/15 dark:bg-purple-500/20 flex items-center justify-center">

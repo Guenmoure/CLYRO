@@ -65,10 +65,10 @@ export function Toaster() {
           role={item.type === 'error' ? 'alert' : 'status'}
           aria-live={item.type === 'error' ? 'assertive' : 'polite'}
           className={cn(
-            'flex items-start gap-3 px-4 py-3 rounded-xl border text-sm font-body shadow-lg animate-fade-in',
-            item.type === 'success' && 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
-            item.type === 'error'   && 'bg-red-500/10 border-red-500/20 text-red-300',
-            item.type === 'info'    && 'bg-clyro-blue/10 border-clyro-blue/20 text-clyro-blue'
+            'flex items-start gap-3 px-4 py-3 rounded-xl border bg-card text-sm font-body shadow-lg animate-fade-in',
+            item.type === 'success' && 'border-emerald-500/30 text-emerald-700 dark:text-emerald-300',
+            item.type === 'error'   && 'border-red-500/30 text-red-700 dark:text-red-300',
+            item.type === 'info'    && 'border-brand/30 text-brand dark:text-violet-300'
           )}
         >
           <span className="shrink-0 mt-0.5" aria-hidden="true">

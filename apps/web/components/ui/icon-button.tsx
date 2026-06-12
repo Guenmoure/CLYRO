@@ -30,7 +30,7 @@ const iconButtonVariants = cva(
         /** Fond subtil — action icon-only en toolbar */
         subtle: [
           'bg-muted/60 border border-border text-[--text-secondary]',
-          'hover:bg-muted hover:text-[--text-primary] hover:border-blue-500/40',
+          'hover:bg-muted hover:text-[--text-primary] hover:border-brand/40',
         ].join(' '),
         /** Destructif — delete scene etc. */
         danger: [

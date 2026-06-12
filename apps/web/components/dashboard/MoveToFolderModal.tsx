@@ -180,7 +180,7 @@ export function MoveToFolderModal({
               {folders.map((f) => (
                 <FolderRowButton
                   key={f.id}
-                  icon={<Folder size={15} className="text-blue-400" />}
+                  icon={<Folder size={15} className="text-primary" />}
                   label={f.name}
                   hint={currentNorm === f.id ? t('move_currentLocation') : undefined}
                   active={selected === f.id}
@@ -197,7 +197,7 @@ export function MoveToFolderModal({
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-2 font-body text-sm text-foreground hover:text-blue-400 transition-colors"
+              className="inline-flex items-center gap-2 font-body text-sm text-foreground hover:text-primary transition-colors"
             >
               <FolderPlus size={14} /> {t('move_newFolder')}
             </button>
@@ -214,7 +214,7 @@ export function MoveToFolderModal({
                 }}
                 placeholder={t('move_createFolderPlaceholder')}
                 maxLength={80}
-                className="flex-1 px-3 py-2 rounded-lg bg-card border border-border text-sm font-body text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                className="flex-1 px-3 py-2 rounded-lg bg-card border border-border text-sm font-body text-foreground focus:outline-none focus:ring-2 focus:ring-brand/40"
               />
               <Button
                 variant="primary"
@@ -270,9 +270,9 @@ function FolderRowButton({
       onClick={onClick}
       className={cn(
         'flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
         active
-          ? 'bg-blue-500/10 border border-blue-500/30'
+          ? 'bg-accent border border-brand/30'
           : 'hover:bg-card border border-transparent',
       )}
       aria-pressed={active}
@@ -288,7 +288,7 @@ function FolderRowButton({
           </span>
         )}
       </span>
-      {active && <Check size={14} className="text-blue-400 shrink-0" aria-hidden="true" />}
+      {active && <Check size={14} className="text-primary shrink-0" aria-hidden="true" />}
     </button>
   )
 }

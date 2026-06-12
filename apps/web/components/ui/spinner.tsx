@@ -15,7 +15,7 @@ const SIZE: Record<string, { wh: string; border: string }> = {
 
 export interface SpinnerProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
-  /** Classe de couleur Tailwind, ex: 'text-blue-500' (défaut) */
+  /** Classe de couleur Tailwind, ex: 'text-primary' (défaut) */
   color?: string
   variant?: 'default' | 'ai'
   /** Texte pour les lecteurs d'écran */
@@ -27,7 +27,7 @@ export interface SpinnerProps {
 
 function Spinner({
   size = 'md',
-  color = 'text-blue-500',
+  color = 'text-primary',
   variant = 'default',
   label = 'Chargement…',
   className,
@@ -69,10 +69,10 @@ function SpinnerAI({
   return (
     <span role="status" aria-label={label} className={cn('inline-flex items-center justify-center', className)}>
       <svg width={dim} height={dim} viewBox={`0 0 ${dim} ${dim}`} fill="none" aria-hidden="true">
-        {/* Arc externe — blue-500, 1s */}
+        {/* Arc externe — violet brand, 1s */}
         <circle
           cx={cx} cy={cx} r={r.outer}
-          stroke="#3B8EF0"
+          stroke="#6D4AFF"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${r.outer * 1.5} ${r.outer * 5}`}
@@ -82,7 +82,7 @@ function SpinnerAI({
         {r.middle > 1 && (
           <circle
             cx={cx} cy={cx} r={r.middle}
-            stroke="#9B5CF6"
+            stroke="#8B5CF6"
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={`${r.middle * 1.5} ${r.middle * 5}`}
@@ -93,7 +93,7 @@ function SpinnerAI({
         {r.inner > 1 && (
           <circle
             cx={cx} cy={cx} r={r.inner}
-            stroke="#38E8FF"
+            stroke="#C4B5FD"
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={`${r.inner * 1.5} ${r.inner * 5}`}

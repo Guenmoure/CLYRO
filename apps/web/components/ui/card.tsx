@@ -19,7 +19,7 @@ const cardVariants = cva(
         gradient:[
           'bg-card border border-transparent',
           'before:absolute before:inset-0 before:rounded-2xl before:-z-10 before:p-px',
-          'before:bg-gradient-to-br before:from-blue-500/20 before:to-purple-500/20',
+          'before:bg-gradient-to-br before:from-brand/20 before:to-violet-500/20',
         ].join(' '),
         /** Carte entièrement cliquable — navigation cards */
         interactive: [
@@ -30,7 +30,7 @@ const cardVariants = cva(
         /** Carte mise en avant — plan Pro, direction recommandée */
         highlight: [
           'bg-card border-2 border-[--primary]/50',
-          'shadow-[0_0_30px_rgba(59,142,240,0.12)]',
+          'shadow-[0_0_30px_rgba(109,74,255,0.12)]',
         ].join(' '),
       },
       padding: {

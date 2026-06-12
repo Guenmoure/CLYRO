@@ -28,16 +28,16 @@ export function NewProjectCard({ feature, className }: NewProjectCardProps) {
       className={cn(
         'group flex flex-col items-center justify-center gap-2',
         'rounded-2xl border-2 border-dashed border-border',
-        'hover:border-blue-500/50 hover:bg-muted/50',
+        'hover:border-brand/50 hover:bg-muted/50',
         'cursor-pointer transition-all duration-200',
         'aspect-[4/3] w-full',
         className,
       )}
     >
-      <div className="rounded-full bg-muted group-hover:bg-blue-500/10 p-3 transition-colors duration-200">
+      <div className="rounded-full bg-muted group-hover:bg-brand/10 p-3 transition-colors duration-200">
         <Plus
           size={20}
-          className="text-[--text-muted] group-hover:text-blue-400 transition-colors duration-200"
+          className="text-[--text-muted] group-hover:text-primary transition-colors duration-200"
         />
       </div>
       <p className="font-body text-xs text-[--text-muted] group-hover:text-[--text-secondary] transition-colors duration-200">

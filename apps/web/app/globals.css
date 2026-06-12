@@ -3,46 +3,46 @@
 @tailwind utilities;
 
 /* ============================================================
-   CLYRO Design System — HeyGen 2026 Inspired
-   Light-first · Clean · Subtle shadows · Blue-violet accents
+   CLYRO Design System — HeyGen Inspired
+   Light-first · White surfaces on soft grey · Violet accents
    ============================================================ */
 
 @layer base {
   /* ── LIGHT MODE (default) ─────────────────────────────────── */
   :root {
-    --background:             #FFFFFF;
-    --foreground:             #0F172A;
+    --background:             #F7F7F8;
+    --foreground:             #111827;
     --card:                   #FFFFFF;
-    --card-foreground:        #0F172A;
+    --card-foreground:        #111827;
     --popover:                #FFFFFF;
-    --popover-foreground:     #0F172A;
+    --popover-foreground:     #111827;
 
-    --primary:                #667EEA;
+    --primary:                #6D4AFF;
     --primary-foreground:     #FFFFFF;
     --secondary:              #8B5CF6;
     --secondary-foreground:   #FFFFFF;
-    --muted:                  #F8F9FB;
-    --muted-foreground:       #64748B;
-    --accent:                 #EDE9FE;
-    --accent-foreground:      #667EEA;
+    --muted:                  #F3F4F6;
+    --muted-foreground:       #6B7280;
+    --accent:                 #F0EDFF;
+    --accent-foreground:      #5B3BE0;
 
     --destructive:            #EF4444;
     --destructive-foreground: #FFFFFF;
 
-    --border:                 #E2E8F0;
-    --input:                  #F8F9FB;
-    --ring:                   #667EEA;
+    --border:                 #E5E7EB;
+    --input:                  #F9FAFB;
+    --ring:                   #6D4AFF;
     --radius:                 10px;
 
-    --text-primary:           #0F172A;
-    --text-secondary:         #475569;
-    --text-muted:             #94A3B8;
-    --text-disabled:          #CBD5E1;
+    --text-primary:           #111827;
+    --text-secondary:         #4B5563;
+    --text-muted:             #6B7280;
+    --text-disabled:          #D1D5DB;
 
-    --bg-secondary:           #F8F9FB;
-    --bg-tertiary:            #F1F3F6;
-    --border-hover:           #CBD5E1;
-    --border-subtle:          #F1F5F9;
+    --bg-secondary:           #F9FAFB;
+    --bg-tertiary:            #F3F4F6;
+    --border-hover:           #D1D5DB;
+    --border-subtle:          #F3F4F6;
   }
 
   /* ── DARK MODE ────────────────────────────────────────────── */
@@ -54,7 +54,7 @@
     --popover:                #1E2130;
     --popover-foreground:     #F1F5F9;
 
-    --primary:                #667EEA;
+    --primary:                #7C5CFF;
     --primary-foreground:     #FFFFFF;
     --secondary:              #8B5CF6;
     --secondary-foreground:   #FFFFFF;
@@ -68,7 +68,7 @@
 
     --border:                 #2D3348;
     --input:                  #1A1D27;
-    --ring:                   #667EEA;
+    --ring:                   #7C5CFF;
     --radius:                 10px;
 
     --text-primary:           #F1F5F9;
@@ -173,14 +173,14 @@
    ============================================================ */
 .text-gradient-primary,
 .gradient-text {
-  background: linear-gradient(135deg, #667EEA, #8B5CF6);
+  background: linear-gradient(135deg, #6D4AFF, #8B5CF6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .text-gradient-animated {
-  background: linear-gradient(270deg, #667EEA, #8B5CF6, #A855F7, #8B5CF6, #667EEA);
+  background: linear-gradient(270deg, #6D4AFF, #8B5CF6, #A855F7, #8B5CF6, #6D4AFF);
   background-size: 300% 300%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

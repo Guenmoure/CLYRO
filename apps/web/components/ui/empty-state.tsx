@@ -18,7 +18,7 @@ interface EmptyStateProps {
 }
 
 const ACCENT: Record<Accent, string> = {
-  blue:    'from-blue-500/15 to-purple-500/15 text-blue-500 border-border',
+  blue:    'from-brand/15 to-violet-500/15 text-brand border-border',
   emerald: 'from-emerald-500/15 to-blue-500/15 text-emerald-500 border-border',
   amber:   'from-amber-500/15 to-orange-500/15 text-amber-500 border-border',
   neutral: 'from-muted/50 to-muted/30 text-[--text-muted] border-border',

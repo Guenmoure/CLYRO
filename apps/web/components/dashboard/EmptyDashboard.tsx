@@ -36,7 +36,7 @@ export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
 
       {/* ── Floating shapes illustration ── */}
       <div className="relative w-32 h-32 mb-6">
-        <div className="absolute w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 top-0 left-4" />
+        <div className="absolute w-16 h-16 rounded-2xl bg-brand/10 border border-brand/20 top-0 left-4" />
         <div className="absolute w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 bottom-2 right-2" />
         <div className="absolute w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/20 bottom-0 left-0" />
         <div className="absolute inset-0 flex items-center justify-center">
@@ -61,7 +61,7 @@ export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
           className={cn(
             'w-full px-4 py-3 rounded-xl font-body text-sm resize-none',
             'bg-muted border border-border',
-            'focus:border-blue-500 focus:outline-none',
+            'focus:border-primary focus:outline-none',
             'text-foreground placeholder:text-[--text-muted]',
             'transition-colors duration-150',
           )}
@@ -80,7 +80,7 @@ export function EmptyDashboard({ firstName }: EmptyDashboardProps) {
           <button
             type="button"
             onClick={handleGenerate}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium text-white bg-primary hover:bg-brand-hover hover:shadow-lg transition-all"
           >
             <Zap size={12} />
             {t('ed_generate_btn')}

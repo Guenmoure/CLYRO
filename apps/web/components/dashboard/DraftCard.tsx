@@ -338,7 +338,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="font-mono text-[11px] text-[--text-muted] px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                className="font-mono text-[11px] text-[--text-muted] px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
               >
                 {t('dc_cancel')}
               </button>
@@ -356,7 +356,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
                   'text-[--text-muted] hover:text-foreground hover:bg-muted',
                   'border border-transparent hover:border-border/50',
                   'opacity-60 group-hover:opacity-100 hover:opacity-100 focus-visible:opacity-100',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60',
                   'transition-all duration-200',
                 )}
               >
@@ -403,10 +403,10 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
           onClick={() => router.push(href)}
           className={cn(
             'mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl',
-            'bg-gradient-to-r from-blue-500 to-blue-600',
+            'bg-primary',
             'font-display text-sm font-semibold text-white',
             'hover:opacity-90 active:opacity-80 transition-opacity',
-            'shadow-[0_4px_12px_rgba(59,142,240,0.25)]',
+            'shadow-[0_4px_12px_rgba(109,74,255,0.25)]',
           )}
         >
           <Play size={13} className="fill-white" />

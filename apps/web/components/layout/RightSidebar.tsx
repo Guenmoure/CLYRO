@@ -48,7 +48,7 @@ export function RightSidebar() {
               className={cn(
                 'group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200',
                 isActive
-                  ? 'bg-blue-500/15 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]'
+                  ? 'bg-accent text-accent-foreground'
                   : 'text-[--text-secondary] hover:bg-white/40 dark:hover:bg-white/5 hover:text-foreground',
               )}
             >
@@ -56,12 +56,12 @@ export function RightSidebar() {
                 size={16}
                 className={cn(
                   'shrink-0 transition-colors',
-                  isActive ? 'text-blue-500' : 'text-[--text-muted] group-hover:text-[--text-secondary]',
+                  isActive ? 'text-accent-foreground' : 'text-[--text-muted] group-hover:text-[--text-secondary]',
                 )}
               />
               <span className="font-body text-sm truncate">{item.label}</span>
               {isActive && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-500" />
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
               )}
             </Link>
           )

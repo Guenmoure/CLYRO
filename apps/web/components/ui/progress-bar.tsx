@@ -42,7 +42,7 @@ export function ProgressBar({
     if (status === 'error') return 'from-red-500 to-red-600'
     if (status === 'done') return 'from-emerald-500 to-emerald-600'
     if (status === 'generating' || status === 'pending' || status === 'processing') return 'from-violet-500 to-violet-600'
-    return 'from-blue-500 to-purple-500'
+    return 'from-brand to-violet-500'
   }
 
   const getContainerColor = () => {

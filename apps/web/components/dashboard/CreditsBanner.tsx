@@ -66,7 +66,7 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
       <div className="flex items-center gap-3 min-w-0">
         <Zap size={16} className={cn(
           'shrink-0',
-          isEmpty ? 'text-error' : isLow ? 'text-amber-500' : 'text-blue-400',
+          isEmpty ? 'text-error' : isLow ? 'text-amber-500' : 'text-primary',
         )} />
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -92,7 +92,7 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
               'h-full rounded-full transition-all duration-500',
               isEmpty ? 'bg-error'
               : isLow ? 'bg-amber-400'
-              : percentUsed > 50 ? 'bg-blue-400' : 'bg-emerald-400',
+              : percentUsed > 50 ? 'bg-primary' : 'bg-emerald-400',
             )}
             style={{ width: `${Math.min(percentUsed, 100)}%` }}
           />
@@ -103,7 +103,7 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
       {isStarter ? (
         <Link
           href="/pricing"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500 text-white hover:bg-blue-400 transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-white hover:bg-brand-hover transition-colors"
         >
           {t('cb_upgrade')} <ArrowRight size={11} />
         </Link>

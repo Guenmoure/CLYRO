@@ -249,8 +249,8 @@ export function LogoFallback({
       className={cn(
         s.box,
         'relative flex items-center justify-center shrink-0',
-        'bg-gradient-to-br from-[#667EEA] via-[#7C3AED] to-[#00B4FF]',
-        'shadow-[0_0_20px_rgba(102,126,234,0.5)]',
+        'bg-gradient-to-br from-[#6D4AFF] via-[#7C3AED] to-[#00B4FF]',
+        'shadow-[0_0_20px_rgba(109,74,255,0.5)]',
       )}
     >
       {/* subtle noise overlay for depth (SVG inline — no external file) */}
@@ -277,7 +277,7 @@ export function LogoFallback({
       className={cn(
         s.wordmark,
         'font-display font-extrabold leading-none select-none tracking-tight',
-        'bg-gradient-to-r from-[#667EEA] via-[#A855F7] to-[#00B4FF]',
+        'bg-gradient-to-r from-[#6D4AFF] via-[#A855F7] to-[#00B4FF]',
         'bg-clip-text text-transparent',
       )}
     >

@@ -12,13 +12,13 @@ const config: Config = {
 
   theme: {
     extend: {
-      // ── Colors — HeyGen 2026 inspired, light-first ──────────────────────
+      // ── Colors — HeyGen inspired, light-first, violet primary ───────────
       colors: {
-        // Brand CLYRO — gradient signature
+        // Brand CLYRO — violet signature
         brand: {
-          DEFAULT: '#667EEA',
-          hover:   '#5A6FD6',
-          soft:    '#EDE9FE',
+          DEFAULT: '#6D4AFF',
+          hover:   '#5B3BE0',
+          soft:    '#F0EDFF',
           50:      '#F5F3FF',
         },
 
@@ -101,8 +101,8 @@ const config: Config = {
 
       // ── Gradients ───────────────────────────────────────────────────────
       backgroundImage: {
-        'grad-primary':  'linear-gradient(135deg, #667EEA 0%, #8B5CF6 50%, #A855F7 100%)',
-        'grad-cta':      'linear-gradient(135deg, #667EEA 0%, #8B5CF6 100%)',
+        'grad-primary':  'linear-gradient(135deg, #6D4AFF 0%, #8B5CF6 50%, #A855F7 100%)',
+        'grad-cta':      'linear-gradient(135deg, #6D4AFF 0%, #8B5CF6 100%)',
         'grad-dark':     'linear-gradient(180deg, #0F1117, #1A1D27)',
         'grad-success':  'linear-gradient(135deg, #10B981, #059669)',
         'grad-warning':  'linear-gradient(135deg, #F59E0B, #D97706)',
@@ -127,7 +127,7 @@ const config: Config = {
         'lg':         '0 10px 25px rgba(0,0,0,0.07), 0 4px 10px rgba(0,0,0,0.04)',
         'xl':         '0 20px 40px rgba(0,0,0,0.08)',
         'dropdown':   '0 10px 30px rgba(0,0,0,0.12)',
-        'glow-brand': '0 4px 12px rgba(102,126,234,0.3)',
+        'glow-brand': '0 4px 12px rgba(109,74,255,0.3)',
       },
 
       // ── Animations — fast and subtle ───────────────────────────────────

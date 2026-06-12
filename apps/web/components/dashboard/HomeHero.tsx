@@ -109,7 +109,7 @@ export function HomeHero() {
           className="font-display text-3xl md:text-5xl lg:text-[44px] leading-tight tracking-tight text-foreground animate-fade-up"
         >
           <span>{slide.titlePrefix}</span>
-          <span className="bg-gradient-to-r from-[#6889ff] via-[#c168ee] to-[#5be3c0] bg-clip-text text-transparent font-extrabold">
+          <span className="bg-gradient-to-r from-[#6D4AFF] via-[#8B5CF6] to-[#C168EE] bg-clip-text text-transparent font-extrabold">
             {slide.titleAccent}
           </span>
           {slide.titleSuffix && <span>{slide.titleSuffix}</span>}

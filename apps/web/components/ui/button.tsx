@@ -40,15 +40,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        /** CTA principal — gradient bleu→violet, glow bleu */
+        /** CTA principal — violet plein (HeyGen), texte blanc */
         primary: [
-          'bg-grad-primary text-white font-display font-semibold',
-          'shadow-glow-brand hover:brightness-110 hover:shadow-[0_0_28px_rgba(102,126,234,0.5)]',
+          'bg-primary text-white font-display font-semibold shadow-sm',
+          'hover:bg-brand-hover hover:shadow-md',
         ].join(' '),
-        /** Surface sombre, bordure subtile */
+        /** Surface blanche, bordure fine */
         secondary: [
-          'bg-muted border border-border text-foreground font-display',
-          'hover:bg-border hover:border-blue-500/50',
+          'bg-card border border-border text-foreground font-display shadow-sm',
+          'hover:bg-muted hover:border-[--border-hover]',
         ].join(' '),
         /** Discret, sans fond */
         ghost: [
@@ -60,9 +60,9 @@ const buttonVariants = cva(
           'bg-error/10 border border-error/30 text-error font-display',
           'hover:bg-error/20',
         ].join(' '),
-        /** Effet néon cyan→bleu→violet */
+        /** Gradient violet signature — CTAs marketing */
         electric: [
-          'bg-grad-electric text-gray-950 font-display font-bold',
+          'bg-grad-cta text-white font-display font-bold',
           'hover:brightness-110',
         ].join(' '),
         /** Contour sans fond — CTAs secondaires sur fond coloré */
