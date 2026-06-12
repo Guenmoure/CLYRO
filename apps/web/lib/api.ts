@@ -236,6 +236,19 @@ export async function updateVideoMetadata(id: string, metadata: Record<string, u
   })
 }
 
+/**
+ * Annule une génération en cours. Le backend retire le job de la queue
+ * (ou laisse le pipeline coopérer s'il est déjà actif), passe la vidéo
+ * en status='cancelled' et rembourse la TOTALITÉ des crédits déduits
+ * (refund idempotent côté DB). 409 ALREADY_FINISHED si la vidéo est
+ * déjà terminée.
+ */
+export async function cancelVideo(videoId: string) {
+  return apiFetch<{ cancelled: boolean; credits_refunded: number }>(`/api/v1/videos/${videoId}/cancel`, {
+    method: 'POST',
+  })
+}
+
 // ---- Voices ----
 
 export interface ClyroVoice {
@@ -906,10 +919,17 @@ export async function uploadBrandLogo(file: File, userId: string): Promise<strin
 
 // ---- SSE Video Status ----
 
+export interface VideoStatusEvent {
+  status: string
+  progress?: number
+  /** Human-readable failure reason emitted by the pipeline when status === 'error'. */
+  error_message?: string | null
+}
+
 export function subscribeToVideoStatus(
   videoId: string,
   token: string,
-  onUpdate: (data: { status: string; progress?: number }) => void,
+  onUpdate: (data: VideoStatusEvent) => void,
   onError?: (error: Event) => void
 ): EventSource {
   const url = `${API_URL}/api/v1/videos/${videoId}/status?token=${encodeURIComponent(token)}`
@@ -917,9 +937,11 @@ export function subscribeToVideoStatus(
 
   eventSource.onmessage = (e: MessageEvent) => {
     try {
-      const data = JSON.parse(e.data as string) as { status: string; progress?: number }
+      const data = JSON.parse(e.data as string) as VideoStatusEvent
       onUpdate(data)
-      if (data.status === 'done' || data.status === 'error') {
+      // 'cancelled' is terminal, like done/error — the server closes its
+      // side too, but closing here avoids a useless reconnect attempt.
+      if (data.status === 'done' || data.status === 'error' || data.status === 'cancelled') {
         eventSource.close()
       }
     } catch {

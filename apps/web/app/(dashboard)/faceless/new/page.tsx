@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, Suspense } from 'react'
+import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { createBrowserClient } from '@/lib/supabase'
@@ -21,6 +21,7 @@ import {
   getPublicVoices,
   subscribeToVideoStatus,
   generateScriptFromUrl,
+  cancelVideo,
 } from '@/lib/api'
 import { useLanguage } from '@/lib/i18n'
 import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
@@ -822,6 +823,12 @@ function FacelessNewPageInner() {
   const [genStage,       setGenStage]       = useState(0)
   const [genProgress,    setGenProgress]    = useState(0)
   const [completedSteps, setCompletedSteps] = useState<string[]>([])
+  // SSE stream for the in-flight generation (was a window global before)
+  const esRef = useRef<EventSource | null>(null)
+  // Video id of the in-flight generation — needed by the real cancel action
+  const generatingVideoIdRef = useRef<string | null>(null)
+  // Close the stream if the page unmounts mid-generation
+  useEffect(() => () => { esRef.current?.close() }, [])
 
   const [resultVideoUrl, setResultVideoUrl] = useState<string | undefined>()
   const [resultOpen,     setResultOpen]     = useState(false)
@@ -943,12 +950,13 @@ function FacelessNewPageInner() {
       // hook immediately so the next autosave / state change cannot
       // re-INSERT a sibling draft while the pipeline runs.
       finalize()
+      generatingVideoIdRef.current = result.video_id
 
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token ?? ''
 
-      await new Promise<void>((resolve, reject) => {
+      const wasCancelled = await new Promise<boolean>((resolve, reject) => {
         const es = subscribeToVideoStatus(result.video_id, token, (data) => {
           const p = data.progress ?? 0
           setGenProgress(p)
@@ -959,13 +967,26 @@ function FacelessNewPageInner() {
             return prev.includes(label) ? prev : [...prev, label]
           })
           if (data.status === 'done') {
-            resolve()
+            resolve(false)
+          } else if (data.status === 'cancelled') {
+            // Cancelled (here or from another tab) — terminal, but NOT an error.
+            resolve(true)
           } else if (data.status === 'error') {
-            reject(new Error('Generation failed'))
+            // Surface the pipeline's failure reason when available instead
+            // of a generic message.
+            reject(new Error(data.error_message || 'Generation failed'))
           }
         })
-        ;(window as Window & { _clyroEs?: EventSource })._clyroEs = es
+        esRef.current = es
       })
+
+      if (wasCancelled) {
+        generatingVideoIdRef.current = null
+        setGenerating(false)
+        toast.success(t('go_cancelled_toast'))
+        router.push('/dashboard')
+        return
+      }
 
       const supabase2 = createBrowserClient()
       const { data: video } = await supabase2
@@ -988,12 +1009,37 @@ function FacelessNewPageInner() {
     }
   }
 
+  /**
+   * "Continue in background" — leaves the overlay WITHOUT stopping the job:
+   * we stop following the SSE stream and send the user to the dashboard,
+   * where the project card tracks progress via Realtime.
+   */
   function handleCancel() {
-    ;(window as Window & { _clyroEs?: EventSource })._clyroEs?.close()
-    setGenerating(false)
-    setGenProgress(0)
-    setGenStage(0)
-    setCompletedSteps([])
+    esRef.current?.close()
+    esRef.current = null
+    router.push('/dashboard')
+  }
+
+  /**
+   * REAL cancellation — POST /api/v1/videos/:id/cancel stops the job
+   * (queue removal or pipeline cooperation) and refunds the full credit
+   * cost, then we leave the wizard.
+   */
+  async function handleCancelGeneration() {
+    const videoId = generatingVideoIdRef.current
+    if (!videoId) return
+    try {
+      await cancelVideo(videoId)
+      esRef.current?.close()
+      esRef.current = null
+      generatingVideoIdRef.current = null
+      setGenerating(false)
+      toast.success(t('go_cancelled_toast'))
+      router.push('/dashboard')
+    } catch (err) {
+      console.error('[faceless/new] cancel failed:', err)
+      toast.error(t('go_cancel_failed'))
+    }
   }
 
   const isLastStep = currentStep === STEPS.length - 1
@@ -1108,6 +1154,7 @@ function FacelessNewPageInner() {
         currentStage={genStage}
         completedSteps={completedSteps}
         onCancel={handleCancel}
+        onCancelGeneration={handleCancelGeneration}
       />
 
       <ResultModal

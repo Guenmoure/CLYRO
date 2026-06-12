@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 const PAGE_SIZE = 12
 
@@ -94,6 +95,8 @@ export default function ProjectsPage() {
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
   // activeFolderMenu now holds a folder id (or null when closed).
   const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null)
+  // Folder pending delete confirmation (hard-delete — needs an explicit step).
+  const [folderToDelete, setFolderToDelete] = useState<FolderRow | null>(null)
 
   const activeModule = SUB_NAV.find(n => n.id === activeNav)?.module ?? null
   const activeStatusMatch = STATUS_FILTERS.find(s => s.id === statusFilter)?.match ?? null
@@ -270,10 +273,14 @@ export default function ProjectsPage() {
     }
   }
 
-  async function handleFolderDelete(folder: FolderRow) {
+  function handleFolderDelete(folder: FolderRow) {
     setActiveFolderMenu(null)
-    if (!window.confirm(t('proj_deleteFolderConfirm').replace('{name}', folder.name))) return
+    setFolderToDelete(folder)
+  }
 
+  async function confirmFolderDelete() {
+    const folder = folderToDelete
+    if (!folder) return
     try {
       const res = await fetch(`/api/folders/${folder.id}`, {
         method:      'DELETE',
@@ -687,6 +694,16 @@ export default function ProjectsPage() {
         {/* /two-column layout */}
 
       </div>
+
+      {/* Folder delete confirmation */}
+      <ConfirmDialog
+        isOpen={!!folderToDelete}
+        onClose={() => setFolderToDelete(null)}
+        onConfirm={confirmFolderDelete}
+        title={t('confirmDelete')}
+        message={t('proj_deleteFolderConfirm').replace('{name}', folderToDelete?.name ?? '')}
+        confirmLabel={t('delete')}
+      />
     </div>
   )
 }
