@@ -1,17 +1,28 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { UserPlus, Video, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AvatarFilters, type AvatarFilter } from '@/components/assets/AvatarFilters'
-import { AvatarPreviewModal } from '@/components/assets/AvatarPreviewModal'
-import { CreateAvatarModal } from '@/components/assets/CreateAvatarModal'
+
 import { getStudioAvatars, type StudioAvatar } from '@/lib/api'
 import { groupAvatarsByName, type AvatarGroup } from '@/lib/avatar-grouping'
 import { useFavoriteAvatars } from '@/lib/use-favorite-avatars'
 import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+
+// Modals are only needed on user interaction — code-split them out of the
+// initial bundle so the avatar grid paints faster.
+const AvatarPreviewModal = dynamic(
+  () => import('@/components/assets/AvatarPreviewModal').then((m) => m.AvatarPreviewModal),
+  { ssr: false },
+)
+const CreateAvatarModal = dynamic(
+  () => import('@/components/assets/CreateAvatarModal').then((m) => m.CreateAvatarModal),
+  { ssr: false },
+)
 
 type AvatarTab = 'public' | 'my'
 
@@ -174,8 +185,8 @@ export default function AvatarsPage() {
   return (
     <>
       {/* Sub-header: avatar tabs + CTA */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border/30 bg-card/40">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 border-b border-border/30 bg-card/40">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <h1 className="font-body text-lg font-bold text-foreground">{t('pageAvatars')}</h1>
           <div className="flex gap-1">
           {tabs.map(({ key, label, count }) => (
