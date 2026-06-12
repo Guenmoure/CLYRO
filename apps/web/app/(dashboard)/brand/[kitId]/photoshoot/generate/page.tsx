@@ -20,6 +20,8 @@ import {
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { cn } from '@/lib/utils'
 import { createBrowserClient } from '@/lib/supabase'
+import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import {
   getBrandKit,
   listBrandMedia,
@@ -40,6 +42,7 @@ export default function PhotoshootGeneratePage() {
   const params = useParams<{ kitId: string }>()
   const router = useRouter()
   const kitId = params?.kitId ?? ''
+  const { t } = useLanguage()
 
   const [kit, setKit] = useState<BrandKit | null>(null)
   const [media, setMedia] = useState<BrandMediaItem[]>([])
@@ -69,7 +72,7 @@ export default function PhotoshootGeneratePage() {
         setMedia(m.data)
         setUserId(u.data.user?.id ?? '')
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : null))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -91,17 +94,17 @@ export default function PhotoshootGeneratePage() {
       if (!signed?.signedUrl) throw new Error('Could not sign URL')
       setReferenceUrl(signed.signedUrl)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Upload failed')
+      toast.error(err instanceof Error ? err.message : t('bk_uploadFailed'))
     } finally {
       setReferenceUploading(false)
     }
-  }, [userId, kitId])
+  }, [userId, kitId, t])
 
   async function handleGenerate() {
     if (submitting) return
     const trimmed = prompt.trim()
     if (trimmed.length < 10) {
-      alert('Please describe the visual you want (10 characters minimum).')
+      toast.error(t('bk_gen_promptTooShort'))
       return
     }
     setSubmitting(true)
@@ -116,7 +119,7 @@ export default function PhotoshootGeneratePage() {
       // Navigation immédiate vers le detail — le polling y prendra le relais.
       router.push(`/brand/${kitId}/photoshoot/${res.data.id}`)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Generation failed')
+      toast.error(err instanceof Error ? err.message : t('bk_generationFailed'))
       setSubmitting(false)
     }
   }
@@ -135,7 +138,7 @@ export default function PhotoshootGeneratePage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-2 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error ?? 'Brand kit not found'}</p>
+          <p className="font-body text-sm text-[--text-muted]">{error ?? t('bk_kitNotFound')}</p>
         </div>
       </BrandKitLayout>
     )
@@ -148,55 +151,55 @@ export default function PhotoshootGeneratePage() {
           href={`/brand/${kitId}/photoshoot`}
           className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[--text-muted] hover:text-foreground"
         >
-          <ArrowLeft size={12} /> Back to Photoshoot
+          <ArrowLeft size={12} /> {t('bk_backToPhotoshoot')}
         </Link>
 
         <header>
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">Generate or edit</p>
-          <h2 className="font-display text-xl font-semibold text-foreground mt-1">Describe the image you want</h2>
+          <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_gen_kicker')}</p>
+          <h2 className="font-display text-xl font-semibold text-foreground mt-1">{t('bk_gen_title')}</h2>
           <p className="font-body text-sm text-[--text-muted] mt-1">
-            The brand palette is applied automatically. An optional reference image acts as a style hint.
+            {t('bk_gen_sub')}
           </p>
         </header>
 
         {/* Prompt */}
         <section className="space-y-2">
-          <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">Prompt</label>
+          <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_prompt')}</label>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value.slice(0, 1500))}
             rows={6}
-            placeholder="A cozy coffee cup on a wooden table by a sunny window, soft morning light, editorial style…"
+            placeholder={t('bk_gen_promptPlaceholder')}
             className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none"
           />
           <p className="font-mono text-[10px] text-[--text-muted] text-right">
-            {prompt.trim().length}/1500 · minimum 10 chars
+            {t('bk_charCount').replace('{count}', String(prompt.trim().length))}
           </p>
         </section>
 
         {/* Reference image */}
         <section className="space-y-2">
-          <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">Reference image (optional)</label>
+          <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_gen_refLabel')}</label>
           {referenceUrl ? (
             <div className="flex items-center gap-3 rounded-xl border border-border bg-muted p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={referenceUrl} alt="Reference" className="w-20 h-20 rounded-lg object-cover border border-border" />
+              <img src={referenceUrl} alt={t('bk_gen_refAlt')} className="w-20 h-20 rounded-lg object-cover border border-border" />
               <div className="flex-1 min-w-0">
-                <p className="font-mono text-[10px] text-[--text-muted]">Will gently guide the style.</p>
+                <p className="font-mono text-[10px] text-[--text-muted]">{t('bk_gen_refHint')}</p>
                 <div className="mt-1 flex gap-1.5">
                   <button
                     type="button"
                     onClick={() => setMediaPickerOpen(true)}
                     className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[10px] text-foreground hover:bg-muted"
                   >
-                    Change
+                    {t('bk_gen_change')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setReferenceUrl(null)}
                     className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[10px] text-[--text-muted] hover:text-error"
                   >
-                    Remove
+                    {t('bk_gen_remove')}
                   </button>
                 </div>
               </div>
@@ -208,7 +211,7 @@ export default function PhotoshootGeneratePage() {
                 referenceUploading && 'opacity-50 pointer-events-none',
               )}>
                 {referenceUploading ? <Loader2 size={20} className="animate-spin" /> : <ImagePlus size={20} />}
-                <span className="font-body text-xs text-foreground">{referenceUploading ? 'Uploading…' : 'Upload image'}</span>
+                <span className="font-body text-xs text-foreground">{referenceUploading ? t('bk_gen_uploading') : t('bk_gen_upload')}</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -222,7 +225,7 @@ export default function PhotoshootGeneratePage() {
                 className="rounded-xl border-2 border-dashed border-border bg-background p-4 flex flex-col items-center gap-2 text-[--text-muted] cursor-pointer hover:border-foreground/40 transition-colors"
               >
                 <Sparkles size={20} />
-                <span className="font-body text-xs text-foreground">Pick from library</span>
+                <span className="font-body text-xs text-foreground">{t('bk_gen_pickFromLibrary')}</span>
               </button>
             </div>
           )}
@@ -230,7 +233,7 @@ export default function PhotoshootGeneratePage() {
 
         {/* Aspect */}
         <section className="space-y-2">
-          <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">Aspect ratio</label>
+          <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_gen_aspectLabel')}</label>
           <div className="flex flex-wrap gap-2">
             {ASPECTS.map((a) => (
               <button
@@ -251,19 +254,19 @@ export default function PhotoshootGeneratePage() {
         </section>
 
         {/* CTA */}
-        <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
-          <span className="font-mono text-[10px] text-[--text-muted]">4 variations · 4 credits</span>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 border-t border-border pt-4">
+          <span className="font-mono text-[10px] text-[--text-muted]">{t('bk_gen_costNote')}</span>
           <button
             type="button"
             onClick={handleGenerate}
             disabled={submitting || prompt.trim().length < 10}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg bg-foreground text-background px-4 py-2 font-display text-sm font-medium',
+              'inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground text-background px-4 py-2 font-display text-sm font-medium',
               (submitting || prompt.trim().length < 10) && 'opacity-50 cursor-not-allowed',
             )}
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-            Generate
+            {t('bk_generate')}
           </button>
         </div>
       </div>
@@ -287,22 +290,23 @@ function MediaPickerInline({
   onPick:  (url: string) => void
   onClose: () => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-2xl rounded-2xl border border-border bg-card shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h3 className="font-display text-base font-semibold text-foreground">Pick a reference</h3>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-[--text-muted] hover:text-foreground">
+          <h3 className="font-display text-base font-semibold text-foreground">{t('bk_gen_pickReference')}</h3>
+          <button type="button" onClick={onClose} aria-label={t('close')} className="text-[--text-muted] hover:text-foreground">
             <X size={18} />
           </button>
         </div>
         <div className="p-5 max-h-[70vh] overflow-y-auto">
           {media.length === 0 ? (
             <p className="text-center font-body text-sm text-[--text-muted] py-8">
-              Your library is empty. Upload images in Assets first.
+              {t('bk_libraryEmpty')}
             </p>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {media.map((m) => (
                 <button
                   key={m.id}

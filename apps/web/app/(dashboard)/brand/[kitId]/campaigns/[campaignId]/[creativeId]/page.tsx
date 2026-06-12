@@ -23,6 +23,8 @@ import {
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { DraggableBlock } from '@/components/brand/DraggableBlock'
 import { cn } from '@/lib/utils'
+import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import {
   getBrandCreative,
   getBrandKit,
@@ -86,6 +88,7 @@ export default function CreativeEditorPage() {
   const kitId       = params?.kitId       ?? ''
   const campaignId  = params?.campaignId  ?? ''
   const creativeId  = params?.creativeId  ?? ''
+  const { t } = useLanguage()
 
   const [kit, setKit] = useState<BrandKit | null>(null)
   const [campaign, setCampaign] = useState<BrandCampaign | null>(null)
@@ -126,7 +129,7 @@ export default function CreativeEditorPage() {
         // Lazy-load media list pour le swap (séparé pour ne pas retarder le load principal)
         listBrandMedia(kitId).then((m) => setMedia(m.data)).catch(() => null)
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
       .finally(() => setLoading(false))
   }, [creativeId, kitId])
 
@@ -197,7 +200,7 @@ export default function CreativeEditorPage() {
       setVersions((cur) => [res.data, ...cur])
       if (creative) setCreative({ ...creative, current_version: res.data.version_num })
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to save version')
+      toast.error(err instanceof Error ? err.message : t('bk_ce_saveVersionFailed'))
     } finally {
       setSavingVersion(false)
     }
@@ -210,7 +213,7 @@ export default function CreativeEditorPage() {
       const res = await restoreBrandCreativeVersion(creativeId, versionNum)
       setCreative(res.data)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Restore failed')
+      toast.error(err instanceof Error ? err.message : t('bk_ce_restoreFailed'))
     } finally {
       setRestoringVersion(null)
     }
@@ -249,7 +252,7 @@ export default function CreativeEditorPage() {
       setCreative(res.data)
       setEditPromptOpen(false)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Regeneration failed')
+      toast.error(err instanceof Error ? err.message : t('bk_ce_regenFailed'))
     } finally {
       setRegenLoading(false)
     }
@@ -262,7 +265,7 @@ export default function CreativeEditorPage() {
       const res = await fixBrandCreativeLayout(creativeId)
       setCreative(res.data)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Fix layout failed')
+      toast.error(err instanceof Error ? err.message : t('bk_ce_fixLayoutFailed'))
     } finally {
       setFixLayoutLoading(false)
     }
@@ -284,7 +287,7 @@ export default function CreativeEditorPage() {
         filename:    `${safeTitle}-v${creative.current_version}.png`,
       })
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Download failed')
+      toast.error(err instanceof Error ? err.message : t('bk_ce_downloadFailed'))
     } finally {
       setDownloadLoading(false)
     }
@@ -305,9 +308,11 @@ export default function CreativeEditorPage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-3 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error ?? 'Creative not found'}</p>
+          <p className="font-body text-sm text-[--text-muted]">
+            {error && error !== 'error' ? error : t('bk_ce_notFound')}
+          </p>
           <Link href={`/brand/${kitId}/campaigns/${campaignId}`} className="font-mono text-xs text-foreground underline">
-            ← Back to campaign
+            ← {t('bk_ce_back')}
           </Link>
         </div>
       </BrandKitLayout>
@@ -316,9 +321,9 @@ export default function CreativeEditorPage() {
 
   const saveStatus = (
     <span className="inline-flex items-center gap-1.5">
-      {saveState === 'saving' && (<><Loader2 size={11} className="animate-spin" /> Saving…</>)}
-      {saveState === 'saved'  && (<><Check    size={11} className="text-emerald-600" /> Saved</>)}
-      {saveState === 'error'  && (<><AlertCircle size={11} className="text-error" /> Failed</>)}
+      {saveState === 'saving' && (<><Loader2 size={11} className="animate-spin" /> {t('saving')}</>)}
+      {saveState === 'saved'  && (<><Check    size={11} className="text-emerald-600" /> {t('bk_ce_saved')}</>)}
+      {saveState === 'error'  && (<><AlertCircle size={11} className="text-error" /> {t('bk_ce_saveFailedShort')}</>)}
     </span>
   )
 
@@ -334,7 +339,7 @@ export default function CreativeEditorPage() {
             href={`/brand/${kitId}/campaigns/${campaignId}`}
             className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[--text-muted] hover:text-foreground"
           >
-            <ArrowLeft size={12} /> Back to {campaign.title.slice(0, 40)}
+            <ArrowLeft size={12} /> {t('bk_ce_backTo').replace('{name}', campaign.title.slice(0, 40))}
           </Link>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">
@@ -344,14 +349,14 @@ export default function CreativeEditorPage() {
               type="button"
               onClick={handleFixLayout}
               disabled={fixLayoutLoading}
-              title="Ask Claude to reposition text overlay"
+              title={t('bk_ce_fixLayoutTitle')}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted',
                 fixLayoutLoading && 'opacity-50 cursor-not-allowed',
               )}
             >
               {fixLayoutLoading ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-              Fix layout
+              {t('bk_ce_fixLayout')}
             </button>
             <button
               type="button"
@@ -363,7 +368,7 @@ export default function CreativeEditorPage() {
               )}
             >
               {downloadLoading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-              Download
+              {t('bk_download')}
             </button>
             <button
               type="button"
@@ -375,7 +380,7 @@ export default function CreativeEditorPage() {
               )}
             >
               {savingVersion ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-              Save version
+              {t('bk_ce_saveVersion')}
             </button>
           </div>
         </div>
@@ -395,14 +400,14 @@ export default function CreativeEditorPage() {
           </section>
 
           {/* Block editor — col 7-9 */}
-          <section className="col-span-12 lg:col-span-4 space-y-3">
-            <BlockSection title="Image" hint="Swap from library or regenerate with a new prompt.">
+          <section className="col-span-12 md:col-span-7 lg:col-span-4 space-y-3">
+            <BlockSection title={t('bk_ce_imageTitle')} hint={t('bk_ce_imageHint')}>
               <div className="flex items-center gap-3 rounded-xl border border-border bg-muted p-2 relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={creative.image_url} alt="" className="w-16 h-16 rounded-lg object-cover border border-border" />
                 <div className="min-w-0 flex-1">
                   <p className="font-mono text-[10px] text-[--text-muted] truncate" title={creative.prompt ?? ''}>
-                    {creative.prompt ?? 'No prompt recorded'}
+                    {creative.prompt ?? t('bk_ce_noPrompt')}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     <button
@@ -410,14 +415,14 @@ export default function CreativeEditorPage() {
                       onClick={() => setMediaPickerOpen(true)}
                       className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[10px] text-foreground hover:bg-muted"
                     >
-                      <ImageIconLucide size={11} /> Swap
+                      <ImageIconLucide size={11} /> {t('bk_ce_swap')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditPromptOpen(true)}
                       className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[10px] text-foreground hover:bg-muted"
                     >
-                      <Pencil size={11} /> Edit prompt
+                      <Pencil size={11} /> {t('bk_ce_editPrompt')}
                     </button>
                   </div>
                 </div>
@@ -425,8 +430,8 @@ export default function CreativeEditorPage() {
             </BlockSection>
 
             <BlockSection
-              title="Header"
-              hint="Top line, large type."
+              title={t('bk_ce_headerTitle')}
+              hint={t('bk_ce_headerHint')}
               toggle={{ on: creative.blocks_visible.header, onClick: () => toggleBlock('header') }}
               size={sizes.header}
               onSizeChange={(v) => setBlockSize('header', v)}
@@ -435,15 +440,15 @@ export default function CreativeEditorPage() {
                 type="text"
                 value={creative.header_text ?? ''}
                 onChange={(e) => patchCreative({ header_text: e.target.value })}
-                placeholder="Bold opening line"
+                placeholder={t('bk_ce_headerPlaceholder')}
                 maxLength={200}
                 className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60"
               />
             </BlockSection>
 
             <BlockSection
-              title="Description"
-              hint="Middle copy, narrative."
+              title={t('bk_ce_descTitle')}
+              hint={t('bk_ce_descHint')}
               toggle={{ on: creative.blocks_visible.description, onClick: () => toggleBlock('description') }}
               size={sizes.description}
               onSizeChange={(v) => setBlockSize('description', v)}
@@ -453,14 +458,14 @@ export default function CreativeEditorPage() {
                 onChange={(e) => patchCreative({ description_text: e.target.value })}
                 rows={3}
                 maxLength={500}
-                placeholder="What the campaign is about"
+                placeholder={t('bk_ce_descPlaceholder')}
                 className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none"
               />
             </BlockSection>
 
             <BlockSection
-              title="Call to action"
-              hint="Bottom button copy."
+              title={t('bk_ce_ctaTitle')}
+              hint={t('bk_ce_ctaHint')}
               toggle={{ on: creative.blocks_visible.cta, onClick: () => toggleBlock('cta') }}
               size={sizes.cta}
               onSizeChange={(v) => setBlockSize('cta', v)}
@@ -471,7 +476,7 @@ export default function CreativeEditorPage() {
                     type="text"
                     value={creative.cta_text ?? ''}
                     onChange={(e) => patchCreative({ cta_text: e.target.value })}
-                    placeholder="SHOP NOW"
+                    placeholder={t('bk_ce_ctaPlaceholder')}
                     maxLength={60}
                     className="flex-1 rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60"
                   />
@@ -485,7 +490,7 @@ export default function CreativeEditorPage() {
                     )}
                   >
                     {ctaLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                    Generate
+                    {t('bk_generate')}
                   </button>
                 </div>
                 {ctaPopoverOpen && (
@@ -501,7 +506,7 @@ export default function CreativeEditorPage() {
           </section>
 
           {/* Right panel — col 10-12 */}
-          <aside className="col-span-12 lg:col-span-2 space-y-4">
+          <aside className="col-span-12 md:col-span-5 lg:col-span-2 space-y-4">
             {kit && <DnaQuickRef kit={kit} />}
             <VersionHistory
               versions={versions}
@@ -545,35 +550,36 @@ function EditPromptModal({
   onRegenerate: (prompt: string) => void | Promise<void>
   onClose:      () => void
 }) {
+  const { t } = useLanguage()
   const [prompt, setPrompt] = useState(initial)
   const valid = prompt.trim().length >= 10
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h3 className="font-display text-base font-semibold text-foreground">Edit image prompt</h3>
-          <button type="button" onClick={onClose} aria-label="Close" disabled={loading} className="text-[--text-muted] hover:text-foreground disabled:opacity-50">
+          <h3 className="font-display text-base font-semibold text-foreground">{t('bk_ce_editPromptTitle')}</h3>
+          <button type="button" onClick={onClose} aria-label={t('close')} disabled={loading} className="text-[--text-muted] hover:text-foreground disabled:opacity-50">
             <X size={18} />
           </button>
         </div>
         <div className="p-5 space-y-3">
           <p className="font-body text-xs text-[--text-muted]">
-            Rewrite the visual instructions. The brand palette is applied automatically. Costs 1 credit.
+            {t('bk_ce_editPromptDesc')}
           </p>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value.slice(0, 1500))}
             rows={6}
             disabled={loading}
-            placeholder="Describe the visual you want…"
+            placeholder={t('bk_ce_editPromptPlaceholder')}
             className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none"
           />
           <p className="font-mono text-[10px] text-[--text-muted] text-right">
-            {prompt.trim().length}/1500 · minimum 10 chars
+            {t('bk_charCount').replace('{count}', String(prompt.trim().length))}
           </p>
           <div className="flex justify-end gap-2">
             <button type="button" onClick={onClose} disabled={loading} className="font-mono text-xs text-[--text-muted] hover:text-foreground px-3 py-1.5 disabled:opacity-50">
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="button"
@@ -585,7 +591,7 @@ function EditPromptModal({
               )}
             >
               {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-              Regenerate
+              {t('bk_ce_regenerate')}
             </button>
           </div>
         </div>
@@ -683,6 +689,7 @@ function BlockSection({
   onSizeChange?: (next: number) => void
   children:      React.ReactNode
 }) {
+  const { t } = useLanguage()
   return (
     <div className="rounded-2xl border border-border bg-card p-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
@@ -694,7 +701,7 @@ function BlockSection({
           <button
             type="button"
             onClick={toggle.onClick}
-            aria-label={toggle.on ? 'Hide block' : 'Show block'}
+            aria-label={toggle.on ? t('bk_ce_hideBlock') : t('bk_ce_showBlock')}
             className={cn('p-1 rounded-md hover:bg-muted', toggle.on ? 'text-foreground' : 'text-[--text-muted]')}
           >
             {toggle.on ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -704,7 +711,7 @@ function BlockSection({
       {children}
       {typeof size === 'number' && onSizeChange && (
         <label className="flex items-center gap-2 pt-1">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] shrink-0">Size</span>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted] shrink-0">{t('bk_ce_sizeLabel')}</span>
           <input
             type="range"
             min={0.6}
@@ -731,22 +738,23 @@ function CtaVariantsPopover({
   onPick:   (text: string) => void
   onClose:  () => void
 }) {
+  const { t } = useLanguage()
   return (
-    <div className="absolute right-0 top-full mt-2 z-30 w-80 rounded-2xl border border-border bg-card shadow-xl p-3 space-y-2">
+    <div className="absolute right-0 top-full mt-2 z-30 w-80 max-w-[calc(100vw-3rem)] rounded-2xl border border-border bg-card shadow-xl p-3 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">CTA variants</span>
-        <button type="button" onClick={onClose} aria-label="Close" className="text-[--text-muted] hover:text-foreground">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_ce_ctaVariants')}</span>
+        <button type="button" onClick={onClose} aria-label={t('close')} className="text-[--text-muted] hover:text-foreground">
           <X size={12} />
         </button>
       </div>
       {loading ? (
         <div className="flex items-center gap-2 py-3 text-[--text-muted]">
           <Loader2 size={12} className="animate-spin" />
-          <span className="font-body text-xs">Generating…</span>
+          <span className="font-body text-xs">{t('bk_generating')}</span>
         </div>
       ) : variants.length === 0 ? (
         <p className="font-body text-xs text-[--text-muted] py-2">
-          Claude didn't return any variant. Try again in a moment.
+          {t('bk_ce_ctaNoVariants')}
         </p>
       ) : (
         <ul className="space-y-1">
@@ -776,22 +784,23 @@ function MediaPickerModal({
   onPick:  (url: string) => void
   onClose: () => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-2xl rounded-2xl border border-border bg-card shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h3 className="font-display text-base font-semibold text-foreground">Swap image from library</h3>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-[--text-muted] hover:text-foreground">
+          <h3 className="font-display text-base font-semibold text-foreground">{t('bk_ce_swapModalTitle')}</h3>
+          <button type="button" onClick={onClose} aria-label={t('close')} className="text-[--text-muted] hover:text-foreground">
             <X size={18} />
           </button>
         </div>
         <div className="p-5 max-h-[70vh] overflow-y-auto">
           {media.length === 0 ? (
             <p className="text-center font-body text-sm text-[--text-muted] py-8">
-              Your library is empty. Upload images in Assets first.
+              {t('bk_libraryEmpty')}
             </p>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {media.map((m) => (
                 <button
                   key={m.id}
@@ -820,11 +829,12 @@ function MediaPickerModal({
 // ── DNA quick-ref ───────────────────────────────────────────────────────────
 
 function DnaQuickRef({ kit }: { kit: BrandKit }) {
+  const { t } = useLanguage()
   return (
     <div className="rounded-2xl border border-border bg-card p-3 space-y-3">
       <div className="flex items-center gap-1.5 text-[--text-muted]">
         <Palette size={12} />
-        <span className="font-mono text-[10px] uppercase tracking-wider">Brand DNA</span>
+        <span className="font-mono text-[10px] uppercase tracking-wider">{t('bk_ce_brandDna')}</span>
       </div>
       <div className="space-y-2">
         <p className="font-display text-sm font-semibold text-foreground truncate" title={kit.name}>{kit.name}</p>
@@ -843,8 +853,8 @@ function DnaQuickRef({ kit }: { kit: BrandKit }) {
       </div>
       {kit.brand_tone_of_voice.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {kit.brand_tone_of_voice.slice(0, 4).map((t) => (
-            <span key={t} className="font-mono text-[9px] rounded bg-muted border border-border px-1 py-px text-foreground">{t}</span>
+          {kit.brand_tone_of_voice.slice(0, 4).map((tone) => (
+            <span key={tone} className="font-mono text-[9px] rounded bg-muted border border-border px-1 py-px text-foreground">{tone}</span>
           ))}
         </div>
       )}
@@ -862,14 +872,15 @@ function VersionHistory({
   onRestore: (versionNum: number) => void
   restoring: number | null
 }) {
+  const { t } = useLanguage()
   return (
     <div className="rounded-2xl border border-border bg-card p-3 space-y-2">
       <div className="flex items-center gap-1.5 text-[--text-muted]">
         <History size={12} />
-        <span className="font-mono text-[10px] uppercase tracking-wider">History</span>
+        <span className="font-mono text-[10px] uppercase tracking-wider">{t('bk_ce_history')}</span>
       </div>
       {versions.length === 0 ? (
-        <p className="font-mono text-[10px] text-[--text-muted]">No saved versions yet.</p>
+        <p className="font-mono text-[10px] text-[--text-muted]">{t('bk_ce_noVersions')}</p>
       ) : (
         <ul className="space-y-1 max-h-64 overflow-y-auto -mx-1 px-1">
           {versions.map((v) => {
@@ -887,7 +898,7 @@ function VersionHistory({
                     restoring !== null && !isCurrent && 'opacity-50 cursor-not-allowed',
                   )}
                 >
-                  <span>v{v.version_num}{isCurrent && ' · current'}</span>
+                  <span>v{v.version_num}{isCurrent && ` · ${t('bk_ce_current')}`}</span>
                   <span className="text-[9px] opacity-70">
                     {isRestoring ? <Loader2 size={10} className="animate-spin inline" /> : new Date(v.created_at).toLocaleDateString()}
                   </span>

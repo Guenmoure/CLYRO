@@ -23,6 +23,8 @@ import Link from 'next/link'
 import { ArrowLeft, Loader2, AlertCircle, Plus, Package } from 'lucide-react'
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { CreativeGalleryCard } from '@/components/brand/CreativeGalleryCard'
+import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import {
   getBrandCampaign,
   updateBrandCreative,
@@ -42,6 +44,7 @@ export default function BrandCampaignDetailPage() {
   const router = useRouter()
   const kitId = params?.kitId ?? ''
   const campaignId = params?.campaignId ?? ''
+  const { t } = useLanguage()
 
   const [campaign, setCampaign] = useState<BrandCampaign | null>(null)
   const [creatives, setCreatives] = useState<BrandCreative[]>([])
@@ -59,7 +62,7 @@ export default function BrandCampaignDetailPage() {
       setCampaign(res.data.campaign)
       setCreatives(res.data.creatives)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load')
+      setError(err instanceof Error ? err.message : 'error')
     }
   }, [campaignId])
 
@@ -107,6 +110,7 @@ export default function BrandCampaignDetailPage() {
       await deleteBrandCreative(creativeId)
     } catch {
       setCreatives(previous)
+      toast.error(t('bk_deleteFailed'))
     }
   }
 
@@ -117,7 +121,7 @@ export default function BrandCampaignDetailPage() {
       const res = await addCreativeToBrandCampaign(campaignId)
       setCreatives((cur) => [...cur, res.data.creative])
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to add creative')
+      toast.error(err instanceof Error ? err.message : t('bk_cd_addFailed'))
     } finally {
       setAddingCreative(false)
     }
@@ -132,7 +136,7 @@ export default function BrandCampaignDetailPage() {
       // son statut. (Le détail player live n'existe pas comme route MVP.)
       router.push(`/motion?launched=${res.data.video_id}`)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to launch animation')
+      toast.error(err instanceof Error ? err.message : t('bk_cd_animateFailed'))
       setAnimatingId(null)
     }
   }
@@ -164,9 +168,11 @@ export default function BrandCampaignDetailPage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-3 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error ?? 'Campaign not found'}</p>
+          <p className="font-body text-sm text-[--text-muted]">
+            {error && error !== 'error' ? error : t('bk_cd_notFound')}
+          </p>
           <Link href={`/brand/${kitId}/campaigns`} className="font-mono text-xs text-foreground underline">
-            ← Back to campaigns
+            ← {t('bk_cd_back')}
           </Link>
         </div>
       </BrandKitLayout>
@@ -177,16 +183,16 @@ export default function BrandCampaignDetailPage() {
     <BrandKitLayout
       kitId={kitId}
       kitName={campaign.title}
-      saveStatus={copiedUrl ? <span className="text-emerald-600">Link copied</span> : null}
+      saveStatus={copiedUrl ? <span className="text-emerald-600">{t('bk_cd_linkCopied')}</span> : null}
     >
-      <div className="flex gap-6 -mx-2">
+      <div className="flex flex-col lg:flex-row gap-6 -mx-2">
         {/* Sidebar gauche : contexte */}
-        <aside className="shrink-0 w-[280px] space-y-5">
+        <aside className="shrink-0 w-full lg:w-[280px] space-y-5">
           <Link
             href={`/brand/${kitId}/campaigns`}
             className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[--text-muted] hover:text-foreground"
           >
-            <ArrowLeft size={12} /> All campaigns
+            <ArrowLeft size={12} /> {t('bk_cd_all')}
           </Link>
 
           <div className="space-y-1">
@@ -201,18 +207,18 @@ export default function BrandCampaignDetailPage() {
             )}
           </div>
 
-          <SectionLabel>Prompt</SectionLabel>
+          <SectionLabel>{t('bk_prompt')}</SectionLabel>
           <p className="font-mono text-[11px] text-[--text-muted] italic leading-relaxed whitespace-pre-wrap">
             {campaign.prompt}
           </p>
 
           {campaign.product_id && (
             <>
-              <SectionLabel>Product</SectionLabel>
+              <SectionLabel>{t('bk_cd_product')}</SectionLabel>
               <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-2">
                 <Package size={14} className="text-[--text-muted]" />
                 <span className="font-body text-xs text-foreground truncate">
-                  Linked product
+                  {t('bk_cd_linkedProduct')}
                 </span>
               </div>
             </>
@@ -220,14 +226,14 @@ export default function BrandCampaignDetailPage() {
 
           {campaign.asset_ids.length > 0 && (
             <>
-              <SectionLabel>Source assets</SectionLabel>
+              <SectionLabel>{t('bk_cd_sourceAssets')}</SectionLabel>
               <p className="font-mono text-[10px] text-[--text-muted]">
-                {campaign.asset_ids.length} attached
+                {t('bk_cd_attached').replace('{count}', String(campaign.asset_ids.length))}
               </p>
             </>
           )}
 
-          <SectionLabel>Format</SectionLabel>
+          <SectionLabel>{t('bk_cd_format')}</SectionLabel>
           <span className="inline-block rounded-md bg-muted border border-border px-2 py-0.5 font-mono text-[11px] text-foreground">
             {campaign.aspect_ratio}
           </span>
@@ -237,12 +243,12 @@ export default function BrandCampaignDetailPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between mb-3">
             <h3 className="font-display text-sm font-semibold text-foreground">
-              Creatives <span className="font-mono text-[11px] text-[--text-muted] ml-1">({creatives.length})</span>
+              {t('bk_cd_creatives')} <span className="font-mono text-[11px] text-[--text-muted] ml-1">({creatives.length})</span>
             </h3>
             {campaign.status === 'generating' && (
               <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-blue-600">
                 <Loader2 size={11} className="animate-spin" />
-                Generating…
+                {t('bk_generating')}
               </span>
             )}
           </div>
@@ -250,7 +256,7 @@ export default function BrandCampaignDetailPage() {
           {creatives.length === 0 && campaign.status !== 'generating' ? (
             <div className="rounded-2xl border border-dashed border-border p-12 text-center max-w-xl">
               <p className="font-body text-sm text-[--text-muted]">
-                No creatives yet. {campaign.status === 'error' && 'The pipeline failed — try recreating the campaign.'}
+                {t('bk_cd_emptyCreatives')} {campaign.status === 'error' && t('bk_cd_pipelineHint')}
               </p>
             </div>
           ) : (
@@ -282,13 +288,13 @@ export default function BrandCampaignDetailPage() {
                 {addingCreative ? (
                   <>
                     <Loader2 size={24} className="animate-spin" />
-                    <span className="font-mono text-[11px]">Generating…</span>
+                    <span className="font-mono text-[11px]">{t('bk_generating')}</span>
                   </>
                 ) : (
                   <>
                     <Plus size={24} />
-                    <span className="font-mono text-[11px]">Add creative</span>
-                    <span className="font-mono text-[9px] text-[--text-muted]">~15 s · 1 credit</span>
+                    <span className="font-mono text-[11px]">{t('bk_cd_addCreative')}</span>
+                    <span className="font-mono text-[9px] text-[--text-muted]">{t('bk_cd_addCreativeMeta')}</span>
                   </>
                 )}
               </button>
@@ -307,11 +313,12 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function StatusBadge({ status }: { status: BrandCampaign['status'] }) {
+  const { t } = useLanguage()
   const map: Record<BrandCampaign['status'], { label: string; cls: string }> = {
-    draft:      { label: 'Draft',      cls: 'text-[--text-muted] bg-muted'    },
-    generating: { label: 'Generating', cls: 'text-blue-700 bg-blue-100'        },
-    done:       { label: 'Ready',      cls: 'text-emerald-700 bg-emerald-100'  },
-    error:      { label: 'Error',      cls: 'text-error bg-error/10'           },
+    draft:      { label: t('bk_statusDraft'),      cls: 'text-[--text-muted] bg-muted'    },
+    generating: { label: t('bk_statusGenerating'), cls: 'text-blue-700 bg-blue-100'        },
+    done:       { label: t('bk_statusReady'),      cls: 'text-emerald-700 bg-emerald-100'  },
+    error:      { label: t('bk_statusError'),      cls: 'text-error bg-error/10'           },
   }
   const m = map[status]
   return (

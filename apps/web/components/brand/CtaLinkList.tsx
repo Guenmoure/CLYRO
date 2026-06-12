@@ -1,6 +1,7 @@
 'use client'
 
 import { Plus, X } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 import type { CtaLink } from '@clyro/shared'
 
 interface CtaLinkListProps {
@@ -16,6 +17,7 @@ interface CtaLinkListProps {
  * URL invalide est tolérée côté UI mais filtrée par Zod côté API.
  */
 export function CtaLinkList({ value, onChange, max = 8 }: CtaLinkListProps) {
+  const { t } = useLanguage()
   function updateAt(idx: number, patch: Partial<CtaLink>) {
     onChange(value.map((c, i) => (i === idx ? { ...c, ...patch } : c)))
   }
@@ -40,7 +42,7 @@ export function CtaLinkList({ value, onChange, max = 8 }: CtaLinkListProps) {
             type="text"
             value={cta.label}
             onChange={(e) => updateAt(i, { label: e.target.value })}
-            placeholder="Label (e.g. Visit store)"
+            placeholder={t('bk_cta_labelPh')}
             maxLength={60}
             className="w-40 bg-transparent outline-none font-body text-sm text-foreground placeholder-[--text-muted]"
           />
@@ -56,7 +58,7 @@ export function CtaLinkList({ value, onChange, max = 8 }: CtaLinkListProps) {
           <button
             type="button"
             onClick={() => removeAt(i)}
-            aria-label="Remove CTA"
+            aria-label={t('bk_cta_removeAria')}
             className="text-[--text-muted] hover:text-error transition-colors"
           >
             <X size={14} />
@@ -70,7 +72,7 @@ export function CtaLinkList({ value, onChange, max = 8 }: CtaLinkListProps) {
           className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 font-body text-xs text-[--text-muted] hover:text-foreground hover:border-foreground/40 transition-colors"
         >
           <Plus size={12} />
-          Add CTA link
+          {t('bk_cta_add')}
         </button>
       )}
     </div>

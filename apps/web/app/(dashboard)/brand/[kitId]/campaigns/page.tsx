@@ -20,6 +20,8 @@ import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { CampaignPromptBox } from '@/components/brand/CampaignPromptBox'
 import { SuggestionCard } from '@/components/brand/SuggestionCard'
 import { CampaignCard } from '@/components/brand/CampaignCard'
+import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import {
   getBrandKit,
   listBrandCampaigns,
@@ -42,6 +44,7 @@ const POLL_INTERVAL_MS = 3000
 export default function BrandCampaignsPage() {
   const params = useParams<{ kitId: string }>()
   const kitId = params?.kitId ?? ''
+  const { t } = useLanguage()
 
   const [kit, setKit] = useState<BrandKit | null>(null)
   const [campaigns, setCampaigns] = useState<BrandCampaign[]>([])
@@ -73,7 +76,7 @@ export default function BrandCampaignsPage() {
         setProducts(p.data)
         setAssets(a.data)
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -143,9 +146,7 @@ export default function BrandCampaignsPage() {
       setCampaigns((cur) => [res.data.campaign, ...cur])
       setPrompt('')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed'
-      // Best-effort : alert plutôt que rien (un toast component existerait)
-      alert(msg)
+      toast.error(err instanceof Error ? err.message : t('bk_cmp_createFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -158,6 +159,7 @@ export default function BrandCampaignsPage() {
       await deleteBrandCampaign(campaignId)
     } catch {
       setCampaigns(previous)
+      toast.error(t('bk_deleteFailed'))
     }
   }
 
@@ -177,7 +179,7 @@ export default function BrandCampaignsPage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-2 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error}</p>
+          <p className="font-body text-sm text-[--text-muted]">{error === 'error' ? t('bk_failedLoad') : error}</p>
         </div>
       </BrandKitLayout>
     )
@@ -188,9 +190,9 @@ export default function BrandCampaignsPage() {
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Prompt box centrale */}
         <section>
-          <h2 className="font-display text-lg font-semibold text-foreground mb-1">Campaigns</h2>
+          <h2 className="font-display text-lg font-semibold text-foreground mb-1">{t('bk_cmp_title')}</h2>
           <p className="font-body text-sm text-[--text-muted] mb-4">
-            Start from a prompt — pick a product, attach reference images, choose the format.
+            {t('bk_cmp_sub')}
           </p>
           <CampaignPromptBox
             products={products}
@@ -201,19 +203,19 @@ export default function BrandCampaignsPage() {
             submitting={submitting}
           />
           <p className="mt-2 font-mono text-[10px] text-[--text-muted]">
-            CLYRO can make mistakes — double-check before publishing.
+            {t('bk_cmp_disclaimer')}
           </p>
         </section>
 
         {/* Suggestions DNA */}
         <section>
           <h3 className="font-display text-sm font-semibold text-foreground mb-3">
-            Suggestions based on Business DNA
+            {t('bk_cmp_suggestionsTitle')}
           </h3>
           {suggestionsLoading ? (
             <div className="flex items-center gap-2 py-4 text-[--text-muted]">
               <Loader2 size={14} className="animate-spin" />
-              <span className="font-body text-xs">Inferring suggestions…</span>
+              <span className="font-body text-xs">{t('bk_cmp_suggestionsLoading')}</span>
             </div>
           ) : suggestions.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -228,7 +230,7 @@ export default function BrandCampaignsPage() {
             </div>
           ) : (
             <p className="font-body text-xs text-[--text-muted]">
-              Enrich the DNA (tagline, tone, aesthetic) to get on-brand suggestions here.
+              {t('bk_cmp_suggestionsEmpty')}
             </p>
           )}
         </section>
@@ -236,11 +238,11 @@ export default function BrandCampaignsPage() {
         {/* Liste des campagnes */}
         <section>
           <h3 className="font-display text-sm font-semibold text-foreground mb-3">
-            Your campaigns
+            {t('bk_cmp_yours')}
           </h3>
           {campaigns.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border p-10 text-center max-w-xl mx-auto">
-              <p className="font-body text-sm text-[--text-muted]">No campaigns yet — write a prompt above and hit Generate.</p>
+              <p className="font-body text-sm text-[--text-muted]">{t('bk_cmp_empty')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

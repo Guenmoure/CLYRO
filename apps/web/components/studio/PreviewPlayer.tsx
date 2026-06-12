@@ -99,10 +99,10 @@ export function PreviewPlayer({ scene, format, onRetry }: PreviewPlayerProps) {
 
       {/* Bottom info strip */}
       <div className="flex items-center gap-3 text-[11px] font-mono text-[--text-muted]">
-        <span>Scene {scene.index + 1}</span>
+        <span>{t('si_sceneLabel')} {scene.index + 1}</span>
         <span>·</span>
         <span>{scene.duration_actual ?? scene.duration_est ?? 10}s</span>
-        {scene.status === 'done' && <><span>·</span><Badge variant="success">Ready</Badge></>}
+        {scene.status === 'done' && <><span>·</span><Badge variant="success">{t('st_statusReady')}</Badge></>}
       </div>
     </div>
   )

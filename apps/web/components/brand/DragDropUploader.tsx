@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react'
 import { Upload, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const
 const MAX_BYTES = 10 * 1024 * 1024 // 10 MB
@@ -20,6 +21,7 @@ interface DragDropUploaderProps {
  * handler. Affiche l'état d'upload global (« 2 / 5 uploaded… »).
  */
 export function DragDropUploader({ onUpload, multiple = true, disabled = false, className }: DragDropUploaderProps) {
+  const { t } = useLanguage()
   const [dragging, setDragging] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -27,13 +29,13 @@ export function DragDropUploader({ onUpload, multiple = true, disabled = false, 
 
   const validate = useCallback((file: File): string | null => {
     if (!ACCEPTED_TYPES.includes(file.type as typeof ACCEPTED_TYPES[number])) {
-      return `Unsupported type: ${file.type || 'unknown'}`
+      return t('bk_dd_unsupportedType').replace('{type}', file.type || 'unknown')
     }
     if (file.size > MAX_BYTES) {
-      return `Too large: ${file.name} (max 10 MB)`
+      return t('bk_dd_tooLarge').replace('{name}', file.name)
     }
     return null
-  }, [])
+  }, [t])
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     if (disabled) return
@@ -57,12 +59,12 @@ export function DragDropUploader({ onUpload, multiple = true, disabled = false, 
         await onUpload(list[i])
         setProgress({ done: i + 1, total: list.length })
       } catch (err) {
-        setError(`Upload failed: ${err instanceof Error ? err.message : 'unknown'}`)
+        setError(t('bk_dd_uploadFailed').replace('{message}', err instanceof Error ? err.message : 'unknown'))
         break
       }
     }
     setTimeout(() => setProgress(null), 1500)
-  }, [disabled, onUpload, validate])
+  }, [disabled, onUpload, validate, t])
 
   function onDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault()
@@ -98,19 +100,23 @@ export function DragDropUploader({ onUpload, multiple = true, disabled = false, 
         {progress ? (
           <>
             <Loader2 size={28} className="animate-spin" />
-            <p className="font-mono text-xs">{progress.done} / {progress.total} uploaded…</p>
+            <p className="font-mono text-xs">
+              {t('bk_dd_progress')
+                .replace('{done}', String(progress.done))
+                .replace('{total}', String(progress.total))}
+            </p>
           </>
         ) : (
           <>
             <Upload size={28} />
             <div className="space-y-0.5">
               <p className="font-body text-sm text-foreground">
-                Drop images here or{' '}
+                {t('bk_dd_dropHere')}{' '}
                 <button type="button" onClick={() => inputRef.current?.click()} className="font-medium underline">
-                  browse
+                  {t('bk_dd_browse')}
                 </button>
               </p>
-              <p className="font-mono text-[10px]">JPG, PNG, WebP or GIF · 10 MB max each</p>
+              <p className="font-mono text-[10px]">{t('bk_dd_hint')}</p>
             </div>
           </>
         )}

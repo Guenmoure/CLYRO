@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Sparkles, Loader2, Package, ImageIcon, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import type { CampaignAspectRatio, BrandCatalogItem, BrandMediaItem } from '@/lib/api'
 
 interface CampaignPromptBoxProps {
@@ -35,6 +36,7 @@ const MAX_PROMPT_LEN = 3000
 const MAX_ASSETS_PER_CAMPAIGN = 6
 
 export function CampaignPromptBox({ products, assets, prompt, onPromptChange, onGenerate, submitting }: CampaignPromptBoxProps) {
+  const { t } = useLanguage()
   const [productId, setProductId] = useState<string | undefined>(undefined)
   const [assetIds, setAssetIds] = useState<string[]>([])
   const [aspectRatio, setAspectRatio] = useState<CampaignAspectRatio>('9:16')
@@ -69,7 +71,7 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
       <textarea
         value={prompt}
         onChange={(e) => onPromptChange(e.target.value.slice(0, MAX_PROMPT_LEN))}
-        placeholder="Describe the campaign you want to create…"
+        placeholder={t('bk_pb_placeholder')}
         rows={4}
         disabled={submitting}
         className="w-full px-5 py-4 bg-transparent outline-none resize-none font-body text-sm text-foreground placeholder-[--text-muted] leading-relaxed"
@@ -89,14 +91,14 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
             )}
           >
             <Package size={12} />
-            {product ? product.name.slice(0, 24) : products.length === 0 ? 'No products' : 'Product'}
+            {product ? product.name.slice(0, 24) : products.length === 0 ? t('bk_pb_noProducts') : t('bk_pb_product')}
             <ChevronDown size={10} />
           </button>
           {productMenuOpen && products.length > 0 && (
             <div className="absolute left-0 top-full mt-1 z-20 w-64 rounded-xl border border-border bg-card shadow-lg max-h-72 overflow-y-auto">
               <button type="button" onClick={() => { setProductId(undefined); setProductMenuOpen(false) }}
                 className="block w-full text-left px-3 py-2 font-mono text-[11px] text-[--text-muted] hover:bg-muted">
-                — None —
+                {t('bk_pb_none')}
               </button>
               {products.map((p) => (
                 <button key={p.id} type="button"
@@ -127,7 +129,7 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
             )}
           >
             <ImageIcon size={12} />
-            {assetIds.length > 0 ? `Images (${assetIds.length}/${MAX_ASSETS_PER_CAMPAIGN})` : assets.length === 0 ? 'No assets' : 'Images'}
+            {assetIds.length > 0 ? `${t('bk_pb_images')} (${assetIds.length}/${MAX_ASSETS_PER_CAMPAIGN})` : assets.length === 0 ? t('bk_pb_noAssets') : t('bk_pb_images')}
             <ChevronDown size={10} />
           </button>
           {assetMenuOpen && assets.length > 0 && (
@@ -161,7 +163,7 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
           value={aspectRatio}
           onChange={(e) => setAspectRatio(e.target.value as CampaignAspectRatio)}
           disabled={submitting}
-          aria-label="Aspect ratio"
+          aria-label={t('bk_gen_aspectLabel')}
           className="rounded-lg border border-border bg-background px-2 py-1.5 font-mono text-[11px] text-foreground outline-none disabled:opacity-50"
         >
           {ASPECT_RATIOS.map((r) => (
@@ -181,7 +183,7 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
           )}
         >
           {submitting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-          Generate
+          {t('bk_generate')}
         </button>
       </div>
     </div>

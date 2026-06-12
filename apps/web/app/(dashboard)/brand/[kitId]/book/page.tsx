@@ -22,6 +22,8 @@ import {
 } from 'lucide-react'
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { cn } from '@/lib/utils'
+import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import {
   getBrandKit,
   getBrandBook,
@@ -42,6 +44,7 @@ function publicUrlFor(book: BrandBook): string | null {
 export default function BrandBookPage() {
   const params = useParams<{ kitId: string }>()
   const kitId = params?.kitId ?? ''
+  const { t } = useLanguage()
 
   const [kit, setKit] = useState<BrandKit | null>(null)
   const [book, setBook] = useState<BrandBook | null>(null)
@@ -62,7 +65,7 @@ export default function BrandBookPage() {
         setKit(k.data)
         if (b) setBook(b.data)
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : null))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -74,11 +77,11 @@ export default function BrandBookPage() {
       const res = await generateBrandBook(kitId)
       setBook(res.data)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Generation failed')
+      toast.error(err instanceof Error ? err.message : t('bk_generationFailed'))
     } finally {
       setGenerating(false)
     }
-  }, [generating, kitId])
+  }, [generating, kitId, t])
 
   async function togglePublish() {
     if (!book || togglingPublish) return
@@ -89,7 +92,7 @@ export default function BrandBookPage() {
         : await publishBrandBook(book.id)
       setBook(res.data)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Publish toggle failed')
+      toast.error(err instanceof Error ? err.message : t('bk_book_publishFailed'))
     } finally {
       setTogglingPublish(false)
     }
@@ -126,7 +129,7 @@ export default function BrandBookPage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-3 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error ?? 'Brand kit not found'}</p>
+          <p className="font-body text-sm text-[--text-muted]">{error ?? t('bk_kitNotFound')}</p>
         </div>
       </BrandKitLayout>
     )
@@ -137,12 +140,10 @@ export default function BrandBookPage() {
     return (
       <BrandKitLayout kitId={kitId} kitName={kit.name}>
         <div className="max-w-xl mx-auto py-16 text-center space-y-4">
-          <div className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">Brand Book</div>
-          <h2 className="font-display text-2xl font-semibold text-foreground">No brand book yet</h2>
+          <div className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_book_label')}</div>
+          <h2 className="font-display text-2xl font-semibold text-foreground">{t('bk_book_emptyTitle')}</h2>
           <p className="font-body text-sm text-[--text-muted]">
-            Generate a guide from your Business DNA — logo, palette, tagline,
-            values, aesthetic, tone of voice. Free, instant, regeneratable any
-            time the DNA changes.
+            {t('bk_book_emptyDesc')}
           </p>
           <button
             type="button"
@@ -154,7 +155,7 @@ export default function BrandBookPage() {
             )}
           >
             {generating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-            Generate brand book
+            {t('bk_book_generate')}
           </button>
         </div>
       </BrandKitLayout>
@@ -170,31 +171,31 @@ export default function BrandBookPage() {
         type="button"
         onClick={generate}
         disabled={generating}
-        title="Regenerate from the current DNA. Creates a new version."
+        title={t('bk_book_regenTitle')}
         className={cn(
           'inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted',
           generating && 'opacity-50 cursor-not-allowed',
         )}
       >
         {generating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-        Regenerate
+        {t('bk_book_regenerate')}
       </button>
       <button
         type="button"
         onClick={handlePrint}
         className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted"
-        title="Render the iframe via the browser print dialog (browser-side rendering)"
+        title={t('bk_book_printTitle')}
       >
-        <Printer size={12} /> Print
+        <Printer size={12} /> {t('bk_book_print')}
       </button>
       <a
         href={`${API_BASE}/api/v1/brand/book/${book.id}/pdf`}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted"
-        title="Server-side PDF generated with pdfkit (deterministic fonts and layout)"
+        title={t('bk_book_pdfTitle')}
       >
-        <FileDown size={12} /> Download PDF
+        <FileDown size={12} /> {t('bk_book_downloadPdf')}
       </a>
       <button
         type="button"
@@ -209,7 +210,7 @@ export default function BrandBookPage() {
         )}
       >
         {togglingPublish ? <Loader2 size={12} className="animate-spin" /> : book.is_published ? <Lock size={12} /> : <Globe size={12} />}
-        {book.is_published ? 'Unpublish' : 'Publish'}
+        {book.is_published ? t('bk_book_unpublish') : t('bk_book_publish')}
       </button>
       {publicUrl && (
         <>
@@ -219,7 +220,7 @@ export default function BrandBookPage() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted"
           >
-            <ExternalLink size={12} /> Open
+            <ExternalLink size={12} /> {t('bk_book_open')}
           </a>
           <button
             type="button"
@@ -227,7 +228,7 @@ export default function BrandBookPage() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted"
           >
             {copied ? <Check size={12} className="text-emerald-600" /> : <Link2 size={12} />}
-            {copied ? 'Copied' : 'Copy link'}
+            {copied ? t('bk_book_copied') : t('bk_book_copyLink')}
           </button>
         </>
       )}
@@ -252,6 +253,7 @@ export default function BrandBookPage() {
 }
 
 function PublishedBadge({ published }: { published: boolean }) {
+  const { t } = useLanguage()
   return (
     <span
       className={cn(
@@ -260,7 +262,7 @@ function PublishedBadge({ published }: { published: boolean }) {
       )}
     >
       {published ? <Globe size={10} /> : <Lock size={10} />}
-      {published ? 'Published' : 'Private'}
+      {published ? t('bk_book_published') : t('bk_book_private')}
     </span>
   )
 }

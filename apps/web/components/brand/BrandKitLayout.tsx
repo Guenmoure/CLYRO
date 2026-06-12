@@ -1,6 +1,7 @@
 'use client'
 
 import { BrandSidebar } from './BrandSidebar'
+import { useLanguage } from '@/lib/i18n'
 
 interface BrandKitLayoutProps {
   kitId: string
@@ -19,14 +20,15 @@ interface BrandKitLayoutProps {
  * Le contenu défile, le sidebar et le header restent fixes.
  */
 export function BrandKitLayout({ kitId, kitName, saveStatus, tabs, children }: BrandKitLayoutProps) {
+  const { t } = useLanguage()
   return (
     <div className="flex h-full min-h-screen bg-background">
       <BrandSidebar kitId={kitId} />
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="shrink-0 border-b border-border px-6 py-4 flex items-center justify-between gap-4">
+        <header className="shrink-0 border-b border-border px-4 md:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
           <div className="min-w-0">
             <h1 className="font-display text-xl font-semibold text-foreground truncate">
-              {kitName ?? 'Brand Kit'}
+              {kitName ?? t('ed_brand_kit')}
             </h1>
             {tabs && <div className="mt-2">{tabs}</div>}
           </div>
@@ -36,7 +38,7 @@ export function BrandKitLayout({ kitId, kitName, saveStatus, tabs, children }: B
             </div>
           )}
         </header>
-        <main className="flex-1 overflow-y-auto px-6 py-6">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 md:px-6 py-6">{children}</main>
       </div>
     </div>
   )

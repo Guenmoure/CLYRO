@@ -15,6 +15,8 @@ import { Loader2, Plus, Link2, AlertCircle } from 'lucide-react'
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { ProductCard } from '@/components/brand/ProductCard'
 import { AddFromUrlModal } from '@/components/brand/AddFromUrlModal'
+import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import {
   getBrandKit,
   listBrandCatalog,
@@ -30,6 +32,7 @@ import { cn } from '@/lib/utils'
 export default function BrandCatalogPage() {
   const params = useParams<{ kitId: string }>()
   const kitId = params?.kitId ?? ''
+  const { t } = useLanguage()
 
   const [kit, setKit] = useState<BrandKit | null>(null)
   const [items, setItems] = useState<BrandCatalogItem[]>([])
@@ -47,7 +50,7 @@ export default function BrandCatalogPage() {
         setKit(k.data)
         setItems(c.data)
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -58,6 +61,7 @@ export default function BrandCatalogPage() {
       await deleteBrandCatalogItem(itemId)
     } catch {
       setItems(previous)
+      toast.error(t('bk_deleteFailed'))
     }
   }
 
@@ -82,14 +86,14 @@ export default function BrandCatalogPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   const header = (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       <button
         type="button"
         onClick={() => setUrlModalOpen(true)}
         className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted transition-colors"
       >
         <Link2 size={14} />
-        Add from URL
+        {t('bk_cat_addFromUrl')}
       </button>
       <button
         type="button"
@@ -97,7 +101,7 @@ export default function BrandCatalogPage() {
         className="inline-flex items-center gap-1.5 rounded-lg bg-foreground text-background px-3 py-1.5 font-display text-xs font-medium"
       >
         <Plus size={14} />
-        Add from scratch
+        {t('bk_cat_addManual')}
       </button>
     </div>
   )
@@ -112,16 +116,16 @@ export default function BrandCatalogPage() {
       {error && !loading && (
         <div className="flex flex-col items-center gap-2 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error}</p>
+          <p className="font-body text-sm text-[--text-muted]">{error === 'error' ? t('bk_failedLoad') : error}</p>
         </div>
       )}
       {!loading && !error && (
         <>
           {items.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border p-12 text-center max-w-xl mx-auto">
-              <h3 className="font-display text-lg font-semibold text-foreground">No products yet</h3>
+              <h3 className="font-display text-lg font-semibold text-foreground">{t('bk_cat_emptyTitle')}</h3>
               <p className="font-body text-sm text-[--text-muted] mt-1">
-                Add your first product from an e-commerce URL or fill it in manually.
+                {t('bk_cat_emptyDesc')}
               </p>
             </div>
           ) : (
@@ -151,14 +155,14 @@ export default function BrandCatalogPage() {
           return res.data
         }}
         onConfirm={handleScrapeAndConfirm}
-        title="Add product from URL"
+        title={t('bk_cat_urlModalTitle')}
         placeholder="https://shop.example.com/products/..."
         renderPreview={(draft, setDraft) => (
           <div className="space-y-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={draft.image_url} alt={draft.name} className="w-full max-h-56 object-contain rounded-xl border border-border bg-muted" />
             <div className="space-y-2">
-              <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">Name</label>
+              <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_name')}</label>
               <input
                 type="text"
                 value={draft.name}
@@ -168,7 +172,7 @@ export default function BrandCatalogPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">Description</label>
+              <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_description')}</label>
               <textarea
                 value={draft.description ?? ''}
                 onChange={(e) => setDraft({ ...draft, description: e.target.value })}
@@ -201,6 +205,7 @@ function ManualCreateModal({
   onClose: () => void
   onCreate: (input: { name: string; image_url: string; description?: string; category?: string }) => Promise<void>
 }) {
+  const { t } = useLanguage()
   const [name, setName] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [description, setDescription] = useState('')
@@ -212,28 +217,28 @@ function ManualCreateModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-xl">
         <div className="border-b border-border px-5 py-3 flex items-center justify-between">
-          <h3 className="font-display text-base font-semibold text-foreground">Add product manually</h3>
-          <button type="button" onClick={onClose} className="text-[--text-muted] hover:text-foreground font-mono text-xs">close</button>
+          <h3 className="font-display text-base font-semibold text-foreground">{t('bk_cat_manualTitle')}</h3>
+          <button type="button" onClick={onClose} className="text-[--text-muted] hover:text-foreground font-mono text-xs">{t('close')}</button>
         </div>
         <div className="p-5 space-y-3">
-          <Field label="Name *">
+          <Field label={t('bk_cat_nameRequired')}>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} maxLength={120}
               className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60" />
           </Field>
-          <Field label="Image URL *">
+          <Field label={t('bk_cat_imageUrlRequired')}>
             <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..."
               className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60" />
           </Field>
-          <Field label="Description">
+          <Field label={t('bk_description')}>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={500}
               className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none" />
           </Field>
-          <Field label="Category">
+          <Field label={t('bk_cat_category')}>
             <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} maxLength={80}
               className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60" />
           </Field>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="font-mono text-xs text-[--text-muted] px-3 py-1.5">Cancel</button>
+            <button type="button" onClick={onClose} className="font-mono text-xs text-[--text-muted] px-3 py-1.5">{t('cancel')}</button>
             <button
               type="button"
               disabled={!valid || submitting}
@@ -247,7 +252,7 @@ function ManualCreateModal({
                     category: category.trim() || undefined,
                   })
                 } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed')
+                  toast.error(err instanceof Error ? err.message : t('bk_cat_addFailed'))
                 } finally {
                   setSubmitting(false)
                 }
@@ -258,7 +263,7 @@ function ManualCreateModal({
               )}
             >
               {submitting && <Loader2 size={12} className="animate-spin" />}
-              Add product
+              {t('bk_cat_addProduct')}
             </button>
           </div>
         </div>

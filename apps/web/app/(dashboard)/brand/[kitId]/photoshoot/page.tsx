@@ -16,12 +16,14 @@ import Link from 'next/link'
 import { Camera, Wand2, Loader2, AlertCircle, CheckCircle2, Sparkles, type LucideIcon } from 'lucide-react'
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { getBrandKit, listBrandPhotoshoots, type BrandPhotoshoot } from '@/lib/api'
 import type { BrandKit } from '@clyro/shared'
 
 export default function BrandPhotoshootLandingPage() {
   const params = useParams<{ kitId: string }>()
   const kitId = params?.kitId ?? ''
+  const { t } = useLanguage()
 
   const [kit, setKit] = useState<BrandKit | null>(null)
   const [photoshoots, setPhotoshoots] = useState<BrandPhotoshoot[]>([])
@@ -34,7 +36,7 @@ export default function BrandPhotoshootLandingPage() {
     setError(null)
     Promise.all([getBrandKit(kitId), listBrandPhotoshoots(kitId)])
       .then(([k, p]) => { setKit(k.data); setPhotoshoots(p.data) })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -52,7 +54,7 @@ export default function BrandPhotoshootLandingPage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-2 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error}</p>
+          <p className="font-body text-sm text-[--text-muted]">{error === 'error' ? t('bk_failedLoad') : error}</p>
         </div>
       </BrandKitLayout>
     )
@@ -62,10 +64,10 @@ export default function BrandPhotoshootLandingPage() {
     <BrandKitLayout kitId={kitId} kitName={kit?.name}>
       <div className="max-w-5xl mx-auto space-y-10">
         <section>
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">Photoshoot</p>
-          <h2 className="font-display text-2xl font-semibold text-foreground mt-1">Make your product look its best</h2>
+          <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_ps_kicker')}</p>
+          <h2 className="font-display text-2xl font-semibold text-foreground mt-1">{t('bk_ps_title')}</h2>
           <p className="font-body text-sm text-[--text-muted] mt-1">
-            Pick a path: a guided studio photoshoot from a product photo, or a free-form prompt to generate or edit a visual.
+            {t('bk_ps_sub')}
           </p>
         </section>
 
@@ -73,24 +75,24 @@ export default function BrandPhotoshootLandingPage() {
           <ModeCard
             href={`/brand/${kitId}/photoshoot/templates`}
             Icon={Camera}
-            title="Create a product photoshoot"
-            description="Upload a product image and pick a template — studio, marble luxe, food editorial, urban lifestyle…"
-            cta="Start a session"
+            title={t('bk_ps_card1Title')}
+            description={t('bk_ps_card1Desc')}
+            cta={t('bk_ps_card1Cta')}
           />
           <ModeCard
             href={`/brand/${kitId}/photoshoot/generate`}
             Icon={Wand2}
-            title="Generate or edit an image"
-            description="Describe what you want, optionally attach a reference image. The brand palette is applied automatically."
-            cta="Open generator"
+            title={t('bk_ps_card2Title')}
+            description={t('bk_ps_card2Desc')}
+            cta={t('bk_ps_card2Cta')}
           />
         </section>
 
         <section>
-          <h3 className="font-display text-sm font-semibold text-foreground mb-3">Recent photoshoots</h3>
+          <h3 className="font-display text-sm font-semibold text-foreground mb-3">{t('bk_ps_recent')}</h3>
           {photoshoots.length === 0 ? (
             <p className="font-body text-xs text-[--text-muted]">
-              You haven't run a photoshoot yet — start with a product template above.
+              {t('bk_ps_empty')}
             </p>
           ) : (
             <ul className="space-y-2">
@@ -135,11 +137,12 @@ function ModeCard({
 }
 
 function PhotoshootRow({ shoot, kitId }: { shoot: BrandPhotoshoot; kitId: string }) {
+  const { t } = useLanguage()
   const meta = {
-    pending:    { label: 'Pending',    cls: 'text-[--text-muted] bg-muted',     Icon: Loader2 },
-    generating: { label: 'Generating', cls: 'text-blue-700 bg-blue-100',         Icon: Loader2 },
-    done:       { label: 'Ready',      cls: 'text-emerald-700 bg-emerald-100',   Icon: CheckCircle2 },
-    error:      { label: 'Error',      cls: 'text-error bg-error/10',            Icon: AlertCircle },
+    pending:    { label: t('bk_statusPending'),    cls: 'text-[--text-muted] bg-muted',     Icon: Loader2 },
+    generating: { label: t('bk_statusGenerating'), cls: 'text-blue-700 bg-blue-100',         Icon: Loader2 },
+    done:       { label: t('bk_statusReady'),      cls: 'text-emerald-700 bg-emerald-100',   Icon: CheckCircle2 },
+    error:      { label: t('bk_statusError'),      cls: 'text-error bg-error/10',            Icon: AlertCircle },
   }[shoot.status]
   const Icon = meta.Icon
   return (
@@ -160,7 +163,7 @@ function PhotoshootRow({ shoot, kitId }: { shoot: BrandPhotoshoot; kitId: string
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider', meta.cls)}>
               <Icon size={10} className={shoot.status === 'generating' || shoot.status === 'pending' ? 'animate-spin' : undefined} />
               {meta.label}
@@ -171,7 +174,7 @@ function PhotoshootRow({ shoot, kitId }: { shoot: BrandPhotoshoot; kitId: string
             )}
           </div>
           <p className="font-mono text-[10px] text-[--text-muted] mt-0.5">
-            {shoot.output_urls.length}/4 variations · {new Date(shoot.created_at).toLocaleString()}
+            {t('bk_ps_variationsMeta').replace('{count}', String(shoot.output_urls.length))} · {new Date(shoot.created_at).toLocaleString()}
           </p>
         </div>
       </Link>

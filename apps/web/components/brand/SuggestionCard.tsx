@@ -1,6 +1,7 @@
 'use client'
 
 import { Sparkles } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 
 interface SuggestionCardProps {
   title: string
@@ -14,6 +15,7 @@ interface SuggestionCardProps {
  * description, et un clic préremplit la prompt box.
  */
 export function SuggestionCard({ title, description, onUse }: SuggestionCardProps) {
+  const { t } = useLanguage()
   return (
     <button
       type="button"
@@ -22,12 +24,12 @@ export function SuggestionCard({ title, description, onUse }: SuggestionCardProp
     >
       <div className="flex items-center gap-2 text-[--text-muted] group-hover:text-foreground transition-colors">
         <Sparkles size={12} />
-        <span className="font-mono text-[10px] uppercase tracking-wider">Suggestion</span>
+        <span className="font-mono text-[10px] uppercase tracking-wider">{t('bk_sg_label')}</span>
       </div>
       <h4 className="font-display text-sm font-semibold text-foreground line-clamp-2">{title}</h4>
       <p className="font-body text-xs text-[--text-muted] line-clamp-3 flex-1">{description}</p>
       <span className="font-mono text-[10px] text-[--text-muted] group-hover:text-foreground transition-colors mt-1">
-        Use this prompt →
+        {t('bk_sg_use')} →
       </span>
     </button>
   )

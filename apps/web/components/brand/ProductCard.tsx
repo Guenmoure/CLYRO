@@ -2,6 +2,7 @@
 
 import { Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 export interface ProductCardProps {
   id?: string
@@ -18,6 +19,7 @@ export interface ProductCardProps {
  * Bouton trash en hover si onDelete fourni.
  */
 export function ProductCard({ name, imageUrl, description, category, onDelete, className }: ProductCardProps) {
+  const { t } = useLanguage()
   return (
     <div className={cn('group relative overflow-hidden rounded-2xl border border-border bg-card hover:border-foreground/30 transition-colors', className)}>
       <div className="aspect-square bg-muted overflow-hidden">
@@ -37,7 +39,7 @@ export function ProductCard({ name, imageUrl, description, category, onDelete, c
         <button
           type="button"
           onClick={onDelete}
-          aria-label="Delete product"
+          aria-label={t('bk_deleteProduct')}
           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-background/80 backdrop-blur p-1.5 text-[--text-muted] hover:text-error"
         >
           <Trash2 size={14} />

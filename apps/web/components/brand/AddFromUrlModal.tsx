@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 interface AddFromUrlModalProps<TDraft> {
   open: boolean
@@ -29,9 +30,10 @@ export function AddFromUrlModal<TDraft>({
   onScrape,
   onConfirm,
   renderPreview,
-  title = 'Add from URL',
+  title,
   placeholder = 'https://…',
 }: AddFromUrlModalProps<TDraft>) {
+  const { t } = useLanguage()
   const [url, setUrl] = useState('')
   const [draft, setDraft] = useState<TDraft | null>(null)
   const [phase, setPhase] = useState<'idle' | 'scraping' | 'confirming' | 'error'>('idle')
@@ -48,7 +50,7 @@ export function AddFromUrlModal<TDraft>({
       setDraft(result)
       setPhase('idle')
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Scrape failed')
+      setErrorMsg(err instanceof Error ? err.message : t('bk_url_scrapeFailed'))
       setPhase('error')
     }
   }
@@ -61,7 +63,7 @@ export function AddFromUrlModal<TDraft>({
       reset()
       onClose()
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Failed to save')
+      setErrorMsg(err instanceof Error ? err.message : t('bk_saveFailed'))
       setPhase('error')
     }
   }
@@ -82,8 +84,8 @@ export function AddFromUrlModal<TDraft>({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
       <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h3 className="font-display text-base font-semibold text-foreground">{title}</h3>
-          <button type="button" onClick={closeAndReset} aria-label="Close" className="text-[--text-muted] hover:text-foreground">
+          <h3 className="font-display text-base font-semibold text-foreground">{title ?? t('bk_cat_addFromUrl')}</h3>
+          <button type="button" onClick={closeAndReset} aria-label={t('close')} className="text-[--text-muted] hover:text-foreground">
             <X size={18} />
           </button>
         </div>
@@ -113,7 +115,7 @@ export function AddFromUrlModal<TDraft>({
               )}
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={closeAndReset} className="font-mono text-xs text-[--text-muted] hover:text-foreground px-3 py-1.5">
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="button"
@@ -125,7 +127,7 @@ export function AddFromUrlModal<TDraft>({
                   )}
                 >
                   {phase === 'scraping' && <Loader2 size={12} className="animate-spin" />}
-                  Fetch
+                  {t('bk_url_fetch')}
                 </button>
               </div>
             </>
@@ -143,11 +145,11 @@ export function AddFromUrlModal<TDraft>({
                   onClick={() => { setDraft(null); setUrl('') }}
                   className="font-mono text-xs text-[--text-muted] hover:text-foreground px-3 py-1.5"
                 >
-                  ← Different URL
+                  ← {t('bk_url_differentUrl')}
                 </button>
                 <div className="flex gap-2">
                   <button type="button" onClick={closeAndReset} className="font-mono text-xs text-[--text-muted] hover:text-foreground px-3 py-1.5">
-                    Cancel
+                    {t('cancel')}
                   </button>
                   <button
                     type="button"
@@ -159,7 +161,7 @@ export function AddFromUrlModal<TDraft>({
                     )}
                   >
                     {phase === 'confirming' && <Loader2 size={12} className="animate-spin" />}
-                    Add to catalog
+                    {t('bk_url_addToCatalog')}
                   </button>
                 </div>
               </div>

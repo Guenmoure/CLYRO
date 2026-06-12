@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Plus, Palette, Trash2, Loader2, Upload, Wand2, Download, X, Sparkles,
   Package, Megaphone, Camera, Play, MessageCircle, Image as ImageIcon,
@@ -21,6 +21,7 @@ import type {
 } from '@/lib/api'
 import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
+import { AlertCircle } from 'lucide-react'
 import type { BrandKit, CreateBrandKitPayload } from '@clyro/shared'
 import { BrandStudio } from '@/components/branding/brand-studio'
 
@@ -315,14 +316,22 @@ function KitPanel({ kit, onUpdate, onDelete }: {
   const [editing,  setEditing]  = useState(false)
   const [assets,   setAssets]   = useState<BrandAsset[]>([])
   const [loadingAssets, setLoadingAssets] = useState(true)
+  const [assetsError,   setAssetsError]   = useState(false)
   const { t } = useLanguage()
 
-  useState(() => {
+  const loadAssets = useCallback(() => {
+    setLoadingAssets(true)
+    setAssetsError(false)
     getBrandAssets(kit.id)
       .then(({ data }) => setAssets(data))
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[brand-hub] failed to load brand assets:', err)
+        setAssetsError(true)
+      })
       .finally(() => setLoadingAssets(false))
-  })
+  }, [kit.id])
+
+  useEffect(() => { loadAssets() }, [loadAssets])
 
   function handleGenerated(asset: BrandAsset) {
     setAssets((prev) => [asset, ...prev])
@@ -406,6 +415,19 @@ function KitPanel({ kit, onUpdate, onDelete }: {
           <div className="grid grid-cols-3 gap-3">
             {[1,2,3].map((i) => <div key={i} className="aspect-square glass rounded-xl animate-pulse" />)}
           </div>
+        ) : assetsError ? (
+          <div className="glass rounded-2xl py-10 px-6 text-center">
+            <AlertCircle size={24} className="mx-auto mb-3 text-amber-500" />
+            <p className="font-body text-sm text-foreground">{t('err_loadTitle')}</p>
+            <p className="font-body text-xs text-[--text-muted] mt-1">{t('err_loadDesc')}</p>
+            <button
+              type="button"
+              onClick={loadAssets}
+              className="mt-4 inline-flex items-center gap-1.5 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2 text-xs font-body text-foreground transition-colors"
+            >
+              {t('retry')}
+            </button>
+          </div>
         ) : (
           <AssetGallery assets={assets} onDelete={handleDeleteAsset} />
         )}
@@ -419,8 +441,10 @@ function KitPanel({ kit, onUpdate, onDelete }: {
 // ═��════════════════════════════════════════════════════════════════════════════════
 
 function CatalogPanel({ kit }: { kit: BrandKit }) {
+  const { t } = useLanguage()
   const [items, setItems]       = useState<CatalogItem[]>([])
   const [loading, setLoading]   = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [showAdd, setShowAdd]   = useState(false)
   const [name, setName]         = useState('')
   const [desc, setDesc]         = useState('')
@@ -430,15 +454,22 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
   const [saving, setSaving]     = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
+  const loadItems = useCallback(() => {
+    setLoading(true)
+    setLoadError(false)
     getCatalogItems(kit.id)
       .then(({ data }) => setItems(data))
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[brand-hub] failed to load catalog items:', err)
+        setLoadError(true)
+      })
       .finally(() => setLoading(false))
   }, [kit.id])
 
+  useEffect(() => { loadItems() }, [loadItems])
+
   async function handleAdd() {
-    if (!name.trim() || !imageFile) { toast.error('Name and image required'); return }
+    if (!name.trim() || !imageFile) { toast.error(t('bh_nameImageRequired')); return }
     setSaving(true)
     try {
       const supabase = createBrowserClient()
@@ -455,9 +486,9 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
       setItems((prev) => [data, ...prev])
       setShowAdd(false)
       setName(''); setDesc(''); setCategory(''); setImageFile(null); setImagePreview('')
-      toast.success('Product added')
+      toast.success(t('bh_productAdded'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add product')
+      toast.error(err instanceof Error ? err.message : t('bk_cat_addFailed'))
     } finally { setSaving(false) }
   }
 
@@ -465,37 +496,37 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
     try {
       await deleteCatalogItem(id)
       setItems((prev) => prev.filter((i) => i.id !== id))
-    } catch { toast.error('Failed to delete') }
+    } catch { toast.error(t('bk_deleteFailed')) }
   }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto px-6 py-6 gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display font-bold text-foreground text-lg">Product Catalog</h2>
-          <p className="font-body text-sm text-[--text-secondary]">Add your products to generate on-brand campaigns</p>
+          <h2 className="font-display font-bold text-foreground text-lg">{t('bh_catalogTitle')}</h2>
+          <p className="font-body text-sm text-[--text-secondary]">{t('bh_catalogSub')}</p>
         </div>
         <button type="button" onClick={() => setShowAdd(true)}
           className="flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-opacity">
-          <Plus size={14} /> Add Product
+          <Plus size={14} /> {t('bh_addProduct')}
         </button>
       </div>
 
       {showAdd && (
         <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
-          <h3 className="font-display font-semibold text-foreground text-sm">New Product</h3>
+          <h3 className="font-display font-semibold text-foreground text-sm">{t('bh_newProduct')}</h3>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-            placeholder="Product name" className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
+            placeholder={t('bh_productNamePh')} className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)}
-            placeholder="Short description (optional)" rows={2}
+            placeholder={t('bh_productDescPh')} rows={2}
             className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none resize-none" />
           <input type="text" value={category} onChange={(e) => setCategory(e.target.value)}
-            placeholder="Category (optional)" className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
+            placeholder={t('bh_productCatPh')} className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
           <div className="flex items-center gap-3">
             {imagePreview && <img src={imagePreview} alt="Preview" className="w-14 h-14 object-cover rounded-xl glass" />}
             <button type="button" onClick={() => fileRef.current?.click()}
               className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-3 py-2 text-xs font-body text-[--text-secondary]">
-              <Upload size={12} /> {imagePreview ? 'Change photo' : 'Upload photo'}
+              <Upload size={12} /> {imagePreview ? t('bh_changePhoto') : t('bh_uploadPhoto')}
             </button>
             <input ref={fileRef} type="file" accept="image/*" title="Upload image" className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) { setImageFile(f); setImagePreview(URL.createObjectURL(f)) } }} />
@@ -503,9 +534,9 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
           <div className="flex gap-3">
             <button type="button" onClick={handleAdd} disabled={saving || !name.trim() || !imageFile}
               className="bg-grad-primary text-white font-display font-semibold px-5 py-2 rounded-xl text-sm hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5">
-              {saving && <Loader2 size={12} className="animate-spin" />} Save
+              {saving && <Loader2 size={12} className="animate-spin" />} {t('save')}
             </button>
-            <button type="button" onClick={() => setShowAdd(false)} className="text-xs text-[--text-muted] hover:text-foreground">Cancel</button>
+            <button type="button" onClick={() => setShowAdd(false)} className="text-xs text-[--text-muted] hover:text-foreground">{t('cancel')}</button>
           </div>
         </div>
       )}
@@ -514,10 +545,23 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {[1,2,3].map((i) => <div key={i} className="aspect-square glass rounded-xl animate-pulse" />)}
         </div>
+      ) : loadError ? (
+        <div className="glass rounded-2xl py-16 text-center">
+          <AlertCircle size={28} className="mx-auto mb-3 text-amber-500" />
+          <p className="font-body text-sm text-foreground">{t('err_loadTitle')}</p>
+          <p className="font-body text-xs text-[--text-muted] mt-1">{t('err_loadDesc')}</p>
+          <button
+            type="button"
+            onClick={loadItems}
+            className="mt-4 inline-flex items-center gap-1.5 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2 text-xs font-body text-foreground transition-colors"
+          >
+            {t('retry')}
+          </button>
+        </div>
       ) : items.length === 0 ? (
         <div className="glass rounded-2xl py-16 text-center">
           <Package size={32} className="mx-auto mb-3 text-[--text-muted]" />
-          <p className="font-body text-sm text-[--text-muted]">No products yet. Add your first product to start generating campaigns.</p>
+          <p className="font-body text-sm text-[--text-muted]">{t('bh_catalogEmpty')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -527,7 +571,7 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button type="button" onClick={() => handleDelete(item.id)}
                   className="flex items-center gap-1.5 bg-red-500/30 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs hover:bg-red-500/50">
-                  <Trash2 size={11} /> Remove
+                  <Trash2 size={11} /> {t('bh_remove')}
                 </button>
               </div>
               <div className="p-3">
@@ -547,6 +591,7 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
 // ═════════════════════════���════════════════════════════════════════════════════════
 
 function CampaignPanel({ kit }: { kit: BrandKit }) {
+  const { t } = useLanguage()
   const [goal, setGoal]           = useState('')
   const [platforms, setPlatforms] = useState<string[]>(['instagram', 'tiktok'])
   const [loading, setLoading]     = useState(false)
@@ -559,7 +604,7 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
   }
 
   async function handleIdeate() {
-    if (!goal.trim() || platforms.length === 0) { toast.error('Enter a goal and select platforms'); return }
+    if (!goal.trim() || platforms.length === 0) { toast.error(t('bh_goalPlatformsRequired')); return }
     setLoading(true)
     setConcepts([])
     setAssets([])
@@ -570,9 +615,9 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
         platforms,
       })
       setConcepts(campaigns)
-      toast.success(`${campaigns.length} campaign ideas generated`)
+      toast.success(t('bh_ideasGenerated').replace('{count}', String(campaigns.length)))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to generate ideas')
+      toast.error(err instanceof Error ? err.message : t('bh_ideasFailed'))
     } finally { setLoading(false) }
   }
 
@@ -584,27 +629,27 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
         campaign: { name: campaign.name, posts: campaign.suggested_posts },
       })
       setAssets(generated)
-      toast.success(`${generated.length} assets generated`)
+      toast.success(t('bh_assetsGenerated').replace('{count}', String(generated.length)))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Asset generation failed')
+      toast.error(err instanceof Error ? err.message : t('bh_assetsFailed'))
     } finally { setGenerating(false) }
   }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto px-6 py-6 gap-6">
       <div>
-        <h2 className="font-display font-bold text-foreground text-lg">Campaign Generator</h2>
-        <p className="font-body text-sm text-[--text-secondary]">AI creates campaign ideas and generates ready-to-post assets</p>
+        <h2 className="font-display font-bold text-foreground text-lg">{t('bh_campaignTitle')}</h2>
+        <p className="font-body text-sm text-[--text-secondary]">{t('bh_campaignSub')}</p>
       </div>
 
       {/* Campaign brief */}
       <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
         <textarea value={goal} onChange={(e) => setGoal(e.target.value)}
-          placeholder="Describe your campaign goal (e.g. 'Summer sale - 30% off all products', 'New product launch for our coffee brand')"
+          placeholder={t('bh_goalPh')}
           rows={3} className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none resize-none" />
 
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">Platforms</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">{t('bh_platforms')}</p>
           <div className="flex flex-wrap gap-2">
             {CAMPAIGN_PLATFORMS.map((p) => (
               <button key={p} type="button" onClick={() => togglePlatform(p)}
@@ -620,14 +665,14 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
         <button type="button" onClick={handleIdeate} disabled={loading || !goal.trim()}
           className="flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-50">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-          {loading ? 'Generating ideas...' : 'Generate Campaign Ideas'}
+          {loading ? t('bh_generatingIdeas') : t('bh_generateIdeas')}
         </button>
       </div>
 
       {/* Campaign concepts */}
       {concepts.length > 0 && (
         <div className="space-y-4">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">Campaign Concepts</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_concepts')}</p>
           {concepts.map((c, i) => (
             <div key={i} className="glass glass-heavy rounded-2xl p-5 space-y-3">
               <div className="flex items-start justify-between">
@@ -638,7 +683,7 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
                 <button type="button" onClick={() => handleGenerateAssets(c)} disabled={generating}
                   className="flex items-center gap-1.5 bg-grad-primary text-white px-3 py-1.5 rounded-xl text-xs font-display font-semibold hover:opacity-90 disabled:opacity-50 shrink-0">
                   {generating ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
-                  Generate Assets
+                  {t('bh_generateAssets')}
                 </button>
               </div>
               <p className="font-body text-sm text-[--text-secondary]">{c.description}</p>
@@ -665,7 +710,7 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
       {/* Generated assets */}
       {assets.length > 0 && (
         <div className="space-y-3">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">Generated Assets</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_generatedAssetsLabel')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {assets.map((a, i) => (
               <div key={i} className="glass rounded-xl overflow-hidden">
@@ -688,6 +733,7 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
 // ══════��══════════════════════════════���════════════════════════════════════════════
 
 function PhotoshootPanel({ kit }: { kit: BrandKit }) {
+  const { t } = useLanguage()
   const [imageUrl, setImageUrl]     = useState('')
   const [imageFile, setImageFile]   = useState<File | null>(null)
   const [preview, setPreview]       = useState('')
@@ -698,7 +744,7 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleGenerate() {
-    if (!imageUrl && !imageFile) { toast.error('Upload or provide an image URL'); return }
+    if (!imageUrl && !imageFile) { toast.error(t('bh_imageOrUrlRequired')); return }
     setLoading(true)
     try {
       let sourceUrl = imageUrl
@@ -716,17 +762,17 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
         custom_prompt: customPrompt.trim() || undefined,
       })
       setResults((prev) => [{ url: data.image_url, template: data.template }, ...prev])
-      toast.success('Photoshoot generated')
+      toast.success(t('bh_photoshootDone'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Photoshoot failed')
+      toast.error(err instanceof Error ? err.message : t('bh_photoshootFailed'))
     } finally { setLoading(false) }
   }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto px-6 py-6 gap-6">
       <div>
-        <h2 className="font-display font-bold text-foreground text-lg">Photoshoot</h2>
-        <p className="font-body text-sm text-[--text-secondary]">Transform any product photo into professional studio shots</p>
+        <h2 className="font-display font-bold text-foreground text-lg">{t('bh_photoshootTitle')}</h2>
+        <p className="font-body text-sm text-[--text-secondary]">{t('bh_photoshootSub')}</p>
       </div>
 
       <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
@@ -736,7 +782,7 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
           <div className="flex-1 space-y-2">
             <button type="button" onClick={() => fileRef.current?.click()}
               className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2.5 text-sm font-body text-[--text-secondary] w-full">
-              <Upload size={14} /> {preview ? 'Change product photo' : 'Upload product photo'}
+              <Upload size={14} /> {preview ? t('bh_changeProductPhoto') : t('bh_uploadProductPhoto')}
             </button>
             <input ref={fileRef} type="file" accept="image/*" title="Upload image" className="hidden"
               onChange={(e) => {
@@ -748,7 +794,7 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
 
         {/* Template selector */}
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">Template</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">{t('bh_templateLabel')}</p>
           <div className="grid grid-cols-2 gap-2">
             {PHOTOSHOOT_TEMPLATES.map((t) => (
               <button key={t.id} type="button" onClick={() => setTemplate(t.id)}
@@ -764,20 +810,20 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
 
         {/* Custom prompt */}
         <input type="text" value={customPrompt} onChange={(e) => setCustomPrompt(e.target.value)}
-          placeholder="Custom direction (optional, e.g. 'on marble surface with plants')"
+          placeholder={t('bh_customDirectionPh')}
           className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
 
         <button type="button" onClick={handleGenerate} disabled={loading || (!imageFile && !imageUrl)}
           className="flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-50 w-full justify-center">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-          {loading ? 'Generating...' : 'Generate Photoshoot'}
+          {loading ? t('bh_generatingShort') : t('bh_generatePhotoshoot')}
         </button>
       </div>
 
       {/* Results */}
       {results.length > 0 && (
         <div className="space-y-3">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">Results</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_results')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {results.map((r, i) => (
               <div key={i} className="group relative glass rounded-xl overflow-hidden">
@@ -785,7 +831,7 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <a href={r.url} download={`photoshoot-${r.template}.png`} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs hover:bg-white/30">
-                    <Download size={11} /> Download
+                    <Download size={11} /> {t('bh_download')}
                   </a>
                 </div>
                 <div className="p-2">
@@ -805,6 +851,7 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
 // ══════════════════════���═══════════════════════════════════════════════════════════
 
 function AnimatePanel({ kit }: { kit: BrandKit }) {
+  const { t } = useLanguage()
   const [imageUrl, setImageUrl]     = useState('')
   const [imageFile, setImageFile]   = useState<File | null>(null)
   const [preview, setPreview]       = useState('')
@@ -815,7 +862,7 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleAnimate() {
-    if (!imageUrl && !imageFile) { toast.error('Upload an image first'); return }
+    if (!imageUrl && !imageFile) { toast.error(t('bh_uploadFirst')); return }
     setLoading(true)
     try {
       let sourceUrl = imageUrl
@@ -833,17 +880,17 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
         duration,
       })
       setResults((prev) => [{ url: data.video_url, type: data.motion_type }, ...prev])
-      toast.success('Animation generated')
+      toast.success(t('bh_animationDone'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Animation failed')
+      toast.error(err instanceof Error ? err.message : t('bk_sh_animationFailed'))
     } finally { setLoading(false) }
   }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto px-6 py-6 gap-6">
       <div>
-        <h2 className="font-display font-bold text-foreground text-lg">Animate</h2>
-        <p className="font-body text-sm text-[--text-secondary]">Turn static assets into eye-catching video animations</p>
+        <h2 className="font-display font-bold text-foreground text-lg">{t('bh_animateTitle')}</h2>
+        <p className="font-body text-sm text-[--text-secondary]">{t('bh_animateSub')}</p>
       </div>
 
       <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
@@ -852,9 +899,9 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
           {preview && <img src={preview} alt="Source" className="w-20 h-20 object-cover rounded-xl glass" />}
           <button type="button" onClick={() => fileRef.current?.click()}
             className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2.5 text-sm font-body text-[--text-secondary]">
-            <Upload size={14} /> {preview ? 'Change image' : 'Upload image'}
+            <Upload size={14} /> {preview ? t('bh_changeImage') : t('bh_uploadImage')}
           </button>
-          <input ref={fileRef} type="file" accept="image/*" title="Upload image" className="hidden"
+          <input ref={fileRef} type="file" accept="image/*" title={t('bh_uploadImage')} className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0]
               if (f) { setImageFile(f); setPreview(URL.createObjectURL(f)); setImageUrl('') }
@@ -863,7 +910,7 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
 
         {/* Motion type */}
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">Motion Type</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">{t('bh_motionType')}</p>
           <div className="grid grid-cols-3 gap-2">
             {MOTION_TYPES.map((m) => (
               <button key={m.id} type="button" onClick={() => setMotion(m.id)}
@@ -878,7 +925,7 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
 
         {/* Duration */}
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">Duration</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">{t('bh_durationLabel')}</p>
           <div className="flex gap-2">
             {(['3', '5'] as const).map((d) => (
               <button key={d} type="button" onClick={() => setDuration(d)}
@@ -894,14 +941,14 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
         <button type="button" onClick={handleAnimate} disabled={loading || (!imageFile && !imageUrl)}
           className="flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-50 w-full justify-center">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-          {loading ? 'Animating...' : 'Animate'}
+          {loading ? t('bh_animating') : t('bk_animate')}
         </button>
       </div>
 
       {/* Results */}
       {results.length > 0 && (
         <div className="space-y-3">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">Animations</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_animations')}</p>
           <div className="grid grid-cols-2 gap-3">
             {results.map((r, i) => (
               <div key={i} className="glass rounded-xl overflow-hidden">
@@ -910,7 +957,7 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
                   <span className="font-mono text-[11px] uppercase text-[--text-muted]">{r.type}</span>
                   <a href={r.url} download={`animate-${r.type}.mp4`} target="_blank" rel="noopener noreferrer"
                     className="text-xs text-clyro-primary hover:underline flex items-center gap-1">
-                    <Download size={10} /> Download
+                    <Download size={10} /> {t('bh_download')}
                   </a>
                 </div>
               </div>
@@ -927,6 +974,7 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
 // ════════��════════════════���════════════════════════════════════════════════════════
 
 function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
+  const { t } = useLanguage()
   const [messages, setMessages] = useState<BrandAgentMessage[]>([])
   const [input, setInput]       = useState('')
   const [loading, setLoading]   = useState(false)
@@ -956,15 +1004,15 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
       setMessages([...updatedMessages, { role: 'assistant', content: reply }])
       if (sug) setSuggestions(sug)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Agent error')
+      toast.error(err instanceof Error ? err.message : t('bh_agentError'))
     } finally { setLoading(false) }
   }
 
   return (
     <div className="flex flex-col h-full">
       <div className="px-6 py-4 border-b border-border">
-        <h2 className="font-display font-bold text-foreground text-lg">Brand Agent</h2>
-        <p className="font-body text-sm text-[--text-secondary]">Chat with AI to build or refine your brand identity</p>
+        <h2 className="font-display font-bold text-foreground text-lg">{t('bh_agentTitle')}</h2>
+        <p className="font-body text-sm text-[--text-secondary]">{t('bh_agentSub')}</p>
       </div>
 
       {/* Messages */}
@@ -973,10 +1021,10 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
           <div className="text-center py-12">
             <MessageCircle size={32} className="mx-auto mb-3 text-[--text-muted]" />
             <p className="font-body text-sm text-[--text-muted]">
-              Hi! I&apos;m your brand strategist. Tell me about your business and I&apos;ll help you build a strong brand identity.
+              {t('bh_agentIntro')}
             </p>
             <div className="flex flex-wrap gap-2 justify-center mt-4">
-              {['Help me choose brand colors', 'Suggest a tagline', 'Define my tone of voice', 'Recommend fonts'].map((q) => (
+              {[t('bh_agentQ1'), t('bh_agentQ2'), t('bh_agentQ3'), t('bh_agentQ4')].map((q) => (
                 <button key={q} type="button" onClick={() => setInput(q)}
                   className="px-3 py-1.5 rounded-xl text-xs font-body bg-muted border border-border text-[--text-secondary] hover:bg-clyro-primary/10 hover:border-clyro-primary/30 transition-all">
                   {q}
@@ -1011,7 +1059,7 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
         <div className="px-6 py-3 border-t border-border bg-clyro-primary/5">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle size={12} className="text-clyro-primary" />
-            <span className="font-mono text-[11px] uppercase tracking-widest text-clyro-primary">Brand Suggestions</span>
+            <span className="font-mono text-[11px] uppercase tracking-widest text-clyro-primary">{t('bh_agentSuggestions')}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {suggestions.primary_color && (
@@ -1038,9 +1086,9 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
         <div className="flex gap-2">
           <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-            placeholder="Ask about colors, fonts, positioning, tone..."
+            placeholder={t('bh_agentInputPh')}
             className="flex-1 glass rounded-xl px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
-          <button type="button" onClick={handleSend} disabled={loading || !input.trim()} title="Send message"
+          <button type="button" onClick={handleSend} disabled={loading || !input.trim()} title={t('bh_sendMessage')} aria-label={t('bh_sendMessage')}
             className="bg-grad-primary text-white rounded-xl px-4 py-2.5 hover:opacity-90 disabled:opacity-50 transition-opacity">
             <Send size={16} />
           </button>
@@ -1055,6 +1103,7 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
 // ════��═════════════════════════════════════════════════════════════════════════════
 
 function BackgroundPanel({ kit }: { kit: BrandKit }) {
+  const { t } = useLanguage()
   const [imageUrl, setImageUrl]       = useState('')
   const [imageFile, setImageFile]     = useState<File | null>(null)
   const [preview, setPreview]         = useState('')
@@ -1064,8 +1113,8 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleEdit() {
-    if (!bgPrompt.trim()) { toast.error('Describe the new background'); return }
-    if (!imageUrl && !imageFile) { toast.error('Upload an image first'); return }
+    if (!bgPrompt.trim()) { toast.error(t('bh_describeBg')); return }
+    if (!imageUrl && !imageFile) { toast.error(t('bh_uploadFirst')); return }
     setLoading(true)
     try {
       let sourceUrl = imageUrl
@@ -1082,17 +1131,17 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
         brand_kit_id: kit.id,
       })
       setResult(res)
-      toast.success('Background replaced')
+      toast.success(t('bh_bgReplaced'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Background edit failed')
+      toast.error(err instanceof Error ? err.message : t('bh_bgFailed'))
     } finally { setLoading(false) }
   }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto px-6 py-6 gap-6">
       <div>
-        <h2 className="font-display font-bold text-foreground text-lg">Background Editor</h2>
-        <p className="font-body text-sm text-[--text-secondary]">Change backgrounds with natural language — just describe it</p>
+        <h2 className="font-display font-bold text-foreground text-lg">{t('bh_bgTitle')}</h2>
+        <p className="font-body text-sm text-[--text-secondary]">{t('bh_bgSub')}</p>
       </div>
 
       <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
@@ -1100,7 +1149,7 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
           {preview && <img src={preview} alt="Source" className="w-20 h-20 object-cover rounded-xl glass" />}
           <button type="button" onClick={() => fileRef.current?.click()}
             className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2.5 text-sm font-body text-[--text-secondary]">
-            <Upload size={14} /> {preview ? 'Change image' : 'Upload image'}
+            <Upload size={14} /> {preview ? t('bh_changeImage') : t('bh_uploadImage')}
           </button>
           <input ref={fileRef} type="file" accept="image/*" title="Upload image" className="hidden"
             onChange={(e) => {
@@ -1110,7 +1159,7 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
         </div>
 
         <textarea value={bgPrompt} onChange={(e) => setBgPrompt(e.target.value)}
-          placeholder="Describe the new background (e.g. 'tropical beach at sunset', 'clean marble surface with plants', 'dark studio with neon lights')"
+          placeholder={t('bh_bgPromptPh')}
           rows={3} className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none resize-none" />
 
         <div className="flex flex-wrap gap-2">
@@ -1125,36 +1174,36 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
         <button type="button" onClick={handleEdit} disabled={loading || !bgPrompt.trim() || (!imageFile && !imageUrl)}
           className="flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-50 w-full justify-center">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />}
-          {loading ? 'Processing...' : 'Replace Background'}
+          {loading ? t('bh_processing') : t('bh_replaceBg')}
         </button>
       </div>
 
       {/* Result */}
       {result && (
         <div className="space-y-3">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">Result</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_resultLabel')}</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="glass rounded-xl overflow-hidden">
               <img src={result.foreground_url} alt="Foreground (transparent)" className="w-full aspect-square object-contain bg-[url('/checkerboard.svg')]" />
               <div className="p-2">
-                <span className="font-mono text-[11px] text-[--text-muted]">Foreground</span>
+                <span className="font-mono text-[11px] text-[--text-muted]">{t('bh_fgLabel')}</span>
               </div>
             </div>
             <div className="glass rounded-xl overflow-hidden">
               <img src={result.background_url} alt="New background" className="w-full aspect-square object-cover" />
               <div className="p-2">
-                <span className="font-mono text-[11px] text-[--text-muted]">New Background</span>
+                <span className="font-mono text-[11px] text-[--text-muted]">{t('bh_newBgLabel')}</span>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
             <a href={result.foreground_url} download="foreground.png" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted/80">
-              <Download size={11} /> Foreground
+              <Download size={11} /> {t('bh_fgLabel')}
             </a>
             <a href={result.background_url} download="background.png" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2 text-xs font-body text-[--text-secondary] hover:bg-muted/80">
-              <Download size={11} /> Background
+              <Download size={11} /> {t('bh_dlBackground')}
             </a>
           </div>
         </div>
@@ -1169,15 +1218,15 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
 
 type SidebarTab = 'kits' | 'studio' | 'catalog' | 'campaigns' | 'photoshoot' | 'animate' | 'agent' | 'background'
 
-const SIDEBAR_TABS: Array<{ id: SidebarTab; label: string; icon: typeof Palette }> = [
-  { id: 'kits',       label: 'Brand Kits',  icon: Palette },
-  { id: 'studio',     label: 'Studio',      icon: Sparkles },
-  { id: 'catalog',    label: 'Catalog',     icon: Package },
-  { id: 'campaigns',  label: 'Campaigns',   icon: Megaphone },
-  { id: 'photoshoot', label: 'Photoshoot',  icon: Camera },
-  { id: 'animate',    label: 'Animate',     icon: Play },
-  { id: 'background', label: 'Background',  icon: ImageIcon },
-  { id: 'agent',      label: 'Brand Agent', icon: MessageCircle },
+const SIDEBAR_TABS: Array<{ id: SidebarTab; labelKey: string; icon: typeof Palette }> = [
+  { id: 'kits',       labelKey: 'bh_tabKits',       icon: Palette },
+  { id: 'studio',     labelKey: 'bh_tabStudio',     icon: Sparkles },
+  { id: 'catalog',    labelKey: 'bh_tabCatalog',    icon: Package },
+  { id: 'campaigns',  labelKey: 'bh_tabCampaigns',  icon: Megaphone },
+  { id: 'photoshoot', labelKey: 'bh_tabPhotoshoot', icon: Camera },
+  { id: 'animate',    labelKey: 'bh_tabAnimate',    icon: Play },
+  { id: 'background', labelKey: 'bh_tabBackground', icon: ImageIcon },
+  { id: 'agent',      labelKey: 'bh_tabAgent',      icon: MessageCircle },
 ]
 
 export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
@@ -1243,7 +1292,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                     : 'text-[--text-secondary] hover:bg-muted hover:text-foreground'
                 )}
               >
-                <Icon size={13} /> {tab.label}
+                <Icon size={13} /> {t(tab.labelKey)}
               </button>
             )
           })}
@@ -1252,11 +1301,12 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
         {/* Active kit selector (shown when feature needs a kit) */}
         {needsKit && kits.length > 0 && (
           <div className="p-3 border-t border-border">
-            <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5">Active Kit</p>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5">{t('bh_activeKit')}</p>
             <select
               value={activeId ?? ''}
               onChange={(e) => setActiveId(e.target.value)}
-              title="Select active brand kit"
+              title={t('bh_selectActiveKit')}
+              aria-label={t('bh_selectActiveKit')}
               className="w-full glass rounded-xl px-2.5 py-2 text-xs font-body text-foreground focus:outline-none"
             >
               {kits.map((k) => (
@@ -1340,7 +1390,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                   </button>
                   <button type="button" onClick={() => setSidebarTab('agent')}
                     className="bg-muted hover:bg-muted/80 border border-border text-foreground font-display font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
-                    <MessageCircle size={15} /> Brand Agent
+                    <MessageCircle size={15} /> {t('bh_tabAgent')}
                   </button>
                 </div>
               </div>
@@ -1359,7 +1409,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                       {kit.name}
                     </button>
                   ))}
-                  <button type="button" onClick={() => setShowCreate(true)} title="New brand kit"
+                  <button type="button" onClick={() => setShowCreate(true)} title={t('bh_newKitTitle')} aria-label={t('bh_newKitTitle')}
                     className="px-2 py-1.5 rounded-lg text-[--text-muted] hover:text-foreground transition-colors">
                     <Plus size={12} />
                   </button>
@@ -1373,10 +1423,10 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
         {needsKit && !activeKit && (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
             <Palette size={32} className="text-[--text-muted]" />
-            <p className="font-body text-sm text-[--text-muted]">Create a brand kit first to use this feature</p>
+            <p className="font-body text-sm text-[--text-muted]">{t('bh_needKit')}</p>
             <button type="button" onClick={() => setSidebarTab('kits')}
               className="flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-4 py-2 rounded-xl text-sm hover:opacity-90">
-              <ArrowRight size={14} /> Go to Brand Kits
+              <ArrowRight size={14} /> {t('bh_goToKits')}
             </button>
           </div>
         )}

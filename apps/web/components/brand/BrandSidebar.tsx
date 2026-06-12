@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Dna, Package, ImageIcon, Megaphone, Camera, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 interface BrandSidebarProps {
   kitId: string
@@ -19,14 +20,15 @@ interface BrandSidebarProps {
  */
 export function BrandSidebar({ kitId }: BrandSidebarProps) {
   const pathname = usePathname() ?? ''
+  const { t } = useLanguage()
 
   const items = [
-    { label: 'Business DNA', href: `/brand/${kitId}/dna`,        Icon: Dna,        enabled: true  },
-    { label: 'Catalog',      href: `/brand/${kitId}/catalog`,    Icon: Package,    enabled: true  },
-    { label: 'Assets',       href: `/brand/${kitId}/assets`,     Icon: ImageIcon,  enabled: true  },
-    { label: 'Campaigns',    href: `/brand/${kitId}/campaigns`,  Icon: Megaphone,  enabled: true  },
-    { label: 'Photoshoot',   href: `/brand/${kitId}/photoshoot`, Icon: Camera,     enabled: true  },
-    { label: 'Brand Book',   href: `/brand/${kitId}/book`,       Icon: BookOpen,   enabled: true  },
+    { label: t('bk_navDna'),        href: `/brand/${kitId}/dna`,        Icon: Dna,        enabled: true  },
+    { label: t('bk_navCatalog'),    href: `/brand/${kitId}/catalog`,    Icon: Package,    enabled: true  },
+    { label: t('bk_navAssets'),     href: `/brand/${kitId}/assets`,     Icon: ImageIcon,  enabled: true  },
+    { label: t('bk_navCampaigns'),  href: `/brand/${kitId}/campaigns`,  Icon: Megaphone,  enabled: true  },
+    { label: t('bk_navPhotoshoot'), href: `/brand/${kitId}/photoshoot`, Icon: Camera,     enabled: true  },
+    { label: t('bk_navBook'),       href: `/brand/${kitId}/book`,       Icon: BookOpen,   enabled: true  },
   ]
 
   return (

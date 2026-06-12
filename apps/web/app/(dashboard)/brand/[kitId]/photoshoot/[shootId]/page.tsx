@@ -21,6 +21,9 @@ import {
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { cn } from '@/lib/utils'
 import { createBrowserClient } from '@/lib/supabase'
+import { toast } from '@/components/ui/toast'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useLanguage } from '@/lib/i18n'
 import {
   getBrandKit,
   getBrandPhotoshoot,
@@ -38,6 +41,7 @@ export default function BrandPhotoshootDetailPage() {
   const router = useRouter()
   const kitId = params?.kitId ?? ''
   const shootId = params?.shootId ?? ''
+  const { t } = useLanguage()
 
   const [kit, setKit] = useState<BrandKit | null>(null)
   const [shoot, setShoot] = useState<BrandPhotoshoot | null>(null)
@@ -46,6 +50,7 @@ export default function BrandPhotoshootDetailPage() {
   const [userId, setUserId] = useState('')
   const [animatingIndex, setAnimatingIndex] = useState<number | null>(null)
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Initial load ──────────────────────────────────────────────────────────
@@ -64,7 +69,7 @@ export default function BrandPhotoshootDetailPage() {
         setShoot(s.data)
         setUserId(u.data.user?.id ?? '')
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : null))
       .finally(() => setLoading(false))
   }, [shootId, kitId])
 
@@ -114,9 +119,9 @@ export default function BrandPhotoshootDetailPage() {
         size_bytes:   blob.size,
         tags:         ['photoshoot'],
       })
-      alert('Saved to Assets library')
+      toast.success(t('bk_savedToAssets'))
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Save failed')
+      toast.error(err instanceof Error ? err.message : t('bk_saveFailed'))
     } finally {
       setSavingIndex(null)
     }
@@ -129,18 +134,17 @@ export default function BrandPhotoshootDetailPage() {
       const res = await animateBrandPhotoshoot(shootId, index)
       router.push(`/motion?launched=${res.data.video_id}`)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Animation failed')
+      toast.error(err instanceof Error ? err.message : t('bk_sh_animationFailed'))
       setAnimatingIndex(null)
     }
   }
 
   async function handleDelete() {
-    if (!confirm('Delete this photoshoot session?')) return
     try {
       await deleteBrandPhotoshoot(shootId)
       router.push(`/brand/${kitId}/photoshoot`)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Delete failed')
+      toast.error(err instanceof Error ? err.message : t('bk_deleteFailed'))
     }
   }
 
@@ -159,9 +163,9 @@ export default function BrandPhotoshootDetailPage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-3 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error ?? 'Photoshoot not found'}</p>
+          <p className="font-body text-sm text-[--text-muted]">{error ?? t('bk_sh_notFound')}</p>
           <Link href={`/brand/${kitId}/photoshoot`} className="font-mono text-xs text-foreground underline">
-            ← Back to Photoshoot
+            ← {t('bk_backToPhotoshoot')}
           </Link>
         </div>
       </BrandKitLayout>
@@ -169,10 +173,10 @@ export default function BrandPhotoshootDetailPage() {
   }
 
   const statusMeta = {
-    pending:    { label: 'Pending',    cls: 'text-[--text-muted] bg-muted',     Icon: Loader2     },
-    generating: { label: 'Generating', cls: 'text-blue-700 bg-blue-100',         Icon: Loader2     },
-    done:       { label: 'Ready',      cls: 'text-emerald-700 bg-emerald-100',   Icon: CheckCircle2 },
-    error:      { label: 'Error',      cls: 'text-error bg-error/10',            Icon: AlertCircle  },
+    pending:    { label: t('bk_statusPending'),    cls: 'text-[--text-muted] bg-muted',     Icon: Loader2     },
+    generating: { label: t('bk_statusGenerating'), cls: 'text-blue-700 bg-blue-100',         Icon: Loader2     },
+    done:       { label: t('bk_statusReady'),      cls: 'text-emerald-700 bg-emerald-100',   Icon: CheckCircle2 },
+    error:      { label: t('bk_statusError'),      cls: 'text-error bg-error/10',            Icon: AlertCircle  },
   }[shoot.status]
   const StatusIcon = statusMeta.Icon
 
@@ -184,14 +188,14 @@ export default function BrandPhotoshootDetailPage() {
             href={`/brand/${kitId}/photoshoot`}
             className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[--text-muted] hover:text-foreground"
           >
-            <ArrowLeft size={12} /> All photoshoots
+            <ArrowLeft size={12} /> {t('bk_sh_all')}
           </Link>
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setConfirmDeleteOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-[11px] text-[--text-muted] hover:text-error"
           >
-            <Trash2 size={12} /> Delete session
+            <Trash2 size={12} /> {t('bk_sh_deleteSession')}
           </button>
         </div>
 
@@ -204,9 +208,9 @@ export default function BrandPhotoshootDetailPage() {
             </span>
             <span className="font-mono text-[10px] text-[--text-muted]">{shoot.aspect_ratio}</span>
             {shoot.template_id && (
-              <span className="font-mono text-[10px] text-[--text-muted]">· template <code className="text-foreground">{shoot.template_id}</code></span>
+              <span className="font-mono text-[10px] text-[--text-muted]">· {t('bk_sh_template')} <code className="text-foreground">{shoot.template_id}</code></span>
             )}
-            <span className="font-mono text-[10px] text-[--text-muted]">· {shoot.mode === 'product_template' ? 'product template' : 'generate/edit'}</span>
+            <span className="font-mono text-[10px] text-[--text-muted]">· {shoot.mode === 'product_template' ? t('bk_sh_modeProduct') : t('bk_sh_modeGenerate')}</span>
             <span className="font-mono text-[10px] text-[--text-muted]">· {new Date(shoot.created_at).toLocaleString()}</span>
           </div>
           {shoot.prompt && (
@@ -216,14 +220,14 @@ export default function BrandPhotoshootDetailPage() {
           )}
           {shoot.input_image_url && (
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-[--text-muted]">Source product:</span>
+              <span className="font-mono text-[10px] text-[--text-muted]">{t('bk_sh_sourceProduct')}</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={shoot.input_image_url} alt="" className="w-10 h-10 rounded-md object-cover border border-border" />
             </div>
           )}
           {shoot.status === 'error' && (
             <p className="font-mono text-[11px] text-error">
-              {String((shoot.metadata as { error_message?: string })?.error_message ?? 'Pipeline failed')}
+              {String((shoot.metadata as { error_message?: string })?.error_message ?? t('bk_pipelineFailed'))}
             </p>
           )}
         </section>
@@ -231,7 +235,7 @@ export default function BrandPhotoshootDetailPage() {
         {/* Variations gallery */}
         <section className="space-y-3">
           <h3 className="font-display text-sm font-semibold text-foreground">
-            Variations <span className="font-mono text-[10px] text-[--text-muted] ml-1">({shoot.output_urls.length}/4)</span>
+            {t('bk_variations')} <span className="font-mono text-[10px] text-[--text-muted] ml-1">({shoot.output_urls.length}/4)</span>
           </h3>
           {shoot.output_urls.length === 0 && shoot.status !== 'error' ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -256,6 +260,14 @@ export default function BrandPhotoshootDetailPage() {
           )}
         </section>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title={t('bk_sh_deleteTitle')}
+        message={t('bk_sh_deleteBody')}
+      />
     </BrandKitLayout>
   )
 }
@@ -270,11 +282,12 @@ function VariationCard({
   onSaveToAssets: () => void
   onAnimate:     () => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="group rounded-2xl border border-border bg-card overflow-hidden">
       <div className="relative aspect-square bg-muted overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt={`Variation ${index + 1}`} className="w-full h-full object-cover" />
+        <img src={url} alt={t('bk_variationAlt').replace('{num}', String(index + 1))} className="w-full h-full object-cover" />
         <span className="absolute top-2 left-2 rounded-full bg-background/85 backdrop-blur px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-foreground">
           V{index + 1}
         </span>
@@ -285,7 +298,7 @@ function VariationCard({
           download={`variation-${index + 1}.jpg`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-[11px] text-foreground hover:bg-muted"
         >
-          <Download size={12} /> Download
+          <Download size={12} /> {t('bk_download')}
         </a>
         <button
           type="button"
@@ -297,7 +310,7 @@ function VariationCard({
           )}
         >
           {saving ? <Loader2 size={12} className="animate-spin" /> : null}
-          Save to Assets
+          {t('bk_saveToAssets')}
         </button>
         <button
           type="button"
@@ -309,7 +322,7 @@ function VariationCard({
           )}
         >
           {animating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-          Animate
+          {t('bk_animate')}
         </button>
       </div>
     </div>

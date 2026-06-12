@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 import { createBrowserClient } from "@/lib/supabase";
+import { useLanguage } from "@/lib/i18n";
 import type {
   BrandBrief,
   BrandAmbiance,
@@ -200,70 +201,73 @@ function suggestAccessibleColor(
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
+// label/desc are translation keys, resolved with t() at render time.
 const AMBIANCE_OPTIONS: Array<{
   id: BrandAmbiance;
-  label: string;
-  desc: string;
+  labelKey: string;
+  descKey: string;
   emoji: string;
 }> = [
   {
     id: "luxe",
-    label: "Luxe",
-    desc: "Elegant, refined, timeless",
+    labelKey: "bs_amb_luxe",
+    descKey: "bs_amb_luxeDesc",
     emoji: "✨",
   },
   {
     id: "accessible",
-    label: "Accessible",
-    desc: "Warm, human, inclusive",
+    labelKey: "bs_amb_accessible",
+    descKey: "bs_amb_accessibleDesc",
     emoji: "🤝",
   },
-  { id: "tech", label: "Tech", desc: "Modern, innovative, refined", emoji: "⚡" },
+  { id: "tech", labelKey: "bs_amb_tech", descKey: "bs_amb_techDesc", emoji: "⚡" },
   {
     id: "naturel",
-    label: "Natural",
-    desc: "Organic, sustainable, authentic",
+    labelKey: "bs_amb_natural",
+    descKey: "bs_amb_naturalDesc",
     emoji: "🌿",
   },
   {
     id: "fun",
-    label: "Fun",
-    desc: "Colorful, expressive, irreverent",
+    labelKey: "bs_amb_fun",
+    descKey: "bs_amb_funDesc",
     emoji: "🎉",
   },
   {
     id: "corporate",
-    label: "Corporate",
-    desc: "Professional, reliable, structured",
+    labelKey: "bs_amb_corporate",
+    descKey: "bs_amb_corporateDesc",
     emoji: "🏢",
   },
 ];
 
-const STEPS: Array<{ key: BrandStudioStep; label: string }> = [
-  { key: "brief", label: "Brief" },
-  { key: "strategy", label: "Strategy" },
-  { key: "logos", label: "Logos" },
-  { key: "assets", label: "Visuals" },
-  { key: "charte", label: "Guidelines" },
-  { key: "export", label: "Export" },
+const STEPS: Array<{ key: BrandStudioStep; labelKey: string }> = [
+  { key: "brief", labelKey: "bs_step_brief" },
+  { key: "strategy", labelKey: "bs_step_strategy" },
+  { key: "logos", labelKey: "bs_step_logos" },
+  { key: "assets", labelKey: "bs_step_assets" },
+  { key: "charte", labelKey: "bs_step_charte" },
+  { key: "export", labelKey: "bs_step_export" },
 ];
 
+// Values are translation keys, resolved with t() at render time.
 const ASSET_LABELS: Record<string, string> = {
-  mockup_business_card: "Business card",
-  mockup_social_post: "Social media post",
-  mockup_letterhead: "Letterhead",
-  mockup_email_header: "Email banner",
-  lifestyle_mockup: "Lifestyle mockup",
-  pattern_url: "Textile pattern",
-  brand_banner: "Web banner",
-  illustration_url: "Editorial illustration",
-  mockup_packaging: "Packaging / Box",
-  og_image_url: "OG / Meta image",
+  mockup_business_card: "bs_asset_businessCard",
+  mockup_social_post: "bs_asset_socialPost",
+  mockup_letterhead: "bs_asset_letterhead",
+  mockup_email_header: "bs_asset_emailHeader",
+  lifestyle_mockup: "bs_asset_lifestyle",
+  pattern_url: "bs_asset_pattern",
+  brand_banner: "bs_asset_banner",
+  illustration_url: "bs_asset_illustration",
+  mockup_packaging: "bs_asset_packaging",
+  og_image_url: "bs_asset_og",
 };
 
 // ── Stepper ───────────────────────────────────────────────────────────────────
 
 function Stepper({ current }: { current: BrandStudioStep }) {
+  const { t } = useLanguage();
   const currentIdx = STEPS.findIndex((s) => s.key === current);
   return (
     <div className="flex items-center gap-1 mb-8 flex-wrap">
@@ -287,7 +291,7 @@ function Stepper({ current }: { current: BrandStudioStep }) {
               ) : (
                 <span className="w-4 text-center">{i + 1}</span>
               )}
-              {active && <span>{step.label}</span>}
+              {active && <span>{t(step.labelKey)}</span>}
             </div>
             {i < STEPS.length - 1 && (
               <div
@@ -341,6 +345,7 @@ function WcagInline({
   hex: string;
   onApply?: (color: string) => void;
 }) {
+  const { t } = useLanguage();
   if (!hex.trim()) return null;
   const result = wcagStatus(hex);
   if (!result) return null;
@@ -355,7 +360,7 @@ function WcagInline({
       <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 border border-amber-200 rounded-lg">
         <AlertTriangle size={11} className="text-amber-500 shrink-0" />
         <p className="text-[11px] text-amber-700">
-          Low contrast ({result.ratio.toFixed(1)}:1 — WCAG AA requires 4.5:1).
+          {t("bs_lowContrast").replace("{ratio}", result.ratio.toFixed(1))}
         </p>
       </div>
       {onApply && (
@@ -367,7 +372,7 @@ function WcagInline({
           />
           <div className="flex-1 min-w-0">
             <p className="text-[11px] text-green-700 font-medium">
-              Suggested color
+              {t("bs_suggestedColor")}
             </p>
             <p className="text-[11px] text-green-600">
               {suggestedColor} ({suggestedRatio.toFixed(1)}:1)
@@ -378,7 +383,7 @@ function WcagInline({
             onClick={() => onApply(suggestedColor)}
             className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-[11px] font-medium rounded transition-colors shrink-0"
           >
-            Apply
+            {t("bs_apply")}
           </button>
         </div>
       )}
@@ -397,6 +402,7 @@ function AnalystModal({
   onContinue: () => void;
   onEdit: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden">
@@ -421,10 +427,10 @@ function AnalystModal({
           </div>
           <div>
             <p className="font-display font-bold text-foreground">
-              {analysis.is_ready ? "Brief validated" : "Brief incomplete"}
+              {analysis.is_ready ? t("bs_briefValidated") : t("bs_briefIncomplete")}
             </p>
             <p className="text-xs text-[--text-muted]">
-              Score : {analysis.brief_score}/100
+              {t("bs_score").replace("{score}", String(analysis.brief_score))}
             </p>
           </div>
           {/* Score bar */}
@@ -447,7 +453,7 @@ function AnalystModal({
             analysis.clarification_questions.length > 0 && (
               <div>
                 <p className="font-mono text-[11px] uppercase tracking-wider text-red-500 mb-2">
-                  Questions de clarification
+                  {t("bs_clarificationQuestions")}
                 </p>
                 <ul className="space-y-2">
                   {analysis.clarification_questions.map((q, i) => (
@@ -462,7 +468,7 @@ function AnalystModal({
           {analysis.contradictions.length > 0 && (
             <div>
               <p className="font-mono text-[11px] uppercase tracking-wider text-red-500 mb-2">
-                Contradictions détectées
+                {t("bs_contradictionsDetected")}
               </p>
               <ul className="space-y-1">
                 {analysis.contradictions.map((c, i) => (
@@ -476,7 +482,7 @@ function AnalystModal({
           {analysis.questions.length > 0 && (
             <div>
               <p className="font-mono text-[11px] uppercase tracking-wider text-amber-500 mb-2">
-                Questions à clarifier
+                {t("bs_questionsToClarify")}
               </p>
               <ul className="space-y-1">
                 {analysis.questions.map((q, i) => (
@@ -490,7 +496,7 @@ function AnalystModal({
           {analysis.suggestions.length > 0 && (
             <div>
               <p className="font-mono text-[11px] uppercase tracking-wider text-blue-500 mb-2">
-                Suggestions
+                {t("bs_suggestions")}
               </p>
               <ul className="space-y-1">
                 {analysis.suggestions.map((s, i) => (
@@ -509,7 +515,7 @@ function AnalystModal({
             onClick={onEdit}
             className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors px-4 py-2.5"
           >
-            <ArrowLeft size={14} /> Modifier le brief
+            <ArrowLeft size={14} /> {t("bs_editBrief")}
           </button>
           <button
             type="button"
@@ -518,8 +524,8 @@ function AnalystModal({
           >
             <ChevronRight size={14} />
             {analysis.is_ready
-              ? "Generate strategy"
-              : "Continue anyway"}
+              ? t("bs_generateStrategy")
+              : t("bs_continueAnyway")}
           </button>
         </div>
       </div>
@@ -540,6 +546,7 @@ function ContradictionPathsModal({
   onSelectPath: (resolution: string) => void;
   onEdit: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden">
@@ -550,10 +557,10 @@ function ContradictionPathsModal({
           </div>
           <div className="flex-1">
             <p className="font-display font-bold text-foreground">
-              Contradictions détectées
+              {t("bs_contradictionsDetected")}
             </p>
             <p className="text-xs text-[--text-muted]">
-              Sélectionne un chemin créatif pour les résoudre
+              {t("bs_selectPathSub")}
             </p>
           </div>
         </div>
@@ -561,7 +568,7 @@ function ContradictionPathsModal({
         {/* Contradictions list */}
         <div className="px-6 py-4 border-b border-border bg-purple-50/30">
           <p className="font-mono text-[11px] uppercase tracking-wider text-purple-600 mb-2">
-            Contradictions détectées
+            {t("bs_contradictionsDetected")}
           </p>
           <ul className="space-y-1">
             {contradictions.map((c, i) => (
@@ -575,7 +582,7 @@ function ContradictionPathsModal({
         {/* Path cards */}
         <div className="px-6 py-6 space-y-4">
           <p className="font-mono text-[11px] uppercase tracking-wider text-[--text-muted] mb-4">
-            2 chemins créatifs
+            {t("bs_twoCreativePaths")}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {paths.map((path, idx) => (
@@ -622,11 +629,11 @@ function ContradictionPathsModal({
             onClick={onEdit}
             className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors px-4 py-2.5"
           >
-            <ArrowLeft size={14} /> Modifier le brief
+            <ArrowLeft size={14} /> {t("bs_editBrief")}
           </button>
           <div className="flex-1" />
           <p className="text-xs text-[--text-muted] self-center">
-            Clique sur un chemin pour continuer
+            {t("bs_clickPathToContinue")}
           </p>
         </div>
       </div>
@@ -643,6 +650,7 @@ function BriefForm({
   onSubmit: (brief: BrandBrief) => void;
   qualityIssues?: string[];
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [secteur, setSecteur] = useState("");
   const [cible, setCible] = useState("");
@@ -690,25 +698,25 @@ function BriefForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="rounded-2xl border border-border bg-muted overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Nom de la marque <span className="text-red-400">·</span></p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t("bs_brandName")} <span className="text-red-400">·</span></p>
           </div>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="ex: Celeste, Nøvak, Bloom…"
+            placeholder={t("bs_brandNamePh")}
             className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
         <div className="rounded-2xl border border-border bg-muted overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Secteur d'activité <span className="text-red-400">·</span></p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t("bs_sector")} <span className="text-red-400">·</span></p>
           </div>
           <input
             type="text"
             value={secteur}
             onChange={(e) => setSecteur(e.target.value)}
-            placeholder="e.g.: Cosmetics, B2B SaaS, Restaurants…"
+            placeholder={t("bs_sectorPh")}
             className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
@@ -716,13 +724,13 @@ function BriefForm({
 
       <div className="rounded-2xl border border-border bg-muted overflow-hidden">
         <div className="px-4 py-2.5 border-b border-border">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Cible principale <span className="text-red-400">·</span></p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t("bs_audience")} <span className="text-red-400">·</span></p>
         </div>
         <input
           type="text"
           value={cible}
           onChange={(e) => setCible(e.target.value)}
-          placeholder="e.g.: Women 25-40 years, upper class, urban, wellness enthusiasts"
+          placeholder={t("bs_audiencePh")}
           className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
         />
       </div>
@@ -734,25 +742,25 @@ function BriefForm({
       <div className="rounded-2xl border border-border bg-muted overflow-hidden">
         <div className="px-4 py-2.5 border-b border-border flex items-center justify-between gap-2">
           <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
-            USP — qu'est-ce qui rend cette marque différente ?
-            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 text-[9px] font-bold">RECOMMANDÉ</span>
+            {t("bs_uspLabel")}
+            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 text-[9px] font-bold">{t("bs_recommended")}</span>
           </p>
         </div>
         <textarea
           value={usp}
           onChange={(e) => setUsp(e.target.value)}
           rows={2}
-          placeholder="ex: Le seul atelier qui livre des bijoux sur-mesure en 72h, sans minimum de commande, dans un univers normalement réservé à la haute joaillerie."
+          placeholder={t("bs_uspPh")}
           className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3 resize-none"
         />
         <p className="px-4 pb-3 font-body text-[11px] text-[--text-muted] leading-relaxed">
-          C'est le levier qualité #1. Sans USP, les directions générées sonneront "moyennes pour le secteur".
+          {t("bs_uspHint")}
         </p>
       </div>
 
       <div className="rounded-2xl border border-border bg-muted overflow-hidden">
         <div className="px-4 py-2.5 border-b border-border">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">3 valeurs de marque <span className="text-red-400">·</span></p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t("bs_values")} <span className="text-red-400">·</span></p>
         </div>
         <div className="flex gap-2 px-4 py-3">
           {[0, 1, 2].map((i) => (
@@ -765,7 +773,7 @@ function BriefForm({
                 next[i] = e.target.value;
                 setValeurs(next);
               }}
-              placeholder={["Innovation", "Simplicity", "Confiance"][i]}
+              placeholder={[t("bs_valuePh1"), t("bs_valuePh2"), t("bs_valuePh3")][i]}
               className="flex-1 bg-card border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
             />
           ))}
@@ -774,7 +782,7 @@ function BriefForm({
 
       <div>
         <label className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-3 block">
-          Ambiance visuelle <span className="text-red-400">·</span>
+          {t("bs_ambiance")} <span className="text-red-400">·</span>
         </label>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {AMBIANCE_OPTIONS.map((opt) => (
@@ -791,10 +799,10 @@ function BriefForm({
             >
               <span className="text-xl">{opt.emoji}</span>
               <p className="font-display font-semibold text-xs text-foreground">
-                {opt.label}
+                {t(opt.labelKey)}
               </p>
               <p className="font-body text-[11px] text-[--text-muted] leading-tight">
-                {opt.desc}
+                {t(opt.descKey)}
               </p>
               {ambiance === opt.id && (
                 <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
@@ -809,31 +817,31 @@ function BriefForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="rounded-2xl border border-border bg-muted overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Concurrents à éviter</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t("bs_competitors")}</p>
           </div>
           <input
             type="text"
             value={concurrents}
             onChange={(e) => setConcurrents(e.target.value)}
-            placeholder="ex: Nike, Apple, Zara…"
+            placeholder={t("bs_competitorsPh")}
             className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
         <div className="rounded-2xl border border-border bg-muted overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Marques de référence</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t("bs_referenceBrands")}</p>
           </div>
           <input
             type="text"
             value={references}
             onChange={(e) => setReferences(e.target.value)}
-            placeholder="ex: Glossier, Notion, Oatly…"
+            placeholder={t("bs_referenceBrandsPh")}
             className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
         <div className="rounded-2xl border border-border bg-muted overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Enforced colors (HEX)</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t("bs_enforcedColors")}</p>
           </div>
           <input
             type="text"
@@ -858,13 +866,13 @@ function BriefForm({
         </div>
         <div className="rounded-2xl border border-border bg-muted overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Logo existant (URL)</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t("bs_existingLogo")}</p>
           </div>
           <input
             type="url"
             value={logoUrl}
             onChange={(e) => setLogoUrl(e.target.value)}
-            placeholder="https://exemple.com/logo.png"
+            placeholder={t("bs_existingLogoPh")}
             className="w-full bg-transparent text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none px-4 py-3"
           />
         </div>
@@ -873,7 +881,7 @@ function BriefForm({
       {qualityIssues.length > 0 && (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 space-y-1.5">
           <p className="font-mono text-[11px] uppercase tracking-widest text-red-600 font-semibold flex items-center gap-1.5">
-            <AlertTriangle size={12} /> Brief insuffisant — corrige ces points :
+            <AlertTriangle size={12} /> {t("bs_briefInsufficient")}
           </p>
           <ul className="space-y-1">
             {qualityIssues.map((issue, i) => (
@@ -895,7 +903,7 @@ function BriefForm({
         disabled={!canSubmit}
         className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-3 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
       >
-        <Sparkles size={15} /> Analyser le brief
+        <Sparkles size={15} /> {t("bs_analyzeBrief")}
       </button>
     </div>
   );
@@ -912,6 +920,7 @@ function DirectionCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { t } = useLanguage();
   const p = direction.palette;
   return (
     <button
@@ -950,16 +959,16 @@ function DirectionCard({
         </div>
         <div className="flex gap-2">
           {[
-            { hex: p.primary, label: "Primary" },
-            { hex: p.secondary, label: "Secondary" },
-            { hex: p.accent, label: "Accent" },
+            { hex: p.primary, label: t("bk_dna_colorPrimary") },
+            { hex: p.secondary, label: t("bk_dna_colorSecondary") },
+            { hex: p.accent, label: t("bs_accent") },
           ].map((s) => (
             <ColorSwatch key={s.hex} hex={s.hex} label={s.label} size="sm" />
           ))}
         </div>
         <div className="bg-white/30 rounded-lg px-3 py-2 space-y-0.5">
           <p className="font-mono text-[11px] text-[--text-muted] uppercase tracking-wider">
-            Typographie
+            {t("bs_typography")}
           </p>
           <p style={{ color: p.primary, fontSize: 14, fontWeight: 700 }}>
             {direction.typography.heading}
@@ -996,6 +1005,7 @@ function HybridPanel({
   directions: [BrandDirection, BrandDirection, BrandDirection];
   onGenerate: (paletteIdx: number, typoIdx: number, logoIdx: number) => void;
 }) {
+  const { t } = useLanguage();
   const [paletteFrom, setPaletteFrom] = useState(0);
   const [typoFrom, setTypoFrom] = useState(1);
   const [logoFrom, setLogoFrom] = useState(0);
@@ -1007,17 +1017,16 @@ function HybridPanel({
       <div className="flex items-center gap-2">
         <Sparkles size={14} className="text-purple-500" />
         <p className="font-display font-semibold text-sm text-foreground">
-          Créer une direction hybride
+          {t("bs_hybridTitle")}
         </p>
       </div>
       <p className="text-xs text-[--text-muted]">
-        Combine la palette, la typographie et le style de logo de différentes
-        directions.
+        {t("bs_hybridDesc")}
       </p>
       <div className="grid grid-cols-3 gap-3">
         <div>
           <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
-            Palette de
+            {t("bs_paletteFrom")}
           </label>
           <select
             value={paletteFrom}
@@ -1033,7 +1042,7 @@ function HybridPanel({
         </div>
         <div>
           <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
-            Typo de
+            {t("bs_typoFrom")}
           </label>
           <select
             value={typoFrom}
@@ -1049,7 +1058,7 @@ function HybridPanel({
         </div>
         <div>
           <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">
-            Logo de
+            {t("bs_logoFrom")}
           </label>
           <select
             value={logoFrom}
@@ -1069,7 +1078,7 @@ function HybridPanel({
         onClick={() => onGenerate(paletteFrom, typoFrom, logoFrom)}
         className="flex items-center gap-2 text-sm font-display font-semibold text-purple-500 hover:opacity-70 transition-opacity"
       >
-        <Sparkles size={13} /> Générer la direction hybride + logos
+        <Sparkles size={13} /> {t("bs_generateHybrid")}
       </button>
     </div>
   );
@@ -1092,24 +1101,25 @@ function LogoConceptCard({
   brandName?: string;
   headingFont?: string;
 }) {
+  const { t } = useLanguage();
   const bgs = [
     {
       key: "logo_white_bg",
-      label: "Fond blanc",
+      label: t("bs_bgWhite"),
       bg: "#FFFFFF",
       url: concept.logo_white_bg,
       textColor: "#111111",
     },
     {
       key: "logo_brand_bg",
-      label: "Fond couleur",
+      label: t("bs_bgBrand"),
       bg: "#6366F1",
       url: concept.logo_brand_bg,
       textColor: "#FFFFFF",
     },
     {
       key: "logo_black_bg",
-      label: "Fond noir",
+      label: t("bs_bgBlack"),
       bg: "#000000",
       url: concept.logo_black_bg,
       textColor: "#FFFFFF",
@@ -1146,10 +1156,19 @@ function LogoConceptCard({
         {bgs.map(({ key, label, bg, url, textColor }) => (
           <div key={key} className="space-y-1">
             <div
-              className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-purple-500/40 transition-all relative"
+              className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-purple-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60 transition-all relative"
               style={{ background: bg }}
               onClick={() => url && onSelectUrl(url)}
-              title={`Use as reference — ${label}`}
+              role="button"
+              tabIndex={0}
+              aria-label={t("bs_useAsReference").replace("{label}", label)}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && url) {
+                  e.preventDefault();
+                  onSelectUrl(url);
+                }
+              }}
+              title={t("bs_useAsReference").replace("{label}", label)}
             >
               {url ? (
                 <img
@@ -1216,6 +1235,7 @@ function AssetCard({
   onRegenerated: (key: string, newUrl: string) => void;
   onSetReference: (url: string) => void;
 }) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -1240,7 +1260,7 @@ function AssetCard({
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     } catch {
-      toast.error("Download error.");
+      toast.error(t("bs_downloadError"));
     } finally {
       setDownloading(false);
     }
@@ -1259,9 +1279,9 @@ function AssetCard({
       );
       const newUrl = data[assetKey];
       if (newUrl) onRegenerated(assetKey, newUrl);
-      else toast.error("No results for this asset.");
+      else toast.error(t("bs_noAssetResult"));
     } catch {
-      toast.error("Regeneration error.");
+      toast.error(t("bs_regenError"));
     } finally {
       setLoading(false);
     }
@@ -1280,7 +1300,7 @@ function AssetCard({
               onClick={() => onSetReference(url)}
               className="text-[11px] text-blue-500 hover:underline flex items-center gap-0.5"
             >
-              <ImageIcon size={9} /> Référence
+              <ImageIcon size={9} /> {t("bk_gen_refAlt")}
             </button>
           )}
           <button
@@ -1294,21 +1314,25 @@ function AssetCard({
             ) : (
               <RefreshCw size={10} />
             )}
-            Regénérer
+            {t("bs_regenerate")}
           </button>
         </div>
       </div>
       <div
-        className="relative rounded-2xl overflow-hidden border border-border bg-card aspect-video flex items-center justify-center group cursor-pointer"
+        className="relative rounded-2xl overflow-hidden border border-border bg-card aspect-video flex items-center justify-center group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60"
         onClick={() => {
           if (url && !loading) setLightboxOpen(true);
         }}
-        aria-label={url ? `Agrandir ${label}` : undefined}
+        role={url ? "button" : undefined}
+        aria-label={url ? t("bs_enlarge").replace("{label}", label) : undefined}
         tabIndex={url ? 0 : undefined}
         onKeyDown={
           url
             ? (e) => {
-                if (e.key === "Enter" || e.key === " ") setLightboxOpen(true);
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  if (!loading) setLightboxOpen(true);
+                }
               }
             : undefined
         }
@@ -1333,7 +1357,7 @@ function AssetCard({
           disabled={downloading}
           className="inline-flex items-center gap-1.5 text-xs text-blue-500 font-medium hover:underline disabled:opacity-50"
         >
-          <Download size={10} /> {downloading ? "…" : "Download"}
+          <Download size={10} /> {downloading ? "…" : t("bk_download")}
         </button>
       )}
       {/* Lightbox */}
@@ -1346,7 +1370,7 @@ function AssetCard({
             type="button"
             className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
             onClick={() => setLightboxOpen(false)}
-            aria-label="Fermer"
+            aria-label={t("close")}
           >
             <X size={18} />
           </button>
@@ -1387,6 +1411,7 @@ function CharteSection({
 // ── Main Brand Studio ─────────────────────────────────────────────────────────
 
 export function BrandStudio() {
+  const { t } = useLanguage();
   const [step, setStep] = useState<BrandStudioStep>("brief");
   const [brief, setBrief] = useState<BrandBrief | null>(null);
   const [analysis, setAnalysis] = useState<BrandAnalysisResult | null>(null);
@@ -1417,7 +1442,7 @@ export function BrandStudio() {
   async function handleBriefSubmit(b: BrandBrief) {
     setBrief(b);
     setLoading(true);
-    setLoadingMsg("Brand Analyst evaluating your brief…");
+    setLoadingMsg(t("bs_loadingAnalyst"));
     try {
       const result = await callApi<BrandAnalysisResult>(
         "/api/brand-analyst",
@@ -1490,9 +1515,7 @@ export function BrandStudio() {
     // Continue with the selected path by generating strategy with resolution context
     // We'll append the resolution to loadingMsg to provide context to the user
     setLoading(true);
-    setLoadingMsg(
-      `Claude génère 3 directions créatives (direction: ${resolution})…`,
-    );
+    setLoadingMsg(t("bs_loadingStrategyPath").replace("{resolution}", resolution));
     try {
       // Re-call generateStrategy with enhanced context
       const data = await callApi<BrandStrategy>(
@@ -1508,7 +1531,7 @@ export function BrandStudio() {
         setStep("brief");
       } else {
         toast.error(
-          err instanceof Error ? err.message : "Generation error.",
+          err instanceof Error ? err.message : t("bs_genError"),
         );
       }
     } finally {
@@ -1523,7 +1546,7 @@ export function BrandStudio() {
     setAnalysis(null);
     setBriefIssues([]);
     setLoading(true);
-    setLoadingMsg("Claude generating 3 creative directions…");
+    setLoadingMsg(t("bs_loadingStrategy"));
     try {
       const data = await callApi<BrandStrategy>("/api/brand-strategy", b);
       setStrategy(data);
@@ -1536,7 +1559,7 @@ export function BrandStudio() {
         setStep("brief");
       } else {
         toast.error(
-          err instanceof Error ? err.message : "Generation error.",
+          err instanceof Error ? err.message : t("bs_genError"),
         );
       }
     } finally {
@@ -1554,7 +1577,7 @@ export function BrandStudio() {
   ) {
     if (!strategy || !brief) return;
     setLoading(true);
-    setLoadingMsg("Claude generating hybrid direction…");
+    setLoadingMsg(t("bs_loadingHybrid"));
     try {
       const hybrid = await callApi<BrandDirection>("/api/brand-hybrid", {
         directions: strategy.directions,
@@ -1575,21 +1598,19 @@ export function BrandStudio() {
       (next as any).hybrid = hybrid;
       setStrategy(next);
       setSelectedId(hybrid.id);
-      toast.success("Hybrid direction generated.");
+      toast.success(t("bs_hybridGenerated"));
 
       // Auto-regenerate logos with the hybrid direction
-      setLoadingMsg(
-        "Auto-regenerating logos for hybrid direction…",
-      );
+      setLoadingMsg(t("bs_loadingHybridLogos"));
       const logoData = await callApi<BrandLogos>("/api/brand-logos", {
         brief,
         direction: hybrid,
       });
       setLogos(logoData);
       setStep("logos");
-      toast.success("Logos regenerated with hybrid direction.");
+      toast.success(t("bs_logosRegenerated"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Hybridation error.");
+      toast.error(err instanceof Error ? err.message : t("bs_hybridError"));
     } finally {
       setLoading(false);
       setLoadingMsg("");
@@ -1601,7 +1622,7 @@ export function BrandStudio() {
   async function handleDirectionToLogos() {
     if (!brief || !selectedDirection) return;
     setLoading(true);
-    setLoadingMsg("fal.ai recraft-v3 generating 3 logo concepts × 3 backgrounds…");
+    setLoadingMsg(t("bs_loadingLogos"));
     try {
       const data = await callApi<BrandLogos>("/api/brand-logos", {
         brief,
@@ -1613,7 +1634,7 @@ export function BrandStudio() {
       toast.error(
         err instanceof Error
           ? err.message
-          : "Logo generation error.",
+          : t("bs_logoGenError"),
       );
     } finally {
       setLoading(false);
@@ -1631,7 +1652,7 @@ export function BrandStudio() {
     const logoUrl =
       selectedConcept?.logo_white_bg ?? selectedConcept?.logo_brand_bg;
     setLoading(true);
-    setLoadingMsg("fal.ai generating 10 brand visuals in batches…");
+    setLoadingMsg(t("bs_loadingVisuals"));
     try {
       const data = await callApi<BrandAssets>("/api/brand-visuals", {
         brief,
@@ -1644,7 +1665,7 @@ export function BrandStudio() {
       toast.error(
         err instanceof Error
           ? err.message
-          : "Asset generation error.",
+          : t("bs_assetGenError"),
       );
     } finally {
       setLoading(false);
@@ -1663,7 +1684,7 @@ export function BrandStudio() {
   async function handleGenerateCharte() {
     if (!brief || !selectedDirection) return;
     setLoading(true);
-    setLoadingMsg("Claude drafting complete brand guidelines…");
+    setLoadingMsg(t("bs_loadingCharte"));
     try {
       const data = await callApi<BrandCharte>("/api/brand-charte", {
         brief,
@@ -1673,7 +1694,7 @@ export function BrandStudio() {
       setStep("charte");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Guidelines generation error.",
+        err instanceof Error ? err.message : t("bs_charteGenError"),
       );
     } finally {
       setLoading(false);
@@ -1700,7 +1721,7 @@ export function BrandStudio() {
       const html = await res.text();
       const win = window.open("", "_blank");
       if (!win) {
-        toast.error("Popups blocked - allow popups");
+        toast.error(t("bs_popupsBlocked"));
         return;
       }
       win.document.write(html);
@@ -1708,7 +1729,7 @@ export function BrandStudio() {
       win.focus();
       setTimeout(() => win.print(), 800);
     } catch {
-      toast.error("PDF generation error.");
+      toast.error(t("bs_pdfError"));
     }
   }
 
@@ -1736,9 +1757,9 @@ export function BrandStudio() {
       a.download = `${slug}-brand-kit.zip`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Brand kit ZIP downloaded.");
+      toast.success(t("bs_zipDownloaded"));
     } catch {
-      toast.error("ZIP download error.");
+      toast.error(t("bs_zipError"));
     }
   }
 
@@ -1769,7 +1790,7 @@ export function BrandStudio() {
       setShareUrl(data.signedUrl);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Sharing error.",
+        err instanceof Error ? err.message : t("bs_shareError"),
       );
     } finally {
       setSharing(false);
@@ -1803,7 +1824,7 @@ export function BrandStudio() {
     a.download = `${brief?.name?.toLowerCase().replace(/\s+/g, "-") ?? "brand"}-identity.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Brand kit exported as JSON");
+    toast.success(t("bs_jsonExported"));
   }
 
   // ── Loading overlay ──
@@ -1817,7 +1838,7 @@ export function BrandStudio() {
         <p className="font-display font-semibold text-foreground">
           {loadingMsg}
         </p>
-        <p className="text-[--text-muted] text-sm">Cela prend 30–120 secondes…</p>
+        <p className="text-[--text-muted] text-sm">{t("bs_takesTime")}</p>
       </div>
     );
   }
@@ -1852,10 +1873,10 @@ export function BrandStudio() {
       <div className="flex flex-col h-full overflow-y-auto px-8 py-8 max-w-4xl mx-auto">
         <div className="mb-6 text-center">
           <h1 className="font-display text-2xl font-bold text-foreground">
-            Identité de marque
+            {t("bs_title")}
           </h1>
           <p className="text-[--text-muted] text-sm mt-1">
-            Brief → Strategy → Logos → Visuals → Guidelines → Export
+            {t("bs_subtitle")}
           </p>
         </div>
 
@@ -1871,7 +1892,7 @@ export function BrandStudio() {
           <div className="space-y-6">
             <div className="bg-card border border-border rounded-2xl p-5">
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">
-                Voix de marque
+                {t("bs_brandVoice")}
               </p>
               <p className="text-sm text-foreground font-medium mb-3">
                 {strategy.voice.tone}
@@ -1879,7 +1900,7 @@ export function BrandStudio() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="font-mono text-[11px] text-green-600 uppercase tracking-wider mb-1.5">
-                    ✓ À faire
+                    ✓ {t("bs_dos")}
                   </p>
                   <ul className="space-y-1">
                     {strategy.voice.dos.slice(0, 3).map((d, i) => (
@@ -1891,7 +1912,7 @@ export function BrandStudio() {
                 </div>
                 <div>
                   <p className="font-mono text-[11px] text-red-500 uppercase tracking-wider mb-1.5">
-                    ✗ À éviter
+                    ✗ {t("bs_donts")}
                   </p>
                   <ul className="space-y-1">
                     {strategy.voice.donts.slice(0, 3).map((d, i) => (
@@ -1906,7 +1927,7 @@ export function BrandStudio() {
 
             <div>
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-4">
-                Sélectionne ta direction créative
+                {t("bs_selectDirection")}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {strategy.directions.map((dir) => (
@@ -1924,7 +1945,7 @@ export function BrandStudio() {
             {(strategy as any).hybrid && (
               <div className="mt-2">
                 <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-3">
-                  Direction hybride
+                  {t("bs_hybridDirection")}
                 </p>
                 <DirectionCard
                   direction={(strategy as any).hybrid}
@@ -1945,7 +1966,7 @@ export function BrandStudio() {
                 onClick={() => setStep("brief")}
                 className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
-                <ArrowLeft size={14} /> Modifier le brief
+                <ArrowLeft size={14} /> {t("bs_editBrief")}
               </button>
               <button
                 type="button"
@@ -1953,7 +1974,7 @@ export function BrandStudio() {
                 disabled={!selectedId}
                 className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
               >
-                <ChevronRight size={14} /> Générer les logos
+                <ChevronRight size={14} /> {t("bs_generateLogos")}
               </button>
             </div>
           </div>
@@ -1964,14 +1985,14 @@ export function BrandStudio() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
-                3 concepts de logo × 3 fonds
+                {t("bs_logoConcepts")}
               </p>
               <button
                 type="button"
                 onClick={handleDirectionToLogos}
                 className="flex items-center gap-1.5 text-xs text-[--text-muted] hover:text-foreground transition-colors"
               >
-                <RefreshCw size={12} /> Regénérer
+                <RefreshCw size={12} /> {t("bs_regenerate")}
               </button>
             </div>
 
@@ -1984,7 +2005,7 @@ export function BrandStudio() {
                   onSelect={() => setSelectedLogo(concept.name)}
                   onSelectUrl={(url) => {
                     setReferenceUrl(url);
-                    toast.success("Set as reference image.");
+                    toast.success(t("bs_refSet"));
                   }}
                   brandName={brief?.name}
                   headingFont={selectedDirection?.typography?.heading}
@@ -1996,11 +2017,11 @@ export function BrandStudio() {
               <div className="flex items-center gap-3 px-4 py-2.5 bg-purple-500/5 border border-purple-500/20 rounded-xl">
                 <img
                   src={referenceUrl}
-                  alt="Reference"
+                  alt={t("bk_gen_refAlt")}
                   className="w-8 h-8 rounded-lg object-contain border border-border"
                 />
                 <p className="text-xs text-foreground flex-1">
-                  Image de référence sélectionnée pour les assets
+                  {t("bs_refSelectedForAssets")}
                 </p>
                 <button
                   type="button"
@@ -2017,14 +2038,14 @@ export function BrandStudio() {
                 onClick={() => setStep("strategy")}
                 className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
-                <ArrowLeft size={14} /> Changer de direction
+                <ArrowLeft size={14} /> {t("bs_changeDirection")}
               </button>
               <button
                 type="button"
                 onClick={handleLogosToAssets}
                 className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
               >
-                <ChevronRight size={14} /> Générer les visuels
+                <ChevronRight size={14} /> {t("bs_generateVisuals")}
               </button>
             </div>
           </div>
@@ -2035,26 +2056,26 @@ export function BrandStudio() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
-                Direction : {selectedDirection.name}
+                {t("bs_directionLabel").replace("{name}", selectedDirection.name)}
               </p>
               {referenceUrl && (
                 <div className="flex items-center gap-1.5 text-xs text-[--text-muted]">
                   <img
                     src={referenceUrl}
-                    alt="ref"
+                    alt={t("bk_gen_refAlt")}
                     className="w-5 h-5 rounded object-contain border border-border"
                   />
-                  Référence active
+                  {t("bs_refActive")}
                 </div>
               )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {Object.entries(ASSET_LABELS).map(([key, label]) => (
+              {Object.entries(ASSET_LABELS).map(([key, labelKey]) => (
                 <AssetCard
                   key={key}
                   assetKey={key}
-                  label={label}
+                  label={t(labelKey)}
                   url={(assets as any)[key]}
                   brief={brief}
                   direction={selectedDirection}
@@ -2062,7 +2083,7 @@ export function BrandStudio() {
                   onRegenerated={handleAssetRegenerated}
                   onSetReference={(url) => {
                     setReferenceUrl(url);
-                    toast.success("Reference updated.");
+                    toast.success(t("bs_refUpdated"));
                   }}
                 />
               ))}
@@ -2074,14 +2095,14 @@ export function BrandStudio() {
                 onClick={() => setStep("logos")}
                 className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
-                <ArrowLeft size={14} /> Retour aux logos
+                <ArrowLeft size={14} /> {t("bs_backToLogos")}
               </button>
               <button
                 type="button"
                 onClick={handleGenerateCharte}
                 className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
               >
-                <ChevronRight size={14} /> Générer la charte graphique
+                <ChevronRight size={14} /> {t("bs_generateCharte")}
               </button>
             </div>
           </div>
@@ -2090,7 +2111,7 @@ export function BrandStudio() {
         {/* ── STEP 5: Charte ── */}
         {step === "charte" && charte && selectedDirection && (
           <div className="space-y-4">
-            <CharteSection title="Color palette">
+            <CharteSection title={t("bs_colorPalette")}>
               <div className="flex flex-wrap gap-4">
                 {charte.colors.map((c) => (
                   <div key={c.hex} className="flex items-center gap-3">
@@ -2111,7 +2132,7 @@ export function BrandStudio() {
               </div>
             </CharteSection>
 
-            <CharteSection title="Typography">
+            <CharteSection title={t("bs_typography")}>
               <div className="space-y-3">
                 {Object.entries(charte.typography).map(([level, t]) => {
                   const tv = t as Record<string, unknown>
@@ -2139,11 +2160,11 @@ export function BrandStudio() {
               </div>
             </CharteSection>
 
-            <CharteSection title="Logo usage rules">
+            <CharteSection title={t("bs_logoRules")}>
               <div className="space-y-2 text-sm">
                 <p>
                   <span className="font-semibold text-foreground">
-                    Espace de protection :
+                    {t("bs_clearSpace")}
                   </span>{" "}
                   <span className="text-[--text-muted]">
                     {charte.logo_rules.clear_space}
@@ -2151,7 +2172,7 @@ export function BrandStudio() {
                 </p>
                 <div>
                   <p className="font-semibold text-foreground mb-1">
-                    Fonds autorisés
+                    {t("bs_allowedBgs")}
                   </p>
                   <div className="flex gap-2 flex-wrap">
                     {charte.logo_rules.allowed_backgrounds.map((bg, i) => (
@@ -2166,7 +2187,7 @@ export function BrandStudio() {
                 </div>
                 <div>
                   <p className="font-semibold text-foreground mb-1">
-                    Interdits
+                    {t("bs_forbidden")}
                   </p>
                   <div className="flex gap-2 flex-wrap">
                     {charte.logo_rules.forbidden.map((f, i) => (
@@ -2183,29 +2204,29 @@ export function BrandStudio() {
             </CharteSection>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <CharteSection title="Page layout">
+              <CharteSection title={t("bs_pageLayout")}>
                 <div className="space-y-2 text-sm text-[--text-muted]">
                   <p>
                     <span className="font-semibold text-foreground">
-                      Grille :
+                      {t("bs_grid")}
                     </span>{" "}
                     {str(charte.layout.grid)}
                   </p>
                   <p>
                     <span className="font-semibold text-foreground">
-                      Espacement :
+                      {t("bs_spacing")}
                     </span>{" "}
                     {str(charte.layout.spacing)}
                   </p>
                   <p>
                     <span className="font-semibold text-foreground">
-                      Marges :
+                      {t("bs_margins")}
                     </span>{" "}
                     {str(charte.layout.margins)}
                   </p>
                 </div>
               </CharteSection>
-              <CharteSection title="Photography direction">
+              <CharteSection title={t("bs_photoDirection")}>
                 <div className="space-y-2 text-sm text-[--text-muted]">
                   <p>{str(charte.photography.style)}</p>
                   <p className="italic">{str(charte.photography.mood)}</p>
@@ -2229,14 +2250,14 @@ export function BrandStudio() {
                 onClick={() => setStep("assets")}
                 className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
               >
-                <ArrowLeft size={14} /> Retour aux visuels
+                <ArrowLeft size={14} /> {t("bs_backToVisuals")}
               </button>
               <button
                 type="button"
                 onClick={() => setStep("export")}
                 className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
               >
-                <ChevronRight size={14} /> Exporter le brand kit
+                <ChevronRight size={14} /> {t("bs_exportKit")}
               </button>
             </div>
           </div>
@@ -2289,9 +2310,9 @@ export function BrandStudio() {
               >
                 <FileText size={16} />
                 <div className="text-left">
-                  <p>Download brand guidelines PDF</p>
+                  <p>{t("bs_downloadPdf")}</p>
                   <p className="text-xs font-body font-normal opacity-70">
-                    HTML → imprimer en PDF depuis le navigateur
+                    {t("bs_downloadPdfDesc")}
                   </p>
                 </div>
               </button>
@@ -2306,9 +2327,9 @@ export function BrandStudio() {
                 >
                   <Archive size={16} />
                   <div className="text-left">
-                    <p>Download brand kit ZIP</p>
+                    <p>{t("bs_downloadZip")}</p>
                     <p className="text-xs font-body font-normal text-[--text-muted]">
-                      Logos + mockups + palette.json + charte.html
+                      {t("bs_downloadZipDesc")}
                     </p>
                   </div>
                 </button>
@@ -2316,7 +2337,7 @@ export function BrandStudio() {
                   type="button"
                   onClick={handleShareZip}
                   disabled={!charte || sharing}
-                  title="Share a download link"
+                  title={t("bs_shareLink")}
                   className="flex items-center justify-center gap-1.5 border border-border bg-white text-foreground font-display font-semibold text-sm px-3.5 rounded-xl hover:bg-card transition-colors disabled:opacity-40"
                 >
                   {sharing ? (
@@ -2333,23 +2354,23 @@ export function BrandStudio() {
                   <input
                     readOnly
                     value={shareUrl}
-                    title="Lien de partage du brand kit"
-                    aria-label="Lien de partage du brand kit"
+                    title={t("bs_shareUrlLabel")}
+                    aria-label={t("bs_shareUrlLabel")}
                     className="flex-1 bg-transparent text-xs font-mono text-[--text-muted] truncate outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleCopyShareUrl}
-                    title="Copier le lien"
+                    title={t("share_copy")}
                     className="flex items-center gap-1 text-xs font-semibold text-purple-500 hover:opacity-70 transition-opacity shrink-0"
                   >
                     {copied ? <CheckCheck size={14} /> : <Copy size={14} />}
-                    {copied ? "Copied" : "Copier"}
+                    {copied ? t("bs_copied") : t("bs_copy")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShareUrl(null)}
-                    title="Fermer"
+                    title={t("close")}
                     className="text-[--text-muted] hover:text-foreground"
                   >
                     <X size={14} />
@@ -2365,9 +2386,9 @@ export function BrandStudio() {
               >
                 <Download size={16} />
                 <div className="text-left">
-                  <p>Exporter en JSON</p>
+                  <p>{t("bs_exportJson")}</p>
                   <p className="text-xs font-body font-normal text-[--text-muted]">
-                    Strategy + palette + typography + guidelines
+                    {t("bs_exportJsonDesc")}
                   </p>
                 </div>
               </button>
@@ -2389,7 +2410,7 @@ export function BrandStudio() {
               }}
               className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-foreground transition-colors"
             >
-              <RefreshCw size={13} /> Créer une nouvelle identité
+              <RefreshCw size={13} /> {t("bs_newIdentity")}
             </button>
           </div>
         )}

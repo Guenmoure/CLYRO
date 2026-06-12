@@ -2,6 +2,7 @@
 
 import { Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 export interface AssetCardProps {
   url: string | null
@@ -18,6 +19,7 @@ export interface AssetCardProps {
  * avec le nom de fichier et les tags. Clic ouvre une lightbox via onClick.
  */
 export function AssetCard({ url, filename, tags, onDelete, onClick, className }: AssetCardProps) {
+  const { t } = useLanguage()
   return (
     <div className={cn('group relative aspect-square overflow-hidden rounded-xl border border-border bg-muted', className)}>
       {url ? (
@@ -31,7 +33,7 @@ export function AssetCard({ url, filename, tags, onDelete, onClick, className }:
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-[--text-muted]">
-          unavailable
+          {t('bk_unavailable')}
         </div>
       )}
 
@@ -55,7 +57,7 @@ export function AssetCard({ url, filename, tags, onDelete, onClick, className }:
             e.stopPropagation()
             onDelete()
           }}
-          aria-label="Delete asset"
+          aria-label={t('bk_deleteAsset')}
           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-background/80 backdrop-blur p-1.5 text-[--text-muted] hover:text-error"
         >
           <Trash2 size={12} />

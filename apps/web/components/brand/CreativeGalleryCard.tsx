@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Eye, EyeOff, Type, Sparkles, Share2, Loader2, MoreHorizontal, Trash2, Pencil } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import type { BrandCreative, CreativeBlocksVisible, CampaignAspectRatio } from '@clyro/shared'
 
 interface CreativeGalleryCardProps {
@@ -36,6 +37,7 @@ const ASPECT_STYLES: Record<CampaignAspectRatio, { width: number; height: number
 export function CreativeGalleryCard({
   creative, aspectRatio, onToggleBlock, onAnimate, onShare, onDelete, editHref, animating,
 }: CreativeGalleryCardProps) {
+  const { t } = useLanguage()
   const dim = ASPECT_STYLES[aspectRatio]
   const blocks = creative.blocks_visible
   const [menuOpen, setMenuOpen] = useState(false)
@@ -71,7 +73,7 @@ export function CreativeGalleryCard({
           {block('cta',         creative.cta_text)}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity bg-foreground/30">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-background text-foreground px-3 py-1.5 font-display text-xs font-medium shadow">
-              <Pencil size={12} /> Edit
+              <Pencil size={12} /> {t('edit')}
             </span>
           </div>
         </Link>
@@ -91,9 +93,9 @@ export function CreativeGalleryCard({
 
       {/* Toggles visibility (eye) */}
       <div className="flex items-center gap-1.5 px-1">
-        <BlockToggle label="Header" on={blocks.header}      onClick={() => onToggleBlock('header', !blocks.header)} />
-        <BlockToggle label="Desc"   on={blocks.description} onClick={() => onToggleBlock('description', !blocks.description)} />
-        <BlockToggle label="CTA"    on={blocks.cta}         onClick={() => onToggleBlock('cta', !blocks.cta)} />
+        <BlockToggle label={t('bk_ce_headerTitle')} on={blocks.header}      onClick={() => onToggleBlock('header', !blocks.header)} />
+        <BlockToggle label={t('bk_cg_desc')}        on={blocks.description} onClick={() => onToggleBlock('description', !blocks.description)} />
+        <BlockToggle label="CTA"                    on={blocks.cta}         onClick={() => onToggleBlock('cta', !blocks.cta)} />
       </div>
 
       {/* 4 boutons : more, share, Animate, retirer texte */}
@@ -102,7 +104,7 @@ export function CreativeGalleryCard({
           <button
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
-            aria-label="More"
+            aria-label={t('bk_cg_more')}
             className="p-1.5 rounded-md border border-border bg-card text-[--text-muted] hover:text-foreground"
           >
             <MoreHorizontal size={14} />
@@ -114,7 +116,7 @@ export function CreativeGalleryCard({
                 onClick={() => { setMenuOpen(false); onDelete() }}
                 className="flex items-center gap-2 w-full text-left px-3 py-1.5 font-mono text-[11px] text-error hover:bg-muted"
               >
-                <Trash2 size={12} /> Delete
+                <Trash2 size={12} /> {t('delete')}
               </button>
             </div>
           )}
@@ -122,7 +124,7 @@ export function CreativeGalleryCard({
         <button
           type="button"
           onClick={onShare}
-          aria-label="Share"
+          aria-label={t('bk_cg_share')}
           className="p-1.5 rounded-md border border-border bg-card text-[--text-muted] hover:text-foreground"
         >
           <Share2 size={14} />
@@ -137,7 +139,7 @@ export function CreativeGalleryCard({
           )}
         >
           {animating ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
-          Animate
+          {t('bk_animate')}
         </button>
         <button
           type="button"
@@ -148,7 +150,7 @@ export function CreativeGalleryCard({
             onToggleBlock('description', allHidden)
             onToggleBlock('cta',         allHidden)
           }}
-          aria-label="Toggle text overlay"
+          aria-label={t('bk_cg_toggleText')}
           className="p-1.5 rounded-md border border-border bg-card text-[--text-muted] hover:text-foreground"
         >
           <Type size={14} />

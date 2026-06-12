@@ -21,6 +21,7 @@ import { AssetCard } from '@/components/brand/AssetCard'
 import { DragDropUploader } from '@/components/brand/DragDropUploader'
 import { AddFromUrlModal } from '@/components/brand/AddFromUrlModal'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 import {
   getBrandKit,
   listBrandMedia,
@@ -55,6 +56,7 @@ interface FromUrlDraft {
 
 export default function BrandAssetsPage() {
   const params = useParams<{ kitId: string }>()
+  const { t } = useLanguage()
   const kitId = params?.kitId ?? ''
 
   const [kit, setKit] = useState<BrandKit | null>(null)
@@ -76,8 +78,9 @@ export default function BrandAssetsPage() {
         setItems(m.data)
         setUserId(u.data.user?.id ?? '')
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('bk_failedLoad')))
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitId])
 
   async function uploadFile(file: File) {
@@ -136,7 +139,7 @@ export default function BrandAssetsPage() {
         className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-display text-xs text-foreground hover:bg-muted transition-colors"
       >
         <Link2 size={14} />
-        Add from URL
+        {t('bk_cat_addFromUrl')}
       </button>
     </div>
   )
@@ -159,7 +162,7 @@ export default function BrandAssetsPage() {
           <DragDropUploader onUpload={uploadFile} />
           {items.length === 0 ? (
             <p className="text-center font-body text-sm text-[--text-muted] py-6">
-              Endless creatives, ready in minutes — upload your first images.
+              {t('bk_assets_empty')}
             </p>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
@@ -188,7 +191,7 @@ export default function BrandAssetsPage() {
           <button
             type="button"
             onClick={() => setLightbox(null)}
-            aria-label="Close lightbox"
+            aria-label={t('bk_assets_closeLightbox')}
             className="absolute top-4 right-4 text-background/80 hover:text-background"
           >
             <X size={24} />
@@ -210,7 +213,7 @@ export default function BrandAssetsPage() {
         onClose={() => setUrlModalOpen(false)}
         onScrape={async (url) => ({ url })}
         onConfirm={handleFromUrl}
-        title="Import image from URL"
+        title={t('bk_assets_importTitle')}
         placeholder="https://example.com/image.jpg"
         renderPreview={(draft) => (
           <div className="space-y-2">
@@ -219,7 +222,7 @@ export default function BrandAssetsPage() {
             <img src={draft.url} alt="" className="w-full max-h-56 object-contain rounded-xl border border-border bg-muted" />
             <p className="font-body text-xs text-[--text-muted] truncate">{draft.url}</p>
             <p className="font-body text-[11px] text-[--text-muted]">
-              The image will be downloaded server-side and stored in your library.
+              {t('bk_assets_urlNote')}
             </p>
           </div>
         )}

@@ -21,6 +21,8 @@ import {
 import { BrandKitLayout } from '@/components/brand/BrandKitLayout'
 import { cn } from '@/lib/utils'
 import { createBrowserClient } from '@/lib/supabase'
+import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import {
   getBrandKit,
   listBrandPhotoshootTemplates,
@@ -44,6 +46,7 @@ const POLL_INTERVAL_MS = 3000
 export default function BrandPhotoshootTemplateInfosPage() {
   const params = useParams<{ kitId: string }>()
   const kitId = params?.kitId ?? ''
+  const { t } = useLanguage()
 
   const [templates, setTemplates] = useState<BrandPhotoshootTemplateInfo[]>([])
   const [loading, setLoading] = useState(true)
@@ -69,11 +72,11 @@ export default function BrandPhotoshootTemplateInfosPage() {
       listBrandPhotoshootTemplates(),
       supabase.auth.getUser(),
     ])
-      .then(([_k, t, u]) => {
-        setTemplates(t.data)
+      .then(([_k, tpl, u]) => {
+        setTemplates(tpl.data)
         setUserId(u.data.user?.id ?? '')
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -115,11 +118,11 @@ export default function BrandPhotoshootTemplateInfosPage() {
       if (!signed?.signedUrl) throw new Error('Could not sign URL')
       setInputImageUrl(signed.signedUrl)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Upload failed')
+      toast.error(err instanceof Error ? err.message : t('bk_uploadFailed'))
     } finally {
       setInputUploading(false)
     }
-  }, [userId, kitId])
+  }, [userId, kitId, t])
 
   async function handleGenerate() {
     if (!inputImageUrl || !selectedTemplate || submitting) return
@@ -134,7 +137,7 @@ export default function BrandPhotoshootTemplateInfosPage() {
       })
       setShoot(res.data)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Generation failed')
+      toast.error(err instanceof Error ? err.message : t('bk_generationFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -162,9 +165,9 @@ export default function BrandPhotoshootTemplateInfosPage() {
         size_bytes:   blob.size,
         tags:         ['photoshoot'],
       })
-      alert('Saved to Assets library')
+      toast.success(t('bk_savedToAssets'))
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Save failed')
+      toast.error(err instanceof Error ? err.message : t('bk_saveFailed'))
     }
   }
 
@@ -182,7 +185,7 @@ export default function BrandPhotoshootTemplateInfosPage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-2 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error}</p>
+          <p className="font-body text-sm text-[--text-muted]">{error === 'error' ? t('bk_failedLoad') : error}</p>
         </div>
       </BrandKitLayout>
     )
@@ -197,28 +200,28 @@ export default function BrandPhotoshootTemplateInfosPage() {
           href={`/brand/${kitId}/photoshoot`}
           className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[--text-muted] hover:text-foreground"
         >
-          <ArrowLeft size={12} /> Back to Photoshoot
+          <ArrowLeft size={12} /> {t('bk_backToPhotoshoot')}
         </Link>
 
         <header>
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">Product photoshoot</p>
-          <h2 className="font-display text-xl font-semibold text-foreground mt-1">Upload + template = 4 hero shots</h2>
+          <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{t('bk_tpl_kicker')}</p>
+          <h2 className="font-display text-xl font-semibold text-foreground mt-1">{t('bk_tpl_title')}</h2>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left — product image + aspect */}
           <section className="space-y-4">
-            <h3 className="font-display text-sm font-semibold text-foreground">1 · Product image</h3>
+            <h3 className="font-display text-sm font-semibold text-foreground">{t('bk_tpl_step1')}</h3>
             {inputImageUrl ? (
               <div className="rounded-2xl border border-border bg-card p-3 space-y-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={inputImageUrl} alt="Product" className="w-full max-h-[320px] object-contain rounded-xl bg-muted" />
+                <img src={inputImageUrl} alt={t('bk_tpl_productAlt')} className="w-full max-h-[320px] object-contain rounded-xl bg-muted" />
                 <button
                   type="button"
                   onClick={() => setInputImageUrl(null)}
                   className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 font-mono text-[10px] text-[--text-muted] hover:text-foreground"
                 >
-                  Replace
+                  {t('bk_tpl_replace')}
                 </button>
               </div>
             ) : (
@@ -228,9 +231,9 @@ export default function BrandPhotoshootTemplateInfosPage() {
               )}>
                 {inputUploading ? <Loader2 size={24} className="animate-spin" /> : <ImagePlus size={24} />}
                 <span className="font-body text-sm text-foreground">
-                  {inputUploading ? 'Uploading…' : 'Click to upload product image'}
+                  {inputUploading ? t('bk_gen_uploading') : t('bk_tpl_uploadCta')}
                 </span>
-                <span className="font-mono text-[10px]">JPG, PNG, WebP up to 10 MB</span>
+                <span className="font-mono text-[10px]">{t('bk_tpl_uploadHint')}</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -241,7 +244,7 @@ export default function BrandPhotoshootTemplateInfosPage() {
             )}
 
             <div>
-              <h3 className="font-display text-sm font-semibold text-foreground mb-2">2 · Aspect ratio</h3>
+              <h3 className="font-display text-sm font-semibold text-foreground mb-2">{t('bk_tpl_step2')}</h3>
               <div className="flex flex-wrap gap-2">
                 {ASPECTS.map((a) => (
                   <button
@@ -264,23 +267,23 @@ export default function BrandPhotoshootTemplateInfosPage() {
 
           {/* Right — templates grid */}
           <section className="space-y-3">
-            <h3 className="font-display text-sm font-semibold text-foreground">3 · Template</h3>
+            <h3 className="font-display text-sm font-semibold text-foreground">{t('bk_tpl_step3')}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[480px] overflow-y-auto -mx-1 px-1">
-              {templates.map((t) => (
+              {templates.map((tpl) => (
                 <button
-                  key={t.id}
+                  key={tpl.id}
                   type="button"
-                  onClick={() => setSelectedTemplate(t.id)}
+                  onClick={() => setSelectedTemplate(tpl.id)}
                   className={cn(
                     'text-left rounded-xl border-2 transition-colors p-3 space-y-1',
-                    selectedTemplate === t.id
+                    selectedTemplate === tpl.id
                       ? 'border-[#c45b3a] bg-muted'
                       : 'border-border bg-card hover:border-foreground/30',
                   )}
                 >
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted]">{t.category}</span>
-                  <p className="font-display text-xs font-semibold text-foreground">{t.name}</p>
-                  <p className="font-body text-[10px] text-[--text-muted] line-clamp-2">{t.description}</p>
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-[--text-muted]">{tpl.category}</span>
+                  <p className="font-display text-xs font-semibold text-foreground">{tpl.name}</p>
+                  <p className="font-body text-[10px] text-[--text-muted] line-clamp-2">{tpl.description}</p>
                 </button>
               ))}
             </div>
@@ -288,10 +291,10 @@ export default function BrandPhotoshootTemplateInfosPage() {
         </div>
 
         {/* CTA */}
-        <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 border-t border-border pt-4">
           {!canGenerate && !shoot && (
             <span className="font-mono text-[10px] text-[--text-muted]">
-              Upload an image and pick a template to continue · 4 credits
+              {t('bk_tpl_ctaHint')}
             </span>
           )}
           <button
@@ -299,12 +302,12 @@ export default function BrandPhotoshootTemplateInfosPage() {
             onClick={handleGenerate}
             disabled={!canGenerate}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg bg-foreground text-background px-4 py-2 font-display text-sm font-medium',
+              'inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground text-background px-4 py-2 font-display text-sm font-medium',
               !canGenerate && 'opacity-50 cursor-not-allowed',
             )}
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-            Generate photoshoot
+            {t('bk_tpl_generate')}
           </button>
         </div>
 
@@ -323,32 +326,33 @@ function PhotoshootResults({
   shoot: BrandPhotoshoot
   onSaveToAssets: (url: string) => void
 }) {
+  const { t } = useLanguage()
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold text-foreground">
-          Variations <span className="font-mono text-[10px] text-[--text-muted] ml-1">({shoot.output_urls.length}/4)</span>
+          {t('bk_variations')} <span className="font-mono text-[10px] text-[--text-muted] ml-1">({shoot.output_urls.length}/4)</span>
         </h3>
         {shoot.status === 'generating' && (
           <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-blue-600">
-            <Loader2 size={11} className="animate-spin" /> Generating…
+            <Loader2 size={11} className="animate-spin" /> {t('bk_generating')}
           </span>
         )}
         {shoot.status === 'done' && (
           <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-emerald-600">
-            <CheckCircle2 size={11} /> Done
+            <CheckCircle2 size={11} /> {t('bk_done')}
           </span>
         )}
         {shoot.status === 'error' && (
           <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-error">
-            <AlertCircle size={11} /> Error
+            <AlertCircle size={11} /> {t('bk_statusError')}
           </span>
         )}
       </div>
 
       {shoot.status === 'error' && (
         <div className="rounded-xl border border-error/30 bg-error/5 p-3 font-mono text-[11px] text-error">
-          {String((shoot.metadata as { error_message?: string })?.error_message ?? 'Pipeline failed')}
+          {String((shoot.metadata as { error_message?: string })?.error_message ?? t('bk_pipelineFailed'))}
         </div>
       )}
 
@@ -363,7 +367,7 @@ function PhotoshootResults({
           {shoot.output_urls.map((url, i) => (
             <div key={url + i} className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt={`Variation ${i + 1}`} className="w-full h-full object-cover" />
+              <img src={url} alt={t('bk_variationAlt').replace('{num}', String(i + 1))} className="w-full h-full object-cover" />
               <div className="absolute inset-x-0 bottom-0 p-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-foreground/80 to-transparent">
                 <a
                   href={url}
@@ -377,7 +381,7 @@ function PhotoshootResults({
                   onClick={() => onSaveToAssets(url)}
                   className="inline-flex items-center gap-1 rounded-md bg-background/90 backdrop-blur px-1.5 py-0.5 font-mono text-[10px] text-foreground hover:bg-background"
                 >
-                  Save to Assets
+                  {t('bk_saveToAssets')}
                 </button>
               </div>
             </div>
