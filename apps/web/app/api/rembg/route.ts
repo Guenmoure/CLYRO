@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -16,6 +17,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const limit = checkRateLimit('rembg', user.id, 30)
+    if (!limit.allowed) return rateLimitResponse(limit)
 
     const { imageUrl } = await request.json() as { imageUrl: string }
     if (!imageUrl) return NextResponse.json({ error: 'imageUrl required' }, { status: 400 })
@@ -38,7 +42,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url })
   } catch (err) {
+    // Generic message only — err.message can leak fal.ai account details.
     console.error('[rembg]', err)
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'rembg failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Background removal failed', code: 'GENERATION_ERROR' }, { status: 500 })
   }
 }

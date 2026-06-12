@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -32,6 +35,18 @@ const STYLE_PREFIXES: Record<string, string> = {
  * Response: { imageUrl: string } or { error: string }
  */
 export async function POST(request: NextRequest) {
+  // SECURITY: calls fal.ai flux/schnell (billable compute). Auth required.
+  const supabase = createRouteHandlerClient({ cookies })
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Quota généreux : appelé une fois par scène, un long script peut en
+  // déclencher 40+ d'un coup. flux/schnell reste le modèle le moins cher.
+  const limit = checkRateLimit('stream-image', user.id, 120)
+  if (!limit.allowed) return rateLimitResponse(limit)
+
   const falKey = process.env.FAL_KEY
   if (!falKey) {
     return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
@@ -82,9 +97,12 @@ export async function POST(request: NextRequest) {
     console.log(`[stream-image] fal.ai status=${falRes.status}, body=${responseText.slice(0, 300)}`)
 
     if (!falRes.ok) {
+      // Don't leak the upstream response body to the client — it can contain
+      // account/quota details. Full detail stays in the server logs above.
+      console.error(`[stream-image] fal.ai error status=${falRes.status}, body=${responseText.slice(0, 500)}`)
       return NextResponse.json(
-        { error: `fal.ai ${falRes.status}: ${responseText.slice(0, 200)}` },
-        { status: 500 }
+        { error: 'Image generation failed', code: 'UPSTREAM_ERROR' },
+        { status: 502 }
       )
     }
 
@@ -99,8 +117,7 @@ export async function POST(request: NextRequest) {
     console.log(`[stream-image] Success: ${imageUrl.slice(0, 80)}...`)
     return NextResponse.json({ imageUrl })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'HD generation failed'
-    console.error('[stream-image] Exception:', message)
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[stream-image] Exception:', err)
+    return NextResponse.json({ error: 'Image generation failed', code: 'GENERATION_ERROR' }, { status: 500 })
   }
 }

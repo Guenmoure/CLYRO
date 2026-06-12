@@ -14,11 +14,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing video id' }, { status: 400 })
     }
 
-    // Vérification session
+    // Vérification utilisateur — getUser() revalide le JWT côté serveur
+    // Supabase (getSession ne fait que lire le cookie local).
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       .from('videos')
       .select('output_url, title')
       .eq('id', videoId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single()
 
     if (dbError || !video) {

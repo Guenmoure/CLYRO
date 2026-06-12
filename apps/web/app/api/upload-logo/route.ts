@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
@@ -15,13 +15,18 @@ const supabaseAdmin = () =>
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_TYPES = ['image/png', 'image/svg+xml', 'image/jpeg', 'image/webp']
+// Whitelist d'extensions cohérente avec ALLOWED_TYPES — l'extension vient du
+// nom de fichier CLIENT, donc jamais de confiance aveugle (path traversal,
+// .html stocké servi avec une URL signée, etc.).
+const ALLOWED_EXTENSIONS = new Set(['png', 'svg', 'jpg', 'jpeg', 'webp'])
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth check — bloquer les requêtes non authentifiées
-    const supabaseAuth = createServerComponentClient({ cookies })
-    const { data: { session } } = await supabaseAuth.auth.getSession()
-    if (!session) {
+    // Auth check — getUser() revalide le JWT côté serveur Supabase
+    // (getSession ne fait que lire le cookie local).
+    const supabaseAuth = createRouteHandlerClient({ cookies })
+    const { data: { user } } = await supabaseAuth.auth.getUser()
+    if (!user) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
@@ -40,7 +45,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Le fichier ne doit pas dépasser 5 Mo' }, { status: 400 })
     }
 
-    const ext = file.name.split('.').pop() ?? 'png'
+    const ext = (file.name.split('.').pop() ?? '').toLowerCase()
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
+      return NextResponse.json(
+        { error: 'Extension non supportée. Utilisez PNG, SVG, JPG, JPEG ou WebP.', code: 'INVALID_FILE_EXTENSION' },
+        { status: 400 }
+      )
+    }
     const storagePath = `logos/${randomUUID()}.${ext}`
     const buffer = Buffer.from(await file.arrayBuffer())
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 export const maxDuration = 60
 
@@ -8,6 +9,10 @@ export async function POST(req: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies })
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 })
+
+  // Chaque appel = 2 requêtes fal.ai (birefnet + flux/dev) → quota serré.
+  const limit = checkRateLimit('brand-background', user.id, 20)
+  if (!limit.allowed) return rateLimitResponse(limit)
 
   const body = await req.json()
   const { source_image_url, background_prompt, brand_kit_id } = body

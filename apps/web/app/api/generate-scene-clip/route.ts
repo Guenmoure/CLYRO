@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300  // 5 min — Kling v2.5-turbo Standard ~20-40s, Pro ~40-90s
@@ -9,12 +10,18 @@ export const maxDuration = 300  // 5 min — Kling v2.5-turbo Standard ~20-40s, 
 const PREMIUM_STYLES = new Set(['cinematique', 'stock-vo', 'luxe', '3d-pixar'])
 
 export async function POST(request: NextRequest) {
-  // Auth check
+  // Auth check — getUser() revalidates the JWT against the Supabase Auth
+  // server, unlike getSession() which only reads the local cookie.
   const supabase = createRouteHandlerClient({ cookies })
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   }
+
+  // Kling v2.5-turbo (Pro pour les styles premium) est l'appel fal.ai le
+  // plus cher de l'app → quota le plus serré.
+  const limit = checkRateLimit('generate-scene-clip', user.id, 10)
+  if (!limit.allowed) return rateLimitResponse(limit)
 
   try {
     const body = await request.json() as {
@@ -74,9 +81,12 @@ export async function POST(request: NextRequest) {
       console.log(`[generate-scene-clip] fal.ai status=${falRes.status}, body=${responseText.slice(0, 200)}`)
 
       if (!falRes.ok) {
+        // Don't leak the upstream response body to the client — it can
+        // contain account/quota details. Detail stays in server logs above.
+        console.error(`[generate-scene-clip] fal.ai error status=${falRes.status}, body=${responseText.slice(0, 500)}`)
         return NextResponse.json(
-          { error: `fal.ai ${falRes.status}: ${responseText.slice(0, 200)}` },
-          { status: falRes.status === 401 ? 401 : 502 }
+          { error: 'Clip generation failed', code: 'UPSTREAM_ERROR' },
+          { status: 502 }
         )
       }
 
@@ -107,8 +117,7 @@ export async function POST(request: NextRequest) {
       throw fetchErr
     }
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Clip generation failed'
-    console.error('[generate-scene-clip] uncaught:', msg, err)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[generate-scene-clip] uncaught:', err)
+    return NextResponse.json({ error: 'Clip generation failed', code: 'GENERATION_ERROR' }, { status: 500 })
   }
 }
