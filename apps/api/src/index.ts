@@ -45,6 +45,20 @@ if (process.env.SENTRY_DSN) {
   logger.info('Sentry initialized')
 }
 
+// ── Global safety net ──────────────────────────────────────────────────────
+// Same pattern as workers/renderWorker.ts:34 — log + Sentry, do NOT exit.
+// An unhandled rejection from a fire-and-forget background task must not
+// take the whole API down; Render would restart-loop and drop in-flight
+// requests.
+process.on('unhandledRejection', (reason) => {
+  Sentry.captureException(reason)
+  logger.error({ reason }, 'Unhandled rejection in API process (kept alive)')
+})
+process.on('uncaughtException', (err) => {
+  Sentry.captureException(err)
+  logger.error({ err }, 'Uncaught exception in API process (kept alive)')
+})
+
 const app = express()
 const PORT = process.env.PORT ?? 4000
 

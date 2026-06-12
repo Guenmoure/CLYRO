@@ -5,9 +5,9 @@
  *   1) Extract audio from the YouTube URL (yt-dlp on the server, see Dockerfile)
  *   2) Send the audio URL to fal.ai Whisper for transcription + segments
  *
- * The extracted audio is uploaded to the `yt-audio` Supabase Storage bucket,
- * fetched by fal.ai via public URL, then deleted in a `finally` block so
- * we don't leak storage on success or failure.
+ * The extracted audio is uploaded to the `yt-audio` Supabase Storage bucket
+ * (private), fetched by fal.ai via a short-lived signed URL (1 h), then
+ * deleted in a `finally` block so we don't leak storage on success or failure.
  */
 
 import { execFile } from 'node:child_process'
@@ -59,7 +59,7 @@ export interface TranscriptResult {
 // ── Stage 1: Extract audio from YouTube ─────────────────────────────────
 
 interface ExtractedAudio {
-  audioUrl: string       // public URL fal.ai will fetch
+  audioUrl: string       // signed URL (1 h) fal.ai will fetch
   storagePath: string    // relative path in the bucket, used for cleanup
 }
 
@@ -225,11 +225,15 @@ async function extractYouTubeAudio(youtubeUrl: string): Promise<ExtractedAudio> 
       throw new Error(`Supabase upload failed: ${uploadError.message}`)
     }
 
-    // Public URL is enough since the bucket is public-read; fal.ai just
-    // needs an HTTP GET. Signed URLs would also work but add latency.
-    const { data: pub } = supabaseAdmin.storage.from(YT_AUDIO_BUCKET).getPublicUrl(storagePath)
-    if (!pub?.publicUrl) {
-      throw new Error('Failed to resolve public URL for uploaded audio')
+    // yt-audio est privé (migration 20260611000001). fal.ai n'a besoin que
+    // d'un HTTP GET : une signed URL courte durée (1 h) suffit largement —
+    // le fichier est consommé par Whisper en quelques minutes puis supprimé
+    // dans le finally de transcribeYouTube().
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from(YT_AUDIO_BUCKET)
+      .createSignedUrl(storagePath, 60 * 60)
+    if (signErr || !signed?.signedUrl) {
+      throw new Error(`Failed to sign URL for uploaded audio: ${signErr?.message ?? 'no signedUrl'}`)
     }
 
     logger.info(
@@ -237,7 +241,7 @@ async function extractYouTubeAudio(youtubeUrl: string): Promise<ExtractedAudio> 
       'extractYouTubeAudio: audio uploaded to Supabase'
     )
 
-    return { audioUrl: pub.publicUrl, storagePath }
+    return { audioUrl: signed.signedUrl, storagePath }
   } finally {
     // Clean local scratch dir regardless of success/failure.
     await rm(workDir, { recursive: true, force: true }).catch((err) => {

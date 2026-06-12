@@ -435,7 +435,9 @@ brandPhotoshootRouter.post('/brand/photoshoots/:id/animate/:index', authMiddlewa
     let enqueued = false
     if (renderQueue && isRedisReady()) {
       try {
-        await renderQueue.add('motion_auto', jobData)
+        // jobId = videoId so /videos/:id/cancel can remove a waiting job.
+        await renderQueue.remove(video.id).catch(() => null)
+        await renderQueue.add('motion_auto', jobData, { jobId: video.id })
         enqueued = true
       } catch (err) {
         logger.warn({ err, videoId: video.id }, 'Photoshoot animate enqueue failed')

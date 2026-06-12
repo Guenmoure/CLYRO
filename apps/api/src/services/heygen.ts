@@ -8,6 +8,11 @@ import { logger } from '../lib/logger'
 const HEYGEN_BASE = 'https://api.heygen.com'
 const HEYGEN_API_KEY = process.env.HEYGEN_API_KEY ?? ''
 
+// Fetch timeouts — same pattern as elevenlabs.ts (AbortSignal.timeout).
+// Without them a hung HeyGen connection blocks the pipeline indefinitely.
+const HEYGEN_API_TIMEOUT_MS  = 30_000  // control-plane calls (generate, status, avatar task)
+const HEYGEN_LIST_TIMEOUT_MS = 60_000  // /v2/avatars returns a large payload (hundreds of avatars)
+
 /** Raw avatar object from HeyGen /v2/avatars */
 export interface HeyGenAvatarRaw {
   avatar_id: string
@@ -110,6 +115,7 @@ export async function generateAvatarScene(params: GenerateAvatarSceneParams): Pr
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(HEYGEN_API_TIMEOUT_MS),
   })
 
   const data = await res.json() as { data?: { video_id: string }; message?: string }
@@ -127,6 +133,7 @@ export async function getVideoStatus(videoId: string): Promise<HeyGenVideoStatus
 
   const res = await fetch(`${HEYGEN_BASE}/v1/video_status.get?video_id=${videoId}`, {
     headers: { 'X-Api-Key': HEYGEN_API_KEY },
+    signal: AbortSignal.timeout(HEYGEN_API_TIMEOUT_MS),
   })
   const data = await res.json() as { data: HeyGenVideoStatus; message?: string }
   if (!res.ok) {
@@ -227,6 +234,7 @@ export async function listAvatars(): Promise<HeyGenAvatar[]> {
 
   const res = await fetch(`${HEYGEN_BASE}/v2/avatars`, {
     headers: { 'X-Api-Key': HEYGEN_API_KEY },
+    signal: AbortSignal.timeout(HEYGEN_LIST_TIMEOUT_MS),
   })
   const data = await res.json() as { data: { avatars: HeyGenAvatarRaw[] }; message?: string }
   if (!res.ok) {
@@ -268,6 +276,7 @@ export async function createInstantAvatar(params: CreateInstantAvatarParams): Pr
       name: params.name,
       callback_id: params.callbackId,
     }),
+    signal: AbortSignal.timeout(HEYGEN_API_TIMEOUT_MS),
   })
   const data = await res.json() as { data?: { avatar_id: string }; message?: string }
   if (!res.ok || !data.data) {
@@ -283,7 +292,13 @@ import { createHmac, timingSafeEqual } from 'crypto'
 export function verifyHeyGenSignature(rawBody: string, signature: string): boolean {
   const secret = process.env.HEYGEN_WEBHOOK_SECRET
   if (!secret) {
-    logger.warn('HEYGEN_WEBHOOK_SECRET not set — skipping signature check')
+    if (process.env.NODE_ENV === 'production') {
+      // In production a missing secret must FAIL CLOSED — accepting unsigned
+      // webhooks would let anyone flip scene statuses.
+      logger.error('HEYGEN_WEBHOOK_SECRET not set in production — rejecting webhook')
+      return false
+    }
+    logger.warn('HEYGEN_WEBHOOK_SECRET not set — skipping signature check (non-production only)')
     return true  // dev fallback — be loud about it
   }
   const expected = createHmac('sha256', secret).update(rawBody).digest('hex')

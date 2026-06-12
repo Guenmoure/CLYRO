@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { z } from 'zod'
 import Anthropic from '@anthropic-ai/sdk'
 import { authMiddleware } from '../middleware/auth'
 import { logger } from '../lib/logger'
@@ -17,7 +18,7 @@ import {
 import { generateMotionStoryboard } from '../services/claude'
 import { detectLanguage } from '../lib/detect-language'
 import { sendBrandKitReadyEmail } from '../services/resend'
-import { extractArticleFromUrl, UrlExtractError } from '../services/urlExtract'
+import { extractArticleFromUrl, validatePublicUrl, UrlExtractError } from '../services/urlExtract'
 
 export const generateRouter = Router()
 
@@ -141,16 +142,23 @@ function extractJson(raw: string): string {
 
 // ── POST /generate/storyboard ─────────────────────────────────────────────────
 
+const storyboardSchema = z.object({
+  script:      z.string().min(1),
+  style:       z.string().min(1),
+  duration:    z.string().optional().default('auto'),
+  title:       z.string().optional(),
+  description: z.string().optional(),
+})
+
 generateRouter.post('/generate/storyboard', authMiddleware, async (req, res) => {
   try {
-    const { script, style, duration = 'auto', title, description } = req.body as {
-      script: string; style: string; duration?: string; title?: string; description?: string
-    }
-
-    if (!script || !style) {
+    const parsedBody = storyboardSchema.safeParse(req.body)
+    if (!parsedBody.success) {
       res.status(400).json({ error: 'script and style are required', code: 'VALIDATION_ERROR' })
       return
     }
+    const { script, style, duration, title, description } = parsedBody.data
+
     if (script.trim().length < 20) {
       res.status(400).json({ error: 'Script trop court (min 20 caractères).', code: 'VALIDATION_ERROR' })
       return
@@ -177,7 +185,7 @@ generateRouter.post('/generate/storyboard', authMiddleware, async (req, res) => 
     res.json({ scenes: parsed.scenes, total_duration: parsed.total_duration })
   } catch (err) {
     logger.error({ err, userId: req.userId }, '[generate/storyboard] error')
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Storyboard generation failed', code: 'GENERATION_ERROR' })
+    res.status(500).json({ error: 'Storyboard generation failed', code: 'GENERATION_ERROR' })
   }
 })
 
@@ -202,11 +210,21 @@ const SCENE_TYPE_ICONS: Record<string, string> = {
   image_full:       '🎬',
 }
 
+const motionStoryboardSchema = z.object({
+  brief:    z.string().optional(),
+  script:   z.string().optional(),
+  format:   z.string().optional(),
+  duration: z.string().optional(),
+})
+
 generateRouter.post('/generate/motion-storyboard', authMiddleware, async (req, res) => {
   try {
-    const { brief, script, format, duration } = req.body as {
-      brief: string; script: string; format?: string; duration?: string
+    const parsedBody = motionStoryboardSchema.safeParse(req.body)
+    if (!parsedBody.success) {
+      res.status(400).json({ error: 'Invalid request body', code: 'VALIDATION_ERROR' })
+      return
     }
+    const { brief, script, format, duration } = parsedBody.data
 
     const combinedBrief = [brief?.trim(), script?.trim()].filter(Boolean).join('\n\n')
 
@@ -250,22 +268,27 @@ generateRouter.post('/generate/motion-storyboard', authMiddleware, async (req, r
     res.json({ scenes: mappedScenes })
   } catch (err) {
     logger.error({ err, userId: req.userId }, '[generate/motion-storyboard] error')
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Erreur serveur', code: 'GENERATION_ERROR' })
+    res.status(500).json({ error: 'Erreur serveur', code: 'GENERATION_ERROR' })
   }
 })
 
 // ── POST /generate/improve-prompt ────────────────────────────────────────────
 
+const improvePromptSchema = z.object({
+  prompt:   z.string().min(1),
+  imageUrl: z.string().url().optional(),
+  style:    z.string().min(1),
+  feedback: z.string().optional(),
+})
+
 generateRouter.post('/generate/improve-prompt', authMiddleware, async (req, res) => {
   try {
-    const { prompt, imageUrl, style, feedback } = req.body as {
-      prompt: string; imageUrl?: string; style: string; feedback?: string
-    }
-
-    if (!prompt || !style) {
+    const parsedBody = improvePromptSchema.safeParse(req.body)
+    if (!parsedBody.success) {
       res.status(400).json({ error: 'prompt and style are required', code: 'VALIDATION_ERROR' })
       return
     }
+    const { prompt, imageUrl, style, feedback } = parsedBody.data
 
     type ContentBlock = { type: 'image'; source: { type: 'url'; url: string } } | { type: 'text'; text: string }
     const content: ContentBlock[] = []
@@ -290,20 +313,25 @@ generateRouter.post('/generate/improve-prompt', authMiddleware, async (req, res)
     res.json(data)
   } catch (err) {
     logger.error({ err, userId: req.userId }, '[generate/improve-prompt] error')
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Prompt improvement failed', code: 'GENERATION_ERROR' })
+    res.status(500).json({ error: 'Prompt improvement failed', code: 'GENERATION_ERROR' })
   }
 })
 
 // ── POST /generate/regen-scene-prompts ───────────────────────────────────────
 
+const regenScenePromptsSchema = z.object({
+  scriptText: z.string().min(1),
+  style:      z.string().min(1),
+})
+
 generateRouter.post('/generate/regen-scene-prompts', authMiddleware, async (req, res) => {
   try {
-    const { scriptText, style } = req.body as { scriptText: string; style: string }
-
-    if (!scriptText || !style) {
+    const parsedBody = regenScenePromptsSchema.safeParse(req.body)
+    if (!parsedBody.success) {
       res.status(400).json({ error: 'scriptText and style are required', code: 'VALIDATION_ERROR' })
       return
     }
+    const { scriptText, style } = parsedBody.data
 
     const message = await withRetry(() => anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -323,15 +351,35 @@ generateRouter.post('/generate/regen-scene-prompts', authMiddleware, async (req,
     res.json(data)
   } catch (err) {
     logger.error({ err, userId: req.userId }, '[generate/regen-scene-prompts] error')
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Prompt regeneration failed', code: 'GENERATION_ERROR' })
+    res.status(500).json({ error: 'Prompt regeneration failed', code: 'GENERATION_ERROR' })
   }
 })
 
 // ── POST /generate/brand-analyst ─────────────────────────────────────────────
 
+// Lenient brief schema shared by the brand routes — the analyst is designed
+// to "never block the user", so missing fields default to empty values and
+// only structurally invalid bodies get a 400.
+const brandBriefSchema = z.object({
+  name:              z.string().default(''),
+  secteur:           z.string().default(''),
+  cible:             z.string().default(''),
+  valeurs:           z.array(z.string()).default([]),
+  ambiance:          z.string().default(''),
+  usp:               z.string().optional(),
+  couleurs_imposees: z.string().optional(),
+  concurrents:       z.string().optional(),
+  references:        z.string().optional(),
+}).passthrough()
+
 generateRouter.post('/generate/brand-analyst', authMiddleware, async (req, res) => {
   try {
-    const brief = req.body
+    const parsedBody = brandBriefSchema.safeParse(req.body)
+    if (!parsedBody.success) {
+      res.status(400).json({ error: 'Invalid brief body', code: 'VALIDATION_ERROR' })
+      return
+    }
+    const brief = parsedBody.data
     const { system, user } = buildBrandAnalystPrompts(brief)
 
     const message = await withRetry(() => anthropic.messages.create({
@@ -388,13 +436,25 @@ generateRouter.post('/generate/brand-analyst', authMiddleware, async (req, res) 
 
 // ── POST /generate/brand-strategy (SSE streaming) ────────────────────────────
 
-generateRouter.post('/generate/brand-strategy', authMiddleware, async (req, res) => {
-  const brief = req.body
+const brandStrategySchema = z.object({
+  name:              z.string().min(1),
+  secteur:           z.string().min(1),
+  cible:             z.string().min(1),
+  ambiance:          z.string().min(1),
+  valeurs:           z.array(z.string()).default([]),
+  usp:               z.string().optional(),
+  couleurs_imposees: z.string().optional(),
+  concurrents:       z.string().optional(),
+  references:        z.string().optional(),
+}).passthrough()
 
-  if (!brief.name || !brief.secteur || !brief.cible || !brief.ambiance) {
+generateRouter.post('/generate/brand-strategy', authMiddleware, async (req, res) => {
+  const parsedBody = brandStrategySchema.safeParse(req.body)
+  if (!parsedBody.success) {
     res.status(400).json({ error: 'Champs requis manquants (name, secteur, cible, ambiance)', code: 'VALIDATION_ERROR' })
     return
   }
+  const brief = parsedBody.data
 
   // ── Quality gate — bloque les briefs trop pauvres avant d'appeler Claude ──
   const quality = validateBriefQuality(brief)
@@ -443,7 +503,7 @@ generateRouter.post('/generate/brand-strategy', authMiddleware, async (req, res)
       logger.info({ userId: req.userId }, 'Brand strategy streamed')
     } catch (err) {
       logger.error({ err, userId: req.userId }, '[generate/brand-strategy SSE] error')
-      res.write(`data: ${JSON.stringify({ error: err instanceof Error ? err.message : 'Erreur serveur' })}\n\n`)
+      res.write(`data: ${JSON.stringify({ error: 'Erreur serveur', code: 'GENERATION_ERROR' })}\n\n`)
       res.end()
     }
   } else {
@@ -468,23 +528,31 @@ generateRouter.post('/generate/brand-strategy', authMiddleware, async (req, res)
       res.json(strategy)
     } catch (err) {
       logger.error({ err, userId: req.userId }, '[generate/brand-strategy] error')
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Erreur serveur', code: 'GENERATION_ERROR' })
+      res.status(500).json({ error: 'Erreur serveur', code: 'GENERATION_ERROR' })
     }
   }
 })
 
 // ── POST /generate/brand-charte (SSE streaming) ───────────────────────────────
 
-generateRouter.post('/generate/brand-charte', authMiddleware, async (req, res) => {
-  const { brief, direction } = req.body as { brief: unknown; direction: unknown }
+const brandCharteSchema = z.object({
+  brief:     z.record(z.unknown()),
+  direction: z.record(z.unknown()),
+})
 
-  if (!brief || !direction) {
+generateRouter.post('/generate/brand-charte', authMiddleware, async (req, res) => {
+  const parsedBody = brandCharteSchema.safeParse(req.body)
+  if (!parsedBody.success) {
     res.status(400).json({ error: 'brief and direction are required', code: 'VALIDATION_ERROR' })
     return
   }
+  const { brief, direction } = parsedBody.data
 
   const wantsStream = req.headers.accept?.includes('text/event-stream')
-  const { system, user } = buildBrandChartePrompts(brief as Parameters<typeof buildBrandChartePrompts>[0], direction as Parameters<typeof buildBrandChartePrompts>[1])
+  const { system, user } = buildBrandChartePrompts(
+    brief as unknown as Parameters<typeof buildBrandChartePrompts>[0],
+    direction as unknown as Parameters<typeof buildBrandChartePrompts>[1],
+  )
 
   function hexToRgb(hex: string): string {
     const r = parseInt(hex.slice(1, 3), 16)
@@ -520,7 +588,7 @@ generateRouter.post('/generate/brand-charte', authMiddleware, async (req, res) =
       res.end()
     } catch (err) {
       logger.error({ err, userId: req.userId }, '[generate/brand-charte SSE] error')
-      res.write(`data: ${JSON.stringify({ error: err instanceof Error ? err.message : 'Erreur serveur' })}\n\n`)
+      res.write(`data: ${JSON.stringify({ error: 'Erreur serveur', code: 'GENERATION_ERROR' })}\n\n`)
       res.end()
     }
   } else {
@@ -540,23 +608,38 @@ generateRouter.post('/generate/brand-charte', authMiddleware, async (req, res) =
       res.json(charte)
     } catch (err) {
       logger.error({ err, userId: req.userId }, '[generate/brand-charte] error')
-      res.status(500).json({ error: err instanceof Error ? err.message : 'Erreur serveur', code: 'GENERATION_ERROR' })
+      res.status(500).json({ error: 'Erreur serveur', code: 'GENERATION_ERROR' })
     }
   }
 })
 
 // ── POST /generate/brand-hybrid ───────────────────────────────────────────────
 
+const hybridDirectionSchema = z.object({
+  name:       z.string(),
+  palette:    z.record(z.unknown()),
+  typography: z.object({ heading: z.string(), body: z.string() }).passthrough(),
+  keywords:   z.array(z.string()).optional(),
+  mood:       z.string().optional(),
+}).passthrough()
+
+const brandHybridSchema = z.object({
+  brief:           z.object({ name: z.string(), secteur: z.string() }).passthrough().optional(),
+  strategy:        z.object({ directions: z.array(hybridDirectionSchema) }).passthrough().optional(),
+  directions:      z.array(hybridDirectionSchema).optional(),
+  palette_from:    z.number().int(),
+  typography_from: z.number().int(),
+  logo_from:       z.number().int().optional(),
+})
+
 generateRouter.post('/generate/brand-hybrid', authMiddleware, async (req, res) => {
   try {
-    const { brief, strategy, directions, palette_from, typography_from, logo_from } = req.body as {
-      brief?: { name: string; secteur: string }
-      strategy?: { directions: Array<{ name: string; palette: object; typography: { heading: string; body: string }; keywords?: string[]; mood?: string }> }
-      directions?: Array<{ name: string; palette: object; typography: { heading: string; body: string }; keywords?: string[]; mood?: string }>
-      palette_from: number
-      typography_from: number
-      logo_from?: number
+    const parsedBody = brandHybridSchema.safeParse(req.body)
+    if (!parsedBody.success) {
+      res.status(400).json({ error: 'Invalid request body', code: 'VALIDATION_ERROR' })
+      return
     }
+    const { brief, strategy, directions, palette_from, typography_from, logo_from } = parsedBody.data
 
     // Accept both { strategy: { directions } } and { directions } formats
     const dirs = strategy?.directions ?? directions
@@ -599,31 +682,33 @@ generateRouter.post('/generate/brand-hybrid', authMiddleware, async (req, res) =
     res.json(hybridDirection)
   } catch (err) {
     logger.error({ err, userId: req.userId }, '[generate/brand-hybrid] error')
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Hybrid generation failed', code: 'GENERATION_ERROR' })
+    res.status(500).json({ error: 'Hybrid generation failed', code: 'GENERATION_ERROR' })
   }
 })
 
 // ── POST /notify/brand-kit-ready ──────────────────────────────────────────────
 
+const brandKitReadySchema = z.object({
+  email:       z.string().email(),
+  brandName:   z.string().min(1),
+  downloadUrl: z.string().url(),
+})
+
 generateRouter.post('/notify/brand-kit-ready', authMiddleware, async (req, res) => {
   try {
-    const { email, brandName, downloadUrl } = req.body as {
-      email: string
-      brandName: string
-      downloadUrl: string
-    }
-
-    if (!email || !brandName || !downloadUrl) {
-      res.status(400).json({ error: 'email, brandName, and downloadUrl required' })
+    const parsedBody = brandKitReadySchema.safeParse(req.body)
+    if (!parsedBody.success) {
+      res.status(400).json({ error: 'email, brandName, and downloadUrl required', code: 'VALIDATION_ERROR' })
       return
     }
+    const { email, brandName, downloadUrl } = parsedBody.data
 
     await sendBrandKitReadyEmail(email, brandName, downloadUrl)
     logger.info({ email, brandName }, 'Brand kit ready email sent')
     res.json({ ok: true })
   } catch (err) {
     logger.error({ err }, '[notify/brand-kit-ready] error')
-    res.status(500).json({ error: 'Failed to send email' })
+    res.status(500).json({ error: 'Failed to send email', code: 'SERVICE_ERROR' })
   }
 })
 
@@ -631,17 +716,31 @@ generateRouter.post('/notify/brand-kit-ready', authMiddleware, async (req, res) 
 // Analyzes scene 0 image via Claude Vision and extracts reusable style tokens
 // for visual consistency across scenes 1..N
 
+const extractStyleTokensSchema = z.object({
+  image_url: z.string().url(),
+  style:     z.string().optional(),
+})
+
 generateRouter.post('/generate/extract-style-tokens', authMiddleware, async (req, res) => {
   try {
-    const { image_url, style } = req.body as { image_url: string; style?: string }
-
-    if (!image_url) {
+    const parsedBody = extractStyleTokensSchema.safeParse(req.body)
+    if (!parsedBody.success) {
       res.status(400).json({ error: 'image_url required', code: 'VALIDATION_ERROR' })
+      return
+    }
+    const { image_url, style } = parsedBody.data
+
+    // Anti-SSRF — this URL is fetched server-side; block private IPs,
+    // cloud metadata hosts, and non-http(s) schemes.
+    try {
+      validatePublicUrl(image_url)
+    } catch {
+      res.status(400).json({ error: 'Invalid URL', code: 'INVALID_URL' })
       return
     }
 
     // Fetch image and convert to base64 (Anthropic only supports base64, not URL)
-    const imgRes = await fetch(image_url)
+    const imgRes = await fetch(image_url, { signal: AbortSignal.timeout(15_000) })
     if (!imgRes.ok) {
       res.status(400).json({ error: 'Could not fetch image_url', code: 'VALIDATION_ERROR' })
       return
@@ -697,18 +796,20 @@ Réponds UNIQUEMENT avec ce JSON :
 
 const VALID_URL_LENGTHS = new Set<UrlToScriptLength>(['short', 'medium', 'long'])
 
+const scriptFromUrlSchema = z.object({
+  url:      z.string().min(1),
+  length:   z.string().optional().default('medium'),
+  language: z.enum(['fr', 'en']).optional(),
+})
+
 generateRouter.post('/generate/script-from-url', authMiddleware, async (req, res) => {
   try {
-    const { url, length = 'medium', language } = req.body as {
-      url?: string
-      length?: string
-      language?: 'fr' | 'en'
-    }
-
-    if (!url || typeof url !== 'string') {
+    const parsedBody = scriptFromUrlSchema.safeParse(req.body)
+    if (!parsedBody.success) {
       res.status(400).json({ error: 'url requis.', code: 'VALIDATION_ERROR' })
       return
     }
+    const { url, length, language } = parsedBody.data
     const safeLength: UrlToScriptLength = VALID_URL_LENGTHS.has(length as UrlToScriptLength)
       ? (length as UrlToScriptLength)
       : 'medium'
@@ -783,7 +884,7 @@ generateRouter.post('/generate/script-from-url', authMiddleware, async (req, res
     }
     logger.error({ err, userId: req.userId }, '[generate/script-from-url] error')
     res.status(500).json({
-      error: err instanceof Error ? err.message : 'URL-to-script generation failed',
+      error: 'URL-to-script generation failed',
       code: 'GENERATION_ERROR',
     })
   }

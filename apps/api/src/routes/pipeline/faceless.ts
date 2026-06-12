@@ -252,6 +252,35 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
     const durationSeconds = parseDurationToSeconds(duration)
     const creditCost = creditCostForVideo(durationSeconds, resolvedAnimationMode as AnimationMode)
 
+    // Atomically deduct creditCost BEFORE enqueueing — if the deduction
+    // happened after the enqueue, a failed deduction would leave a job
+    // running for free (and concurrent requests could oversubscribe a
+    // tight balance while the job was already in flight).
+    try {
+      await deductCredits(req.userId, creditCost, `video:${video.id}`, {
+        mode: resolvedAnimationMode,
+        duration,
+        durationSeconds,
+      })
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        // Mark the just-created row as error so the user's library reflects reality.
+        await supabaseAdmin.from('videos').update({
+          status: 'error',
+          metadata: { error_message: 'Insufficient credits', error_at: new Date().toISOString() },
+        }).eq('id', video.id).then(() => null, () => null)
+        res.status(402).json({
+          error:    'Insufficient credits',
+          code:     'INSUFFICIENT_CREDITS',
+          required: err.required,
+          available: err.available,
+          video_id: video.id,
+        })
+        return
+      }
+      throw err
+    }
+
     const jobData = {
       type: 'faceless' as const,
       videoId:   video.id,
@@ -285,7 +314,12 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
     let enqueued = false
     if (renderQueue && isRedisReady()) {
       try {
-        await renderQueue.add('faceless', jobData)
+        // jobId = videoId so /videos/:id/cancel can renderQueue.remove(videoId)
+        // while the job waits. BullMQ keeps the same id across retry attempts.
+        // A stale completed/failed job with this id (revert-to-draft → relaunch
+        // reuses the row id) would make add() a silent no-op, so clear it first.
+        await renderQueue.remove(video.id).catch(() => null)
+        await renderQueue.add('faceless', jobData, { jobId: video.id })
         enqueued = true
         logger.info({ videoId: video.id }, 'Job enqueued to BullMQ')
       } catch (err) {
@@ -301,6 +335,10 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
           { videoId: video.id },
           'No BullMQ worker available and ALLOW_INLINE_FALLBACK=false — refusing job to protect event loop',
         )
+        // Credits were deducted before the enqueue attempt — refund them
+        // since the job will never run.
+        await refundCredits(req.userId, creditCost, `video:${video.id}`, { reason: 'worker_unavailable' })
+          .catch((refundErr) => logger.error({ refundErr, videoId: video.id }, 'Refund after enqueue failure failed'))
         // Marquer la vidéo en erreur pour que le frontend sache que le job est mort à la naissance
         try {
           await supabaseAdmin
@@ -348,34 +386,6 @@ pipelineFacelessRouter.post('/faceless', authMiddleware, quotaMiddleware, async 
           logger.error({ dbErr, videoId: video.id }, 'Failed to update video error status in DB')
         }
       })
-    }
-
-    // Atomically deduct creditCost (computed above when building jobData).
-    // After enqueue but before returning so concurrent requests can't
-    // oversubscribe a tight balance.
-    try {
-      await deductCredits(req.userId, creditCost, `video:${video.id}`, {
-        mode: resolvedAnimationMode,
-        duration,
-        durationSeconds,
-      })
-    } catch (err) {
-      if (err instanceof InsufficientCreditsError) {
-        // Mark the just-created row as error so the user's library reflects reality.
-        await supabaseAdmin.from('videos').update({
-          status: 'error',
-          metadata: { error_message: 'Insufficient credits', error_at: new Date().toISOString() },
-        }).eq('id', video.id).then(() => null, () => null)
-        res.status(402).json({
-          error:    'Insufficient credits',
-          code:     'INSUFFICIENT_CREDITS',
-          required: err.required,
-          available: err.available,
-          video_id: video.id,
-        })
-        return
-      }
-      throw err
     }
 
     // Retourner immédiatement (avec le coût débité pour information UI)

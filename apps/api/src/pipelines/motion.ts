@@ -14,6 +14,7 @@ import { renderMotionVideoLambda, isLambdaEnabled } from '../services/remotionLa
 import { sendVideoReadyEmail } from '../services/resend'
 import { selectFalModel, sceneNeedsImage } from '../config/fal-models'
 import { logger } from '../lib/logger'
+import { assertNotCancelled, CancelledError } from './cancellation'
 
 async function downloadMusicTrack(url: string): Promise<Buffer> {
   const res = await fetch(url)
@@ -52,10 +53,15 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
       .from('videos')
       .update({ status: 'generating', metadata: { phase, progress, ...extra } })
       .eq('id', videoId)
+      // Never resurrect a row the user just cancelled.
+      .neq('status', 'cancelled')
     logger.info({ videoId, phase, progress }, 'Motion pipeline status update')
   }
 
   try {
+    // Coopération annulation : abandon immédiat si annulé avant le pickup.
+    await assertNotCancelled(videoId)
+
     // ÉTAPE 1 : Storyboard (Claude AI) — génère animation_type, display_text, needs_background, cta_text
     await updateStatus('storyboard', 10)
     // Pass both brief and script so 'auto' duration mode can size the
@@ -68,6 +74,9 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
     const storyboard = await generateMotionStoryboard(brief, style, params.format, params.duration, scriptForClaude, language)
     await updateStatus('storyboard', 20, { scenes: storyboard.scenes })
     logger.info({ videoId, sceneCount: storyboard.scenes.length }, 'Motion storyboard generated')
+
+    // Annulé pendant le storyboard ? Stop avant de payer fal.ai/ElevenLabs.
+    await assertNotCancelled(videoId)
 
     // ÉTAPE 2 : Visuels fal.ai — deux passes : schnell preview puis HD optimal
     await updateStatus('visuals', 25)
@@ -187,6 +196,9 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
       })
     }
 
+    // Annulé pendant visuels + audio ? Stop avant le rendu Remotion.
+    await assertNotCancelled(videoId)
+
     // ÉTAPE 4 : Rendu Remotion (Lambda si activé, sinon local) — single code path
     // Les deux renderers retournent { mp4: Buffer, thumbnail: Buffer | null }
     // depuis que le Lambda re-télécharge l'output S3 dans le worker. Storage
@@ -285,6 +297,13 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
       }
     }
   } catch (err) {
+    // Annulation utilisateur : ne PAS marquer 'error', ne PAS refund (la
+    // route /cancel a déjà émis le refund idempotent). Return silencieux.
+    if (err instanceof CancelledError) {
+      logger.info({ videoId }, 'Motion pipeline halted — video cancelled by user')
+      return
+    }
+
     const errorMessage = err instanceof Error ? err.message : String(err)
     Sentry.captureException(err, { extra: { videoId, userId } })
     logger.error({ err, videoId }, 'Motion pipeline error')
@@ -305,6 +324,8 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
         metadata: { ...existingMeta, error_message: errorMessage, progress: 0, error_at: new Date().toISOString() },
       })
       .eq('id', videoId)
+      // Ne pas écraser 'cancelled' si l'annulation a fait échouer un appel en vol.
+      .neq('status', 'cancelled')
       .then(() => null, () => null)
 
     if (creditCost && creditCost > 0) {

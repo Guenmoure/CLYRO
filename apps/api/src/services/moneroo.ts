@@ -1,6 +1,8 @@
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
+import { type PlanId, PLAN_MONTHLY_CREDITS } from '@clyro/shared'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
+import { setPlan, grantCredits } from './credits'
 
 const MONEROO_API_URL = 'https://api.moneroo.io/v1'
 
@@ -11,10 +13,8 @@ const PLAN_PRICES: Record<string, number> = {
   studio:  32000, // ~49 EUR
 }
 
-const PLAN_CREDITS: Record<string, number> = {
-  starter: 30,
-  studio:  999999, // illimité
-}
+// Plans purchasable via Moneroo Mobile Money.
+const MONEROO_PLANS = new Set<PlanId>(['starter', 'studio'])
 
 interface CreateMonerooPaymentParams {
   userId: string
@@ -94,7 +94,13 @@ export function verifyMonerooSignature(rawBody: string, signature: string): bool
   }
 
   const expectedSignature = createHmac('sha256', secret).update(rawBody).digest('hex')
-  return signature === expectedSignature
+
+  // Constant-time comparison — a plain === leaks timing information that
+  // lets an attacker brute-force the signature byte by byte.
+  const provided = Buffer.from(signature, 'utf8')
+  const expected = Buffer.from(expectedSignature, 'utf8')
+  if (provided.length !== expected.length) return false
+  return timingSafeEqual(provided, expected)
 }
 
 /**
@@ -137,23 +143,62 @@ export async function handleMonerooWebhook(rawBody: string, signature: string): 
 }
 
 async function activateSubscription(userId: string, plan: string, paymentId: string): Promise<void> {
-  const credits = PLAN_CREDITS[plan] ?? 0
+  if (!MONEROO_PLANS.has(plan as PlanId)) {
+    logger.error({ userId, plan, paymentId }, 'Moneroo: unknown plan in webhook metadata — ignoring')
+    return
+  }
+  const planId = plan as PlanId
 
-  const { error } = await supabaseAdmin
-    .from('profiles')
-    .update({ plan, credits })
-    .eq('id', userId)
+  // Idempotency: Moneroo can retry webhooks — skip if this payment id was
+  // already processed (same pattern as Stripe's session_id dedup).
+  const { data: existing } = await supabaseAdmin
+    .from('payments')
+    .select('id')
+    .eq('provider', 'moneroo')
+    .eq('status', 'success')
+    .filter('metadata->>payment_id', 'eq', paymentId)
+    .maybeSingle()
 
-  if (error) {
-    logger.error({ error, userId, plan }, 'Moneroo: failed to update profile after payment')
-    throw new Error('Failed to activate subscription in database')
+  if (existing) {
+    logger.info({ paymentId }, 'Moneroo: webhook already processed — skipping')
+    return
   }
 
-  await supabaseAdmin
+  // 1. Set the plan + monthly_credits + renewal clock on the profile.
+  //    Never overwrite the credits balance directly — the ledger is the
+  //    source of truth and balances roll over by design.
+  await setPlan(userId, planId)
+
+  // 2. Grant the first month's credits via the ledger so it's audited.
+  const firstMonth = PLAN_MONTHLY_CREDITS[planId]
+  await grantCredits(userId, firstMonth, 'subscription', `moneroo:${paymentId}`, {
+    plan: planId,
+    moneroo_payment_id: paymentId,
+    reason: 'mobile_money_payment',
+  })
+
+  // 3. Mark the pre-recorded payment as success (insert one if the
+  //    pre-record was lost so the dedup above still works on retry).
+  const { data: updated } = await supabaseAdmin
     .from('payments')
     .update({ status: 'success' })
-    .eq('metadata->>payment_id', paymentId)
-    .then(() => null, (err) => logger.warn({ err }, 'Moneroo: failed to update payment record'))
+    .eq('provider', 'moneroo')
+    .filter('metadata->>payment_id', 'eq', paymentId)
+    .select('id')
 
-  logger.info({ userId, plan, paymentId }, 'Moneroo: subscription activated')
+  if (!updated || updated.length === 0) {
+    const { error: insertError } = await supabaseAdmin.from('payments').insert({
+      user_id:  userId,
+      provider: 'moneroo',
+      amount:   PLAN_PRICES[planId] ?? 0,
+      currency: 'XOF',
+      status:   'success',
+      metadata: { payment_id: paymentId, plan: planId },
+    })
+    if (insertError) {
+      logger.warn({ err: insertError, paymentId }, 'Moneroo: failed to record success payment')
+    }
+  }
+
+  logger.info({ userId, plan: planId, paymentId, credits: firstMonth }, 'Moneroo: subscription activated')
 }
