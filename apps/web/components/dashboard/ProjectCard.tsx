@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import {
   Video, Sparkles, Palette, MoreVertical,
@@ -13,8 +14,18 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toast'
 import { useLanguage } from '@/lib/i18n'
-import { MoveToFolderModal } from '@/components/dashboard/MoveToFolderModal'
-import { ShareLinkModal } from '@/components/dashboard/ShareLinkModal'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+
+// Modals only open on user interaction — code-split them out of the initial
+// bundle so the projects grid paints faster (same pattern as assets pages).
+const MoveToFolderModal = dynamic(
+  () => import('@/components/dashboard/MoveToFolderModal').then((m) => m.MoveToFolderModal),
+  { ssr: false },
+)
+const ShareLinkModal = dynamic(
+  () => import('@/components/dashboard/ShareLinkModal').then((m) => m.ShareLinkModal),
+  { ssr: false },
+)
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -305,6 +316,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   const [previewOpen,    setPreviewOpen]    = useState(false)
   const [moveOpen,       setMoveOpen]       = useState(false)
   const [shareOpen,      setShareOpen]      = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [localFolderId,  setLocalFolderId]  = useState<string | null>(project.folder_id ?? null)
 
   const isProcessing = ['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly', 'animation'].includes(project.status)
@@ -395,6 +407,9 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   // For brand kit done state: link to brand hub to view results
   const brandHubHref = `/brand/hub?draft=${project.id}`
 
+  // The thumbnail acts as a button only when there's something to open
+  const thumbnailClickable = !isProcessing && !isError && (isBrand || !!project.output_url)
+
   function handleThumbnailClick() {
     if (isProcessing || isError) return
     if (isBrand) {
@@ -429,8 +444,22 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
           className={cn(
             'relative aspect-video overflow-hidden bg-card',
             (isDone || isBrand) && !isProcessing && 'cursor-pointer',
+            thumbnailClickable && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
           )}
           onClick={handleThumbnailClick}
+          role={thumbnailClickable ? 'button' : undefined}
+          tabIndex={thumbnailClickable ? 0 : undefined}
+          aria-label={thumbnailClickable
+            ? (isBrand ? t('pc_viewBrandKit') : t('pc_preview'))
+            : undefined}
+          onKeyDown={thumbnailClickable
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleThumbnailClick()
+                }
+              }
+            : undefined}
         >
           {/* Gradient placeholder */}
           <div className={cn(
@@ -553,7 +582,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
             <ContextMenu
               project={project}
               onClose={() => setMenuOpen(false)}
-              onDelete={handleDelete}
+              onDelete={() => setConfirmDeleteOpen(true)}
               onRename={handleRename}
               onEditAsNew={handleEditAsNew}
               onPreview={() => setPreviewOpen(true)}
@@ -587,6 +616,16 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
         videoId={project.id}
+      />
+
+      {/* Delete confirmation — DELETE is a hard-delete with no undo */}
+      <ConfirmDialog
+        isOpen={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title={t('pc_deleteConfirmTitle')}
+        message={t('pc_deleteConfirmBody').replace('{name}', localTitle ?? t('pc_untitled'))}
+        confirmLabel={t('pc_delete')}
       />
     </>
   )
