@@ -82,7 +82,7 @@ function StepBrief({ brief, onChange }: { brief: string; onChange: (v: string) =
         onChange={e => onChange(e.target.value)}
         rows={10}
         placeholder={t('mn_brief_placeholder')}
-        className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+        className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-primary transition-colors"
       />
       <p className="font-mono text-xs text-[--text-muted] text-right">
         {t('mn_brief_chars').replace('{n}', String(brief.trim().length))}
@@ -146,7 +146,7 @@ function StepStyleFormat({
               className={cn(
                 'flex-1 min-w-[120px] flex flex-col items-center gap-3 rounded-xl p-4 border-2 transition-all duration-200',
                 format === opt.value
-                  ? 'border-blue-500 bg-blue-500/10'
+                  ? 'border-primary bg-brand/10'
                   : 'border-border bg-muted hover:border-border',
               )}
             >
@@ -174,7 +174,7 @@ function StepStyleFormat({
               className={cn(
                 'px-6 py-3 rounded-xl border-2 font-display text-sm transition-all duration-200',
                 duration === opt.value
-                  ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                  ? 'border-primary bg-brand/10 text-primary'
                   : 'border-border bg-muted text-[--text-secondary] hover:border-border',
               )}
             >
@@ -247,7 +247,7 @@ function StepBrand({
               className={cn(
                 'px-3 py-1.5 rounded-lg border text-sm transition-all duration-150',
                 fontFamily === f
-                  ? 'border-blue-500/40 bg-blue-500/10 text-blue-400'
+                  ? 'border-brand/40 bg-brand/10 text-primary'
                   : 'border-border bg-muted text-[--text-secondary] hover:border-border',
               )}
               data-font={f}
@@ -281,13 +281,13 @@ function StepVoiceAudio({
           className={cn(
             'flex items-center gap-4 w-full rounded-xl px-4 py-3 border-2 transition-all duration-200',
             selectedVoice
-              ? 'border-blue-500/40 bg-blue-500/5'
+              ? 'border-brand/40 bg-brand/5'
               : 'border-border bg-muted hover:border-border',
           )}
         >
           <div className="w-10 h-10 rounded-xl bg-border flex items-center justify-center shrink-0">
             {selectedVoice
-              ? <Volume2 size={18} className="text-blue-400" />
+              ? <Volume2 size={18} className="text-primary" />
               : <Mic size={18} className="text-[--text-muted]" />}
           </div>
           <div className="flex-1 text-left">

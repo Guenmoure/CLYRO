@@ -183,7 +183,7 @@ function TabsBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
           className={cn(
             'pb-2 font-display text-sm font-medium transition-colors border-b-2',
             tab === t.id
-              ? 'text-foreground border-[#c45b3a]'
+              ? 'text-foreground border-primary'
               : 'text-[--text-muted] border-transparent hover:text-foreground',
           )}
         >
@@ -217,7 +217,7 @@ function Section({
 }
 
 const inputCls =
-  'w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] outline-none focus:border-blue-500/60 transition-colors'
+  'w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] outline-none focus:border-brand/60 transition-colors'
 
 // ── Onglet 1 — Brand Overview ───────────────────────────────────────────────
 
@@ -369,7 +369,7 @@ function ColorField({
   return (
     <div className="space-y-1">
       <label className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">{label}</label>
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2 focus-within:border-blue-500/60 transition-colors">
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2 focus-within:border-brand/60 transition-colors">
         <input
           type="color"
           value={display}

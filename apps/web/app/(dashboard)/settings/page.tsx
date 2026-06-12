@@ -54,8 +54,8 @@ export default function SettingsPage() {
         {/* Profile */}
         <Card padding="none" className="overflow-hidden">
           <header className="flex items-center gap-3 px-6 py-4 border-b border-border">
-            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-              <User size={16} className="text-blue-500" />
+            <div className="w-9 h-9 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center">
+              <User size={16} className="text-primary" />
             </div>
             <div>
               <h2 className="font-display font-semibold text-foreground">{t('set_profile')}</h2>

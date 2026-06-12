@@ -81,8 +81,8 @@ const TYPE_META: Record<NotifType, { icon: React.ReactNode; color: string; bg: s
   },
   info: {
     icon: <Info size={14} strokeWidth={1.8} />,
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/10',
+    color: 'text-info',
+    bg: 'bg-info/10',
   },
 }
 

@@ -47,11 +47,11 @@ function AvatarGroupCard({
 }) {
   const { t } = useLanguage()
   return (
-    <div className="relative rounded-2xl border border-border bg-card overflow-hidden transition-all hover:border-blue-500/30 hover:shadow-md w-full group">
+    <div className="relative rounded-2xl border border-border bg-card overflow-hidden transition-all hover:border-brand/30 hover:shadow-md w-full group">
       <button
         type="button"
         onClick={onClick}
-        className="block text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="block text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-label={`${group.baseName}, ${group.totalLooks} looks`}
       >
         <div className="relative aspect-[3/4] bg-muted overflow-hidden">
@@ -65,7 +65,7 @@ function AvatarGroupCard({
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+            <div className="w-full h-full bg-gradient-to-br from-brand/15 to-violet-500/15 flex items-center justify-center">
               <span className="font-body text-4xl text-foreground/40">
                 {group.baseName.charAt(0).toUpperCase()}
               </span>
@@ -197,14 +197,14 @@ export default function AvatarsPage() {
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 rounded-lg font-body text-sm transition-all duration-150',
                 activeTab === key
-                  ? 'bg-blue-500/10 text-blue-500'
+                  ? 'bg-brand/10 text-primary'
                   : 'text-[--text-muted] hover:text-foreground hover:bg-muted',
               )}
             >
               {label}
               <span className={cn(
                 'font-body text-[10px] rounded-full px-1.5 py-0.5',
-                activeTab === key ? 'bg-blue-500/20 text-blue-500' : 'bg-muted text-[--text-muted]',
+                activeTab === key ? 'bg-brand/15 text-primary' : 'bg-muted text-[--text-muted]',
               )}>
                 {count}
               </span>

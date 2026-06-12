@@ -146,7 +146,7 @@ export function SecuritySection() {
                   autoComplete="new-password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
                   placeholder={t('sec_at_least_8_chars')}
                   minLength={8}
                   required
@@ -170,7 +170,7 @@ export function SecuritySection() {
                   autoComplete="new-password"
                   value={confirmPass}
                   onChange={(e) => setConfirmPass(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
                   placeholder={t('sec_retype_password')}
                   required
                 />
@@ -199,8 +199,8 @@ export function SecuritySection() {
       {/* 2FA */}
       <Card padding="none" className="overflow-hidden">
         <header className="flex items-center gap-3 px-5 py-4 border-b border-border">
-          <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-            <Smartphone size={16} className="text-blue-500" />
+          <div className="w-9 h-9 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center">
+            <Smartphone size={16} className="text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-display font-semibold text-foreground">

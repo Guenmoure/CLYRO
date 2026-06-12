@@ -20,8 +20,8 @@ export default function AssetsLayout({ children }: { children: React.ReactNode }
       {/* Section header */}
       <div className="bg-card border-b border-border/50 px-6 pt-6 pb-0 shrink-0">
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
-            <Package size={16} className="text-blue-500" />
+          <div className="w-8 h-8 rounded-xl bg-brand/10 flex items-center justify-center">
+            <Package size={16} className="text-primary" />
           </div>
           <h1 className="font-body text-2xl font-bold text-foreground">{t('assets')}</h1>
         </div>
@@ -41,7 +41,7 @@ export default function AssetsLayout({ children }: { children: React.ReactNode }
                   'flex items-center gap-2 px-4 py-2.5 font-body text-sm rounded-t-xl',
                   'border-b-2 transition-all duration-150',
                   active
-                    ? 'text-blue-400 border-blue-500 bg-blue-500/8'
+                    ? 'text-primary border-primary bg-brand/10'
                     : 'text-[--text-secondary] border-transparent hover:text-foreground hover:bg-muted',
                 )}
               >

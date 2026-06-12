@@ -69,7 +69,7 @@ export function PersonalizationSection() {
           value={defaultVoice}
           onChange={(e) => { setDefaultVoice(e.target.value); save('clyro_default_voice', e.target.value, 'Voix') }}
           disabled={loadingVoices}
-          className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer disabled:opacity-60"
+          className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer disabled:opacity-60"
         >
           <option value="">— None (choose each time)</option>
           {voices.map((v) => (
@@ -138,7 +138,7 @@ export function PersonalizationSection() {
                 onClick={() => { setDefaultFormat(f.id); save('clyro_default_format', f.id, 'Format') }}
                 className={cn(
                   'flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all',
-                  active ? 'border-blue-500 bg-blue-500/5 ring-2 ring-blue-500/20' : 'border-border bg-background hover:border-border',
+                  active ? 'border-primary bg-brand/5 ring-2 ring-brand/20' : 'border-border bg-background hover:border-border',
                 )}
                 aria-pressed={active}
               >
@@ -160,7 +160,7 @@ export function PersonalizationSection() {
           onClick={() => { const next = !autoAdvance; setAutoAdvance(next); save('clyro_auto_advance', next, 'Avancement automatique') }}
           className={cn(
             'relative inline-flex items-center w-11 h-6 rounded-full transition-colors',
-            autoAdvance ? 'bg-blue-500' : 'bg-muted border border-border',
+            autoAdvance ? 'bg-primary' : 'bg-muted border border-border',
           )}
           aria-pressed={autoAdvance}
           role="switch"

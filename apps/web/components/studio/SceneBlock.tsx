@@ -33,7 +33,7 @@ export function SceneBlock({
         'relative rounded-lg flex flex-col justify-between',
         'border border-white/10 cursor-pointer select-none',
         'transition-all duration-150 shrink-0 group text-left',
-        selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-card',
+        selected && 'ring-2 ring-brand ring-offset-2 ring-offset-card',
       )}
       style={{ width: `${width}px`, height: '80px', background: bg, minWidth: '64px' }}
       aria-pressed={selected}

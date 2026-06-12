@@ -36,7 +36,7 @@ export function AvatarCard({ avatar, isFavorite, onClick, onFavorite, onUse }: A
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+        <div className="w-full h-full bg-gradient-to-br from-brand/15 to-violet-500/15 flex items-center justify-center">
           <span className="font-display text-4xl text-foreground/40">
             {avatar.avatar_name.charAt(0).toUpperCase()}
           </span>

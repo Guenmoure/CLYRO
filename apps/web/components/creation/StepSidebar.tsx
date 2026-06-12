@@ -23,7 +23,7 @@ function AutoSaveIndicator({ lastSaved, isSaving }: { lastSaved?: Date | null; i
     <div className="flex items-center gap-1.5 mt-1" aria-live="polite">
       {isSaving ? (
         <>
-          <Cloud size={11} className="text-blue-400 animate-pulse" strokeWidth={1.8} />
+          <Cloud size={11} className="text-primary animate-pulse" strokeWidth={1.8} />
           <span className="font-mono text-[11px] text-[--text-muted]">Saving…</span>
         </>
       ) : lastSaved ? (
@@ -69,7 +69,7 @@ function StepIndicator({ index, status }: { index: number; status: 'done' | 'act
   }
   if (status === 'active') {
     return (
-      <span className="w-6 h-6 rounded-full bg-blue-500/20 border border-blue-500 flex items-center justify-center shrink-0">
+      <span className="w-6 h-6 rounded-full bg-brand/20 border border-primary flex items-center justify-center shrink-0">
         <span className="font-mono text-xs gradient-text font-bold">{index + 1}</span>
       </span>
     )
@@ -111,14 +111,14 @@ function DesktopSidebar({
             onChange={e => onProjectNameChange(e.target.value)}
             onBlur={stopEdit}
             onKeyDown={e => e.key === 'Enter' && stopEdit()}
-            className="w-full bg-muted border border-blue-500 rounded-lg px-2 py-1 font-display text-sm text-foreground focus:outline-none"
+            className="w-full bg-muted border border-primary rounded-lg px-2 py-1 font-display text-sm text-foreground focus:outline-none"
             autoFocus
           />
         ) : (
           <button
             type="button"
             onClick={startEdit}
-            className="w-full text-left font-display text-sm text-foreground hover:text-blue-400 transition-colors truncate"
+            className="w-full text-left font-display text-sm text-foreground hover:text-primary transition-colors truncate"
           >
             {projectName || 'New project'}
           </button>
@@ -173,7 +173,7 @@ function DesktopSidebar({
       {contextualHelp && (
         <Card variant="glass" className="p-3 rounded-xl mt-4">
           <div className="flex gap-2">
-            <HelpCircle size={14} className="text-blue-400 shrink-0 mt-0.5" />
+            <HelpCircle size={14} className="text-primary shrink-0 mt-0.5" />
             <p className="font-body text-xs text-[--text-muted] leading-relaxed">
               {contextualHelp}
             </p>

@@ -88,7 +88,7 @@ export function PreferencesSection() {
           <select
             value={language}
             onChange={(e) => selectLanguage(e.target.value)}
-            className="w-full rounded-xl border border-border bg-background pl-9 pr-4 py-2.5 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+            className="w-full rounded-xl border border-border bg-background pl-9 pr-4 py-2.5 text-sm font-body text-foreground focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
             aria-label="Language"
           >
             {LANGUAGES.map((l) => (
@@ -147,7 +147,7 @@ export function PreferencesSection() {
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-body transition-all',
                   active
-                    ? 'border-blue-500/60 bg-blue-500/10 text-blue-500 font-medium'
+                    ? 'border-brand/60 bg-brand/10 text-primary font-medium'
                     : 'border-border bg-background text-[--text-secondary] hover:text-foreground hover:border-border',
                 )}
                 aria-pressed={active}
@@ -183,7 +183,7 @@ function ThemeCard({
       className={cn(
         'group relative overflow-hidden rounded-2xl border p-3 transition-all',
         active
-          ? 'border-blue-500 ring-2 ring-blue-500/30'
+          ? 'border-primary ring-2 ring-brand/30'
           : 'border-border hover:border-border card-interactive',
       )}
     >
@@ -201,7 +201,7 @@ function ThemeCard({
           <Icon size={18} className={mode === 'light' ? 'text-gray-700' : 'text-gray-300'} />
         </div>
         {active && (
-          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow">
+          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow">
             <Check size={11} className="text-white" />
           </div>
         )}

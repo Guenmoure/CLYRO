@@ -277,7 +277,7 @@ export default function BrandPhotoshootTemplateInfosPage() {
                   className={cn(
                     'text-left rounded-xl border-2 transition-colors p-3 space-y-1',
                     selectedTemplate === tpl.id
-                      ? 'border-[#c45b3a] bg-muted'
+                      ? 'border-primary bg-muted'
                       : 'border-border bg-card hover:border-foreground/30',
                   )}
                 >
@@ -334,7 +334,7 @@ function PhotoshootResults({
           {t('bk_variations')} <span className="font-mono text-[10px] text-[--text-muted] ml-1">({shoot.output_urls.length}/4)</span>
         </h3>
         {shoot.status === 'generating' && (
-          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-blue-600">
+          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-info">
             <Loader2 size={11} className="animate-spin" /> {t('bk_generating')}
           </span>
         )}

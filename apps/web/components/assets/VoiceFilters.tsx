@@ -76,7 +76,7 @@ export function VoiceFilters({
             value={search}
             onChange={(e) => onSearch(e.target.value)}
             placeholder={t('searchVoices')}
-            className="w-full bg-muted border border-border rounded-xl h-10 pl-9 pr-4 font-body text-sm text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="w-full bg-muted border border-border rounded-xl h-10 pl-9 pr-4 font-body text-sm text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
           />
         </div>
         {hasAdvanced ? (
@@ -116,7 +116,7 @@ export function VoiceFilters({
               'shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-body text-xs font-medium border transition-all duration-150 whitespace-nowrap',
               activeCategory === key
                 ? 'bg-foreground text-background border-foreground'
-                : 'bg-card text-foreground border-border hover:border-blue-500/40',
+                : 'bg-card text-foreground border-border hover:border-brand/40',
             )}
           >
             <Icon size={12} />
@@ -133,7 +133,7 @@ export function VoiceFilters({
           <select
             value={gender ?? ''}
             onChange={(e) => onGender?.(e.target.value)}
-            className="bg-muted border border-border rounded-lg h-9 px-3 font-body text-xs text-foreground focus:outline-none focus:border-blue-500/60"
+            className="bg-muted border border-border rounded-lg h-9 px-3 font-body text-xs text-foreground focus:outline-none focus:border-primary"
           >
             <option value="">{t('vf_genderLabel')}</option>
             {filterOptions.genders.map((g) => (
@@ -143,7 +143,7 @@ export function VoiceFilters({
           <select
             value={language ?? ''}
             onChange={(e) => onLanguage?.(e.target.value)}
-            className="bg-muted border border-border rounded-lg h-9 px-3 font-body text-xs text-foreground focus:outline-none focus:border-blue-500/60"
+            className="bg-muted border border-border rounded-lg h-9 px-3 font-body text-xs text-foreground focus:outline-none focus:border-primary"
           >
             <option value="">{t('vf_languageLabel')}</option>
             {filterOptions.languages.map((l) => (
@@ -153,7 +153,7 @@ export function VoiceFilters({
           <select
             value={useCase ?? ''}
             onChange={(e) => onUseCase?.(e.target.value)}
-            className="bg-muted border border-border rounded-lg h-9 px-3 font-body text-xs text-foreground focus:outline-none focus:border-blue-500/60"
+            className="bg-muted border border-border rounded-lg h-9 px-3 font-body text-xs text-foreground focus:outline-none focus:border-primary"
           >
             <option value="">{t('vf_usageLabel')}</option>
             {filterOptions.useCases.map((u) => (

@@ -442,7 +442,7 @@ export default function CreativeEditorPage() {
                 onChange={(e) => patchCreative({ header_text: e.target.value })}
                 placeholder={t('bk_ce_headerPlaceholder')}
                 maxLength={200}
-                className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60"
+                className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60"
               />
             </BlockSection>
 
@@ -459,7 +459,7 @@ export default function CreativeEditorPage() {
                 rows={3}
                 maxLength={500}
                 placeholder={t('bk_ce_descPlaceholder')}
-                className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none"
+                className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60 resize-none"
               />
             </BlockSection>
 
@@ -478,7 +478,7 @@ export default function CreativeEditorPage() {
                     onChange={(e) => patchCreative({ cta_text: e.target.value })}
                     placeholder={t('bk_ce_ctaPlaceholder')}
                     maxLength={60}
-                    className="flex-1 rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60"
+                    className="flex-1 rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60"
                   />
                   <button
                     type="button"
@@ -572,7 +572,7 @@ function EditPromptModal({
             rows={6}
             disabled={loading}
             placeholder={t('bk_ce_editPromptPlaceholder')}
-            className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none"
+            className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60 resize-none"
           />
           <p className="font-mono text-[10px] text-[--text-muted] text-right">
             {t('bk_charCount').replace('{count}', String(prompt.trim().length))}

@@ -15,7 +15,7 @@ interface Plan {
 const PLAN_META: Record<Plan['plan'], { label: string; price: string; color: string }> = {
   free:    { label: 'Free',    price: '0€',     color: 'from-gray-400/20 to-gray-200/10' },
   starter: { label: 'Starter', price: '9€/mo',  color: 'from-amber-400/30 to-amber-200/10' },
-  pro:     { label: 'Pro',     price: '19€/mo', color: 'from-blue-500/30 to-purple-500/20' },
+  pro:     { label: 'Pro',     price: '19€/mo', color: 'from-brand/30 to-violet-500/20' },
   studio:  { label: 'Studio',  price: '49€/mo', color: 'from-purple-500/30 to-pink-500/20' },
 }
 

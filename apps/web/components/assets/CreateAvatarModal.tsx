@@ -101,10 +101,10 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
               className={cn(
                 'relative border-2 border-dashed rounded-2xl p-10 text-center transition-all duration-200',
                 dragOver
-                  ? 'border-blue-500/60 bg-blue-500/5'
+                  ? 'border-brand/60 bg-brand/5'
                   : videoFile
                     ? 'border-success/40 bg-success/5'
-                    : 'border-border hover:border-blue-500/40 hover:bg-blue-500/5',
+                    : 'border-border hover:border-brand/40 hover:bg-brand/5',
               )}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
               onDragLeave={() => setDragOver(false)}
@@ -184,10 +184,10 @@ export function CreateAvatarModal({ isOpen, onClose }: CreateAvatarModalProps) {
               className={cn(
                 'relative border-2 border-dashed rounded-2xl p-10 text-center transition-all duration-200 cursor-pointer',
                 dragOver
-                  ? 'border-blue-500/60 bg-blue-500/5'
+                  ? 'border-brand/60 bg-brand/5'
                   : photoFile
                     ? 'border-success/40 bg-success/5'
-                    : 'border-border hover:border-blue-500/40 hover:bg-blue-500/5',
+                    : 'border-border hover:border-brand/40 hover:bg-brand/5',
               )}
               onClick={() => photoInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}

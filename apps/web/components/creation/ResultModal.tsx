@@ -51,8 +51,8 @@ function VideoResult({ videoUrl, thumbnailUrl, title }: { videoUrl: string; thum
 // ── Brand asset grid ───────────────────────────────────────────────────────────
 
 function AssetIcon({ type }: { type: BrandAsset['type'] }) {
-  if (type === 'image' || type === 'svg') return <ImageIcon size={20} className="text-blue-400" />
-  if (type === 'pdf') return <FileText size={20} className="text-purple-400" />
+  if (type === 'image' || type === 'svg') return <ImageIcon size={20} className="text-primary" />
+  if (type === 'pdf') return <FileText size={20} className="text-violet-500" />
   return <Palette size={20} className="text-teal-500" />
 }
 
@@ -68,7 +68,7 @@ function BrandResult({ assets }: { assets: BrandAsset[] }) {
           rel="noopener noreferrer"
           className={cn(
             'group flex flex-col items-center gap-3 rounded-xl p-4',
-            'bg-muted border border-border hover:border-blue-500/50',
+            'bg-muted border border-border hover:border-brand/50',
             'transition-all duration-200 hover:bg-muted',
           )}
         >

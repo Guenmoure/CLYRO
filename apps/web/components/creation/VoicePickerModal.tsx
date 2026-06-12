@@ -63,7 +63,7 @@ function FilterPills({
           className={cn(
             'px-2.5 py-1 rounded-lg font-mono text-xs transition-all duration-150',
             selected === opt
-              ? 'bg-blue-500/15 border border-blue-500/40 text-blue-400'
+              ? 'bg-brand/15 border border-brand/40 text-primary'
               : 'bg-muted border border-border text-[--text-muted] hover:border-border hover:text-foreground',
           )}
         >
@@ -109,7 +109,7 @@ function VoiceRow({
       className={cn(
         'w-full flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 text-left',
         selected
-          ? 'bg-blue-500/10 border border-blue-500/30'
+          ? 'bg-brand/10 border border-brand/30'
           : 'bg-muted/50 border border-border/50 hover:bg-muted hover:border-border',
       )}
     >
@@ -126,7 +126,7 @@ function VoiceRow({
         aria-label={playing ? 'Pause' : 'Listen'}
       >
         {playing
-          ? <Pause size={13} className="text-blue-400" />
+          ? <Pause size={13} className="text-primary" />
           : <Play  size={13} className="text-[--text-secondary]" />
         }
       </button>
@@ -162,7 +162,7 @@ function VoiceRow({
 
       {/* Selected check */}
       {selected && (
-        <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+        <span className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
           <Check size={11} className="text-white" />
         </span>
       )}
@@ -243,7 +243,7 @@ export function VoicePickerModal({
             >
               {label}
               {key === 'cloned' && clonedVoices.length > 0 && (
-                <span className="ml-1.5 text-[11px] text-blue-400">({clonedVoices.length})</span>
+                <span className="ml-1.5 text-[11px] text-primary">({clonedVoices.length})</span>
               )}
             </button>
           ))}
@@ -261,7 +261,7 @@ export function VoicePickerModal({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search for a voice…"
-            className="w-full bg-muted border border-border rounded-xl pl-9 pr-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="w-full bg-muted border border-border rounded-xl pl-9 pr-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-primary transition-colors"
           />
         </div>
 
@@ -286,8 +286,8 @@ export function VoicePickerModal({
             <div className="py-8 text-center">
               {tab === 'cloned' && onRequestClone ? (
                 <>
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3" aria-hidden="true">
-                    <Mic2 size={16} className="text-blue-400" />
+                  <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center mx-auto mb-3" aria-hidden="true">
+                    <Mic2 size={16} className="text-primary" />
                   </div>
                   <p className="font-body text-sm text-foreground mb-1">No cloned voices yet</p>
                   <p className="font-mono text-xs text-[--text-muted] mb-4">

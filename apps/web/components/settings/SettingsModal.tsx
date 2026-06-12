@@ -136,11 +136,11 @@ function SectionGroup({
                 className={cn(
                   'flex items-center gap-3 w-full rounded-xl px-3 py-2 text-sm font-body transition-colors',
                   isActive
-                    ? 'bg-blue-500/15 text-foreground font-medium'
+                    ? 'bg-brand/15 text-foreground font-medium'
                     : 'text-[--text-secondary] hover:bg-muted hover:text-foreground',
                 )}
               >
-                <Icon size={16} className={isActive ? 'text-blue-500' : 'text-[--text-muted]'} />
+                <Icon size={16} className={isActive ? 'text-primary' : 'text-[--text-muted]'} />
                 {item.label}
               </button>
             </li>

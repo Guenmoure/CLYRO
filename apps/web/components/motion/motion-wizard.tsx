@@ -219,7 +219,7 @@ function StepBrand({
                 <button
                   type="button"
                   onClick={() => onUpdate({ ...brand, logo_url: undefined })}
-                  className="text-xs text-muted-foreground hover:text-red-400 text-left"
+                  className="text-xs text-muted-foreground hover:text-error text-left"
                 >
                   Supprimer
                 </button>
@@ -249,7 +249,7 @@ function StepBrand({
               }}
               className="w-32 bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-mono text-sm focus:outline-none focus:border-clyro-purple"
             />
-            <span className={`text-xs font-mono px-2 py-1 rounded-lg ${wcagOk ? 'bg-green-900/40 text-green-400' : 'bg-amber-900/40 text-amber-400'}`}>
+            <span className={`text-xs font-mono px-2 py-1 rounded-lg ${wcagOk ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning'}`}>
               {wcagOk ? `✓ WCAG AA (${contrastRatio.toFixed(1)}:1)` : `⚠ ${t('mw_lowContrast')} (${contrastRatio.toFixed(1)}:1 — min 4.5)`}
             </span>
           </div>
@@ -585,8 +585,8 @@ function StepGenerating({ videoId, onReset }: { videoId: string; onReset: () => 
         })}
       </div>
       {isError && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4">
-          <p className="text-red-400 text-sm font-body">{errorMessage ?? t('mw_errorOccurred')}</p>
+        <div className="bg-error/10 border border-error/20 rounded-xl p-4 mb-4">
+          <p className="text-error text-sm font-body">{errorMessage ?? t('mw_errorOccurred')}</p>
         </div>
       )}
       {isDone && outputUrl && (

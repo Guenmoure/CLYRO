@@ -168,7 +168,7 @@ export default function BrandCatalogPage() {
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                 maxLength={120}
-                className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60"
+                className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60"
               />
             </div>
             <div className="space-y-2">
@@ -178,7 +178,7 @@ export default function BrandCatalogPage() {
                 onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 rows={3}
                 maxLength={500}
-                className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none"
+                className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60 resize-none"
               />
             </div>
           </div>
@@ -223,19 +223,19 @@ function ManualCreateModal({
         <div className="p-5 space-y-3">
           <Field label={t('bk_cat_nameRequired')}>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} maxLength={120}
-              className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60" />
+              className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60" />
           </Field>
           <Field label={t('bk_cat_imageUrlRequired')}>
             <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..."
-              className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60" />
+              className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60" />
           </Field>
           <Field label={t('bk_description')}>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={500}
-              className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none" />
+              className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60 resize-none" />
           </Field>
           <Field label={t('bk_cat_category')}>
             <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} maxLength={80}
-              className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60" />
+              className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60" />
           </Field>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="font-mono text-xs text-[--text-muted] px-3 py-1.5">{t('cancel')}</button>

@@ -121,7 +121,7 @@ export function AccountSection() {
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
             placeholder={t('acc_first_name_placeholder')}
           />
         </Field>
@@ -132,7 +132,7 @@ export function AccountSection() {
             type="text"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
             placeholder={t('acc_last_name_placeholder')}
           />
         </Field>

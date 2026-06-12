@@ -124,8 +124,8 @@ export default function TeamPage() {
         {/* Members card */}
         <Card padding="none" className="overflow-hidden">
           <header className="flex items-center gap-3 px-6 py-4 border-b border-border">
-            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-              <Users size={16} className="text-blue-500" />
+            <div className="w-9 h-9 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center">
+              <Users size={16} className="text-primary" />
             </div>
             <div>
               <h2 className="font-display font-semibold text-foreground">Members</h2>
@@ -145,7 +145,7 @@ export default function TeamPage() {
               members.map((member) => (
                 <div key={member.id} className="px-6 py-4 flex items-center gap-4">
                   {/* Avatar */}
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-violet-500 flex items-center justify-center shrink-0">
                     <span className="font-display font-bold text-xs text-white">
                       {member.avatarInitials}
                     </span>

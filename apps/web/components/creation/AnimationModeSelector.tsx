@@ -78,8 +78,8 @@ export default function AnimationModeSelector({
               'relative rounded-2xl border text-left transition-all duration-200',
               compact ? 'p-3' : 'p-5',
               active && !locked
-                ? 'border-blue-500 bg-blue-500/10 shadow-glow-brand'
-                : 'border-border bg-muted hover:border-blue-500/30',
+                ? 'border-primary bg-brand/10 shadow-glow-brand'
+                : 'border-border bg-muted hover:border-brand/30',
               locked && 'opacity-50 cursor-not-allowed',
             )}
           >
@@ -99,11 +99,11 @@ export default function AnimationModeSelector({
 
               {locked ? (
                 <span className="flex items-center gap-1">
-                  <Lock size={10} className="text-purple-400" />
+                  <Lock size={10} className="text-violet-500" />
                   <Badge variant="purple" className="text-[10px]">Pro+</Badge>
                 </span>
               ) : active ? (
-                <CheckCircle size={16} className="text-blue-400 flex-shrink-0 mt-0.5" />
+                <CheckCircle size={16} className="text-primary flex-shrink-0 mt-0.5" />
               ) : null}
             </div>
 
@@ -138,7 +138,7 @@ export default function AnimationModeSelector({
                 </span>
                 <span className={cn(
                   'font-mono text-xs font-medium',
-                  active ? 'text-blue-400' : 'text-[--text-secondary]',
+                  active ? 'text-primary' : 'text-[--text-secondary]',
                 )}>
                   ~{credits} crédits
                 </span>
@@ -148,7 +148,7 @@ export default function AnimationModeSelector({
             {/* Locked CTA */}
             {locked && !compact && (
               <div className="mt-3 pt-3 border-t border-border/50">
-                <p className="font-mono text-[11px] text-purple-400">
+                <p className="font-mono text-[11px] text-violet-500">
                   Disponible à partir du plan Pro →
                 </p>
               </div>

@@ -48,13 +48,13 @@ export function ApiSection() {
       </div>
 
       {/* Hero — waitlist */}
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent">
-        <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/20 blur-3xl" />
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-brand/10 via-violet-500/5 to-transparent">
+        <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-gradient-to-br from-brand/30 to-violet-500/20 blur-3xl" />
 
         <div className="relative p-6 space-y-5">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-background border border-border flex items-center justify-center shrink-0">
-              <Code2 size={22} className="text-blue-500" />
+              <Code2 size={22} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0 space-y-2">
               <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ export function ApiSection() {
               className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-display font-semibold transition-all ${
                 joined
                   ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 cursor-default'
-                  : 'bg-gray-900 dark:bg-foreground dark:text-gray-950 text-white hover:opacity-90 disabled:opacity-60'
+                  : 'bg-primary text-primary-foreground hover:bg-brand-hover disabled:opacity-60'
               }`}
             >
               {joining ? <><Loader2 size={13} className="animate-spin" /> {t('api_joining')}</> :
@@ -143,7 +143,7 @@ function Feature({
   return (
     <div className="rounded-xl border border-border bg-background/60 p-3 space-y-1">
       <div className="flex items-center gap-2">
-        <Icon size={13} className="text-blue-500" />
+        <Icon size={13} className="text-primary" />
         <p className="font-body text-xs font-semibold text-foreground">{title}</p>
       </div>
       <p className="font-body text-[11px] text-[--text-secondary] leading-relaxed">{body}</p>

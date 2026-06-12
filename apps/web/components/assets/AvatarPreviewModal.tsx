@@ -96,7 +96,7 @@ export function AvatarPreviewModal({ group, isOpen, onClose, onUse }: AvatarPrev
             // eslint-disable-next-line @next/next/no-img-element
             <img src={imageUrl} alt={group.baseName} decoding="async" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+            <div className="w-full h-full bg-gradient-to-br from-brand/15 to-violet-500/15 flex items-center justify-center">
               <span className="font-display text-6xl text-foreground/20">
                 {group.baseName.charAt(0).toUpperCase()}
               </span>
@@ -152,7 +152,7 @@ export function AvatarPreviewModal({ group, isOpen, onClose, onUse }: AvatarPrev
                       onClick={() => setSelectedId(look.id)}
                       className={cn(
                         'relative aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all duration-150',
-                        isActive ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-border hover:border-blue-500/40',
+                        isActive ? 'border-primary ring-2 ring-brand/20' : 'border-border hover:border-brand/40',
                       )}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}

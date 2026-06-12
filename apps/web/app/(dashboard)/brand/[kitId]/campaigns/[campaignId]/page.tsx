@@ -246,7 +246,7 @@ export default function BrandCampaignDetailPage() {
               {t('bk_cd_creatives')} <span className="font-mono text-[11px] text-[--text-muted] ml-1">({creatives.length})</span>
             </h3>
             {campaign.status === 'generating' && (
-              <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-blue-600">
+              <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-info">
                 <Loader2 size={11} className="animate-spin" />
                 {t('bk_generating')}
               </span>

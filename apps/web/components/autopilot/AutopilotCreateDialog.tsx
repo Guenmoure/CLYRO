@@ -113,7 +113,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="autopilot-create-title"
@@ -124,8 +124,8 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
         className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto"
       >
         <header className="flex items-start gap-3 px-6 pt-6 pb-4">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0" aria-hidden="true">
-            <Rocket size={18} className="text-blue-500" />
+          <div className="w-10 h-10 rounded-xl bg-feature-autopilot/10 flex items-center justify-center shrink-0" aria-hidden="true">
+            <Rocket size={18} className="text-feature-autopilot" />
           </div>
           <div className="flex-1 min-w-0">
             <h2 id="autopilot-create-title" className="font-display text-base font-semibold text-foreground">
@@ -140,7 +140,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
             onClick={onClose}
             disabled={submitting}
             aria-label={t('auto_dialog_close')}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 disabled:opacity-50 shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50 shrink-0"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -161,7 +161,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
               placeholder={t('auto_dialog_name_placeholder')}
               maxLength={120}
               disabled={submitting}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
             />
           </div>
 
@@ -178,7 +178,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
               maxLength={500}
               rows={3}
               disabled={submitting}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50 resize-none"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50 resize-none"
             />
             <p className="font-mono text-[10px] text-[--text-muted] mt-1">
               {topic.length} {t('auto_dialog_chars_hint')}
@@ -201,9 +201,9 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
                     aria-checked={active}
                     onClick={() => setCadence(opt.value)}
                     disabled={submitting}
-                    className={`text-left rounded-xl border p-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50 ${
+                    className={`text-left rounded-xl border p-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50 ${
                       active
-                        ? 'border-blue-500/60 bg-blue-500/5'
+                        ? 'border-brand/60 bg-brand/5'
                         : 'border-border bg-muted/30 hover:border-border hover:bg-muted/60'
                     }`}
                   >
@@ -226,7 +226,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
                 value={style}
                 onChange={(e) => setStyle(e.target.value)}
                 disabled={submitting}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
               >
                 {STYLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
               </select>
@@ -240,7 +240,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
                 disabled={submitting}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
               >
                 <option value="fr">Français</option>
                 <option value="en">English</option>
@@ -259,7 +259,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
                 value={format}
                 onChange={(e) => setFormat(e.target.value as '9:16' | '16:9' | '1:1')}
                 disabled={submitting}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
               >
                 <option value="9:16">{t('auto_format_vertical')}</option>
                 <option value="16:9">{t('auto_format_landscape')}</option>
@@ -275,7 +275,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value))}
                 disabled={submitting}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
               >
                 <option value={30}>~30 s</option>
                 <option value={60}>~60 s</option>

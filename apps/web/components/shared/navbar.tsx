@@ -41,7 +41,7 @@ export function Navbar() {
             <a
               key={href}
               href={href}
-              className="font-body text-sm text-gray-500 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+              className="font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors duration-200"
             >
               {label}
             </a>
@@ -52,13 +52,13 @@ export function Navbar() {
           <ThemeToggle />
           <Link
             href="/login"
-            className="font-body text-sm text-white/50 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 px-3 py-1.5"
+            className="font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors duration-200 px-3 py-1.5"
           >
             Connexion
           </Link>
           <Link
             href="/signup"
-            className="shimmer font-body text-sm font-medium bg-gradient-to-r from-clyro-blue to-clyro-purple text-white px-4 py-1.5 rounded-xl hover:opacity-90 transition-opacity duration-200 flex items-center gap-1.5"
+            className="shimmer font-body text-sm font-medium bg-grad-cta text-white px-4 py-1.5 rounded-xl hover:opacity-90 transition-opacity duration-200 flex items-center gap-1.5"
           >
             Commencer gratuitement <ArrowRight size={13} />
           </Link>

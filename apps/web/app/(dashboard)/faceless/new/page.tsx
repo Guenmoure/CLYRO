@@ -157,7 +157,7 @@ function StepScript({
           onClick={() => setSource('text')}
           className={cn(
             'px-3 py-1.5 text-xs font-display rounded-md transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
             source === 'text' ? 'bg-background text-foreground shadow-sm' : 'text-[--text-muted] hover:text-foreground',
           )}
         >
@@ -169,7 +169,7 @@ function StepScript({
           onClick={() => setSource('url')}
           className={cn(
             'px-3 py-1.5 text-xs font-display rounded-md transition-colors flex items-center gap-1.5',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
             source === 'url' ? 'bg-background text-foreground shadow-sm' : 'text-[--text-muted] hover:text-foreground',
           )}
         >
@@ -194,7 +194,7 @@ function StepScript({
               aria-label={t('fn_url_ariaLabel')}
               aria-invalid={importError ? true : undefined}
               aria-describedby={importError ? 'url-import-error' : undefined}
-              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 focus-visible:ring-2 focus-visible:ring-blue-500/40"
+              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
               onKeyDown={(e) => { if (e.key === 'Enter' && !importing) handleImport() }}
               disabled={importing}
             />
@@ -202,7 +202,7 @@ function StepScript({
               value={urlLength}
               onChange={(e) => setUrlLength(e.target.value as UrlImportLength)}
               aria-label={t('fn_url_targetLength')}
-              className="bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+              className="bg-background border border-border rounded-lg px-3 py-2 font-body text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
               disabled={importing}
             >
               <option value="short">{t('fn_url_short')}</option>
@@ -226,7 +226,7 @@ function StepScript({
             <p
               id="url-import-error"
               role="alert"
-              className="font-mono text-xs text-red-400"
+              className="font-mono text-xs text-error"
             >
               {importError}
             </p>
@@ -242,7 +242,7 @@ function StepScript({
             onChange={e => onChange(e.target.value)}
             rows={14}
             placeholder={t('fn_script_placeholder')}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-primary transition-colors"
           />
           <div className="flex items-center justify-between">
             <p className="font-mono text-xs text-[--text-muted]">
@@ -305,12 +305,12 @@ function StepStyleVoice({
           className={cn(
             'flex items-center gap-4 w-full rounded-xl px-4 py-3 border-2 transition-all duration-200',
             selectedVoice
-              ? 'border-blue-500/40 bg-blue-500/5'
+              ? 'border-brand/40 bg-brand/5'
               : 'border-border bg-muted hover:border-border',
           )}
         >
           <div className="w-10 h-10 rounded-xl bg-border flex items-center justify-center shrink-0">
-            {selectedVoice ? <Volume2 size={18} className="text-blue-400" /> : <Mic size={18} className="text-[--text-muted]" />}
+            {selectedVoice ? <Volume2 size={18} className="text-primary" /> : <Mic size={18} className="text-[--text-muted]" />}
           </div>
           <div className="flex-1 text-left">
             {selectedVoice ? (
@@ -451,7 +451,7 @@ function StepFormat({
               className={cn(
                 'flex-1 min-w-[120px] flex flex-col items-center gap-3 rounded-xl p-4 border-2 transition-all duration-200',
                 format === opt.value
-                  ? 'border-blue-500 bg-blue-500/10'
+                  ? 'border-primary bg-brand/10'
                   : 'border-border bg-muted hover:border-border',
               )}
             >
@@ -482,7 +482,7 @@ function StepFormat({
               className={cn(
                 'px-6 py-3 rounded-xl border-2 font-display text-sm transition-all duration-200',
                 duration === opt.value
-                  ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                  ? 'border-primary bg-brand/10 text-primary'
                   : 'border-border bg-muted text-[--text-secondary] hover:border-border',
               )}
             >
@@ -529,7 +529,7 @@ function StepOptions({
       <div className="flex items-center justify-between rounded-xl bg-muted border border-border px-4 py-4">
         <div className="flex items-center gap-3">
           {dialogueMode ? (
-            <Mic size={18} className="text-blue-400" />
+            <Mic size={18} className="text-primary" />
           ) : (
             <MicOff size={18} className="text-[--text-muted]" />
           )}
@@ -545,7 +545,7 @@ function StepOptions({
           onClick={() => onDialogueModeChange(!dialogueMode)}
           className={cn(
             'relative w-11 h-6 rounded-full transition-colors duration-200',
-            dialogueMode ? 'bg-blue-500' : 'bg-border',
+            dialogueMode ? 'bg-primary' : 'bg-border',
           )}
           role="switch"
           title={dialogueMode ? t('fn_dialogue_disable') : t('fn_dialogue_enable')}
@@ -563,7 +563,7 @@ function StepOptions({
         <div className="flex items-center gap-3">
           <Captions
             size={18}
-            className={subtitlesEnabled ? 'text-blue-400' : 'text-[--text-muted]'}
+            className={subtitlesEnabled ? 'text-primary' : 'text-[--text-muted]'}
           />
           <div>
             <p className="font-display text-sm text-foreground">{t('fn_subtitles_title')}</p>
@@ -577,7 +577,7 @@ function StepOptions({
           onClick={() => onSubtitlesChange(!subtitlesEnabled)}
           className={cn(
             'relative w-11 h-6 rounded-full transition-colors duration-200',
-            subtitlesEnabled ? 'bg-blue-500' : 'bg-border',
+            subtitlesEnabled ? 'bg-primary' : 'bg-border',
           )}
           role="switch"
           title={subtitlesEnabled ? t('fn_subtitles_disable') : t('fn_subtitles_enable')}
@@ -593,7 +593,7 @@ function StepOptions({
       {/* F1-012: background music picker */}
       <div className="rounded-xl bg-muted border border-border px-4 py-4">
         <div className="flex items-center gap-3 mb-3">
-          <Music size={18} className="text-blue-400" />
+          <Music size={18} className="text-primary" />
           <div>
             <p className="font-display text-sm text-foreground">{t('fn_music_title')}</p>
             <p className="font-body text-xs text-[--text-muted]">
@@ -614,7 +614,7 @@ function StepOptions({
                 className={cn(
                   'flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2 text-left transition-all',
                   active
-                    ? 'border-blue-500 bg-blue-500/10 text-foreground'
+                    ? 'border-primary bg-brand/10 text-foreground'
                     : 'border-border text-[--text-muted] hover:border-border/70 hover:text-foreground',
                 )}
               >
@@ -694,8 +694,8 @@ function StepReview({
       </div>
 
       {animationMode !== 'storyboard' && (
-        <div className="flex items-start gap-3 rounded-xl bg-blue-500/5 border border-blue-500/20 px-4 py-3">
-          <span className="font-mono text-[11px] text-blue-400 mt-0.5">ℹ</span>
+        <div className="flex items-start gap-3 rounded-xl bg-brand/5 border border-brand/20 px-4 py-3">
+          <span className="font-mono text-[11px] text-primary mt-0.5">ℹ</span>
           <p className="font-body text-xs text-[--text-muted]">
             {t('fn_review_anim_info')
               .replace('{label}', animConfig.label)

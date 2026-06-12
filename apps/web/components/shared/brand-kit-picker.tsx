@@ -38,7 +38,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
   }, [])
 
   if (loading) {
-    return <div className={cn('h-10 glass rounded-xl animate-pulse', className)} />
+    return <div className={cn('h-10 rounded-xl border border-border bg-muted animate-pulse', className)} />
   }
 
   if (kits.length === 0) {
@@ -46,7 +46,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
       <div className={cn('flex items-center gap-2 text-sm font-body text-[--text-muted]', className)}>
         <Palette size={14} />
         No brand kits —{' '}
-        <Link href="/settings/brand" className="text-clyro-primary hover:underline">
+        <Link href="/settings/brand" className="text-primary hover:underline">
           create one
         </Link>
       </div>
@@ -62,7 +62,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
         className={cn(
           'px-3 py-2 rounded-xl border text-xs font-mono transition-all',
           !value
-            ? 'bg-gray-100 dark:bg-white/[0.08] border-gray-300 dark:border-white/20 text-gray-700 dark:text-white/70'
+            ? 'bg-accent border-brand/40 text-accent-foreground'
             : 'bg-muted hover:bg-muted/80 border border-border text-[--text-muted]'
         )}
       >
@@ -77,7 +77,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
           className={cn(
             'flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-body transition-all',
             value === kit.id
-              ? 'ring-2 ring-clyro-primary/40 border-clyro-primary/30 bg-clyro-primary/5 text-gray-800 dark:text-white/80'
+              ? 'ring-2 ring-brand/40 border-brand/30 bg-brand/5 text-foreground'
               : 'bg-muted hover:bg-muted/80 border border-border text-[--text-secondary]'
           )}
         >
@@ -93,7 +93,7 @@ export function BrandKitPicker({ value, onChange, className }: BrandKitPickerPro
           )}
           {kit.name}
           {kit.is_default && (
-            <span className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">★</span>
+            <span className="font-mono text-[11px] text-primary uppercase tracking-wider">★</span>
           )}
         </button>
       ))}

@@ -280,9 +280,9 @@ function Stepper({ current }: { current: BrandStudioStep }) {
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-display font-semibold transition-all",
                 done
-                  ? "bg-purple-500/10 text-purple-500"
+                  ? "bg-accent text-accent-foreground"
                   : active
-                    ? "bg-purple-500 text-white shadow-sm"
+                    ? "bg-primary text-white shadow-sm"
                     : "bg-card text-[--text-muted]",
               )}
             >
@@ -297,7 +297,7 @@ function Stepper({ current }: { current: BrandStudioStep }) {
               <div
                 className={cn(
                   "w-4 h-px",
-                  i < currentIdx ? "bg-purple-500" : "bg-border",
+                  i < currentIdx ? "bg-primary" : "bg-border",
                 )}
               />
             )}
@@ -405,7 +405,7 @@ function AnalystModal({
   const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden">
+      <div className="bg-card rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden">
         {/* Header */}
         <div
           className={cn(
@@ -495,13 +495,13 @@ function AnalystModal({
           )}
           {analysis.suggestions.length > 0 && (
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-wider text-blue-500 mb-2">
+              <p className="font-mono text-[11px] uppercase tracking-wider text-info mb-2">
                 {t("bs_suggestions")}
               </p>
               <ul className="space-y-1">
                 {analysis.suggestions.map((s, i) => (
                   <li key={i} className="text-sm text-[--text-muted] flex gap-2">
-                    <span className="text-blue-500 shrink-0">→</span> {s}
+                    <span className="text-info shrink-0">→</span> {s}
                   </li>
                 ))}
               </ul>
@@ -520,7 +520,7 @@ function AnalystModal({
           <button
             type="button"
             onClick={onContinue}
-            className="flex-1 flex items-center justify-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-5 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
+            className="flex-1 flex items-center justify-center gap-2 bg-primary text-white font-display font-semibold text-sm px-5 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
           >
             <ChevronRight size={14} />
             {analysis.is_ready
@@ -549,11 +549,11 @@ function ContradictionPathsModal({
   const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden">
+      <div className="bg-card rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden">
         {/* Header */}
-        <div className="bg-purple-50 flex items-center gap-3 px-6 py-5 border-b border-border">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-100">
-            <AlertTriangle size={20} className="text-purple-600" />
+        <div className="bg-brand-50 flex items-center gap-3 px-6 py-5 border-b border-border">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-accent">
+            <AlertTriangle size={20} className="text-accent-foreground" />
           </div>
           <div className="flex-1">
             <p className="font-display font-bold text-foreground">
@@ -566,14 +566,14 @@ function ContradictionPathsModal({
         </div>
 
         {/* Contradictions list */}
-        <div className="px-6 py-4 border-b border-border bg-purple-50/30">
-          <p className="font-mono text-[11px] uppercase tracking-wider text-purple-600 mb-2">
+        <div className="px-6 py-4 border-b border-border bg-brand-50/40">
+          <p className="font-mono text-[11px] uppercase tracking-wider text-accent-foreground mb-2">
             {t("bs_contradictionsDetected")}
           </p>
           <ul className="space-y-1">
             {contradictions.map((c, i) => (
               <li key={i} className="text-sm text-foreground flex gap-2">
-                <span className="text-purple-500 shrink-0">⚡</span> {c}
+                <span className="text-brand shrink-0">⚡</span> {c}
               </li>
             ))}
           </ul>
@@ -589,10 +589,10 @@ function ContradictionPathsModal({
               <button
                 key={idx}
                 onClick={() => onSelectPath(path.resolution)}
-                className="group relative rounded-2xl border-2 border-border bg-white p-4 text-left transition-all hover:border-purple-400 hover:shadow-lg"
+                className="group relative rounded-2xl border-2 border-border bg-card p-4 text-left transition-all hover:border-primary hover:shadow-lg"
               >
                 {/* Path label */}
-                <p className="font-display font-bold text-foreground group-hover:text-purple-600 transition-colors mb-2">
+                <p className="font-display font-bold text-foreground group-hover:text-accent-foreground transition-colors mb-2">
                   {path.label}
                 </p>
 
@@ -606,7 +606,7 @@ function ContradictionPathsModal({
                   {path.resolution.split(",").map((keyword, ki) => (
                     <span
                       key={ki}
-                      className="px-2.5 py-1 bg-purple-100 text-purple-700 text-[11px] font-medium rounded-lg"
+                      className="px-2.5 py-1 bg-accent text-accent-foreground text-[11px] font-medium rounded-lg"
                     >
                       {keyword.trim()}
                     </span>
@@ -614,8 +614,8 @@ function ContradictionPathsModal({
                 </div>
 
                 {/* Hover indicator */}
-                <div className="absolute top-0 right-0 rounded-full w-0 h-0 group-hover:w-12 group-hover:h-12 bg-purple-100 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                  <ChevronRight size={16} className="text-purple-600" />
+                <div className="absolute top-0 right-0 rounded-full w-0 h-0 group-hover:w-12 group-hover:h-12 bg-accent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                  <ChevronRight size={16} className="text-accent-foreground" />
                 </div>
               </button>
             ))}
@@ -623,7 +623,7 @@ function ContradictionPathsModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border flex gap-3 bg-gray-50">
+        <div className="px-6 py-4 border-t border-border flex gap-3 bg-muted">
           <button
             type="button"
             onClick={onEdit}
@@ -774,7 +774,7 @@ function BriefForm({
                 setValeurs(next);
               }}
               placeholder={[t("bs_valuePh1"), t("bs_valuePh2"), t("bs_valuePh3")][i]}
-              className="flex-1 bg-card border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500"
+              className="flex-1 bg-card border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-primary"
             />
           ))}
         </div>
@@ -793,8 +793,8 @@ function BriefForm({
               className={cn(
                 "relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-center transition-all",
                 ambiance === opt.id
-                  ? "border-purple-500 bg-purple-500/5"
-                  : "border-border bg-card hover:border-purple-500/40",
+                  ? "border-primary bg-brand/5"
+                  : "border-border bg-card hover:border-brand/40",
               )}
             >
               <span className="text-xl">{opt.emoji}</span>
@@ -805,7 +805,7 @@ function BriefForm({
                 {t(opt.descKey)}
               </p>
               {ambiance === opt.id && (
-                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
+                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
                   <Check size={9} className="text-white" />
                 </div>
               )}
@@ -901,7 +901,7 @@ function BriefForm({
         type="button"
         onClick={handleSubmit}
         disabled={!canSubmit}
-        className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-3 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
+        className="flex items-center gap-2 bg-primary text-white font-display font-semibold text-sm px-6 py-3 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
       >
         <Sparkles size={15} /> {t("bs_analyzeBrief")}
       </button>
@@ -929,12 +929,12 @@ function DirectionCard({
       className={cn(
         "relative text-left rounded-2xl border-2 overflow-hidden transition-all hover:shadow-lg",
         selected
-          ? "border-purple-500 ring-2 ring-purple-500/20"
-          : "border-border hover:border-purple-500/40",
+          ? "border-primary ring-2 ring-brand/20"
+          : "border-border hover:border-brand/40",
       )}
     >
       {selected && (
-        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center z-10">
+        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center z-10">
           <Check size={12} className="text-white" />
         </div>
       )}
@@ -1015,7 +1015,7 @@ function HybridPanel({
   return (
     <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <Sparkles size={14} className="text-purple-500" />
+        <Sparkles size={14} className="text-brand" />
         <p className="font-display font-semibold text-sm text-foreground">
           {t("bs_hybridTitle")}
         </p>
@@ -1031,7 +1031,7 @@ function HybridPanel({
           <select
             value={paletteFrom}
             onChange={(e) => setPaletteFrom(Number(e.target.value))}
-            className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
+            className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -1047,7 +1047,7 @@ function HybridPanel({
           <select
             value={typoFrom}
             onChange={(e) => setTypoFrom(Number(e.target.value))}
-            className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
+            className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -1063,7 +1063,7 @@ function HybridPanel({
           <select
             value={logoFrom}
             onChange={(e) => setLogoFrom(Number(e.target.value))}
-            className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
+            className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -1076,7 +1076,7 @@ function HybridPanel({
       <button
         type="button"
         onClick={() => onGenerate(paletteFrom, typoFrom, logoFrom)}
-        className="flex items-center gap-2 text-sm font-display font-semibold text-purple-500 hover:opacity-70 transition-opacity"
+        className="flex items-center gap-2 text-sm font-display font-semibold text-brand hover:opacity-70 transition-opacity"
       >
         <Sparkles size={13} /> {t("bs_generateHybrid")}
       </button>
@@ -1131,7 +1131,7 @@ function LogoConceptCard({
       className={cn(
         "rounded-2xl border-2 overflow-hidden transition-all",
         selected
-          ? "border-purple-500 ring-2 ring-purple-500/20"
+          ? "border-primary ring-2 ring-brand/20"
           : "border-border",
       )}
     >
@@ -1145,7 +1145,7 @@ function LogoConceptCard({
           className={cn(
             "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
             selected
-              ? "border-purple-500 bg-purple-500"
+              ? "border-primary bg-primary"
               : "border-border",
           )}
         >
@@ -1156,7 +1156,7 @@ function LogoConceptCard({
         {bgs.map(({ key, label, bg, url, textColor }) => (
           <div key={key} className="space-y-1">
             <div
-              className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-purple-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60 transition-all relative"
+              className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 transition-all relative"
               style={{ background: bg }}
               onClick={() => url && onSelectUrl(url)}
               role="button"
@@ -1177,7 +1177,7 @@ function LogoConceptCard({
                   className="w-full h-full object-contain p-2"
                 />
               ) : (
-                <ImageIcon size={16} className="text-gray-400" />
+                <ImageIcon size={16} className="text-[--text-muted]" />
               )}
               {brandName && (
                 <div
@@ -1298,7 +1298,7 @@ function AssetCard({
             <button
               type="button"
               onClick={() => onSetReference(url)}
-              className="text-[11px] text-blue-500 hover:underline flex items-center gap-0.5"
+              className="text-[11px] text-brand hover:underline flex items-center gap-0.5"
             >
               <ImageIcon size={9} /> {t("bk_gen_refAlt")}
             </button>
@@ -1319,7 +1319,7 @@ function AssetCard({
         </div>
       </div>
       <div
-        className="relative rounded-2xl overflow-hidden border border-border bg-card aspect-video flex items-center justify-center group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60"
+        className="relative rounded-2xl overflow-hidden border border-border bg-card aspect-video flex items-center justify-center group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
         onClick={() => {
           if (url && !loading) setLightboxOpen(true);
         }}
@@ -1355,7 +1355,7 @@ function AssetCard({
           type="button"
           onClick={() => handleDownloadAsset(url)}
           disabled={downloading}
-          className="inline-flex items-center gap-1.5 text-xs text-blue-500 font-medium hover:underline disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 text-xs text-brand font-medium hover:underline disabled:opacity-50"
         >
           <Download size={10} /> {downloading ? "…" : t("bk_download")}
         </button>
@@ -1399,7 +1399,7 @@ function CharteSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white border border-border rounded-2xl p-5 space-y-3">
+    <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
       <h3 className="font-display font-bold text-foreground text-sm">
         {title}
       </h3>
@@ -1832,8 +1832,8 @@ export function BrandStudio() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
-        <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center">
-          <Loader2 size={24} className="text-purple-500 animate-spin" />
+        <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center">
+          <Loader2 size={24} className="text-brand animate-spin" />
         </div>
         <p className="font-display font-semibold text-foreground">
           {loadingMsg}
@@ -1972,7 +1972,7 @@ export function BrandStudio() {
                 type="button"
                 onClick={handleDirectionToLogos}
                 disabled={!selectedId}
-                className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 bg-primary text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl disabled:opacity-40 hover:opacity-80 transition-opacity"
               >
                 <ChevronRight size={14} /> {t("bs_generateLogos")}
               </button>
@@ -2014,7 +2014,7 @@ export function BrandStudio() {
             </div>
 
             {referenceUrl && (
-              <div className="flex items-center gap-3 px-4 py-2.5 bg-purple-500/5 border border-purple-500/20 rounded-xl">
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-brand/5 border border-brand/20 rounded-xl">
                 <img
                   src={referenceUrl}
                   alt={t("bk_gen_refAlt")}
@@ -2043,7 +2043,7 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={handleLogosToAssets}
-                className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 bg-primary text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
               >
                 <ChevronRight size={14} /> {t("bs_generateVisuals")}
               </button>
@@ -2100,7 +2100,7 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={handleGenerateCharte}
-                className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 bg-primary text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
               >
                 <ChevronRight size={14} /> {t("bs_generateCharte")}
               </button>
@@ -2255,7 +2255,7 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={() => setStep("export")}
-                className="flex items-center gap-2 bg-foreground text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 bg-primary text-white font-display font-semibold text-sm px-6 py-2.5 rounded-xl hover:opacity-80 transition-opacity"
               >
                 <ChevronRight size={14} /> {t("bs_exportKit")}
               </button>
@@ -2306,7 +2306,7 @@ export function BrandStudio() {
                 type="button"
                 onClick={handleDownloadPdf}
                 disabled={!charte}
-                className="flex items-center gap-3 w-full bg-foreground text-white font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+                className="flex items-center gap-3 w-full bg-primary text-white font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
               >
                 <FileText size={16} />
                 <div className="text-left">
@@ -2323,7 +2323,7 @@ export function BrandStudio() {
                   type="button"
                   onClick={handleDownloadZip}
                   disabled={!charte}
-                  className="flex items-center gap-3 flex-1 border border-border bg-white text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-card transition-colors disabled:opacity-40"
+                  className="flex items-center gap-3 flex-1 border border-border bg-card text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-muted transition-colors disabled:opacity-40"
                 >
                   <Archive size={16} />
                   <div className="text-left">
@@ -2338,7 +2338,7 @@ export function BrandStudio() {
                   onClick={handleShareZip}
                   disabled={!charte || sharing}
                   title={t("bs_shareLink")}
-                  className="flex items-center justify-center gap-1.5 border border-border bg-white text-foreground font-display font-semibold text-sm px-3.5 rounded-xl hover:bg-card transition-colors disabled:opacity-40"
+                  className="flex items-center justify-center gap-1.5 border border-border bg-card text-foreground font-display font-semibold text-sm px-3.5 rounded-xl hover:bg-muted transition-colors disabled:opacity-40"
                 >
                   {sharing ? (
                     <Loader2 size={16} className="animate-spin" />
@@ -2362,7 +2362,7 @@ export function BrandStudio() {
                     type="button"
                     onClick={handleCopyShareUrl}
                     title={t("share_copy")}
-                    className="flex items-center gap-1 text-xs font-semibold text-purple-500 hover:opacity-70 transition-opacity shrink-0"
+                    className="flex items-center gap-1 text-xs font-semibold text-brand hover:opacity-70 transition-opacity shrink-0"
                   >
                     {copied ? <CheckCheck size={14} /> : <Copy size={14} />}
                     {copied ? t("bs_copied") : t("bs_copy")}
@@ -2382,7 +2382,7 @@ export function BrandStudio() {
               <button
                 type="button"
                 onClick={handleExportJson}
-                className="flex items-center gap-3 w-full border border-border bg-white text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-card transition-colors"
+                className="flex items-center gap-3 w-full border border-border bg-card text-foreground font-display font-semibold text-sm px-5 py-3.5 rounded-xl hover:bg-muted transition-colors"
               >
                 <Download size={16} />
                 <div className="text-left">

@@ -35,7 +35,7 @@ export function AvatarFilters({ search, activeFilter, onSearch, onFilter }: Avat
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder={t('searchAvatars')}
-          className="w-full bg-muted border border-border rounded-xl h-11 pl-10 pr-10 font-body text-sm text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+          className="w-full bg-muted border border-border rounded-xl h-11 pl-10 pr-10 font-body text-sm text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
         />
         <button
           type="button"
@@ -56,7 +56,7 @@ export function AvatarFilters({ search, activeFilter, onSearch, onFilter }: Avat
             className={cn(
               'px-4 py-1.5 rounded-full font-body text-sm border transition-all duration-150',
               activeFilter === key
-                ? 'bg-blue-500/15 border-blue-500/40 text-blue-400'
+                ? 'bg-brand/15 border-brand/40 text-primary'
                 : 'bg-muted border-border text-[--text-secondary] hover:border-border hover:text-foreground',
             )}
           >

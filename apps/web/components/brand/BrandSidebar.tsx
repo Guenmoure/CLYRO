@@ -39,7 +39,7 @@ export function BrandSidebar({ kitId }: BrandSidebarProps) {
           <div className="group relative flex items-center justify-center w-12 h-12 rounded-xl">
             {active && (
               <span
-                className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-[#c45b3a]"
+                className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-primary"
                 aria-hidden="true"
               />
             )}

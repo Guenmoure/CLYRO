@@ -14,7 +14,7 @@ function WaveformAnimated() {
       {[1, 2, 3, 4].map((i) => (
         <div
           key={i}
-          className="w-0.5 bg-blue-400 rounded-full animate-waveform"
+          className="w-0.5 bg-primary rounded-full animate-waveform"
           style={{ animationDelay: `${i * 120}ms` }}
         />
       ))}
@@ -55,7 +55,7 @@ export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }
         'flex items-center gap-4 p-4 rounded-xl border cursor-pointer',
         'transition-all duration-150 group',
         playing
-          ? 'border-blue-500/50 bg-blue-500/8'
+          ? 'border-brand/50 bg-brand/10'
           : 'border-border bg-card hover:border-border hover:bg-muted/40',
       )}
       onClick={onClick}
@@ -63,11 +63,11 @@ export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }
       {/* Avatar circle */}
       <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 bg-muted">
         {playing ? (
-          <div className="w-full h-full bg-blue-500/20 flex items-center justify-center">
+          <div className="w-full h-full bg-brand/15 flex items-center justify-center">
             <WaveformAnimated />
           </div>
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-brand/30 to-violet-500/30 flex items-center justify-center">
             <span className="font-display text-sm font-bold text-foreground">
               {initials}
             </span>
@@ -76,7 +76,7 @@ export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }
 
         {/* Verified badge */}
         {voice.isFavorite && (
-          <div className="absolute -bottom-0.5 -right-0.5 bg-blue-500 rounded-full w-4 h-4 flex items-center justify-center">
+          <div className="absolute -bottom-0.5 -right-0.5 bg-primary rounded-full w-4 h-4 flex items-center justify-center">
             <Check size={8} className="text-white" />
           </div>
         )}
@@ -109,7 +109,7 @@ export function VoiceCard({ voice, playing, onPlay, onClick, onUse, onFavorite }
         className={cn(
           'w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-150',
           playing
-            ? 'bg-blue-500 text-white shadow-glow-brand'
+            ? 'bg-primary text-white shadow-glow-brand'
             : 'bg-muted text-[--text-secondary] hover:bg-border',
         )}
         onClick={togglePlay}

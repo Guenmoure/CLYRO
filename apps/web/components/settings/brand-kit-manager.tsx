@@ -100,13 +100,13 @@ function BrandKitForm({
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-      <h3 className="font-display font-semibold text-gray-900 dark:text-white">
+      <h3 className="font-display font-semibold text-foreground">
         {initial?.id ? 'Edit brand kit' : 'New brand kit'}
       </h3>
 
       {/* Name */}
       <div>
-        <label htmlFor="bkm-name" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">Name</label>
+        <label htmlFor="bkm-name" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Name</label>
         <input
           id="bkm-name"
           name="brand_name"
@@ -115,14 +115,14 @@ function BrandKitForm({
           onChange={(e) => setName(e.target.value)}
           placeholder="ex: CLYRO Official"
           maxLength={80}
-          className="w-full glass rounded-xl px-4 py-3 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all"
+          className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-all"
         />
       </div>
 
       {/* Colors */}
       <div className="flex gap-4 flex-wrap">
         <div className="flex-1 min-w-36">
-          <label htmlFor="bkm-primary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
+          <label htmlFor="bkm-primary" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
             Primary color
           </label>
           <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ function BrandKitForm({
           </div>
         </div>
         <div className="flex-1 min-w-36">
-          <label htmlFor="bkm-secondary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
+          <label htmlFor="bkm-secondary" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
             Secondary color <span className="normal-case">(optional)</span>
           </label>
           <div className="flex items-center gap-3">
@@ -154,7 +154,7 @@ function BrandKitForm({
               {secondaryColor ? secondaryColor.toUpperCase() : '—'}
             </span>
             {secondaryColor && (
-              <button type="button" onClick={() => setSecondaryColor('')} className="text-xs text-[--text-muted] hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => setSecondaryColor('')} className="text-xs text-[--text-muted] hover:text-error transition-colors">
                 ✕
               </button>
             )}
@@ -164,7 +164,7 @@ function BrandKitForm({
 
       {/* Font family */}
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
+        <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
           Font <span className="normal-case">(optional)</span>
         </label>
         <input
@@ -172,18 +172,18 @@ function BrandKitForm({
           value={fontFamily}
           onChange={(e) => setFontFamily(e.target.value)}
           placeholder="ex: Montserrat, Playfair Display"
-          className="w-full glass rounded-xl px-4 py-3 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none focus:border-clyro-primary/50 transition-all"
+          className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-all"
         />
       </div>
 
       {/* Logo */}
       <div>
-        <label className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2 block">
+        <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
           Logo <span className="normal-case">(optional)</span>
         </label>
         <div className="flex items-center gap-4">
           {logoPreview && (
-            <img src={logoPreview} alt="Logo preview" className="w-12 h-12 object-contain rounded-lg glass" />
+            <img src={logoPreview} alt="Logo preview" className="w-12 h-12 object-contain rounded-lg border border-border bg-muted" />
           )}
           <button
             type="button"
@@ -209,7 +209,7 @@ function BrandKitForm({
           type="checkbox"
           checked={isDefault}
           onChange={(e) => setIsDefault(e.target.checked)}
-          className="w-4 h-4 rounded accent-clyro-primary"
+          className="w-4 h-4 rounded accent-brand"
         />
         <span className="font-body text-sm text-[--text-secondary]">Use by default</span>
       </label>
@@ -253,21 +253,21 @@ function BrandKitCard({
   return (
     <div className={cn(
       'bg-card border border-border rounded-2xl p-5 transition-all',
-      kit.is_default && 'ring-2 ring-clyro-primary/30'
+      kit.is_default && 'ring-2 ring-brand/30'
     )}>
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
           {kit.logo_url ? (
-            <img src={kit.logo_url} alt={kit.name} className="w-10 h-10 rounded-lg object-contain glass" />
+            <img src={kit.logo_url} alt={kit.name} className="w-10 h-10 rounded-lg object-contain border border-border bg-muted" />
           ) : (
             <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: kit.primary_color }}>
               <Palette size={16} className="text-white" />
             </div>
           )}
           <div>
-            <p className="font-display font-semibold text-gray-900 dark:text-white text-sm">{kit.name}</p>
+            <p className="font-display font-semibold text-foreground text-sm">{kit.name}</p>
             {kit.is_default && (
-              <span className="font-mono text-[11px] uppercase tracking-wider text-clyro-primary">Default</span>
+              <span className="font-mono text-[11px] uppercase tracking-wider text-primary">Default</span>
             )}
           </div>
         </div>
@@ -277,7 +277,7 @@ function BrandKitCard({
               type="button"
               title="Set as default"
               onClick={() => onSetDefault(kit.id)}
-              className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-yellow-500 transition-colors"
+              className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-warning transition-colors"
             >
               <Star size={13} />
             </button>
@@ -294,7 +294,7 @@ function BrandKitCard({
             type="button"
             title="Delete"
             onClick={() => onDelete(kit.id)}
-            className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-red-400 transition-colors"
+            className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-error transition-colors"
           >
             <Trash2 size={12} />
           </button>
@@ -375,7 +375,7 @@ export function BrandKitManager() {
     return (
       <div className="space-y-3">
         {[1, 2].map((i) => (
-          <div key={i} className="h-24 glass rounded-2xl animate-pulse" />
+          <div key={i} className="h-24 rounded-2xl border border-border bg-muted animate-pulse" />
         ))}
       </div>
     )

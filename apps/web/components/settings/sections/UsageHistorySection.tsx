@@ -21,7 +21,7 @@ type Tab = 'usage' | 'history'
 type View = 'table' | 'graph'
 
 const MODULE_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  faceless: { label: 'Faceless', icon: Video,     color: 'text-blue-500'   },
+  faceless: { label: 'Faceless', icon: Video,     color: 'text-feature-faceless'   },
   motion:   { label: 'Motion',   icon: Sparkles,  color: 'text-purple-500' },
   brand:    { label: 'Brand',    icon: Palette,   color: 'text-teal-500'   },
 }
@@ -143,7 +143,7 @@ export function UsageHistorySection() {
             )}
           >
             {t === 'usage' ? 'Usage' : 'Historique'}
-            {tab === t && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-blue-500 rounded-full" />}
+            {tab === t && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />}
           </button>
         ))}
       </div>
@@ -244,7 +244,7 @@ function UsageQuotaCard({
 }) {
   const colorMap = {
     warning: { bg: 'bg-amber-500/10',   icon: 'text-amber-500',   bar: 'bg-amber-500'   },
-    blue:    { bg: 'bg-blue-500/10',    icon: 'text-blue-500',    bar: 'bg-blue-500'    },
+    blue:    { bg: 'bg-feature-faceless/10', icon: 'text-feature-faceless', bar: 'bg-feature-faceless' },
     purple:  { bg: 'bg-purple-500/10',  icon: 'text-purple-500',  bar: 'bg-purple-500'  },
     emerald: { bg: 'bg-emerald-500/10', icon: 'text-emerald-500', bar: 'bg-emerald-500' },
   }[color]
@@ -348,7 +348,7 @@ function HistoryGraph({
             <div key={m.label} className="flex-1 flex flex-col items-center gap-1.5">
               <div className="w-full flex-1 flex items-end">
                 <div
-                  className="w-full rounded-t-lg bg-gradient-to-t from-blue-500 to-purple-500 transition-all duration-500"
+                  className="w-full rounded-t-lg bg-gradient-to-t from-brand to-violet-500 transition-all duration-500"
                   style={{ height: `${Math.max(height, 3)}%` }}
                   title={`${m.count} vidéos`}
                 />

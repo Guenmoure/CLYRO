@@ -170,7 +170,7 @@ export default function PhotoshootGeneratePage() {
             onChange={(e) => setPrompt(e.target.value.slice(0, 1500))}
             rows={6}
             placeholder={t('bk_gen_promptPlaceholder')}
-            className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-blue-500/60 resize-none"
+            className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground outline-none focus:border-brand/60 resize-none"
           />
           <p className="font-mono text-[10px] text-[--text-muted] text-right">
             {t('bk_charCount').replace('{count}', String(prompt.trim().length))}

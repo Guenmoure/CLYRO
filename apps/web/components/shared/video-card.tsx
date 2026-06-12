@@ -102,7 +102,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
   }
 
   return (
-    <div className="bg-muted border border-border rounded-xl p-4 hover:border-blue-500/30 transition-colors">
+    <div className="bg-muted border border-border rounded-xl p-4 hover:border-brand/30 transition-colors">
       <div className="flex flex-wrap items-center gap-3 sm:gap-4">
         {/* Thumbnail / icon */}
         <div className="w-14 h-14 bg-card rounded-lg flex items-center justify-center shrink-0 text-2xl">
@@ -131,7 +131,7 @@ export function VideoCard({ video, onDeleted }: VideoCardProps) {
               type="button"
               onClick={handleDownload}
               disabled={downloading}
-              className="font-mono text-xs text-blue-500 hover:underline px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg transition-colors hover:bg-blue-500/20 disabled:opacity-50"
+              className="font-mono text-xs text-primary hover:underline px-3 py-1.5 bg-brand/10 border border-brand/20 rounded-lg transition-colors hover:bg-brand/15 disabled:opacity-50"
             >
               {downloading ? '...' : 'Télécharger'}
             </button>

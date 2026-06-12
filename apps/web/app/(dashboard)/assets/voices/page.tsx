@@ -48,8 +48,8 @@ function VoiceSkeleton() {
 
 function CollectionCard({ title, icon }: { title: string; icon: React.ReactNode }) {
   return (
-    <div className="shrink-0 w-48 rounded-xl bg-muted border border-border p-4 cursor-pointer hover:border-blue-500/30 hover:bg-muted/80 transition-all">
-      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3">
+    <div className="shrink-0 w-48 rounded-xl bg-muted border border-border p-4 cursor-pointer hover:border-brand/30 hover:bg-muted/80 transition-all">
+      <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center mb-3">
         {icon}
       </div>
       <p className="font-body text-sm text-foreground leading-snug">{title}</p>
@@ -215,7 +215,7 @@ export default function VoicesAssetsPage() {
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 rounded-lg font-body text-sm transition-all duration-150',
                 activeTab === key
-                  ? 'bg-blue-500/10 text-blue-500'
+                  ? 'bg-brand/10 text-primary'
                   : 'text-[--text-muted] hover:text-foreground hover:bg-muted',
               )}
             >
@@ -223,7 +223,7 @@ export default function VoicesAssetsPage() {
               {count !== undefined && (
                 <span className={cn(
                   'font-body text-[11px] rounded-full px-1.5 py-0.5',
-                  activeTab === key ? 'bg-blue-500/20 text-blue-500' : 'bg-muted text-[--text-muted]',
+                  activeTab === key ? 'bg-brand/15 text-primary' : 'bg-muted text-[--text-muted]',
                 )}>
                   {count}
                 </span>
@@ -264,7 +264,7 @@ export default function VoicesAssetsPage() {
         {activeTab === 'explore' && !loading && trendingVoices.length > 0 && !search && !category && (
           <section>
             <div className="flex items-center gap-2 mb-4">
-              <TrendingUp size={16} className="text-blue-500" />
+              <TrendingUp size={16} className="text-primary" />
               <h2 className="font-body text-base font-semibold text-foreground">{t('trendingVoices')}</h2>
               <ChevronRight size={14} className="text-[--text-muted]" />
             </div>
@@ -292,7 +292,7 @@ export default function VoicesAssetsPage() {
             </div>
             <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-2">
               {[
-                { title: t('bestVoicesV3'),      icon: <Sparkles size={14} className="text-blue-400" /> },
+                { title: t('bestVoicesV3'),      icon: <Sparkles size={14} className="text-primary" /> },
                 { title: t('popularTikTok'),           icon: <TrendingUp size={14} className="text-pink-400" /> },
                 { title: t('studioConversational'),   icon: <Sparkles size={14} className="text-amber-400" /> },
                 { title: t('narrationVoices'),                icon: <Sparkles size={14} className="text-emerald-400" /> },

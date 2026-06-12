@@ -254,7 +254,7 @@ function StudioNewPageInner() {
           <ModeCard
             active={mode === 'script'}
             onClick={() => setMode('script')}
-            icon={<FileText size={28} className="text-blue-500" />}
+            icon={<FileText size={28} className="text-brand" />}
             title={t('iHaveScript')}
             description={t('scriptDescription')}
             tags={[t('tagAnyLanguage'), t('tagAutoStructured'), t('tagFreeFormat')]}
@@ -280,7 +280,7 @@ function StudioNewPageInner() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('titlePlaceholder')}
-            className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors"
+            className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors"
             maxLength={120}
           />
         </div>
@@ -297,7 +297,7 @@ function StudioNewPageInner() {
               onChange={(e) => setScript(e.target.value)}
               rows={12}
               placeholder={t('scriptPlaceholder')}
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors resize-y"
+              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors resize-y"
             />
             <div className="flex items-center justify-between">
               <p className="font-mono text-xs text-[--text-muted]">
@@ -319,7 +319,7 @@ function StudioNewPageInner() {
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
                 placeholder="https://youtube.com/watch?v=..."
-                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors"
               />
             </div>
             <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
@@ -345,7 +345,7 @@ function StudioNewPageInner() {
               id="lang"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors appearance-none cursor-pointer"
+              className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors appearance-none cursor-pointer"
             >
               {LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>{l.flag}  {l.label}</option>
@@ -393,10 +393,10 @@ function StudioNewPageInner() {
                       setExpandedGroup(null)
                     }}
                     className={cn(
-                      'px-3 py-1 rounded-full text-xs font-body font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
+                      'px-3 py-1 rounded-full text-xs font-body font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
                       avatarTab === tab.key
-                        ? 'bg-blue-500 text-white border-blue-500'
-                        : 'bg-card text-foreground border-border hover:border-blue-300',
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-card text-foreground border-border hover:border-brand/40',
                     )}
                   >
                     {tab.label}
@@ -412,7 +412,7 @@ function StudioNewPageInner() {
                   value={avatarSearch}
                   onChange={(e) => setAvatarSearch(e.target.value)}
                   placeholder={t('searchAvatars')}
-                  className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-colors"
+                  className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors"
                 />
               </div>
 
@@ -452,8 +452,8 @@ function StudioNewPageInner() {
 
               {/* Selection summary */}
               {selectedAvatar && (
-                <div className="flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/5 px-3 py-2">
-                  <Check size={13} className="text-blue-500 shrink-0" />
+                <div className="flex items-center gap-2 rounded-xl border border-brand/30 bg-brand/5 px-3 py-2">
+                  <Check size={13} className="text-brand shrink-0" />
                   <p className="font-body text-xs text-foreground">
                     <span className="font-semibold">{selectedAvatar.avatar_name}</span>
                     {selectedLookId && selectedAvatar.looks.find((l) => l.look_id === selectedLookId) && (
@@ -480,11 +480,11 @@ function StudioNewPageInner() {
             className={cn(
               'w-full flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors text-left',
               selectedVoice
-                ? 'border-blue-500/50 bg-blue-500/5'
-                : 'border-border bg-card hover:border-blue-300',
+                ? 'border-brand/50 bg-brand/5'
+                : 'border-border bg-card hover:border-brand/40',
             )}
           >
-            <Mic size={16} className={selectedVoice ? 'text-blue-400' : 'text-[--text-muted]'} />
+            <Mic size={16} className={selectedVoice ? 'text-brand' : 'text-[--text-muted]'} />
             <div className="flex-1 min-w-0">
               {selectedVoice ? (
                 <span className="font-body text-sm text-foreground">{selectedVoice.name}</span>
@@ -550,7 +550,7 @@ function StudioNewPageInner() {
         {analyzing && (
           <div className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center gap-3 text-sm text-foreground">
-              <Loader2 size={15} className="animate-spin text-blue-500 shrink-0" />
+              <Loader2 size={15} className="animate-spin text-brand shrink-0" />
               <span className="font-body">{step}</span>
             </div>
             <div className="mt-3 space-y-1.5 pl-8">
@@ -599,7 +599,7 @@ function ModeCard({
       className={cn(
         'relative text-left rounded-2xl border p-5 transition-all card-interactive',
         active
-          ? 'border-blue-500 ring-2 ring-blue-500/30 bg-blue-500/[0.03]'
+          ? 'border-primary ring-2 ring-brand/30 bg-brand/[0.03]'
           : 'border-border bg-card hover:border-border',
       )}
     >
@@ -616,7 +616,7 @@ function ModeCard({
         ))}
       </div>
       {active && (
-        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow">
+        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow">
           <Check size={12} className="text-white" />
         </div>
       )}
@@ -660,8 +660,8 @@ function StudioAvatarGroupCard({
       className={cn(
         'rounded-xl border overflow-hidden transition-all',
         groupHasSelection
-          ? 'border-blue-500 ring-2 ring-blue-500/30'
-          : 'border-border hover:border-blue-300',
+          ? 'border-primary ring-2 ring-brand/30'
+          : 'border-border hover:border-brand/40',
       )}
     >
       {/* Main group card */}
@@ -670,7 +670,7 @@ function StudioAvatarGroupCard({
         onClick={onToggle}
         aria-expanded={isExpanded}
         aria-label={`${group.baseName}, ${group.totalLooks} looks`}
-        className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+        className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
       >
         <div className="relative aspect-[3/4] bg-muted overflow-hidden group">
           {group.mainPreview ? (
@@ -681,7 +681,7 @@ function StudioAvatarGroupCard({
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+            <div className="w-full h-full bg-gradient-to-br from-brand/20 to-violet-500/20 flex items-center justify-center">
               <span className="font-body text-4xl text-foreground/40">
                 {group.baseName.charAt(0).toUpperCase()}
               </span>
@@ -689,7 +689,7 @@ function StudioAvatarGroupCard({
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
           {groupHasSelection && (
-            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow">
+            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow">
               <Check size={11} className="text-white" />
             </div>
           )}
@@ -726,10 +726,10 @@ function StudioAvatarGroupCard({
                   }
                   aria-pressed={isLookSelected}
                   className={cn(
-                    'relative rounded-lg overflow-hidden border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
+                    'relative rounded-lg overflow-hidden border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
                     isLookSelected
-                      ? 'border-blue-500 ring-2 ring-blue-500/30'
-                      : 'border-border hover:border-blue-300',
+                      ? 'border-primary ring-2 ring-brand/30'
+                      : 'border-border hover:border-brand/40',
                   )}
                 >
                   <div
@@ -737,7 +737,7 @@ function StudioAvatarGroupCard({
                     style={{ backgroundImage: `url(${look.preview_image_url})` }}
                   />
                   {isLookSelected && (
-                    <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                    <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
                       <Check size={9} className="text-white" />
                     </div>
                   )}

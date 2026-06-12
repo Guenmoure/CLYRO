@@ -51,9 +51,9 @@ export default function MotionIndexPage() {
 
   const STATUS_META: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
     pending:    { label: t('ml_statusPending'),    color: 'bg-muted text-[--text-muted]' },
-    processing: { label: t('ml_statusProcessing'), color: 'bg-blue-500/15 text-blue-500',   icon: <Loader2 size={10} className="animate-spin" /> },
-    assembly:   { label: t('ml_statusRendering'),  color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
-    done:       { label: t('ml_statusReady'),      color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
+    processing: { label: t('ml_statusProcessing'), color: 'bg-brand/15 text-primary',   icon: <Loader2 size={10} className="animate-spin" /> },
+    assembly:   { label: t('ml_statusRendering'),  color: 'bg-feature-motion/15 text-feature-motion', icon: <Loader2 size={10} className="animate-spin" /> },
+    done:       { label: t('ml_statusReady'),      color: 'bg-success/15 text-success', icon: <Check size={10} /> },
     error:      { label: t('ml_statusError'),      color: 'bg-error/15 text-error',         icon: <AlertCircle size={10} /> },
   }
 
@@ -73,7 +73,7 @@ export default function MotionIndexPage() {
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={14} className="text-purple-500" />
+              <Sparkles size={14} className="text-feature-motion" />
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('ml_moduleLabel')}</p>
             </div>
             <h1 className="font-display text-3xl font-bold text-foreground">{t('ml_heading')}</h1>
@@ -83,8 +83,8 @@ export default function MotionIndexPage() {
           </div>
 
           <Link href="/motion/hub" className="group relative">
-            <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 via-violet-600 to-fuchsia-600 text-white font-body text-sm font-semibold shadow-lg">
+            <div className="absolute -inset-0.5 rounded-xl bg-grad-cta opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-grad-cta text-white font-body text-sm font-semibold shadow-lg">
               <Plus size={16} className="group-hover:rotate-90 transition-transform duration-200" />
               {t('ml_newProject')}
             </div>
@@ -95,9 +95,9 @@ export default function MotionIndexPage() {
         {videos.length === 0 ? (
           <Card variant="elevated" padding="xl" className="flex flex-col items-center text-center gap-5 py-20">
             <div className="relative">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 blur-2xl" />
-              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-500/15 to-fuchsia-500/15 border border-border flex items-center justify-center">
-                <Sparkles size={32} className="text-purple-500" />
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-brand/20 to-violet-500/20 blur-2xl" />
+              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-brand/15 to-violet-500/15 border border-border flex items-center justify-center">
+                <Sparkles size={32} className="text-feature-motion" />
               </div>
             </div>
             <div className="space-y-1">
@@ -107,8 +107,8 @@ export default function MotionIndexPage() {
               </p>
             </div>
             <Link href="/motion/hub" className="group relative mt-2">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 opacity-60 blur-md group-hover:opacity-90 transition-opacity duration-300" />
-              <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 via-violet-600 to-fuchsia-600 text-white font-body text-base font-semibold shadow-xl">
+              <div className="absolute -inset-1 rounded-2xl bg-grad-cta opacity-60 blur-md group-hover:opacity-90 transition-opacity duration-300" />
+              <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-grad-cta text-white font-body text-base font-semibold shadow-xl">
                 <Clapperboard size={18} />
                 {t('ml_createFirst')}
                 <Sparkles size={14} className="opacity-80" />
@@ -137,13 +137,13 @@ export default function MotionIndexPage() {
 function NewProjectCard({ newProjectLabel, fromPromptLabel, badgeLabel }: { newProjectLabel: string; fromPromptLabel: string; badgeLabel: string }) {
   return (
     <Link href="/motion/hub" className="group relative block rounded-2xl overflow-hidden aspect-[4/3]">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-violet-600 to-fuchsia-600 opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-grad-cta opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute inset-[1.5px] rounded-2xl bg-card group-hover:bg-card/90 transition-colors duration-300" />
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-violet-500/8 to-fuchsia-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-br from-brand/10 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 via-violet-500 to-fuchsia-500 blur-lg opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
-          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 via-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <div className="absolute inset-0 rounded-full bg-grad-cta blur-lg opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
+          <div className="relative w-14 h-14 rounded-full bg-grad-cta flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
             <Plus size={24} className="text-white group-hover:rotate-90 transition-transform duration-300" />
           </div>
         </div>
@@ -155,9 +155,9 @@ function NewProjectCard({ newProjectLabel, fromPromptLabel, badgeLabel }: { newP
             {fromPromptLabel}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/15 to-fuchsia-500/15 border border-purple-500/20 group-hover:from-purple-500/25 group-hover:to-fuchsia-500/25 transition-all duration-200">
-          <Sparkles size={10} className="text-purple-400" />
-          <span className="font-mono text-[10px] text-purple-400 tracking-wider uppercase">{badgeLabel}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-brand/15 to-violet-500/15 border border-brand/20 group-hover:from-brand/25 group-hover:to-violet-500/25 transition-all duration-200">
+          <Sparkles size={10} className="text-feature-motion" />
+          <span className="font-mono text-[10px] text-feature-motion tracking-wider uppercase">{badgeLabel}</span>
         </div>
       </div>
     </Link>
@@ -185,7 +185,7 @@ function MotionVideoCard({
       rel={video.output_url ? 'noopener noreferrer' : undefined}
       className="card-interactive rounded-2xl border border-border bg-card overflow-hidden block"
     >
-      <div className="aspect-video relative bg-gradient-to-br from-purple-500/20 via-violet-500/10 to-fuchsia-500/20 flex items-center justify-center">
+      <div className="aspect-video relative bg-gradient-to-br from-brand/20 via-violet-500/10 to-violet-500/20 flex items-center justify-center">
         <div className="absolute inset-0 grid-bg opacity-[0.04]" />
         {video.output_url ? (
           <video src={video.output_url} className="absolute inset-0 w-full h-full object-cover" muted />

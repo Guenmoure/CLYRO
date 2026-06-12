@@ -60,7 +60,7 @@ function StyleCard({
       className={cn(
         'relative overflow-hidden rounded-2xl border-2 transition-all duration-200 shrink-0 w-56 snap-center text-left',
         selected
-          ? 'border-blue-500 shadow-glow-brand'
+          ? 'border-primary shadow-glow-brand'
           : 'border-border hover:border-border',
       )}
     >
@@ -97,7 +97,7 @@ function StyleCard({
 
         {/* Selected check */}
         {selected && (
-          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
             <CheckCircle size={14} className="text-white" />
           </div>
         )}

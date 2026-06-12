@@ -113,7 +113,7 @@ export function ConnectionsSection() {
 
       <p className="font-body text-xs text-[--text-muted]">
         Need another integration? Contact us at{' '}
-        <a href="mailto:support@clyro.app" className="text-blue-500 hover:underline">support@clyro.app</a>.
+        <a href="mailto:support@clyro.app" className="text-primary hover:underline">support@clyro.app</a>.
       </p>
     </div>
   )

@@ -16,8 +16,8 @@ const PLANS = [
     period: '/mois',
     credits: '30 vidéos/mois',
     features: ['6 styles Faceless Videos', '2 voix clonées', 'Export MP4 HD'],
-    color: 'border-white/[0.06]',
-    accent: 'text-clyro-accent',
+    color: 'border-border',
+    accent: 'text-primary',
   },
   {
     id: 'studio' as const,
@@ -26,8 +26,8 @@ const PLANS = [
     period: '/mois',
     credits: 'Vidéos illimitées',
     features: ['Motion Graphics inclus', 'Voix clonées illimitées', 'SSO Entreprise'],
-    color: 'border-clyro-primary/30',
-    accent: 'text-clyro-primary',
+    color: 'border-brand/30',
+    accent: 'text-primary',
   },
 ]
 
@@ -77,7 +77,7 @@ export default function BillingPage() {
             <div className="h-8 bg-muted rounded animate-pulse w-1/3" />
           ) : (
             <div className="flex items-center gap-3">
-              <span className="font-mono text-xs uppercase tracking-widest text-clyro-primary bg-clyro-primary/10 border border-clyro-primary/20 px-3 py-1.5 rounded-full">
+              <span className="font-mono text-xs uppercase tracking-widest text-primary bg-brand/10 border border-brand/20 px-3 py-1.5 rounded-full">
                 {plan}
               </span>
               <span className="font-body text-[--text-secondary] text-sm">
@@ -92,9 +92,9 @@ export default function BillingPage() {
           {PLANS.map((p) => {
             const isCurrent = plan === p.id
             return (
-              <div key={p.id} className={cn('bg-card border border-border rounded-2xl p-6 transition-all', p.color, isCurrent && 'ring-2 ring-clyro-primary/25')}>
+              <div key={p.id} className={cn('bg-card border border-border rounded-2xl p-6 transition-all', p.color, isCurrent && 'ring-2 ring-brand/25')}>
                 {isCurrent && (
-                  <span className="font-mono text-xs text-clyro-primary uppercase tracking-widest bg-clyro-primary/10 border border-clyro-primary/20 px-2 py-1 rounded-full mb-4 inline-block">
+                  <span className="font-mono text-xs text-primary uppercase tracking-widest bg-brand/10 border border-brand/20 px-2 py-1 rounded-full mb-4 inline-block">
                     Plan actuel
                   </span>
                 )}
@@ -108,7 +108,7 @@ export default function BillingPage() {
                 <ul className="space-y-2 mb-6">
                   {p.features.map((f) => (
                     <li key={f} className="text-sm font-body text-[--text-secondary] flex items-center gap-2">
-                      <Check size={14} className="text-clyro-primary shrink-0" /> {f}
+                      <Check size={14} className="text-primary shrink-0" /> {f}
                     </li>
                   ))}
                 </ul>
@@ -147,7 +147,7 @@ export default function BillingPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+225 07 00 00 00 00"
-              className="w-full glass rounded-xl px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-clyro-primary/50 transition-all mb-4"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-all mb-4"
             />
             <div className="flex gap-3">
               <button onClick={() => setShowMobileMoneyModal(null)}

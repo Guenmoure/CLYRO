@@ -43,7 +43,7 @@ export function SocialLinksEditor({ value, onChange }: SocialLinksEditorProps) {
       {SOCIAL_NETWORKS.map(({ key, label, placeholder, Icon }) => (
         <div
           key={key}
-          className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2 focus-within:border-blue-500/60 transition-colors"
+          className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2 focus-within:border-brand/60 transition-colors"
         >
           <Icon size={18} className="text-[--text-muted] shrink-0" aria-hidden="true" />
           <span className="font-mono text-xs text-[--text-muted] w-24 shrink-0">{label}</span>

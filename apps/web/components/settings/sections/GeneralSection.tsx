@@ -106,7 +106,7 @@ export function GeneralSection() {
           type="text"
           value={workspaceName}
           onChange={(e) => setWorkspaceName(e.target.value)}
-          className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
+          className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
           placeholder={t('gen_workspace_name_placeholder')}
           maxLength={60}
         />
@@ -126,7 +126,7 @@ export function GeneralSection() {
           onChange={(e) => setWorkspaceDesc(e.target.value)}
           rows={3}
           maxLength={200}
-          className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors resize-none"
+          className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors resize-none"
           placeholder={t('gen_description_placeholder')}
         />
         <p className="font-body text-xs text-[--text-muted]">

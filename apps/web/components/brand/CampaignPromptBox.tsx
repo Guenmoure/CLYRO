@@ -140,14 +140,14 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
                   <button key={a.id} type="button" onClick={() => toggleAsset(a.id)}
                     className={cn(
                       'relative aspect-square rounded-md overflow-hidden border-2 transition-colors',
-                      selected ? 'border-[#c45b3a]' : 'border-transparent hover:border-border',
+                      selected ? 'border-primary' : 'border-transparent hover:border-border',
                     )}>
                     {a.url && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={a.url} alt="" className="w-full h-full object-cover" />
                     )}
                     {selected && (
-                      <span className="absolute top-1 right-1 rounded-full bg-[#c45b3a] text-background text-[9px] w-4 h-4 flex items-center justify-center">
+                      <span className="absolute top-1 right-1 rounded-full bg-primary text-white text-[9px] w-4 h-4 flex items-center justify-center">
                         {assetIds.indexOf(a.id) + 1}
                       </span>
                     )}

@@ -44,9 +44,9 @@ export default function StudioIndexPage() {
 
   const STATUS_META: Record<StudioProject['status'], { label: string; color: string; icon?: React.ReactNode }> = {
     draft:      { label: t('sl_statusDraft'),      color: 'bg-muted text-[--text-muted]' },
-    analyzing:  { label: t('sl_statusAnalyzing'),  color: 'bg-blue-500/15 text-blue-500',     icon: <Loader2 size={10} className="animate-spin" /> },
+    analyzing:  { label: t('sl_statusAnalyzing'),  color: 'bg-brand/15 text-brand',           icon: <Loader2 size={10} className="animate-spin" /> },
     generating: { label: t('sl_statusGenerating'), color: 'bg-amber-500/15 text-amber-500',   icon: <Loader2 size={10} className="animate-spin" /> },
-    editing:    { label: t('sl_statusReadyToEdit'),color: 'bg-blue-500/15 text-blue-500' },
+    editing:    { label: t('sl_statusReadyToEdit'),color: 'bg-brand/15 text-brand' },
     rendering:  { label: t('sl_statusRendering'),  color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
     done:       { label: t('sl_statusReady'),      color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
     error:      { label: t('sl_statusError'),      color: 'bg-error/15 text-error',           icon: <AlertCircle size={10} /> },
@@ -68,7 +68,7 @@ export default function StudioIndexPage() {
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Film size={14} className="text-rose-500" />
+              <Film size={14} className="text-feature-avatar" />
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('sl_moduleLabel')}</p>
             </div>
             <h1 className="font-display text-3xl font-bold text-foreground">{t('sl_heading')}</h1>
@@ -78,8 +78,8 @@ export default function StudioIndexPage() {
           </div>
 
           <Link href="/studio/new" className="group relative">
-            <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-rose-500 via-purple-500 to-blue-500 opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-purple-600 to-blue-600 text-white font-body text-sm font-semibold shadow-lg">
+            <div className="absolute -inset-0.5 rounded-xl bg-brand/40 opacity-0 blur-sm group-hover:opacity-70 transition-opacity duration-300" />
+            <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold shadow-sm group-hover:bg-brand-hover transition-colors">
               <Plus size={16} className="group-hover:rotate-90 transition-transform duration-200" />
               {t('sl_newProject')}
             </div>
@@ -90,9 +90,9 @@ export default function StudioIndexPage() {
         {projects.length === 0 ? (
           <Card variant="elevated" padding="xl" className="flex flex-col items-center text-center gap-5 py-20">
             <div className="relative">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 blur-2xl" />
-              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-rose-500/15 to-purple-500/15 border border-border flex items-center justify-center">
-                <Film size={32} className="text-rose-500" />
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-feature-avatar/15 to-violet-500/15 blur-2xl" />
+              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-feature-avatar/15 to-violet-500/15 border border-border flex items-center justify-center">
+                <Film size={32} className="text-feature-avatar" />
               </div>
             </div>
             <div className="space-y-1">
@@ -102,8 +102,8 @@ export default function StudioIndexPage() {
               </p>
             </div>
             <Link href="/studio/new" className="group relative mt-2">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-rose-500 via-purple-500 to-blue-500 opacity-60 blur-md group-hover:opacity-90 transition-opacity duration-300" />
-              <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-rose-500 via-purple-600 to-blue-600 text-white font-body text-base font-semibold shadow-xl">
+              <div className="absolute -inset-1 rounded-2xl bg-brand/40 opacity-0 blur-md group-hover:opacity-60 transition-opacity duration-300" />
+              <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-primary text-primary-foreground font-body text-base font-semibold shadow-sm group-hover:bg-brand-hover transition-colors">
                 <Clapperboard size={18} />
                 {t('sl_createFirst')}
                 <Sparkles size={14} className="opacity-80" />
@@ -146,27 +146,27 @@ function NewProjectCard({
 }) {
   return (
     <Link href="/studio/new" className="group relative block rounded-2xl overflow-hidden aspect-[4/3]">
-      <div className="absolute inset-0 bg-gradient-to-br from-rose-500 via-purple-600 to-blue-600 opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-br from-brand via-violet-500 to-feature-avatar opacity-50 group-hover:opacity-90 transition-opacity duration-300" />
       <div className="absolute inset-[1.5px] rounded-2xl bg-card group-hover:bg-card/90 transition-colors duration-300" />
-      <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 via-purple-500/8 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-br from-brand/5 via-violet-500/5 to-feature-avatar/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-rose-500 via-purple-500 to-blue-500 blur-lg opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
-          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-rose-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <div className="absolute inset-0 rounded-full bg-brand/40 blur-lg opacity-40 group-hover:opacity-70 transition-opacity duration-300" />
+          <div className="relative w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-glow-brand group-hover:scale-110 transition-transform duration-300">
             <Plus size={24} className="text-white group-hover:rotate-90 transition-transform duration-300" />
           </div>
         </div>
         <div className="text-center">
-          <p className="font-display text-base font-bold text-foreground group-hover:text-white transition-colors duration-200">
+          <p className="font-display text-base font-bold text-foreground group-hover:text-brand transition-colors duration-200">
             {newProjectLabel}
           </p>
-          <p className="font-body text-xs text-[--text-muted] mt-0.5 group-hover:text-white/60 transition-colors duration-200">
+          <p className="font-body text-xs text-[--text-muted] mt-0.5 transition-colors duration-200">
             {fromScriptOrYTLabel}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-rose-500/15 to-purple-500/15 border border-rose-500/20 group-hover:from-rose-500/25 group-hover:to-purple-500/25 transition-all duration-200">
-          <Sparkles size={10} className="text-rose-400" />
-          <span className="font-mono text-[10px] text-rose-400 tracking-wider uppercase">{badgeLabel}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-brand/15 to-violet-500/15 border border-brand/20 group-hover:from-brand/25 group-hover:to-violet-500/25 transition-all duration-200">
+          <Sparkles size={10} className="text-brand" />
+          <span className="font-mono text-[10px] text-brand tracking-wider uppercase">{badgeLabel}</span>
         </div>
       </div>
     </Link>
@@ -194,12 +194,12 @@ function StudioProjectCard({
       href={`/studio/${project.id}/editor`}
       className="card-interactive rounded-2xl border border-border bg-card overflow-hidden block"
     >
-      <div className="aspect-video relative bg-gradient-to-br from-rose-500/20 via-purple-500/10 to-blue-500/20 flex items-center justify-center">
+      <div className="aspect-video relative bg-gradient-to-br from-brand/15 via-violet-500/10 to-feature-avatar/15 flex items-center justify-center">
         <div className="absolute inset-0 grid-bg opacity-[0.04]" />
         {project.final_video_url ? (
           <video src={project.final_video_url} className="absolute inset-0 w-full h-full object-cover" muted />
         ) : (
-          <Film size={32} className="text-white/40 relative" />
+          <Film size={32} className="text-brand/40 relative" />
         )}
         <span className={`absolute top-2 left-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider ${meta.color}`}>
           {meta.icon}

@@ -178,7 +178,7 @@ export default function AutopilotPage() {
                       </h3>
                       <CadenceBadge cadence={s.cadence} />
                       {s.id === flagshipId && (
-                        <span className="font-mono text-[11px] uppercase tracking-wide bg-blue-500/10 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full">
+                        <span className="font-mono text-[11px] uppercase tracking-wide bg-brand/10 text-brand border border-brand/30 px-2 py-0.5 rounded-full">
                           {t('auto_flagship')}
                         </span>
                       )}
@@ -209,7 +209,7 @@ export default function AutopilotPage() {
                       type="button"
                       onClick={() => handleRun(s)}
                       disabled={busyId === s.id}
-                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
                       aria-label={t('auto_aria_run').replace('{name}', s.name)}
                     >
                       <Play size={12} aria-hidden="true" />
@@ -219,7 +219,7 @@ export default function AutopilotPage() {
                       type="button"
                       onClick={() => handleToggle(s)}
                       disabled={busyId === s.id}
-                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
                       aria-label={(s.enabled ? t('auto_aria_pause') : t('auto_aria_resume')).replace('{name}', s.name)}
                     >
                       {s.enabled ? <Pause size={12} aria-hidden="true" /> : <Play size={12} aria-hidden="true" />}
@@ -231,7 +231,7 @@ export default function AutopilotPage() {
                       type="button"
                       onClick={() => setDeleteTarget(s)}
                       disabled={busyId === s.id}
-                      className="inline-flex items-center justify-center w-11 h-11 rounded-lg border border-border bg-card text-[--text-muted] hover:text-red-400 hover:border-red-500/40 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60"
+                      className="inline-flex items-center justify-center w-11 h-11 rounded-lg border border-border bg-card text-[--text-muted] hover:text-error hover:border-error/40 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/60"
                       aria-label={t('auto_aria_delete').replace('{name}', s.name)}
                     >
                       <Trash2 size={14} aria-hidden="true" />
@@ -276,8 +276,8 @@ export default function AutopilotPage() {
 function CadenceBadge({ cadence }: { cadence: AutopilotCadence }) {
   const { t } = useLanguage()
   const tone =
-    cadence === 'daily'  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' :
-    cadence === 'weekly' ? 'bg-blue-500/10 text-blue-300 border-blue-500/30' :
+    cadence === 'daily'  ? 'bg-success/10 text-success border-success/30' :
+    cadence === 'weekly' ? 'bg-brand/10 text-brand border-brand/30' :
                            'bg-muted text-[--text-muted] border-border'
   const label =
     cadence === 'daily'  ? t('auto_cadence_daily_label') :

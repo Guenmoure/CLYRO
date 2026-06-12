@@ -27,9 +27,9 @@ export function StudioTopBar({
 
   const STATUS_META: Record<StudioProjectStatus, { label: string; color: string }> = {
     draft:      { label: t('st_statusDraft'),      color: 'bg-muted text-[--text-muted]' },
-    analyzing:  { label: t('st_statusAnalyzing'),  color: 'bg-blue-500/15 text-blue-500' },
+    analyzing:  { label: t('st_statusAnalyzing'),  color: 'bg-brand/15 text-brand' },
     generating: { label: t('st_statusGenerating'), color: 'bg-amber-500/15 text-amber-500' },
-    editing:    { label: t('st_statusEditing'),    color: 'bg-blue-500/15 text-blue-500' },
+    editing:    { label: t('st_statusEditing'),    color: 'bg-brand/15 text-brand' },
     rendering:  { label: t('st_statusRendering'),  color: 'bg-purple-500/15 text-purple-500' },
     done:       { label: t('st_statusReady'),      color: 'bg-emerald-500/15 text-emerald-500' },
     error:      { label: t('st_statusError'),      color: 'bg-error/15 text-error' },
@@ -68,7 +68,7 @@ export function StudioTopBar({
         <div className="hidden md:flex items-center gap-2 flex-1 max-w-xs">
           <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
+              className="h-full rounded-full bg-gradient-to-r from-brand to-violet-500 transition-all"
               style={{ width: `${Math.round((scenesDone! / scenesTotal!) * 100)}%` }}
             />
           </div>

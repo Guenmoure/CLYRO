@@ -61,7 +61,7 @@ export function TimelineEditor({
                     type="button"
                     aria-label={t('te_addSceneHere')}
                     onClick={() => onAddScene(scene.index)}
-                    className="opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity w-5 h-5 rounded-full bg-muted border border-border hover:border-blue-500 hover:text-blue-500 flex items-center justify-center text-[--text-muted]"
+                    className="opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity w-5 h-5 rounded-full bg-muted border border-border hover:border-brand hover:text-brand flex items-center justify-center text-[--text-muted]"
                   >
                     <Plus size={10} />
                   </button>
@@ -79,12 +79,12 @@ export function TimelineEditor({
               return (
                 <div
                   key={scene.id}
-                  className={`h-6 rounded-md border border-white/10 shrink-0 flex items-center px-2 ${
-                    hasAudio ? 'bg-emerald-900/40' : 'bg-muted'
+                  className={`h-6 rounded-md border border-border shrink-0 flex items-center px-2 ${
+                    hasAudio ? 'bg-emerald-500/20' : 'bg-muted'
                   }`}
                   style={{ width: `${width}px` }}
                 >
-                  <span className="font-mono text-[9px] text-white/60 truncate">
+                  <span className="font-mono text-[9px] text-[--text-secondary] truncate">
                     {hasAudio ? 'VO' : '—'}
                   </span>
                 </div>
@@ -95,10 +95,10 @@ export function TimelineEditor({
           {/* Music track */}
           <Track label={t('te_music')}>
             <div
-              className="h-6 rounded-md border border-white/10 shrink-0 bg-purple-900/30 flex items-center px-3"
+              className="h-6 rounded-md border border-border shrink-0 bg-brand/15 flex items-center px-3"
               style={{ width: `${Math.max(400, projectDuration * SCALE)}px` }}
             >
-              <span className="font-mono text-[10px] text-white/70 truncate">
+              <span className="font-mono text-[10px] text-[--text-secondary] truncate">
                 {musicTrackName ?? t('te_noMusicTrack')}
               </span>
             </div>

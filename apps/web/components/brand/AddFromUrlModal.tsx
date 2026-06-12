@@ -107,7 +107,7 @@ export function AddFromUrlModal<TDraft>({
                       void handleScrape()
                     }
                   }}
-                  className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] outline-none focus:border-blue-500/60 transition-colors"
+                  className="w-full rounded-xl border border-border bg-muted px-3 py-2 font-body text-sm text-foreground placeholder-[--text-muted] outline-none focus:border-brand/60 transition-colors"
                 />
               </div>
               {errorMsg && (

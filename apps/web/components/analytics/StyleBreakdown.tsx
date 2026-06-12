@@ -34,7 +34,7 @@ export function StyleBreakdown({ entries, total }: { entries: Entry[]; total: nu
               aria-label={`${e.style}: ${e.count} videos, ${share} percent of total`}
             >
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-[width]"
+                className="h-full bg-gradient-to-r from-brand to-violet-500 rounded-full transition-[width]"
                 style={{ width: `${pct}%` }}
               />
             </div>

@@ -142,8 +142,8 @@ export function ContentTemplateGallery({
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles size={16} className="text-blue-500" />
-              <p className="font-mono text-[10px] uppercase tracking-widest text-blue-500">
+              <Sparkles size={16} className="text-primary" />
+              <p className="font-mono text-[10px] uppercase tracking-widest text-primary">
                 {copy.eyebrow}
               </p>
             </div>
@@ -185,7 +185,7 @@ export function ContentTemplateGallery({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={copy.searchPlaceholder}
-              className="w-full pl-9 pr-9 py-2 rounded-xl bg-card border border-border text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500/50 transition-colors"
+              className="w-full pl-9 pr-9 py-2 rounded-xl bg-card border border-border text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
             />
             {search && (
               <button
@@ -218,7 +218,7 @@ export function ContentTemplateGallery({
                   className={cn(
                     'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
                     activeCategory === cat.id
-                      ? 'bg-blue-500/10 border-blue-500/50 text-blue-500'
+                      ? 'bg-brand/10 border-brand/50 text-primary'
                       : 'bg-card border-border text-[--text-muted] hover:border-border hover:text-foreground',
                   )}
                 >
@@ -241,7 +241,7 @@ export function ContentTemplateGallery({
                 className={cn(
                   'px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
                   activeNiche === 'all'
-                    ? 'bg-blue-500/10 border-blue-500/50 text-blue-500'
+                    ? 'bg-brand/10 border-brand/50 text-primary'
                     : 'bg-card border-border text-[--text-muted] hover:border-border hover:text-foreground',
                 )}
               >
@@ -255,7 +255,7 @@ export function ContentTemplateGallery({
                   className={cn(
                     'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
                     activeNiche === n.id
-                      ? 'bg-blue-500/10 border-blue-500/50 text-blue-500'
+                      ? 'bg-brand/10 border-brand/50 text-primary'
                       : 'bg-card border-border text-[--text-muted] hover:border-border hover:text-foreground',
                   )}
                 >
@@ -324,7 +324,7 @@ function TemplateCard({
       className={cn(
         'group relative text-left rounded-2xl border bg-card overflow-hidden',
         selected
-          ? 'border-blue-500 ring-2 ring-blue-500/30'
+          ? 'border-primary ring-2 ring-brand/30'
           : 'card-interactive border-border',
       )}
     >
@@ -340,7 +340,7 @@ function TemplateCard({
 
         {/* Selection indicator */}
         {selected && (
-          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow">
+          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow">
             <Check size={12} className="text-white" />
           </div>
         )}
@@ -398,10 +398,10 @@ function TemplateCard({
 
       {/* Hover CTA hint */}
       <div className={cn(
-        'absolute inset-x-0 bottom-0 px-4 py-2 bg-gradient-to-t from-blue-500/20 to-transparent transition-opacity duration-200',
+        'absolute inset-x-0 bottom-0 px-4 py-2 bg-gradient-to-t from-brand/20 to-transparent transition-opacity duration-200',
         selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
       )}>
-        <p className="font-mono text-[10px] uppercase tracking-wider text-blue-500 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-wider text-primary text-center">
           {selected ? selectedLabel : ctaLabel}
         </p>
       </div>

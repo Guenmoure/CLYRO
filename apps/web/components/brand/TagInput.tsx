@@ -68,7 +68,7 @@ export function TagInput({
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-muted px-3 py-2 min-h-[44px] focus-within:border-blue-500/60 transition-colors',
+        'flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-muted px-3 py-2 min-h-[44px] focus-within:border-brand/60 transition-colors',
         disabled && 'opacity-60 pointer-events-none',
         className,
       )}

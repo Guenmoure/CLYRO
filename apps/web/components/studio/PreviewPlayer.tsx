@@ -56,7 +56,7 @@ export function PreviewPlayer({ scene, format, onRetry }: PreviewPlayerProps) {
                   style={{ backgroundImage: `url(${scene.thumbnail_url})` }}
                 />
               )}
-              <Loader2 size={32} className="relative text-blue-400 animate-spin" />
+              <Loader2 size={32} className="relative text-brand animate-spin" />
               <p className="relative font-body text-sm text-white/80">
                 {scene.status === 'pending' ? t('pp_waitingToGenerate') : t('pp_generating')}
               </p>

@@ -62,7 +62,7 @@ export function HyperFramesSection({
       <label className="flex items-start gap-3 cursor-pointer">
         <input
           type="checkbox"
-          className="mt-1 h-4 w-4 rounded border-border accent-blue-500 cursor-pointer"
+          className="mt-1 h-4 w-4 rounded border-border accent-primary cursor-pointer"
           checked={enabled}
           onChange={(e) => onToggle(e.target.checked)}
         />
@@ -71,7 +71,7 @@ export function HyperFramesSection({
             <span className="font-display text-sm font-semibold text-foreground">
               {t('sn_hf_section_title')}
             </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-brand/10 text-primary border border-brand/20">
               {t('sn_hf_section_badge')}
             </span>
           </div>
@@ -82,7 +82,7 @@ export function HyperFramesSection({
       </label>
 
       {enabled && (
-        <div className="space-y-3 pt-2 pl-7 border-l-2 border-blue-500/20">
+        <div className="space-y-3 pt-2 pl-7 border-l-2 border-brand/20">
           {/* Template picker — 5 cards in a 2-col grid (3 on lg). Each card
               shows an inline SVG preview that hints at the visual style. */}
           <div>
@@ -101,7 +101,7 @@ export function HyperFramesSection({
                     className={cn(
                       'rounded-xl border p-3 text-left transition-all flex flex-col gap-2',
                       selected
-                        ? 'border-blue-500 bg-blue-500/5 ring-1 ring-blue-500/20'
+                        ? 'border-primary bg-brand/5 ring-1 ring-brand/20'
                         : 'border-border bg-background hover:border-border/80',
                     )}
                   >
@@ -140,7 +140,7 @@ export function HyperFramesSection({
                   const v = e.target.value
                   if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) onBrandColorChange(v)
                 }}
-                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-blue-500/60"
+                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
                 placeholder="#3B8EF0"
                 maxLength={7}
               />

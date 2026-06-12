@@ -442,7 +442,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
     : 0
   return (
     <div
-      className="bg-card border-b border-border relative flex items-center gap-1 overflow-x-auto px-4 sm:px-6 py-3 shrink-0 z-20 rounded-b-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+      className="bg-card border-b border-border relative flex items-center gap-1 overflow-x-auto px-4 sm:px-6 py-3 shrink-0 z-20 rounded-b-2xl shadow-card"
       role="progressbar"
       aria-valuenow={progressPct}
       aria-valuemin={0}
@@ -462,8 +462,8 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
           <div key={step.id} className="flex items-center gap-1 shrink-0">
             <div className={cn(
               'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-body font-medium whitespace-nowrap transition-all',
-              active ? 'bg-blue-500 text-white shadow-sm' :
-              done   ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+              active ? 'bg-primary text-white shadow-sm' :
+              done   ? 'bg-success/10 text-success border border-success/20' :
                        'text-[--text-muted]'
             )}>
               {done
@@ -473,7 +473,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
               <span>{step.label}</span>
             </div>
             {i < PIPELINE_STEPS.length - 1 && (
-              <div className={cn('w-5 h-px', done ? 'bg-emerald-300' : 'bg-border')} />
+              <div className={cn('w-5 h-px', done ? 'bg-success/40' : 'bg-border')} />
             )}
           </div>
         )
@@ -482,7 +482,7 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
       {savedState && (
         <div className={cn(
           'ml-auto flex items-center gap-1 shrink-0 whitespace-nowrap text-[11px] font-mono transition-all',
-          savedState === 'saving' ? 'text-[--text-muted]' : 'text-emerald-600'
+          savedState === 'saving' ? 'text-[--text-muted]' : 'text-success'
         )}>
           {savedState === 'saving'
             ? <><Loader2 size={10} className="animate-spin" /> Sauvegarde…</>
@@ -513,13 +513,13 @@ function StylePickerDropdown({ value, onChange, onClose }: {
           return (
             <button key={s.id} type="button" onClick={() => { onChange(s.id); onClose() }}
               className={cn('relative rounded-xl overflow-hidden transition-all',
-                value === s.id ? 'ring-2 ring-blue-500 ring-offset-1' : 'hover:ring-1 hover:ring-border')}>
+                value === s.id ? 'ring-2 ring-brand ring-offset-1' : 'hover:ring-1 hover:ring-border')}>
               <div className="h-16 w-full relative"><Preview selected={value === s.id} /></div>
               <div className="p-2 bg-muted">
                 <p className="font-display font-semibold text-[11px] text-foreground truncate">{s.label}</p>
               </div>
-              {s.badge && <span className="absolute top-1 right-1 font-mono text-[8px] uppercase tracking-wider bg-blue-500 text-white px-1 py-0.5 rounded-full">{s.badge}</span>}
-              {value === s.id && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center"><Check size={8} className="text-white" /></div>}
+              {s.badge && <span className="absolute top-1 right-1 font-mono text-[8px] uppercase tracking-wider bg-primary text-white px-1 py-0.5 rounded-full">{s.badge}</span>}
+              {value === s.id && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center"><Check size={8} className="text-white" /></div>}
             </button>
           )
         })}
@@ -565,19 +565,19 @@ function VoicePickerDropdown({ value, voices, onChange, onClose }: {
       <div className="space-y-1 max-h-64 overflow-y-auto">
         <button type="button" onClick={() => { onChange(''); onClose() }}
           className={cn('w-full text-left px-3 py-2 rounded-xl text-sm font-body transition-colors',
-            !value ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-card text-[--text-muted]')}>
+            !value ? 'bg-brand/10 text-primary' : 'hover:bg-card text-[--text-muted]')}>
           Aucune voix
         </button>
         {voices.map((v) => (
-          <div key={v.id} className={cn('flex items-center gap-2 rounded-xl transition-colors', value === v.id ? 'bg-blue-500/10' : 'hover:bg-card')}>
+          <div key={v.id} className={cn('flex items-center gap-2 rounded-xl transition-colors', value === v.id ? 'bg-brand/10' : 'hover:bg-card')}>
             <button type="button" onClick={() => { onChange(v.id); onClose() }} className="flex-1 text-left px-3 py-2">
-              <p className={cn('text-sm font-body font-medium', value === v.id ? 'text-blue-500' : 'text-foreground')}>{v.name}</p>
+              <p className={cn('text-sm font-body font-medium', value === v.id ? 'text-primary' : 'text-foreground')}>{v.name}</p>
               {(v.gender || v.accent) && <p className="text-[11px] text-[--text-muted]">{[v.gender, v.accent].filter(Boolean).join(' · ')}</p>}
             </button>
             {v.previewUrl && (
               <button type="button" onClick={(e) => playPreview(e, v)} aria-label={t('fh_previewVoice')}
                 className={cn('w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center mr-2 transition-all',
-                  playingId === v.id ? 'bg-blue-500 text-white' : 'bg-card border border-border text-[--text-muted] hover:text-blue-500')}>
+                  playingId === v.id ? 'bg-primary text-white' : 'bg-card border border-border text-[--text-muted] hover:text-primary')}>
                 {playingId === v.id
                   ? <div className="w-2.5 h-2.5 flex gap-0.5 items-center"><div className="w-0.5 h-2.5 bg-white rounded" /><div className="w-0.5 h-2.5 bg-white rounded" /></div>
                   : <Play size={9} className="fill-current translate-x-px" />}
@@ -606,8 +606,8 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
             <button key={cat.id} type="button" onClick={() => setActiveCategory(cat.id)}
               className={cn('px-3.5 py-1.5 rounded-full text-xs font-body font-medium border transition-all',
                 activeCategory === cat.id
-                  ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-                  : 'bg-muted border-border text-[--text-muted] hover:border-blue-500/40 hover:text-foreground')}>
+                  ? 'bg-brand/10 border-primary text-primary'
+                  : 'bg-muted border-border text-[--text-muted] hover:border-brand/40 hover:text-foreground')}>
               {cat.label}
             </button>
           ))}
@@ -619,14 +619,14 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
             return (
               <button key={t.id} type="button" onClick={() => onSelect(t.id)}
                 className={cn('relative rounded-2xl overflow-hidden text-left transition-all',
-                  isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : 'hover:scale-[1.02] hover:shadow-card')}>
+                  isSelected ? 'ring-2 ring-brand ring-offset-2' : 'hover:scale-[1.02] hover:shadow-card')}>
                 <div className="h-24 w-full relative"><Preview selected={isSelected} /></div>
                 <div className="p-2.5 bg-muted border-t border-border/50">
                   <p className="font-display font-bold text-[11px] text-foreground">{t.label}</p>
                   <p className="font-body text-[11px] text-[--text-muted] mt-0.5 leading-tight">{t.desc}</p>
                 </div>
-                {t.badge && <span className="absolute top-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-blue-500 text-white px-1.5 py-0.5 rounded-full">{t.badge}</span>}
-                {isSelected && <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow"><Check size={9} className="text-white" /></div>}
+                {t.badge && <span className="absolute top-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-primary text-white px-1.5 py-0.5 rounded-full">{t.badge}</span>}
+                {isSelected && <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow"><Check size={9} className="text-white" /></div>}
               </button>
             )
           })}
@@ -762,8 +762,8 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               <div className="px-4 pb-4">
                 <label htmlFor="faceless-audio"
                   className={cn('flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed cursor-pointer transition-all',
-                    project.audioFile ? 'border-blue-500 bg-blue-500/10' : 'border-border hover:border-blue-500/50')}>
-                  <Upload size={18} className={cn('mb-2', project.audioFile ? 'text-blue-500' : 'text-[--text-muted]')} />
+                    project.audioFile ? 'border-primary bg-brand/10' : 'border-border hover:border-brand/50')}>
+                  <Upload size={18} className={cn('mb-2', project.audioFile ? 'text-primary' : 'text-[--text-muted]')} />
                   <p className="font-display text-sm font-semibold text-foreground">{project.audioFile ? project.audioFile.name : t('fh_importAudio')}</p>
                   <p className="text-xs text-[--text-muted] mt-0.5">MP3, WAV, M4A — max 50 MB</p>
                   <input ref={fileRef} id="faceless-audio" type="file" accept="audio/*" className="hidden"
@@ -780,7 +780,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                     const words = s.trim() ? s.trim().split(/\s+/).length : 0
                     const estSec = Math.round(words / 2.5) // ~150 wpm voiceover
                     return (
-                      <span className={cn('font-mono text-[11px]', s.length < 20 ? 'text-amber-500' : 'text-[--text-muted]')}>
+                      <span className={cn('font-mono text-[11px]', s.length < 20 ? 'text-warning' : 'text-[--text-muted]')}>
                         {words} {t('fh_words')} · ~{estSec}s {t('fh_estimated')}
                         {s.length < 20 && ` · ${20 - s.length} ${t('fh_moreChars')}`}
                       </span>
@@ -793,7 +793,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                           key={ex.label}
                           type="button"
                           onClick={() => onChange({ script: ex.script, description: ex.description, style: ex.style, duration: ex.duration })}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg border border-border text-[11px] font-mono text-[--text-muted] hover:border-blue-500/40 hover:text-blue-500 transition-all"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg border border-border text-[11px] font-mono text-[--text-muted] hover:border-brand/40 hover:text-primary transition-all"
                         >
                           <Sparkles size={9} /> {t(ex.label)}
                         </button>
@@ -807,11 +807,11 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                   const dialogue = detectDialogueInScript(project.script)
                   return dialogue.hasDialogue ? (
                     <div className="px-4 pb-2">
-                      <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5 flex items-start gap-2">
-                        <Volume2 size={14} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div className="rounded-lg bg-brand/10 border border-brand/20 px-3 py-2.5 flex items-start gap-2">
+                        <Volume2 size={14} className="text-primary mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <p className="font-body text-xs font-medium text-blue-900">{t('fh_dialogueDetected')}</p>
-                          <p className="font-body text-[11px] text-blue-700 mt-0.5">
+                          <p className="font-body text-xs font-medium text-foreground">{t('fh_dialogueDetected')}</p>
+                          <p className="font-body text-[11px] text-[--text-secondary] mt-0.5">
                             {dialogue.speakers.size} personnages trouvés ({Array.from(dialogue.speakers).join(', ')}). Les voix alterneront automatiquement.
                           </p>
                         </div>
@@ -829,7 +829,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             <div ref={styleRef} className="relative">
               <button type="button" onClick={() => { setShowStylePicker((v) => !v); setShowVoicePicker(false) }}
                 className={cn('flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-body transition-all',
-                  project.style ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-card border-border text-[--text-muted] hover:border-blue-500/40')}>
+                  project.style ? 'bg-brand/10 border-primary text-primary' : 'bg-card border-border text-[--text-muted] hover:border-brand/40')}>
                 <span className="font-medium">{selectedStyle?.label ?? t('fh_visualStyle')}</span>
                 <ChevronDown size={13} className={cn('transition-transform', showStylePicker && 'rotate-180')} />
               </button>
@@ -840,7 +840,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             <div ref={voiceRef} className="relative">
               <button type="button" onClick={() => { setShowVoicePicker((v) => !v); setShowStylePicker(false) }}
                 className={cn('flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-body transition-all',
-                  project.voiceId ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-card border-border text-[--text-muted] hover:border-blue-500/40')}>
+                  project.voiceId ? 'bg-brand/10 border-primary text-primary' : 'bg-card border-border text-[--text-muted] hover:border-brand/40')}>
                 <Mic2 size={14} />
                 <span className="font-medium">{selectedVoice?.name ?? t('fh_voiceover')}</span>
                 <ChevronDown size={13} className={cn('transition-transform', showVoicePicker && 'rotate-180')} />
@@ -853,7 +853,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               {FORMATS.map((f) => (
                 <button key={f.id} type="button" title={f.desc} onClick={() => onChange({ format: f.id })}
                   className={cn('px-2.5 py-1 rounded-lg text-xs font-display font-semibold transition-all',
-                    project.format === f.id ? 'bg-blue-500/10 border border-blue-500 text-blue-500' : 'text-[--text-muted] hover:text-foreground')}>
+                    project.format === f.id ? 'bg-brand/10 border border-primary text-primary' : 'text-[--text-muted] hover:text-foreground')}>
                   {f.label}
                 </button>
               ))}
@@ -862,7 +862,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             {/* Title */}
             <input type="text" value={project.title} onChange={(e) => onChange({ title: e.target.value })}
               placeholder={t('fh_titlePlaceholder')}
-              className="w-full sm:w-auto sm:ml-auto sm:flex-1 sm:max-w-xs bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors" />
+              className="w-full sm:w-auto sm:ml-auto sm:flex-1 sm:max-w-xs bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors" />
           </div>
 
           {/* Generate row — separate from dropdowns to avoid click interception (P0 fix) */}
@@ -883,7 +883,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             <button type="button" onClick={onNext} disabled={!canNext || loading}
               aria-disabled={!canNext || loading}
               className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all shrink-0',
-                canNext && !loading ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-sm hover:shadow-md' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
+                canNext && !loading ? 'bg-primary text-white hover:bg-brand-hover shadow-sm hover:shadow-md' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               Generate storyboard
               {!loading && <ArrowRight size={13} />}
@@ -1028,7 +1028,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
           <p className="font-body text-xs text-[--text-muted]">{scenes.length} scènes générées — modifie le script et les prompts avant de générer les images</p>
         </div>
         <button type="button" onClick={regenAll} disabled={generating}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground hover:border-brand/40 transition-all">
           {generating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
           Tout régénérer
         </button>
@@ -1046,7 +1046,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
             onDragEnd={handleDragEnd}
             className={cn(
               'rounded-2xl border bg-muted overflow-hidden transition-all',
-              dragOverIndex === i && dragIndex !== i ? 'border-blue-500/60 ring-2 ring-blue-500/20' : 'border-border',
+              dragOverIndex === i && dragIndex !== i ? 'border-brand/60 ring-2 ring-brand/20' : 'border-border',
               dragIndex === i ? 'opacity-50' : '',
             )}
           >
@@ -1055,16 +1055,16 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               {/* Drag handle */}
               <GripVertical size={14} className="text-[--text-muted]/40 cursor-grab active:cursor-grabbing shrink-0" />
               <div className="flex items-center gap-1.5">
-                <span className="font-mono text-[11px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">
+                <span className="font-mono text-[11px] font-bold text-primary bg-brand/10 px-2 py-0.5 rounded-full">
                   Scène {i + 1}
                 </span>
-                <span className="font-mono text-[11px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+                <span className="font-mono text-[11px] font-bold text-[--text-secondary] bg-muted px-2 py-0.5 rounded-full">
                   ~{calculateSceneDuration(scene.scriptText)}s
                 </span>
               </div>
               <div className="flex-1" />
               <button type="button" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
-                className={cn('flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all', editingId === scene.id ? 'bg-blue-500/10 text-blue-500' : 'text-[--text-muted] hover:text-foreground')}>
+                className={cn('flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all', editingId === scene.id ? 'bg-brand/10 text-primary' : 'text-[--text-muted] hover:text-foreground')}>
                 <Edit3 size={11} />
                 {editingId === scene.id ? t('fh_editClose') : t('fh_editOpen')}
               </button>
@@ -1081,7 +1081,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                   size="sm"
                   aria-label={t('fh_mergeScene')}
                   onClick={() => mergeWithNext(scene.id)}
-                  className="hover:text-amber-600"
+                  className="hover:text-warning"
                 >
                   <Merge />
                 </IconButton>
@@ -1106,7 +1106,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                 {editingId === scene.id ? (
                   <textarea value={scene.scriptText} onChange={(e) => updateScene(scene.id, { scriptText: e.target.value })}
                     rows={3} placeholder={t('fh_scriptTextPlaceholder')}
-                    className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm font-body text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
+                    className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm font-body text-foreground focus:outline-none focus:border-primary transition-colors resize-none" />
                 ) : (
                   <p className="text-sm font-body text-foreground leading-relaxed">{scene.scriptText}</p>
                 )}
@@ -1124,7 +1124,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                   {editingId === scene.id ? (
                     <textarea value={scene.imagePrompt} onChange={(e) => updateScene(scene.id, { imagePrompt: e.target.value })}
                       rows={3} placeholder={t('fh_imagePromptPlaceholder')}
-                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
+                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-primary transition-colors resize-none" />
                   ) : (
                     <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-3">{scene.imagePrompt}</p>
                   )}
@@ -1139,7 +1139,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                   {editingId === scene.id ? (
                     <textarea value={scene.animationPrompt} onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
                       rows={3} placeholder={t('fh_animPromptPlaceholder')}
-                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none" />
+                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-primary transition-colors resize-none" />
                   ) : (
                     <p className="text-xs font-mono text-[--text-muted] leading-relaxed line-clamp-3">{scene.animationPrompt}</p>
                   )}
@@ -1151,7 +1151,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
 
         {/* Add scene button */}
         <button type="button" onClick={addScene}
-          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-dashed border-border/60 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all hover:bg-blue-500/10/20">
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-dashed border-border/60 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-brand/40 transition-all hover:bg-brand/10">
           <Plus size={14} />
           Ajouter une scène
         </button>
@@ -1162,7 +1162,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
         <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> Retour
         </button>
-        <button type="button" onClick={onNext} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all">
+        <button type="button" onClick={onNext} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white font-display font-semibold text-sm hover:bg-brand-hover transition-all">
           Generate images <ArrowRight size={13} />
         </button>
       </div>
@@ -1498,14 +1498,14 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-body transition-all',
               batchMode
-                ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-                : 'border-border text-[--text-muted] hover:text-foreground hover:border-blue-500/40'
+                ? 'bg-brand/10 border-primary text-primary'
+                : 'border-border text-[--text-muted] hover:text-foreground hover:border-brand/40'
             )}>
             {batchMode ? <Check size={12} /> : <Settings2 size={12} />}
             {batchMode ? t('fh_batchActive') : t('fh_batchMultiple')}
           </button>
           <button type="button" onClick={generateAll} disabled={generatingAll || allDone || scene0Phase === 'pending_validation'}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all disabled:opacity-40">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground hover:border-brand/40 transition-all disabled:opacity-40">
             {generatingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
             {allDone ? t('fh_allGenerated')
               : scene0Phase === 'idle' ? t('fh_generateScene0')
@@ -1518,8 +1518,8 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
       {/* Batch action bar */}
       {batchMode && selected.size > 0 && (
-        <div className="px-4 sm:px-6 py-2.5 bg-blue-500/10 border-b border-blue-500/20 flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
-          <p className="font-mono text-xs text-blue-500 flex-1">
+        <div className="px-4 sm:px-6 py-2.5 bg-brand/10 border-b border-brand/20 flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
+          <p className="font-mono text-xs text-primary flex-1">
             {selected.size} scène{selected.size > 1 ? 's' : ''} sélectionnée{selected.size > 1 ? 's' : ''}
           </p>
           <button type="button" onClick={() => setSelected(new Set())}
@@ -1527,7 +1527,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
             Tout désélectionner
           </button>
           <button type="button" onClick={regenerateSelected}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500 text-white text-xs font-display font-semibold hover:bg-blue-500/90 transition-all">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-display font-semibold hover:bg-brand-hover transition-all">
             <RefreshCw size={11} /> Régénérer {selected.size} scène{selected.size > 1 ? 's' : ''}
           </button>
         </div>
@@ -1552,7 +1552,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
           <button
             type="button"
             onClick={validateScene0}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-display font-semibold hover:bg-emerald-700 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-success text-white text-xs font-display font-semibold hover:bg-success/90 transition-all"
           >
             <Check size={12} /> Valider et continuer
           </button>
@@ -1560,16 +1560,16 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       )}
 
       {scene0Phase === 'validated' && scenes.some((s) => s.index > 0 && s.imageStatus !== 'done') && (
-        <div className="px-4 sm:px-6 py-2.5 bg-emerald-50 border-b border-emerald-200 flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
-          <Check size={14} className="text-emerald-600" />
-          <p className="text-xs text-emerald-700 flex-1">
+        <div className="px-4 sm:px-6 py-2.5 bg-success/10 border-b border-success/20 flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
+          <Check size={14} className="text-success" />
+          <p className="text-xs text-success flex-1">
             {t('fh_scene0ValidatedRef')}
           </p>
           <button
             type="button"
             onClick={generateRemaining}
             disabled={generatingAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-display font-semibold hover:bg-emerald-700 transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success text-white text-xs font-display font-semibold hover:bg-success/90 transition-all disabled:opacity-50"
           >
             {generatingAll ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
             Generate the {scenes.filter((s) => s.index > 0 && s.imageStatus !== 'done').length} remaining scenes
@@ -1600,7 +1600,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                       type="button"
                       onClick={() => setPreviewIndex(i)}
                       aria-label={`Prévisualiser Scène ${i + 1} en grand`}
-                      className="absolute inset-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
+                      className="absolute inset-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -1652,7 +1652,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                     className={cn(
                       'absolute top-2 left-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all z-10',
                       selected.has(scene.id)
-                        ? 'bg-blue-500 border-blue-500'
+                        ? 'bg-primary border-primary'
                         : 'bg-black/40 border-white/40 hover:border-white'
                     )}>
                     {selected.has(scene.id) && <Check size={10} className="text-white" />}
@@ -1666,12 +1666,12 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
                 {/* Quality badge */}
                 {scene.imageStatus === 'done' && scene.qualityHint === 'draft' && (
-                  <span className="absolute bottom-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-amber-500/80 text-white px-1.5 py-0.5 rounded-full">
+                  <span className="absolute bottom-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-warning/80 text-white px-1.5 py-0.5 rounded-full">
                     Draft
                   </span>
                 )}
                 {scene.imageStatus === 'done' && scene.qualityHint === 'hd' && (
-                  <span className="absolute bottom-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-emerald-500/80 text-white px-1.5 py-0.5 rounded-full">
+                  <span className="absolute bottom-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-success/80 text-white px-1.5 py-0.5 rounded-full">
                     HD
                   </span>
                 )}
@@ -1700,7 +1700,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                         before: scene.imageHistory![scene.imageHistory!.length - 1],
                         after: scene.imageUrl!,
                       })}
-                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-purple-500/80 flex items-center justify-center transition-all"
+                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-brand/80 flex items-center justify-center transition-all"
                       title={t('fh_compareBefore')}
                     >
                       <ArrowLeft size={8} className="translate-x-px" />
@@ -1708,7 +1708,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                     </button>
                   )}
                   <button type="button" aria-label="Modifier le prompt" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
-                    className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-blue-500 text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
+                    className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-primary text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
                     <Edit3 size={10} />
                   </button>
                   <button type="button" aria-label="Régénérer l'image" onClick={() => generateImage(scene.id)} disabled={scene.imageStatus === 'generating'}
@@ -1725,7 +1725,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                     <textarea value={scene.imagePrompt}
                       onChange={(e) => updateScene(scene.id, { imagePrompt: e.target.value })}
                       placeholder={t('fh_promptImage')} rows={3}
-                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none" />
+                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-primary resize-none" />
 
                     {/* Overlay text — incruste du texte sur l'image au montage (drawtext ffmpeg).
                         Évite les textes illisibles générés par flux. Max 200 chars. */}
@@ -1739,7 +1739,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                         onChange={(e) => updateScene(scene.id, { overlayText: e.target.value.slice(0, 200) })}
                         placeholder={t('fh_overlayExample')}
                         maxLength={200}
-                        className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-body text-foreground focus:outline-none focus:border-blue-500"
+                        className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-body text-foreground focus:outline-none focus:border-primary"
                       />
                       {scene.overlayText && scene.overlayText.length > 0 && (
                         <p className="text-[10px] text-[--text-muted]">
@@ -1750,8 +1750,8 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
                     {/* Improve prompt panel */}
                     {improveResult && improvingId === null && (
-                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2.5 space-y-1.5">
-                        <p className="font-mono text-[11px] uppercase tracking-widest text-blue-500">✨ Suggestion Claude</p>
+                      <div className="bg-brand/10 border border-brand/20 rounded-lg p-2.5 space-y-1.5">
+                        <p className="font-mono text-[11px] uppercase tracking-widest text-primary">✨ Suggestion Claude</p>
                         <p className="font-mono text-[11px] text-foreground leading-relaxed">{improveResult.improvedPrompt}</p>
                         <p className="text-[11px] text-[--text-muted] italic">{improveResult.explanation}</p>
                         <button type="button"
@@ -1759,7 +1759,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                             updateScene(scene.id, { imagePrompt: improveResult.improvedPrompt })
                             setImproveResult(null)
                           }}
-                          className="w-full py-1 rounded-md bg-blue-500 text-white text-[11px] font-display font-semibold hover:bg-blue-500/90 transition-all">
+                          className="w-full py-1 rounded-md bg-primary text-white text-[11px] font-display font-semibold hover:bg-brand-hover transition-all">
                           Utiliser ce prompt
                         </button>
                       </div>
@@ -1769,14 +1769,14 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                       <button type="button"
                         onClick={() => improvePrompt(scene.id)}
                         disabled={improvingId === scene.id}
-                        className="flex items-center gap-1 flex-1 py-1.5 rounded-lg border border-purple-500/30 text-purple-500 bg-purple-500/5 text-xs font-body hover:bg-purple-500/10 transition-all disabled:opacity-50">
+                        className="flex items-center gap-1 flex-1 py-1.5 rounded-lg border border-brand/30 text-primary bg-brand/5 text-xs font-body hover:bg-brand/10 transition-all disabled:opacity-50">
                         {improvingId === scene.id
                           ? <Loader2 size={10} className="animate-spin" />
                           : <Sparkles size={10} />}
                         Améliorer via IA
                       </button>
                       <button type="button" onClick={() => { generateImage(scene.id); setEditingId(null); setImproveResult(null) }}
-                        className="flex-1 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-display font-semibold hover:bg-blue-500/90 transition-all">
+                        className="flex-1 py-1.5 rounded-lg bg-primary text-white text-xs font-display font-semibold hover:bg-brand-hover transition-all">
                         Régénérer
                       </button>
                     </div>
@@ -1801,7 +1801,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
           )}
           <button type="button" onClick={onNext} disabled={!allDone}
             className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
-              allDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
+              allDone ? 'bg-primary text-white hover:bg-brand-hover' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
             Generate clips <ArrowRight size={13} />
           </button>
         </div>
@@ -1978,7 +1978,7 @@ function ScenePreviewLightbox({
                 <button
                   type="button"
                   onClick={() => onRegenerate(scene.id)}
-                  className="mt-2 flex items-center gap-1.5 px-3 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-display font-semibold transition-all"
+                  className="mt-2 flex items-center gap-1.5 px-3 h-9 rounded-lg bg-primary hover:bg-brand-hover text-white text-sm font-display font-semibold transition-all"
                 >
                   <RefreshCw size={13} /> Régénérer
                 </button>
@@ -2032,10 +2032,10 @@ function ScenePreviewLightbox({
                 Scène {index + 1} / {scenes.length}
               </span>
               {effectiveMode === 'image' && scene.qualityHint === 'hd' && (
-                <span className="font-mono text-[10px] uppercase tracking-wider bg-emerald-500/80 text-white px-1.5 py-0.5 rounded-full">HD</span>
+                <span className="font-mono text-[10px] uppercase tracking-wider bg-success/80 text-white px-1.5 py-0.5 rounded-full">HD</span>
               )}
               {effectiveMode === 'image' && scene.qualityHint === 'draft' && (
-                <span className="font-mono text-[10px] uppercase tracking-wider bg-amber-500/80 text-white px-1.5 py-0.5 rounded-full">Draft</span>
+                <span className="font-mono text-[10px] uppercase tracking-wider bg-warning/80 text-white px-1.5 py-0.5 rounded-full">Draft</span>
               )}
             </div>
             <p className="text-sm text-white/80 leading-relaxed line-clamp-3">
@@ -2075,7 +2075,7 @@ function ScenePreviewLightbox({
                 type="button"
                 onClick={() => onRegenerate(scene.id)}
                 aria-label={t('fh_regenerate')}
-                className="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-display font-semibold transition-all"
+                className="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-primary hover:bg-brand-hover text-white text-sm font-display font-semibold transition-all"
               >
                 <RefreshCw size={13} /> Régénérer
               </button>
@@ -2314,8 +2314,8 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                   className={cn(
                     'rounded-xl border px-3 py-2.5 text-left transition-all',
                     selected
-                      ? 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30'
-                      : 'border-border bg-card hover:border-blue-500/40'
+                      ? 'border-primary bg-brand/10 ring-2 ring-brand/30'
+                      : 'border-border bg-card hover:border-brand/40'
                   )}
                 >
                   <p className="font-display text-[13px] font-semibold text-foreground flex items-center gap-1.5">
@@ -2351,7 +2351,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     type="button"
                     onClick={() => setPreviewIndex(i)}
                     aria-label={`Prévisualiser clip Scène ${i + 1} en grand`}
-                    className="absolute inset-0 cursor-zoom-in group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    className="absolute inset-0 cursor-zoom-in group focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <video
                       src={scene.clipUrl}
@@ -2378,7 +2378,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                       type="button"
                       onClick={() => setPreviewIndex(i)}
                       aria-label={`Prévisualiser Scène ${i + 1} en grand`}
-                      className="absolute inset-0 cursor-zoom-in group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                      className="absolute inset-0 cursor-zoom-in group focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -2423,14 +2423,14 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
 
                 {/* Status badge (bottom-left) */}
                 {scene.clipStatus === 'done' && (
-                  <span className="absolute bottom-2 left-2 font-mono text-[8px] uppercase tracking-wider bg-emerald-500/80 text-white px-1.5 py-0.5 rounded-full">
+                  <span className="absolute bottom-2 left-2 font-mono text-[8px] uppercase tracking-wider bg-success/80 text-white px-1.5 py-0.5 rounded-full">
                     Ready
                   </span>
                 )}
 
                 {/* Audio over-duration warning (bottom-right) */}
                 {scene.audioDuration && scene.duree_estimee && scene.audioDuration > scene.duree_estimee * 1.2 && (
-                  <span className="absolute bottom-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-amber-500/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                  <span className="absolute bottom-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-warning/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
                     <AlertTriangle size={8} />
                     +{Math.round((scene.audioDuration - scene.duree_estimee))}s
                   </span>
@@ -2450,7 +2450,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     </button>
                   )}
                   <button type="button" aria-label="Modifier le prompt" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
-                    className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-blue-500 text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
+                    className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-primary text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
                     <Edit3 size={10} />
                   </button>
                   <button type="button" aria-label="Régénérer le clip" onClick={() => generateClip(scene.id)} disabled={scene.clipStatus === 'generating'}
@@ -2460,7 +2460,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                   {videoId && (
                     <button type="button" aria-label="Régénérer image + clip" onClick={() => regenImageAndClip(scene.id)} disabled={scene.clipStatus === 'generating' || scene.imageStatus === 'generating'}
                       title={t('fh_regenImageClip')}
-                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-blue-500/80 flex items-center justify-center transition-all disabled:opacity-40">
+                      className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-brand/80 flex items-center justify-center transition-all disabled:opacity-40">
                       <Sparkles size={10} />
                     </button>
                   )}
@@ -2476,12 +2476,12 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                       onChange={(e) => updateScene(scene.id, { animationPrompt: e.target.value })}
                       rows={3}
                       placeholder={t('fh_animPrompt')}
-                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-blue-500 resize-none"
+                      className="w-full bg-card border border-border rounded-lg px-2 py-1.5 text-[11px] font-mono text-foreground focus:outline-none focus:border-primary resize-none"
                     />
                     <button
                       type="button"
                       onClick={() => { generateClip(scene.id); setEditingId(null) }}
-                      className="w-full py-1.5 rounded-lg bg-blue-500 text-white text-xs font-display font-semibold hover:bg-blue-500/90 transition-all"
+                      className="w-full py-1.5 rounded-lg bg-primary text-white text-xs font-display font-semibold hover:bg-brand-hover transition-all"
                     >
                       Régénérer
                     </button>
@@ -2502,8 +2502,8 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
           <div className="rounded-2xl border border-border bg-muted overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-3">
               <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
-                voiceStatus === 'done' ? 'bg-emerald-50' : voiceStatus === 'generating' ? 'bg-blue-50' : 'bg-card border border-border')}>
-                {voiceStatus === 'generating' ? <Loader2 size={16} className="text-blue-500 animate-spin" /> : <Volume2 size={16} className={voiceStatus === 'done' ? 'text-emerald-600' : 'text-[--text-muted]'} />}
+                voiceStatus === 'done' ? 'bg-success/10' : voiceStatus === 'generating' ? 'bg-brand/10' : 'bg-card border border-border')}>
+                {voiceStatus === 'generating' ? <Loader2 size={16} className="text-primary animate-spin" /> : <Volume2 size={16} className={voiceStatus === 'done' ? 'text-success' : 'text-[--text-muted]'} />}
               </div>
               <div className="flex-1">
                 <p className="font-display text-sm font-semibold text-foreground">Voix off</p>
@@ -2565,14 +2565,14 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
         <div className="flex flex-wrap items-center gap-2">
           {videoId && hasRegenerated && (
             <button type="button" onClick={handleReassemble} disabled={reassembling}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white font-display font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white font-display font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50">
               {reassembling ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
               {reassembling ? t('fh_reassembling') : t('fh_reassemble')}
             </button>
           )}
           <button type="button" onClick={onNext} disabled={!allClipsDone}
             className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',
-              allClipsDone ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
+              allClipsDone ? 'bg-primary text-white hover:bg-brand-hover' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
             <span>{t('fh_assembleVideo')}</span>
             <span className="font-mono text-[11px] opacity-70 border-l border-white/20 pl-2 hidden sm:inline">
               ~{estimatedTotalSec}s · {scenes.length} {scenes.length > 1 ? 'scènes' : 'scène'}
@@ -2687,8 +2687,8 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
     <div className="flex flex-col items-center justify-center h-full px-4 sm:px-8 max-w-xl mx-auto gap-6">
       {!isDone && !isError ? (
         <div className="w-full text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto">
-            <Loader2 size={28} className="text-blue-500 animate-spin" />
+          <div className="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto">
+            <Loader2 size={28} className="text-primary animate-spin" />
           </div>
           <h2 className="font-display text-xl font-bold text-foreground">
             {getStatusLabels(t)[status] ?? t('fh_statusGenerating')}
@@ -2700,19 +2700,19 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
         </div>
       ) : isError ? (
         <div className="text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
-            <X size={26} className="text-red-500" />
+          <div className="w-14 h-14 rounded-2xl bg-error/10 flex items-center justify-center mx-auto">
+            <X size={26} className="text-error" />
           </div>
           <h2 className="font-display text-xl font-bold text-foreground">{t('fh_genErrorTitle')}</h2>
           {errorMessage ? (
-            <p className="font-mono text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2 max-w-sm mx-auto text-left break-all">{errorMessage}</p>
+            <p className="font-mono text-xs text-error bg-error/10 border border-error/20 rounded-xl px-4 py-2 max-w-sm mx-auto text-left break-all">{errorMessage}</p>
           ) : (
             <p className="font-body text-sm text-[--text-muted]">{t('fh_genErrorDesc')}</p>
           )}
           <div className="flex items-center gap-3 justify-center">
             {onRetry && (
               <button type="button" onClick={onRetry}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 text-white text-sm font-body hover:opacity-90 transition-all">
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-body hover:opacity-90 transition-all">
                 <RotateCcw size={14} /> Relancer la génération
               </button>
             )}
@@ -2724,8 +2724,8 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
         </div>
       ) : (
         <div className="w-full space-y-5 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto">
-            <Check size={26} className="text-emerald-600" />
+          <div className="w-14 h-14 rounded-2xl bg-success/10 flex items-center justify-center mx-auto">
+            <Check size={26} className="text-success" />
           </div>
           <div>
             <h2 className="font-display text-2xl font-bold text-foreground mb-1">Votre vidéo est prête !</h2>
@@ -2750,20 +2750,20 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
               type="button"
               onClick={handleDownload}
               disabled={downloading || !project.videoId}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-white font-display font-semibold text-sm hover:bg-brand-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download size={15} />
               {downloading ? t('fh_downloading') : t('fh_download')}
             </button>
             {onEditScenes && (
               <button type="button" onClick={onEditScenes}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground hover:border-brand/40 transition-all">
                 <Edit3 size={14} />
                 Modifier des scènes
               </button>
             )}
             <button type="button" onClick={onNew}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground hover:border-blue-500/40 transition-all">
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground hover:border-brand/40 transition-all">
               <Plus size={14} />
               {t('fh_newVideo')}
             </button>
@@ -3166,7 +3166,7 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
-        <Loader2 size={32} className="text-blue-500 animate-spin" />
+        <Loader2 size={32} className="text-primary animate-spin" />
         <p className="font-display text-base font-semibold text-foreground">Découpage du script en scènes…</p>
         <p className="font-body text-sm text-[--text-muted]">L'IA analyse ton script et génère les prompts visuels.</p>
       </div>
@@ -3177,8 +3177,8 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
     <div className="flex flex-col h-full">
       {/* Banner: background generation detected via localStorage (no ?resume param in URL) */}
       {bgGen && project.step !== 'final' && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border-b border-blue-500/20 shrink-0">
-          <Loader2 size={14} className="text-blue-500 animate-spin shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3 bg-brand/10 border-b border-brand/20 shrink-0">
+          <Loader2 size={14} className="text-primary animate-spin shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="font-body text-sm font-medium text-foreground">Votre vidéo tourne en arrière-plan</p>
             <p className="font-mono text-xs text-[--text-muted] truncate">{bgGen.title}</p>
@@ -3186,7 +3186,7 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
           <button
             type="button"
             onClick={() => { patch({ videoId: bgGen.videoId, step: 'final' }); setBgGen(null) }}
-            className="font-body text-xs text-blue-500 font-semibold hover:underline whitespace-nowrap"
+            className="font-body text-xs text-primary font-semibold hover:underline whitespace-nowrap"
           >
             Voir le progrès →
           </button>
@@ -3351,8 +3351,8 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
 
         <div className="p-3 border-b border-border">
           <button type="button" onClick={() => setViewId(null)}
-            className="flex items-center gap-2 w-full bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-blue-500/10 hover:border-blue-500/40 transition-all">
-            <Plus size={15} className="text-blue-500" />
+            className="flex items-center gap-2 w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground hover:bg-brand/10 hover:border-brand/40 transition-all">
+            <Plus size={15} className="text-primary" />
             {t('fh_newVideo')}
           </button>
         </div>
@@ -3369,7 +3369,7 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
                 <button key={s.id} type="button" onClick={() => setViewId(s.id)}
                   title={s.title ?? t('fh_untitled')}
                   className={cn('w-full text-left px-3 py-2.5 rounded-xl transition-all',
-                    viewId === s.id ? 'bg-blue-500/15 border border-blue-500/30' : 'hover:bg-white/40 dark:hover:bg-white/5')}>
+                    viewId === s.id ? 'bg-brand/15 border border-brand/30' : 'hover:bg-muted')}>
                   <p className="font-body text-xs text-foreground truncate">{s.title ?? t('fh_untitled')}</p>
                   <span className="font-mono text-[11px] text-[--text-muted]">
                     {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
@@ -3388,7 +3388,7 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
             <div className="w-full">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-display text-lg font-bold text-foreground">{viewSession.title ?? 'Video'}</h2>
-                <button type="button" onClick={() => setViewId(null)} className="text-xs font-mono text-blue-500 hover:underline">+ {t('fh_newVideo')}</button>
+                <button type="button" onClick={() => setViewId(null)} className="text-xs font-mono text-primary hover:underline">+ {t('fh_newVideo')}</button>
               </div>
               {viewSession.output_url
                 ? <VideoPlayer url={viewSession.output_url} title={viewSession.title ?? undefined} />
@@ -3407,7 +3407,7 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
                 type="button"
                 onClick={() => handleSessionDownload(viewSession)}
                 disabled={downloading}
-                className="mt-4 flex items-center justify-center gap-2 w-full px-5 py-2.5 rounded-xl bg-gray-900 text-white font-display font-semibold text-sm hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-4 flex items-center justify-center gap-2 w-full px-5 py-2.5 rounded-xl bg-primary text-white font-display font-semibold text-sm hover:bg-brand-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download size={15} /> {downloading ? t('fh_downloading') : t('fh_download')}
               </button>

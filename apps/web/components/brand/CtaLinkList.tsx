@@ -36,7 +36,7 @@ export function CtaLinkList({ value, onChange, max = 8 }: CtaLinkListProps) {
       {value.map((cta, i) => (
         <div
           key={i}
-          className="flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 focus-within:border-blue-500/60 transition-colors"
+          className="flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 focus-within:border-brand/60 transition-colors"
         >
           <input
             type="text"

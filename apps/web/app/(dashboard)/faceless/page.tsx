@@ -48,12 +48,12 @@ export default function FacelessIndexPage() {
 
   const STATUS_META: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
     pending:    { label: t('fl_statusPending'),    color: 'bg-muted text-[--text-muted]' },
-    processing: { label: t('fl_statusProcessing'), color: 'bg-blue-500/15 text-blue-500',   icon: <Loader2 size={10} className="animate-spin" /> },
-    storyboard: { label: t('fl_statusStoryboard'), color: 'bg-blue-500/15 text-blue-500',   icon: <Loader2 size={10} className="animate-spin" /> },
+    processing: { label: t('fl_statusProcessing'), color: 'bg-feature-faceless/15 text-feature-faceless',   icon: <Loader2 size={10} className="animate-spin" /> },
+    storyboard: { label: t('fl_statusStoryboard'), color: 'bg-feature-faceless/15 text-feature-faceless',   icon: <Loader2 size={10} className="animate-spin" /> },
     visuals:    { label: t('fl_statusVisuals'),    color: 'bg-amber-500/15 text-amber-500', icon: <Loader2 size={10} className="animate-spin" /> },
-    audio:      { label: t('fl_statusAudio'),      color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
-    assembly:   { label: t('fl_statusRendering'),  color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
-    done:       { label: t('fl_statusReady'),      color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
+    audio:      { label: t('fl_statusAudio'),      color: 'bg-violet-500/15 text-violet-500', icon: <Loader2 size={10} className="animate-spin" /> },
+    assembly:   { label: t('fl_statusRendering'),  color: 'bg-violet-500/15 text-violet-500', icon: <Loader2 size={10} className="animate-spin" /> },
+    done:       { label: t('fl_statusReady'),      color: 'bg-success/15 text-success', icon: <Check size={10} /> },
     error:      { label: t('fl_statusError'),      color: 'bg-error/15 text-error',         icon: <AlertCircle size={10} /> },
   }
 
@@ -73,7 +73,7 @@ export default function FacelessIndexPage() {
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Video size={14} className="text-blue-500" />
+              <Video size={14} className="text-feature-faceless" />
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('fl_moduleLabel')}</p>
             </div>
             <h1 className="font-display text-3xl font-bold text-foreground">{t('fl_heading')}</h1>
@@ -95,8 +95,8 @@ export default function FacelessIndexPage() {
           <Card variant="elevated" padding="xl" className="flex flex-col items-center text-center gap-5 py-20">
             <div className="relative">
               <div className="absolute inset-0 rounded-3xl bg-primary/10 blur-2xl" />
-              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/15 to-blue-500/10 border border-border flex items-center justify-center">
-                <Video size={32} className="text-blue-500" />
+              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-feature-faceless/15 to-feature-faceless/10 border border-border flex items-center justify-center">
+                <Video size={32} className="text-feature-faceless" />
               </div>
             </div>
             <div className="space-y-1">
@@ -155,9 +155,9 @@ function NewProjectCard({ newProjectLabel, fromScriptLabel, badgeLabel }: { newP
             {fromScriptLabel}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 group-hover:bg-blue-500/25 transition-all duration-200">
-          <Sparkles size={10} className="text-blue-500" />
-          <span className="font-mono text-[10px] text-blue-500 tracking-wider uppercase">{badgeLabel}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-feature-faceless/15 border border-feature-faceless/30 group-hover:bg-feature-faceless/25 transition-all duration-200">
+          <Sparkles size={10} className="text-feature-faceless" />
+          <span className="font-mono text-[10px] text-feature-faceless tracking-wider uppercase">{badgeLabel}</span>
         </div>
       </div>
     </Link>
@@ -187,7 +187,7 @@ function FacelessVideoCard({
       rel={video.output_url ? 'noopener noreferrer' : undefined}
       className="card-interactive rounded-2xl border border-border bg-card overflow-hidden block"
     >
-      <div className="aspect-video relative bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center">
+      <div className="aspect-video relative bg-gradient-to-br from-feature-faceless/20 to-feature-faceless/10 flex items-center justify-center">
         <div className="absolute inset-0 grid-bg opacity-[0.04]" />
         {video.output_url ? (
           <video src={video.output_url} className="absolute inset-0 w-full h-full object-cover" muted />

@@ -145,7 +145,7 @@ function WizardBottomBar({
             className={cn(
               'rounded-full transition-all duration-200',
               i === currentStep
-                ? 'w-4 h-1.5 bg-blue-500'
+                ? 'w-4 h-1.5 bg-primary'
                 : i < currentStep
                   ? 'w-1.5 h-1.5 bg-success/60'
                   : 'w-1.5 h-1.5 bg-border',

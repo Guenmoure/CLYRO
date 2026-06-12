@@ -73,7 +73,7 @@ function StepBrief({
           value={name}
           onChange={e => onChange('name', e.target.value)}
           placeholder={t('bn_brief_namePlaceholder')}
-          className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+          className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-brand/60 transition-colors"
         />
       </div>
 
@@ -85,7 +85,7 @@ function StepBrief({
           value={industry}
           onChange={e => onChange('industry', e.target.value)}
           placeholder={t('bn_brief_industryPlaceholder')}
-          className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+          className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-brand/60 transition-colors"
         />
       </div>
 
@@ -97,7 +97,7 @@ function StepBrief({
           onChange={e => onChange('values', e.target.value)}
           rows={5}
           placeholder={t('bn_brief_valuesPlaceholder')}
-          className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+          className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-brand/60 transition-colors"
         />
       </div>
     </div>
@@ -130,7 +130,7 @@ function StepVisuals({
               className={cn(
                 'flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-150',
                 primaryColor === p.primary && secondaryColor === p.secondary
-                  ? 'border-blue-500/40 bg-blue-500/10'
+                  ? 'border-brand/40 bg-accent'
                   : 'border-border bg-muted hover:border-border',
               )}
             >
@@ -186,7 +186,7 @@ function StepVisuals({
               className={cn(
                 'px-3 py-1.5 rounded-lg border text-sm transition-all duration-150',
                 fontFamily === f
-                  ? 'border-blue-500/40 bg-blue-500/10 text-blue-400'
+                  ? 'border-brand/40 bg-accent text-accent-foreground'
                   : 'border-border bg-muted text-[--text-secondary] hover:border-border',
               )}
               data-font={f}
@@ -253,7 +253,7 @@ function StepLogo({
             'flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all duration-200',
             logoUrl
               ? 'border-success/40 bg-success/5'
-              : 'border-border hover:border-blue-500/50 hover:bg-blue-500/5',
+              : 'border-border hover:border-brand/50 hover:bg-brand/5',
           )}
         >
           <input
@@ -293,7 +293,7 @@ function StepLogo({
             onChange={e => onLogoPromptChange(e.target.value)}
             rows={4}
             placeholder={t('bn_logo_describePlaceholder')}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-brand/60 transition-colors"
           />
           <p className="font-body text-xs text-[--text-muted]">
             {t('bn_logo_aiNote')}
@@ -329,13 +329,13 @@ function StepAssets({
               className={cn(
                 'w-full flex items-center gap-4 rounded-xl px-4 py-3 border-2 transition-all duration-200 text-left',
                 selected
-                  ? 'border-blue-500/40 bg-blue-500/5'
+                  ? 'border-brand/40 bg-accent'
                   : 'border-border bg-muted hover:border-border',
               )}
             >
               <div className={cn(
                 'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors',
-                selected ? 'border-blue-500 bg-blue-500' : 'border-border',
+                selected ? 'border-primary bg-primary' : 'border-border',
               )}>
                 {selected && <Check size={11} className="text-white" />}
               </div>
@@ -436,7 +436,7 @@ function StepExport({
 
       {generating && (
         <div className="rounded-xl bg-muted border border-border px-4 py-3 flex items-center gap-3">
-          <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin shrink-0" />
+          <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
           <p className="font-body text-sm text-[--text-secondary]">{t('bn_export_generating')}</p>
         </div>
       )}

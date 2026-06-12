@@ -110,7 +110,7 @@ function BrandKitForm({
 
   return (
     <div className="space-y-4">
-      <h3 className="font-display font-semibold text-gray-900 dark:text-white text-sm">
+      <h3 className="font-display font-semibold text-foreground text-sm">
         {initial?.id ? t('bh_formEdit') : t('bh_formNew')}
       </h3>
 
@@ -118,26 +118,26 @@ function BrandKitForm({
         id="brand-hub-name" name="brand_name"
         type="text" value={name} onChange={(e) => setName(e.target.value)}
         placeholder={t('bh_namePlaceholder')}
-        className="w-full glass rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none transition-all"
+        className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none transition-all"
       />
 
       <div className="flex gap-4">
         <div className="flex-1">
-          <label htmlFor="brand-hub-primary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5 block">{t('bh_primaryColorLabel')}</label>
+          <label htmlFor="brand-hub-primary" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">{t('bh_primaryColorLabel')}</label>
           <div className="flex items-center gap-2">
             <input id="brand-hub-primary" name="primary_color" type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)}
               className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
-            <span className="font-mono text-xs text-gray-500 dark:text-white/50">{primaryColor.toUpperCase()}</span>
+            <span className="font-mono text-xs text-[--text-muted]">{primaryColor.toUpperCase()}</span>
           </div>
         </div>
         <div className="flex-1">
-          <label htmlFor="brand-hub-secondary" className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1.5 block">{t('bh_secondaryLabel')}</label>
+          <label htmlFor="brand-hub-secondary" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5 block">{t('bh_secondaryLabel')}</label>
           <div className="flex items-center gap-2">
             <input id="brand-hub-secondary" name="secondary_color" type="color" value={secondaryColor || '#ffffff'} onChange={(e) => setSecondaryColor(e.target.value)}
               className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
             {secondaryColor
-              ? <button type="button" onClick={() => setSecondaryColor('')} title="Remove secondary color" className="text-xs text-gray-400 dark:text-white/30 hover:text-red-400"><X size={11} /></button>
-              : <span className="font-mono text-xs text-gray-400 dark:text-white/25">—</span>
+              ? <button type="button" onClick={() => setSecondaryColor('')} title="Remove secondary color" className="text-xs text-[--text-muted] hover:text-red-400"><X size={11} /></button>
+              : <span className="font-mono text-xs text-[--text-muted]">—</span>
             }
           </div>
         </div>
@@ -147,11 +147,11 @@ function BrandKitForm({
         id="brand-hub-font" name="font_family"
         type="text" value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}
         placeholder={t('bh_fontPlaceholder')}
-        className="w-full glass rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none transition-all"
+        className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none transition-all"
       />
 
       <div className="flex items-center gap-3">
-        {logoPreview && <img src={logoPreview} alt="Logo" className="w-10 h-10 object-contain rounded-lg glass" />}
+        {logoPreview && <img src={logoPreview} alt="Logo" className="w-10 h-10 object-contain rounded-lg bg-card border border-border" />}
         <button type="button" onClick={() => fileRef.current?.click()}
           className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-3 py-2 text-xs font-body text-[--text-secondary] transition-all">
           <Upload size={12} /> {logoPreview ? t('bh_changeLogo') : t('bh_importLogo')}
@@ -161,8 +161,8 @@ function BrandKitForm({
       </div>
 
       <label className="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} className="w-3.5 h-3.5 rounded accent-clyro-primary" />
-        <span className="font-body text-xs text-gray-500 dark:text-white/50">{t('bh_useByDefault')}</span>
+        <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} className="w-3.5 h-3.5 rounded accent-brand" />
+        <span className="font-body text-xs text-[--text-muted]">{t('bh_useByDefault')}</span>
       </label>
 
       <div className="flex items-center gap-3 pt-1">
@@ -171,7 +171,7 @@ function BrandKitForm({
           {saving && <Loader2 size={12} className="animate-spin" />}
           {saving ? t('bh_saving') : t('bh_save')}
         </button>
-        <button type="button" onClick={onCancel} className="text-xs font-body text-gray-400 dark:text-white/30 hover:text-gray-600 dark:hover:text-white/60 transition-colors">
+        <button type="button" onClick={onCancel} className="text-xs font-body text-[--text-muted] hover:text-foreground transition-colors">
           {t('bh_cancel')}
         </button>
       </div>
@@ -209,17 +209,17 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
   }
 
   return (
-    <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
-      <div className="flex items-center gap-1 p-1 glass rounded-xl w-fit">
+    <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4">
+      <div className="flex items-center gap-1 p-1 bg-muted rounded-xl w-fit">
         <button type="button" onClick={() => setTab('logo')}
           className={cn('px-3 py-1.5 rounded-lg text-xs font-mono transition-all',
-            tab === 'logo' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70'
+            tab === 'logo' ? 'bg-card text-foreground shadow-sm' : 'text-[--text-muted] hover:text-foreground'
           )}>
           {t('bh_logoTab')}
         </button>
         <button type="button" onClick={() => setTab('social')}
           className={cn('px-3 py-1.5 rounded-lg text-xs font-mono transition-all',
-            tab === 'social' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/70'
+            tab === 'social' ? 'bg-card text-foreground shadow-sm' : 'text-[--text-muted] hover:text-foreground'
           )}>
           {t('bh_socialTab')}
         </button>
@@ -231,11 +231,11 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
             <button key={p.id} type="button" onClick={() => setPlatform(p.id)}
               className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-body transition-all border',
                 platform === p.id
-                  ? 'bg-clyro-primary/10 border-clyro-primary/30 text-clyro-primary'
+                  ? 'bg-accent border-brand/30 text-accent-foreground'
                   : 'bg-muted hover:bg-muted/80 border border-border text-[--text-secondary]'
               )}>
               <span>{p.emoji}</span> {p.label}
-              <span className="font-mono text-[11px] text-gray-400 dark:text-white/25">{p.ratio}</span>
+              <span className="font-mono text-[11px] text-[--text-muted]">{p.ratio}</span>
             </button>
           ))}
         </div>
@@ -247,10 +247,10 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={tab === 'logo' ? t('bh_logoPromptPlaceholder') : t('bh_socialPromptPlaceholder')}
           rows={3}
-          className="w-full glass rounded-xl px-3 py-2.5 text-gray-700 dark:text-white/80 font-body text-sm placeholder:text-gray-400 dark:placeholder:text-white/25 focus:outline-none resize-none transition-all"
+          className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none resize-none transition-all"
         />
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-white/30 font-mono">
+          <div className="flex items-center gap-2 text-xs text-[--text-muted] font-mono">
             <span className="w-3 h-3 rounded-full inline-block" style={{ background: kit.primary_color }} />
             {kit.secondary_color && <span className="w-3 h-3 rounded-full inline-block -ml-1" style={{ background: kit.secondary_color }} />}
             {kit.name}
@@ -273,9 +273,9 @@ function AssetGallery({ assets, onDelete }: { assets: BrandAsset[]; onDelete: (i
 
   if (assets.length === 0) {
     return (
-      <div className="glass rounded-2xl py-12 text-center">
-        <Wand2 size={28} className="mx-auto mb-3 text-gray-300 dark:text-white/15" />
-        <p className="font-body text-sm text-gray-400 dark:text-white/30">{t('bh_noAssetsYet')}</p>
+      <div className="bg-card border border-border rounded-2xl py-12 text-center">
+        <Wand2 size={28} className="mx-auto mb-3 text-[--text-muted]" />
+        <p className="font-body text-sm text-[--text-muted]">{t('bh_noAssetsYet')}</p>
       </div>
     )
   }
@@ -283,7 +283,7 @@ function AssetGallery({ assets, onDelete }: { assets: BrandAsset[]; onDelete: (i
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {assets.map((asset) => (
-        <div key={asset.id} className="group relative glass rounded-xl overflow-hidden">
+        <div key={asset.id} className="group relative bg-card border border-border rounded-xl overflow-hidden">
           <img src={asset.image_url} alt={asset.prompt} className="w-full aspect-square object-cover" />
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
             <a href={asset.image_url} download={`${asset.type}-${asset.id}.png`} target="_blank" rel="noopener noreferrer"
@@ -296,7 +296,7 @@ function AssetGallery({ assets, onDelete }: { assets: BrandAsset[]; onDelete: (i
             </button>
           </div>
           <div className="p-2">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-gray-400 dark:text-white/30">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-[--text-muted]">
               {asset.platform ?? asset.type}
             </span>
           </div>
@@ -361,19 +361,19 @@ function KitPanel({ kit, onUpdate, onDelete }: {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {kit.logo_url ? (
-            <img src={kit.logo_url} alt={kit.name} className="w-12 h-12 rounded-xl object-contain glass" />
+            <img src={kit.logo_url} alt={kit.name} className="w-12 h-12 rounded-xl object-contain bg-card border border-border" />
           ) : (
             <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: kit.primary_color }}>
               <Palette size={20} className="text-white" />
             </div>
           )}
           <div>
-            <h2 className="font-display font-bold text-gray-900 dark:text-white text-lg">{kit.name}</h2>
+            <h2 className="font-display font-bold text-foreground text-lg">{kit.name}</h2>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="w-4 h-4 rounded-full border border-white/10 shadow-sm" style={{ background: kit.primary_color }} />
-              {kit.secondary_color && <span className="w-4 h-4 rounded-full border border-white/10 shadow-sm" style={{ background: kit.secondary_color }} />}
-              {kit.font_family && <span className="font-mono text-[11px] text-gray-400 dark:text-white/30">{kit.font_family}</span>}
-              {kit.is_default && <span className="font-mono text-[11px] text-clyro-primary uppercase tracking-wider">{t('bh_defaultStarLabel')}</span>}
+              <span className="w-4 h-4 rounded-full border border-border shadow-sm" style={{ background: kit.primary_color }} />
+              {kit.secondary_color && <span className="w-4 h-4 rounded-full border border-border shadow-sm" style={{ background: kit.secondary_color }} />}
+              {kit.font_family && <span className="font-mono text-[11px] text-[--text-muted]">{kit.font_family}</span>}
+              {kit.is_default && <span className="font-mono text-[11px] text-brand uppercase tracking-wider">{t('bh_defaultStarLabel')}</span>}
             </div>
           </div>
         </div>
@@ -391,7 +391,7 @@ function KitPanel({ kit, onUpdate, onDelete }: {
 
       {/* Edit form */}
       {editing && (
-        <div className="glass glass-heavy rounded-2xl p-5">
+        <div className="bg-card border border-border shadow-sm rounded-2xl p-5">
           <BrandKitForm
             initial={kit}
             onSave={(updated) => { onUpdate(updated); setEditing(false) }}
@@ -402,21 +402,21 @@ function KitPanel({ kit, onUpdate, onDelete }: {
 
       {/* Generator */}
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">{t('bh_aiGenerator')}</p>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-3">{t('bh_aiGenerator')}</p>
         <AssetGenerator kit={kit} onGenerated={handleGenerated} />
       </div>
 
       {/* Gallery */}
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-3">
           {t('bh_generatedAssets').replace('{count}', String(assets.length))}
         </p>
         {loadingAssets ? (
           <div className="grid grid-cols-3 gap-3">
-            {[1,2,3].map((i) => <div key={i} className="aspect-square glass rounded-xl animate-pulse" />)}
+            {[1,2,3].map((i) => <div key={i} className="aspect-square bg-card border border-border rounded-xl animate-pulse" />)}
           </div>
         ) : assetsError ? (
-          <div className="glass rounded-2xl py-10 px-6 text-center">
+          <div className="bg-card border border-border rounded-2xl py-10 px-6 text-center">
             <AlertCircle size={24} className="mx-auto mb-3 text-amber-500" />
             <p className="font-body text-sm text-foreground">{t('err_loadTitle')}</p>
             <p className="font-body text-xs text-[--text-muted] mt-1">{t('err_loadDesc')}</p>
@@ -513,17 +513,17 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
       </div>
 
       {showAdd && (
-        <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
+        <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4">
           <h3 className="font-display font-semibold text-foreground text-sm">{t('bh_newProduct')}</h3>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-            placeholder={t('bh_productNamePh')} className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
+            placeholder={t('bh_productNamePh')} className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)}
             placeholder={t('bh_productDescPh')} rows={2}
-            className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none resize-none" />
+            className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none resize-none" />
           <input type="text" value={category} onChange={(e) => setCategory(e.target.value)}
-            placeholder={t('bh_productCatPh')} className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
+            placeholder={t('bh_productCatPh')} className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
           <div className="flex items-center gap-3">
-            {imagePreview && <img src={imagePreview} alt="Preview" className="w-14 h-14 object-cover rounded-xl glass" />}
+            {imagePreview && <img src={imagePreview} alt="Preview" className="w-14 h-14 object-cover rounded-xl bg-card border border-border" />}
             <button type="button" onClick={() => fileRef.current?.click()}
               className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-3 py-2 text-xs font-body text-[--text-secondary]">
               <Upload size={12} /> {imagePreview ? t('bh_changePhoto') : t('bh_uploadPhoto')}
@@ -543,10 +543,10 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
 
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {[1,2,3].map((i) => <div key={i} className="aspect-square glass rounded-xl animate-pulse" />)}
+          {[1,2,3].map((i) => <div key={i} className="aspect-square bg-card border border-border rounded-xl animate-pulse" />)}
         </div>
       ) : loadError ? (
-        <div className="glass rounded-2xl py-16 text-center">
+        <div className="bg-card border border-border rounded-2xl py-16 text-center">
           <AlertCircle size={28} className="mx-auto mb-3 text-amber-500" />
           <p className="font-body text-sm text-foreground">{t('err_loadTitle')}</p>
           <p className="font-body text-xs text-[--text-muted] mt-1">{t('err_loadDesc')}</p>
@@ -559,14 +559,14 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
           </button>
         </div>
       ) : items.length === 0 ? (
-        <div className="glass rounded-2xl py-16 text-center">
+        <div className="bg-card border border-border rounded-2xl py-16 text-center">
           <Package size={32} className="mx-auto mb-3 text-[--text-muted]" />
           <p className="font-body text-sm text-[--text-muted]">{t('bh_catalogEmpty')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {items.map((item) => (
-            <div key={item.id} className="group relative glass rounded-xl overflow-hidden">
+            <div key={item.id} className="group relative bg-card border border-border rounded-xl overflow-hidden">
               <img src={item.image_url} alt={item.name} className="w-full aspect-square object-cover" />
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button type="button" onClick={() => handleDelete(item.id)}
@@ -643,10 +643,10 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
       </div>
 
       {/* Campaign brief */}
-      <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
+      <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4">
         <textarea value={goal} onChange={(e) => setGoal(e.target.value)}
           placeholder={t('bh_goalPh')}
-          rows={3} className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none resize-none" />
+          rows={3} className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none resize-none" />
 
         <div>
           <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2">{t('bh_platforms')}</p>
@@ -654,7 +654,7 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
             {CAMPAIGN_PLATFORMS.map((p) => (
               <button key={p} type="button" onClick={() => togglePlatform(p)}
                 className={cn('px-3 py-1.5 rounded-xl text-xs font-body border transition-all capitalize',
-                  platforms.includes(p) ? 'bg-clyro-primary/10 border-clyro-primary/30 text-clyro-primary' : 'bg-muted border-border text-[--text-secondary]'
+                  platforms.includes(p) ? 'bg-accent border-brand/30 text-accent-foreground' : 'bg-muted border-border text-[--text-secondary]'
                 )}>
                 {p}
               </button>
@@ -674,11 +674,11 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
         <div className="space-y-4">
           <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_concepts')}</p>
           {concepts.map((c, i) => (
-            <div key={i} className="glass glass-heavy rounded-2xl p-5 space-y-3">
+            <div key={i} className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-3">
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-display font-bold text-foreground">{c.name}</h3>
-                  <p className="font-body text-sm text-clyro-primary italic">{c.tagline}</p>
+                  <p className="font-body text-sm text-brand italic">{c.tagline}</p>
                 </div>
                 <button type="button" onClick={() => handleGenerateAssets(c)} disabled={generating}
                   className="flex items-center gap-1.5 bg-grad-primary text-white px-3 py-1.5 rounded-xl text-xs font-display font-semibold hover:opacity-90 disabled:opacity-50 shrink-0">
@@ -713,10 +713,10 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
           <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_generatedAssetsLabel')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {assets.map((a, i) => (
-              <div key={i} className="glass rounded-xl overflow-hidden">
+              <div key={i} className="bg-card border border-border rounded-xl overflow-hidden">
                 <img src={a.image_url} alt={a.copy} className="w-full aspect-square object-cover" />
                 <div className="p-2.5">
-                  <p className="font-mono text-[11px] uppercase text-clyro-primary">{a.platform}</p>
+                  <p className="font-mono text-[11px] uppercase text-brand">{a.platform}</p>
                   <p className="font-body text-xs text-[--text-secondary] line-clamp-2 mt-0.5">{a.copy}</p>
                 </div>
               </div>
@@ -775,10 +775,10 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
         <p className="font-body text-sm text-[--text-secondary]">{t('bh_photoshootSub')}</p>
       </div>
 
-      <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
+      <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4">
         {/* Image upload */}
         <div className="flex items-center gap-4">
-          {preview && <img src={preview} alt="Source" className="w-20 h-20 object-cover rounded-xl glass" />}
+          {preview && <img src={preview} alt="Source" className="w-20 h-20 object-cover rounded-xl bg-card border border-border" />}
           <div className="flex-1 space-y-2">
             <button type="button" onClick={() => fileRef.current?.click()}
               className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2.5 text-sm font-body text-[--text-secondary] w-full">
@@ -799,7 +799,7 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
             {PHOTOSHOOT_TEMPLATES.map((t) => (
               <button key={t.id} type="button" onClick={() => setTemplate(t.id)}
                 className={cn('p-3 rounded-xl text-left transition-all border',
-                  template === t.id ? 'bg-clyro-primary/10 border-clyro-primary/30' : 'glass border-border hover:border-[--text-muted]'
+                  template === t.id ? 'bg-accent border-brand/30' : 'bg-card border-border hover:border-[--text-muted]'
                 )}>
                 <p className="font-display text-sm font-semibold text-foreground">{t.label}</p>
                 <p className="font-body text-xs text-[--text-secondary] mt-0.5">{t.desc}</p>
@@ -811,7 +811,7 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
         {/* Custom prompt */}
         <input type="text" value={customPrompt} onChange={(e) => setCustomPrompt(e.target.value)}
           placeholder={t('bh_customDirectionPh')}
-          className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
+          className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
 
         <button type="button" onClick={handleGenerate} disabled={loading || (!imageFile && !imageUrl)}
           className="flex items-center gap-2 bg-grad-primary text-white font-display font-semibold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-50 w-full justify-center">
@@ -826,7 +826,7 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
           <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_results')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {results.map((r, i) => (
-              <div key={i} className="group relative glass rounded-xl overflow-hidden">
+              <div key={i} className="group relative bg-card border border-border rounded-xl overflow-hidden">
                 <img src={r.url} alt={r.template} className="w-full aspect-square object-cover" />
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <a href={r.url} download={`photoshoot-${r.template}.png`} target="_blank" rel="noopener noreferrer"
@@ -893,10 +893,10 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
         <p className="font-body text-sm text-[--text-secondary]">{t('bh_animateSub')}</p>
       </div>
 
-      <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
+      <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4">
         {/* Image upload */}
         <div className="flex items-center gap-4">
-          {preview && <img src={preview} alt="Source" className="w-20 h-20 object-cover rounded-xl glass" />}
+          {preview && <img src={preview} alt="Source" className="w-20 h-20 object-cover rounded-xl bg-card border border-border" />}
           <button type="button" onClick={() => fileRef.current?.click()}
             className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2.5 text-sm font-body text-[--text-secondary]">
             <Upload size={14} /> {preview ? t('bh_changeImage') : t('bh_uploadImage')}
@@ -915,7 +915,7 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
             {MOTION_TYPES.map((m) => (
               <button key={m.id} type="button" onClick={() => setMotion(m.id)}
                 className={cn('px-3 py-2 rounded-xl text-xs font-body text-center transition-all border',
-                  motion === m.id ? 'bg-clyro-primary/10 border-clyro-primary/30 text-clyro-primary' : 'glass border-border text-[--text-secondary]'
+                  motion === m.id ? 'bg-accent border-brand/30 text-accent-foreground' : 'bg-card border-border text-[--text-secondary]'
                 )}>
                 {m.label}
               </button>
@@ -930,7 +930,7 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
             {(['3', '5'] as const).map((d) => (
               <button key={d} type="button" onClick={() => setDuration(d)}
                 className={cn('px-4 py-2 rounded-xl text-sm font-body border transition-all',
-                  duration === d ? 'bg-clyro-primary/10 border-clyro-primary/30 text-clyro-primary' : 'glass border-border text-[--text-secondary]'
+                  duration === d ? 'bg-accent border-brand/30 text-accent-foreground' : 'bg-card border-border text-[--text-secondary]'
                 )}>
                 {d}s
               </button>
@@ -951,12 +951,12 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
           <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_animations')}</p>
           <div className="grid grid-cols-2 gap-3">
             {results.map((r, i) => (
-              <div key={i} className="glass rounded-xl overflow-hidden">
+              <div key={i} className="bg-card border border-border rounded-xl overflow-hidden">
                 <video src={r.url} controls className="w-full aspect-video" />
                 <div className="p-2 flex items-center justify-between">
                   <span className="font-mono text-[11px] uppercase text-[--text-muted]">{r.type}</span>
                   <a href={r.url} download={`animate-${r.type}.mp4`} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-clyro-primary hover:underline flex items-center gap-1">
+                    className="text-xs text-brand hover:underline flex items-center gap-1">
                     <Download size={10} /> {t('bh_download')}
                   </a>
                 </div>
@@ -1026,7 +1026,7 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
             <div className="flex flex-wrap gap-2 justify-center mt-4">
               {[t('bh_agentQ1'), t('bh_agentQ2'), t('bh_agentQ3'), t('bh_agentQ4')].map((q) => (
                 <button key={q} type="button" onClick={() => setInput(q)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-body bg-muted border border-border text-[--text-secondary] hover:bg-clyro-primary/10 hover:border-clyro-primary/30 transition-all">
+                  className="px-3 py-1.5 rounded-xl text-xs font-body bg-muted border border-border text-[--text-secondary] hover:bg-accent hover:border-brand/30 transition-all">
                   {q}
                 </button>
               ))}
@@ -1037,7 +1037,7 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
         {messages.map((msg, i) => (
           <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
             <div className={cn('max-w-[80%] rounded-2xl px-4 py-3',
-              msg.role === 'user' ? 'bg-clyro-primary text-white' : 'glass glass-heavy text-foreground'
+              msg.role === 'user' ? 'bg-primary text-white' : 'bg-card border border-border shadow-sm text-foreground'
             )}>
               <p className="font-body text-sm whitespace-pre-wrap">{msg.content}</p>
             </div>
@@ -1046,7 +1046,7 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="glass glass-heavy rounded-2xl px-4 py-3">
+            <div className="bg-card border border-border shadow-sm rounded-2xl px-4 py-3">
               <Loader2 size={16} className="animate-spin text-[--text-muted]" />
             </div>
           </div>
@@ -1056,10 +1056,10 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
 
       {/* Suggestions banner */}
       {suggestions && (
-        <div className="px-6 py-3 border-t border-border bg-clyro-primary/5">
+        <div className="px-6 py-3 border-t border-border bg-brand/5">
           <div className="flex items-center gap-2 mb-2">
-            <CheckCircle size={12} className="text-clyro-primary" />
-            <span className="font-mono text-[11px] uppercase tracking-widest text-clyro-primary">{t('bh_agentSuggestions')}</span>
+            <CheckCircle size={12} className="text-brand" />
+            <span className="font-mono text-[11px] uppercase tracking-widest text-brand">{t('bh_agentSuggestions')}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {suggestions.primary_color && (
@@ -1087,7 +1087,7 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
           <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
             placeholder={t('bh_agentInputPh')}
-            className="flex-1 glass rounded-xl px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
+            className="flex-1 bg-card border border-border rounded-xl px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none" />
           <button type="button" onClick={handleSend} disabled={loading || !input.trim()} title={t('bh_sendMessage')} aria-label={t('bh_sendMessage')}
             className="bg-grad-primary text-white rounded-xl px-4 py-2.5 hover:opacity-90 disabled:opacity-50 transition-opacity">
             <Send size={16} />
@@ -1144,9 +1144,9 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
         <p className="font-body text-sm text-[--text-secondary]">{t('bh_bgSub')}</p>
       </div>
 
-      <div className="glass glass-heavy rounded-2xl p-5 space-y-4">
+      <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4">
         <div className="flex items-center gap-4">
-          {preview && <img src={preview} alt="Source" className="w-20 h-20 object-cover rounded-xl glass" />}
+          {preview && <img src={preview} alt="Source" className="w-20 h-20 object-cover rounded-xl bg-card border border-border" />}
           <button type="button" onClick={() => fileRef.current?.click()}
             className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2.5 text-sm font-body text-[--text-secondary]">
             <Upload size={14} /> {preview ? t('bh_changeImage') : t('bh_uploadImage')}
@@ -1160,12 +1160,12 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
 
         <textarea value={bgPrompt} onChange={(e) => setBgPrompt(e.target.value)}
           placeholder={t('bh_bgPromptPh')}
-          rows={3} className="w-full glass rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none resize-none" />
+          rows={3} className="w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none resize-none" />
 
         <div className="flex flex-wrap gap-2">
           {['White studio', 'Tropical beach', 'Marble surface', 'Dark neon studio', 'Forest', 'Office desk'].map((s) => (
             <button key={s} type="button" onClick={() => setBgPrompt(s)}
-              className="px-2.5 py-1 rounded-lg text-xs font-body bg-muted border border-border text-[--text-secondary] hover:bg-clyro-primary/10 hover:border-clyro-primary/30 transition-all">
+              className="px-2.5 py-1 rounded-lg text-xs font-body bg-muted border border-border text-[--text-secondary] hover:bg-accent hover:border-brand/30 transition-all">
               {s}
             </button>
           ))}
@@ -1183,13 +1183,13 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
         <div className="space-y-3">
           <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('bh_resultLabel')}</p>
           <div className="grid grid-cols-2 gap-3">
-            <div className="glass rounded-xl overflow-hidden">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
               <img src={result.foreground_url} alt="Foreground (transparent)" className="w-full aspect-square object-contain bg-[url('/checkerboard.svg')]" />
               <div className="p-2">
                 <span className="font-mono text-[11px] text-[--text-muted]">{t('bh_fgLabel')}</span>
               </div>
             </div>
-            <div className="glass rounded-xl overflow-hidden">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
               <img src={result.background_url} alt="New background" className="w-full aspect-square object-cover" />
               <div className="p-2">
                 <span className="font-mono text-[11px] text-[--text-muted]">{t('bh_newBgLabel')}</span>
@@ -1288,7 +1288,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                 className={cn(
                   'w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-body transition-all',
                   sidebarTab === tab.id
-                    ? 'bg-clyro-primary/10 text-clyro-primary border border-clyro-primary/20'
+                    ? 'bg-accent text-accent-foreground font-medium'
                     : 'text-[--text-secondary] hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -1307,7 +1307,7 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
               onChange={(e) => setActiveId(e.target.value)}
               title={t('bh_selectActiveKit')}
               aria-label={t('bh_selectActiveKit')}
-              className="w-full glass rounded-xl px-2.5 py-2 text-xs font-body text-foreground focus:outline-none"
+              className="w-full bg-card border border-border rounded-xl px-2.5 py-2 text-xs font-body text-foreground focus:outline-none"
             >
               {kits.map((k) => (
                 <option key={k.id} value={k.id}>{k.name}</option>
@@ -1332,8 +1332,8 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
             {showCreate && (
               <div className="flex flex-col h-full overflow-y-auto px-8 py-8">
                 <div className="max-w-lg">
-                  <p className="font-mono text-[11px] uppercase tracking-widest text-gray-400 dark:text-white/30 mb-4">{t('bh_newBrandKitHeader')}</p>
-                  <div className="glass glass-heavy rounded-2xl p-6">
+                  <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-4">{t('bh_newBrandKitHeader')}</p>
+                  <div className="bg-card border border-border shadow-sm rounded-2xl p-6">
                     <BrandKitForm
                       onSave={handleSaved}
                       onCancel={() => { setShowCreate(false); setActiveId(kits[0]?.id ?? null) }}
@@ -1357,9 +1357,9 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
                 <div className="relative">
                   <div className="absolute inset-0 rounded-3xl bg-primary/10 blur-2xl" />
                   <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-teal-500/15 to-teal-500/10 border border-border flex items-center justify-center shadow-lg">
-                    <Palette size={40} className="text-clyro-accent" />
+                    <Palette size={40} className="text-feature-brand" />
                   </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 rounded-xl bg-blue-500 shadow-lg" />
+                  <div className="absolute -top-2 -right-2 w-8 h-8 rounded-xl bg-brand shadow-lg" />
                   <div className="absolute -bottom-2 -left-2 w-6 h-6 rounded-lg bg-purple-500 shadow-lg" />
                 </div>
 
@@ -1399,11 +1399,11 @@ export function BrandHub({ initialKits }: { initialKits: BrandKit[] }) {
             {/* Kit list at bottom of kits view */}
             {!showCreate && kits.length > 0 && (
               <div className="fixed bottom-4 left-[calc(13rem+2rem)] z-10">
-                <div className="flex gap-1 p-1 glass glass-heavy rounded-xl border border-border shadow-lg">
+                <div className="flex gap-1 p-1 bg-card rounded-xl border border-border shadow-lg">
                   {kits.slice(0, 5).map((kit) => (
                     <button key={kit.id} type="button" onClick={() => setActiveId(kit.id)}
                       className={cn('px-3 py-1.5 rounded-lg text-xs font-body transition-all',
-                        activeId === kit.id ? 'bg-clyro-primary/15 text-clyro-primary' : 'text-[--text-secondary] hover:bg-muted'
+                        activeId === kit.id ? 'bg-accent text-accent-foreground' : 'text-[--text-secondary] hover:bg-muted'
                       )}>
                       <span className="w-2.5 h-2.5 rounded-full inline-block mr-1.5" style={{ background: kit.primary_color }} />
                       {kit.name}

@@ -222,7 +222,7 @@ export default function DraftsPage() {
                 className={cn(
                   'flex items-center gap-2 px-4 py-2 rounded-xl',
                   'font-mono text-xs text-foreground border border-border bg-card',
-                  'hover:border-blue-500/40 hover:bg-muted transition-colors',
+                  'hover:border-brand/40 hover:bg-muted transition-colors',
                   'disabled:opacity-60 disabled:cursor-not-allowed',
                 )}
               >

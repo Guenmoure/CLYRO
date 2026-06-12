@@ -70,10 +70,10 @@ function VoiceCard({ voice, onToggleFavorite, compact }: {
     return (
       <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all cursor-pointer group">
         {/* Avatar circle */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-border flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand/15 to-violet-500/15 border border-border flex items-center justify-center shrink-0">
           {voice.previewUrl ? (
             <button type="button" onClick={handlePlay} aria-label={playing ? 'Pause' : 'Play'}>
-              {playing ? <Pause size={14} className="text-blue-500" /> : <Play size={14} className="text-blue-500" />}
+              {playing ? <Pause size={14} className="text-primary" /> : <Play size={14} className="text-primary" />}
             </button>
           ) : (
             <Mic2 size={14} className="text-[--text-muted]" />
@@ -95,17 +95,17 @@ function VoiceCard({ voice, onToggleFavorite, compact }: {
 
   // Full card style
   return (
-    <div className="rounded-xl border border-border bg-card p-4 hover:border-blue-500/30 hover:bg-muted/30 transition-all group">
+    <div className="rounded-xl border border-border bg-card p-4 hover:border-brand/30 hover:bg-muted/30 transition-all group">
       <div className="flex items-start gap-3">
         {/* Play avatar */}
-        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500/15 to-purple-500/15 border border-border flex items-center justify-center shrink-0">
+        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand/15 to-violet-500/15 border border-border flex items-center justify-center shrink-0">
           {voice.previewUrl ? (
             <button type="button" onClick={handlePlay} aria-label={playing ? 'Pause' : 'Play'}
-              className="w-full h-full rounded-full flex items-center justify-center hover:bg-blue-500/10 transition-colors"
+              className="w-full h-full rounded-full flex items-center justify-center hover:bg-brand/10 transition-colors"
             >
               {playing
-                ? <Pause size={14} className="text-blue-500" />
-                : <Play size={14} className="text-blue-500 ml-0.5" />
+                ? <Pause size={14} className="text-primary" />
+                : <Play size={14} className="text-primary ml-0.5" />
               }
             </button>
           ) : (
@@ -229,14 +229,14 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
             <label htmlFor="voice-name" className="font-body text-xs font-medium text-[--text-secondary] mb-2 block">{t('name')}</label>
             <input id="voice-name" type="text" value={name} onChange={(e) => setName(e.target.value)}
               placeholder="My main voice"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-all"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-all"
             />
           </div>
           <div>
             <label htmlFor="voice-file" className="font-body text-xs font-medium text-[--text-secondary] mb-2 block">{t('audioFile')}</label>
             <input id="voice-file" type="file" accept="audio/mp3,audio/mpeg,audio/wav,audio/m4a,audio/*"
               onChange={handleFilePick}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm file:mr-3 file:text-xs file:text-blue-500 file:bg-transparent file:border-0 file:cursor-pointer focus:outline-none"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm file:mr-3 file:text-xs file:text-primary file:bg-transparent file:border-0 file:cursor-pointer focus:outline-none"
             />
             <p className="mt-1.5 font-body text-[11px] text-[--text-muted]">
               Max {VOICE_SAMPLE_MAX_BYTES / 1024 / 1024} MB — formats mp3, wav, m4a.
@@ -248,7 +248,7 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
             {t('cancel')}
           </button>
           <button type="button" onClick={handleSubmit} disabled={!name.trim() || !file || uploading}
-            className="flex-1 bg-blue-500 text-white font-body font-medium py-2.5 rounded-xl hover:bg-blue-600 disabled:opacity-50 text-sm transition-colors"
+            className="flex-1 bg-primary text-white font-body font-medium py-2.5 rounded-xl hover:bg-brand-hover disabled:opacity-50 text-sm transition-colors"
           >
             {uploading ? t('uploading') : t('clone')}
           </button>
@@ -334,7 +334,7 @@ function TrendingSection({ voices, onToggleFavorite }: {
   return (
     <section>
       <div className="flex items-center gap-2 mb-3">
-        <TrendingUp size={16} className="text-blue-500" />
+        <TrendingUp size={16} className="text-primary" />
         <h2 className="font-body text-base font-semibold text-foreground">{t('trendingVoices')}</h2>
         <ChevronRight size={16} className="text-[--text-muted]" />
       </div>
@@ -463,7 +463,7 @@ export default function VoicesPage() {
           {/* Create voice button */}
           {tab === 'my-voices' && (
             <button type="button" onClick={() => setShowCloneModal(true)}
-              className="flex items-center gap-2 bg-blue-500 text-white font-body font-medium px-4 py-2.5 rounded-xl hover:bg-blue-600 text-sm transition-colors"
+              className="flex items-center gap-2 bg-primary text-white font-body font-medium px-4 py-2.5 rounded-xl hover:bg-brand-hover text-sm transition-colors"
             >
               <Plus size={14} /> {t('createVoice')}
             </button>
@@ -484,7 +484,7 @@ export default function VoicesPage() {
                   onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
                   placeholder={t('searchVoices')}
                   aria-label="Search voices"
-                  className="w-full pl-10 pr-9 py-2.5 border border-border bg-card rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-all"
+                  className="w-full pl-10 pr-9 py-2.5 border border-border bg-card rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-all"
                 />
                 {filters.search && (
                   <button type="button" onClick={() => setFilters((p) => ({ ...p, search: '' }))} aria-label="Clear search"
@@ -502,7 +502,7 @@ export default function VoicesPage() {
                   value={filters.language}
                   onChange={(e) => setFilters((p) => ({ ...p, language: e.target.value }))}
                   aria-label="Filter by language"
-                  className="bg-transparent text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 appearance-none cursor-pointer pr-2"
+                  className="bg-transparent text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary appearance-none cursor-pointer pr-2"
                 >
                   <option value="">{t('languageLabel')}</option>
                   {filterOptions.languages.map((l) => (
@@ -516,7 +516,7 @@ export default function VoicesPage() {
                 value={filters.gender}
                 onChange={(e) => setFilters((p) => ({ ...p, gender: e.target.value }))}
                 aria-label={t('gender')}
-                className="border border-border bg-card rounded-xl px-3 py-2.5 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 appearance-none cursor-pointer"
+                className="border border-border bg-card rounded-xl px-3 py-2.5 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary appearance-none cursor-pointer"
               >
                 <option value="">{t('gender')}</option>
                 {filterOptions.genders.map((g) => <option key={g} value={g}>{g}</option>)}
@@ -537,7 +537,7 @@ export default function VoicesPage() {
                       'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-body font-medium border whitespace-nowrap transition-all shrink-0',
                       isActive
                         ? 'bg-foreground text-background border-foreground'
-                        : 'bg-card text-foreground border-border hover:border-blue-500/40'
+                        : 'bg-card text-foreground border-border hover:border-brand/40'
                     )}
                   >
                     {Icon && <Icon size={14} />}
@@ -616,7 +616,7 @@ export default function VoicesPage() {
                   <button
                     type="button"
                     onClick={() => setShowCloneModal(true)}
-                    className="inline-flex items-center gap-2 bg-blue-500 text-white font-body font-medium px-5 py-2.5 rounded-xl hover:bg-blue-600 text-sm transition-colors"
+                    className="inline-flex items-center gap-2 bg-primary text-white font-body font-medium px-5 py-2.5 rounded-xl hover:bg-brand-hover text-sm transition-colors"
                   >
                     <Plus size={14} /> {t('createVoice')}
                   </button>

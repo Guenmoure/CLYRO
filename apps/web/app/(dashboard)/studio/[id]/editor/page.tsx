@@ -154,7 +154,7 @@ export default function StudioEditorPage() {
   if (loading) {
     return (
       <div className="h-screen bg-background flex items-center justify-center">
-        <Loader2 size={28} className="animate-spin text-blue-500" />
+        <Loader2 size={28} className="animate-spin text-brand" />
       </div>
     )
   }
@@ -211,7 +211,7 @@ export default function StudioEditorPage() {
 
       {/* Call-to-action strip if scenes haven't been generated yet */}
       {scenes.every((s) => s.status === 'pending') && (
-        <div className="shrink-0 px-4 py-2.5 bg-blue-500/10 border-b border-blue-500/30 flex items-center justify-between gap-4">
+        <div className="shrink-0 px-4 py-2.5 bg-brand/10 border-b border-brand/30 flex items-center justify-between gap-4">
           <p className="font-body text-sm text-foreground">
             <span className="font-semibold">{t('st_scenesReadyCount').replace('{n}', String(scenes.length))}</span>{' '}
             <span className="text-[--text-secondary]">{t('st_clickGenerate')}</span>
@@ -220,7 +220,7 @@ export default function StudioEditorPage() {
             type="button"
             onClick={startGeneration}
             disabled={starting}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-500 text-white px-4 py-1.5 font-display text-sm font-semibold hover:bg-blue-600 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-1.5 font-display text-sm font-semibold hover:bg-brand-hover disabled:opacity-60 transition-colors"
           >
             {starting ? <Loader2 size={13} className="animate-spin" /> : '⚡'}
             {t('st_generateAll')}

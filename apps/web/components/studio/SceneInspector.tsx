@@ -103,7 +103,7 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
             value={script}
             onChange={(e) => setScript(e.target.value)}
             rows={5}
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors resize-y"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors resize-y"
             placeholder={t('si_scriptPlaceholder')}
           />
           {dirtyScript && (
@@ -162,7 +162,7 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
               type="text"
               value={scene.broll_query ?? ''}
               placeholder={t('si_pexelsPlaceholder')}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
               readOnly
             />
             <p className="font-mono text-[10px] text-[--text-muted]">{t('si_pexelsSoon')}</p>
@@ -180,7 +180,7 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             placeholder={t('si_aiFeedbackPlaceholder')}
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
           />
         </div>
 

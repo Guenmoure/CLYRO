@@ -178,7 +178,7 @@ export default async function AnalyticsPage() {
           action={
             <Link
               href="/faceless/new"
-              className="inline-flex items-center gap-2 bg-blue-500 text-white font-body font-medium px-4 py-2 rounded-xl text-sm hover:bg-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="inline-flex items-center gap-2 bg-primary text-white font-body font-medium px-4 py-2 rounded-xl text-sm hover:bg-brand-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <Sparkles size={14} aria-hidden="true" />
               Create your first video
@@ -273,7 +273,7 @@ export default async function AnalyticsPage() {
                 <li key={v.id} className="py-2.5 first:pt-0 last:pb-0">
                   <Link
                     href={`/videos/${v.id}`}
-                    className="flex items-center justify-between gap-3 hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 rounded"
+                    className="flex items-center justify-between gap-3 hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 rounded"
                   >
                     <span className="font-body text-sm text-foreground truncate flex items-center gap-2 min-w-0">
                       {v.status === 'done' ? (

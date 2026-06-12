@@ -87,7 +87,7 @@ export function PromptEditModal({
             value={editedPrompt}
             onChange={e => setEditedPrompt(e.target.value)}
             rows={6}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-primary transition-colors"
             placeholder="Describe what you want to generate…"
           />
           <p className="font-mono text-[11px] text-[--text-muted] text-right">
@@ -117,7 +117,7 @@ export function PromptEditModal({
                 onChange={e => setFeedback(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && feedback.trim() && handleImprove()}
                 placeholder="Ex: make it more dramatic, add a female voice…"
-                className="flex-1 bg-muted border border-border rounded-xl px-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-blue-500/60 transition-colors"
+                className="flex-1 bg-muted border border-border rounded-xl px-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-primary transition-colors"
                 disabled={improving}
               />
               <Button

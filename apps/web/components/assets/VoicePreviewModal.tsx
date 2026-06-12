@@ -17,7 +17,7 @@ function WaveformAnimated() {
       {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
         <div
           key={i}
-          className="w-1 bg-blue-400 rounded-full animate-waveform"
+          className="w-1 bg-primary rounded-full animate-waveform"
           style={{ animationDelay: `${i * 80}ms` }}
         />
       ))}
@@ -76,7 +76,7 @@ export function VoicePreviewModal({ voice, isOpen, onClose, onUse }: VoicePrevie
 
         {/* Header row */}
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center shrink-0">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand/30 to-violet-500/30 flex items-center justify-center shrink-0">
             <span className="font-display text-xl font-bold text-foreground">{initials}</span>
           </div>
           <div className="min-w-0 flex-1">
@@ -115,7 +115,7 @@ export function VoicePreviewModal({ voice, isOpen, onClose, onUse }: VoicePrevie
                 className={cn(
                   'w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all',
                   playing
-                    ? 'bg-blue-500 text-white shadow-glow-brand'
+                    ? 'bg-primary text-white shadow-glow-brand'
                     : 'bg-border text-foreground hover:bg-muted',
                 )}
               >
@@ -129,7 +129,7 @@ export function VoicePreviewModal({ voice, isOpen, onClose, onUse }: VoicePrevie
                 ) : (
                   <div className="h-1.5 bg-border rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-500 rounded-full transition-all duration-100"
+                      className="h-full bg-primary rounded-full transition-all duration-100"
                       style={{ width: `${progress}%` }}
                     />
                   </div>

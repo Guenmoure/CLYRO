@@ -225,7 +225,7 @@ function Step1Welcome({ firstName, onNext }: Step1Props) {
         <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
           {firstName ? `Hey ${firstName},` : 'Hey there,'}{' '}
           <span
-            className="bg-gradient-to-r from-[#6D4AFF] via-[#A855F7] to-[#5B3BE0] bg-clip-text text-transparent"
+            className="bg-gradient-to-r from-brand via-purple-500 to-brand-hover bg-clip-text text-transparent"
           >
             let&apos;s get you set up
           </span>
@@ -559,7 +559,7 @@ function Step3Brand({
                 'bg-muted text-foreground placeholder:text-[--text-muted]',
                 'border border-border transition-colors duration-200',
                 'pl-7 pr-4 outline-none',
-                'focus:border-blue-500 focus:bg-card',
+                'focus:border-primary focus:bg-card',
               )}
               aria-label="Brand color hex value"
             />
