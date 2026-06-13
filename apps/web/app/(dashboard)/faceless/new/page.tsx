@@ -717,6 +717,7 @@ function FacelessNewPageInner() {
   const router      = useRouter()
   const params      = useSearchParams()
   const draftParam  = params.get('draft')
+  const promptParam = params.get('prompt')
   const { t }       = useLanguage()
 
   const STEPS = STEP_IDS.map((id) => ({
@@ -782,6 +783,15 @@ function FacelessNewPageInner() {
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftParam])
+
+  // Pre-fill the script when arriving from the home prompt hero (?prompt=...).
+  // Visual flow only — no AI call; the user keeps editing from here.
+  useEffect(() => {
+    if (draftParam) return            // a draft takes precedence
+    if (!promptParam) return
+    setScript((prev) => (prev ? prev : promptParam))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [promptParam])
 
   // DB-backed draft auto-save.
   //
