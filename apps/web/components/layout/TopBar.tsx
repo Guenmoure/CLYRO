@@ -16,7 +16,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, Search } from 'lucide-react'
+import { Menu, Search, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
 import { NotificationPanel } from '@/components/shared/notification-panel'
@@ -123,6 +123,25 @@ export function TopBar({ onMobileMenuToggle, user }: TopBarProps) {
           <kbd className="shrink-0 font-mono text-[10px] text-[--text-muted] bg-muted border border-border/60 px-1.5 py-0.5 rounded" aria-hidden="true">
             ⌘K
           </kbd>
+        </button>
+
+        {/* Ask AI — visual entry point for the future assistant.
+            For now it opens the existing command palette (same ⌘K mechanism
+            as the search field) so the pill is functional, not a dead button.
+            // TODO: brancher l'assistant IA quand disponible */}
+        <button
+          type="button"
+          onClick={openCommandPalette}
+          aria-label={t('tb_askAI')}
+          className={cn(
+            'hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-full',
+            'bg-card border border-border text-sm font-medium font-display text-foreground',
+            'hover:border-[--border-hover] hover:bg-muted transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+          )}
+        >
+          <Sparkles size={14} className="shrink-0 text-primary" aria-hidden="true" />
+          {t('tb_askAI')}
         </button>
 
         {/* Primary "+ Create" dropdown — the 5 modules */}

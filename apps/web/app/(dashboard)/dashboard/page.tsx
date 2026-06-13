@@ -13,7 +13,7 @@ import { CreateTiles }        from '@/components/dashboard/CreateTiles'
 import { CreditsBanner }      from '@/components/dashboard/CreditsBanner'
 import { EmptyDashboard }     from '@/components/dashboard/EmptyDashboard'
 import { ProjectsSection }    from '@/components/dashboard/ProjectsSection'
-import { DashboardGreeting }  from '@/components/dashboard/DashboardGreeting'
+import { PromptHero }         from '@/components/dashboard/PromptHero'
 import type { VideoProject }  from '@/components/dashboard/ProjectCard'
 
 export const dynamic = 'force-dynamic'
@@ -100,8 +100,8 @@ export default async function DashboardPage() {
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto space-y-8">
 
-      {/* ── 1. Greeting — personalised salutation ─────────────── */}
-      <DashboardGreeting firstName={firstName} />
+      {/* ── 1. Prompt-first hero — greeting + (visual) input card ─ */}
+      <PromptHero firstName={firstName} />
 
       {/* ── 2. Create tiles — one per module (HeyGen pattern) ──── */}
       <CreateTiles />

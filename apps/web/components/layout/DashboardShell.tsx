@@ -13,12 +13,16 @@
  */
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
 import { LanguageProvider } from '@/lib/i18n'
 import { CommandPalette } from '@/components/shared/command-palette'
 import { cn } from '@/lib/utils'
+import { resolveActiveEntry } from '@/components/layout/nav-model'
 
+// `collapsed` now means "contextual panel hidden". The icon rail is always
+// visible on desktop. Persisted across sessions.
 const STORAGE_KEY = 'clyro_sidebar_collapsed'
 
 export interface SidebarUser {
@@ -41,9 +45,16 @@ export function DashboardShell({
   projectsCount,
   draftsCount,
 }: DashboardShellProps) {
-  const [collapsed,  setCollapsed]  = useState(true)   // default collapsed
+  const [collapsed,  setCollapsed]  = useState(false)  // default: panel open
   const [mobileOpen, setMobileOpen] = useState(false)
   const [hydrated,   setHydrated]   = useState(false)
+  const pathname = usePathname()
+
+  // Does the current section have a contextual panel?
+  const activeEntry = resolveActiveEntry(pathname)
+  const sectionHasPanel = (activeEntry?.children?.length ?? 0) > 0
+  // Desktop content offset: rail (72) + panel (210) when a panel is shown.
+  const panelShown = sectionHasPanel && !collapsed
 
   // Read persisted state after mount to avoid SSR mismatch
   useEffect(() => {
@@ -84,8 +95,9 @@ export function DashboardShell({
           className={cn(
             'flex-1 flex flex-col overflow-hidden min-w-0',
             'md:transition-[margin-left] md:duration-300 md:ease-in-out',
-            !hydrated && 'md:ml-[72px]',
-            hydrated && (collapsed ? 'md:ml-[72px]' : 'md:ml-[240px]'),
+            // Rail = 72px; rail + panel = 282px.
+            !hydrated && (sectionHasPanel ? 'md:ml-[282px]' : 'md:ml-[72px]'),
+            hydrated && (panelShown ? 'md:ml-[282px]' : 'md:ml-[72px]'),
           )}
         >
           <TopBar user={user} onMobileMenuToggle={() => setMobileOpen(v => !v)} />
