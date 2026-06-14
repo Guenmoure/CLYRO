@@ -1,5 +1,32 @@
 import type { BrandBrief, BrandDirection, BrandCharte } from '@clyro/shared'
 
+/** Escape HTML special characters to prevent XSS in text content. */
+function esc(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/** Validate and sanitize a CSS hex color value (e.g. #ff0000). Returns fallback on invalid input. */
+function safeHex(value: string, fallback = '#888'): string {
+  return /^#[0-9a-fA-F]{3,8}$/.test(value) ? value : fallback
+}
+
+/** Sanitize a CSS font-family name — strip anything that could break out of quotes. */
+function safeFont(name: string): string {
+  return name.replace(/['"\\;{}()]/g, '')
+}
+
+/** Sanitize a URL for use in src/href — only allow http(s) and data:image. */
+function safeUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return esc(url)
+  if (/^data:image\//i.test(url)) return url
+  return ''
+}
+
 export function buildCharteHtml(
   brief: BrandBrief,
   direction: BrandDirection,
@@ -9,44 +36,49 @@ export function buildCharteHtml(
   const colors = charte.colors ?? []
   const colorSwatches = colors.map(c => `
       <div class="swatch">
-        <div class="swatch-box" style="background:${c.hex}"></div>
+        <div class="swatch-box" style="background:${safeHex(c.hex)}"></div>
         <div class="swatch-info">
-          <strong>${c.name}</strong><br/>
-          <code>${c.hex}</code> · <code>${c.rgb}</code><br/>
-          <small>${c.usage}</small>
+          <strong>${esc(c.name)}</strong><br/>
+          <code>${esc(c.hex)}</code> · <code>${esc(c.rgb)}</code><br/>
+          <small>${esc(c.usage)}</small>
         </div>
       </div>`).join('')
 
   const typRows = Object.entries(charte.typography ?? {}).map(([level, t]) => `
       <tr>
-        <td class="level">${level}</td>
-        <td><strong>${t.font}</strong></td>
-        <td>${t.weight}</td>
-        <td>${t.sizes}</td>
-        <td>${t.usage}</td>
+        <td class="level">${esc(level)}</td>
+        <td><strong>${esc(t.font)}</strong></td>
+        <td>${esc(t.weight)}</td>
+        <td>${esc(t.sizes)}</td>
+        <td>${esc(t.usage)}</td>
       </tr>`).join('')
+
+  const headingFont = safeFont(direction.typography.heading)
+  const bodyFont = safeFont(direction.typography.body)
+  const primary = safeHex(direction.palette.primary)
+  const neutral = safeHex(direction.palette.neutral, '#666')
 
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<title>Charte Graphique — ${brief.name}</title>
+<title>Charte Graphique — ${esc(brief.name)}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=${encodeURIComponent(direction.typography.heading)}:wght@400;700&family=${encodeURIComponent(direction.typography.body)}:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=${encodeURIComponent(headingFont)}:wght@400;700&family=${encodeURIComponent(bodyFont)}:wght@400;500&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'${direction.typography.body}',sans-serif; color:#1a1a1a; background:#fff; }
+  body { font-family:'${bodyFont}',sans-serif; color:#1a1a1a; background:#fff; }
   .page { max-width:794px; margin:0 auto; padding:48px; }
   @media print { .page { padding:24px; } }
 
   /* Cover */
-  .cover { display:flex; flex-direction:column; justify-content:center; min-height:400px; padding:60px 0; border-bottom:3px solid ${direction.palette.primary}; margin-bottom:48px; }
-  .cover-brand { font-family:'${direction.typography.heading}',sans-serif; font-size:64px; font-weight:700; color:${direction.palette.primary}; line-height:1; }
-  .cover-tagline { font-size:18px; color:${direction.palette.neutral}; margin-top:12px; font-style:italic; }
+  .cover { display:flex; flex-direction:column; justify-content:center; min-height:400px; padding:60px 0; border-bottom:3px solid ${primary}; margin-bottom:48px; }
+  .cover-brand { font-family:'${headingFont}',sans-serif; font-size:64px; font-weight:700; color:${primary}; line-height:1; }
+  .cover-tagline { font-size:18px; color:${neutral}; margin-top:12px; font-style:italic; }
   .cover-meta { margin-top:32px; display:flex; gap:32px; font-size:13px; color:#666; }
 
   /* Sections */
   .section { margin-bottom:48px; page-break-inside:avoid; }
-  .section-title { font-family:'${direction.typography.heading}',sans-serif; font-size:24px; font-weight:700; color:${direction.palette.primary}; border-bottom:2px solid ${direction.palette.primary}22; padding-bottom:8px; margin-bottom:24px; }
+  .section-title { font-family:'${headingFont}',sans-serif; font-size:24px; font-weight:700; color:${primary}; border-bottom:2px solid ${primary}22; padding-bottom:8px; margin-bottom:24px; }
 
   /* Palette */
   .swatches { display:flex; flex-wrap:wrap; gap:24px; }
@@ -58,9 +90,9 @@ export function buildCharteHtml(
 
   /* Typography table */
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { text-align:left; padding:8px 12px; background:${direction.palette.primary}11; font-family:'${direction.typography.heading}',sans-serif; }
+  th { text-align:left; padding:8px 12px; background:${primary}11; font-family:'${headingFont}',sans-serif; }
   td { padding:8px 12px; border-bottom:1px solid #f0f0f0; vertical-align:top; }
-  .level { font-weight:700; text-transform:uppercase; font-size:11px; color:${direction.palette.primary}; }
+  .level { font-weight:700; text-transform:uppercase; font-size:11px; color:${primary}; }
 
   /* Tags */
   .tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
@@ -81,19 +113,19 @@ export function buildCharteHtml(
 
   <!-- Cover -->
   <div class="cover">
-    ${logoUrl ? `<img src="${logoUrl}" alt="${brief.name} logo" style="height:80px;object-fit:contain;object-position:left;margin-bottom:24px;"/>` : ''}
-    <div class="cover-brand">${brief.name}</div>
-    <div class="cover-tagline">${direction.tagline}</div>
+    ${logoUrl ? `<img src="${safeUrl(logoUrl)}" alt="${esc(brief.name)} logo" style="height:80px;object-fit:contain;object-position:left;margin-bottom:24px;"/>` : ''}
+    <div class="cover-brand">${esc(brief.name)}</div>
+    <div class="cover-tagline">${esc(direction.tagline)}</div>
     <div class="cover-meta">
-      <span>Secteur : ${brief.secteur}</span>
-      <span>Direction : ${direction.name}</span>
-      <span>Cible : ${brief.cible}</span>
+      <span>Secteur : ${esc(brief.secteur)}</span>
+      <span>Direction : ${esc(direction.name)}</span>
+      <span>Cible : ${esc(brief.cible)}</span>
     </div>
   </div>
 
   <!-- Palette strip -->
   <div class="palette-strip">
-    ${[direction.palette.primary, direction.palette.secondary, direction.palette.accent, direction.palette.neutral, direction.palette.background].map(c => `<div style="background:${c}"></div>`).join('')}
+    ${[direction.palette.primary, direction.palette.secondary, direction.palette.accent, direction.palette.neutral, direction.palette.background].map(c => `<div style="background:${safeHex(c)}"></div>`).join('')}
   </div>
 
   <!-- Couleurs -->
@@ -114,31 +146,31 @@ export function buildCharteHtml(
   <!-- Logo -->
   <div class="section">
     <div class="section-title">Règles d'usage du logo</div>
-    <p><strong>Espace de protection :</strong> ${charte.logo_rules?.clear_space ?? '—'}</p>
+    <p><strong>Espace de protection :</strong> ${esc(charte.logo_rules?.clear_space ?? '—')}</p>
     <p style="margin-top:16px;font-weight:600">Fonds autorisés</p>
-    <div class="tags">${(charte.logo_rules?.allowed_backgrounds ?? []).map(b => `<span class="tag tag-green">${b}</span>`).join('')}</div>
+    <div class="tags">${(charte.logo_rules?.allowed_backgrounds ?? []).map(b => `<span class="tag tag-green">${esc(b)}</span>`).join('')}</div>
     <p style="margin-top:16px;font-weight:600">Interdits</p>
-    <div class="tags">${(charte.logo_rules?.forbidden ?? []).map(f => `<span class="tag tag-red">✗ ${f}</span>`).join('')}</div>
+    <div class="tags">${(charte.logo_rules?.forbidden ?? []).map(f => `<span class="tag tag-red">✗ ${esc(f)}</span>`).join('')}</div>
   </div>
 
   <!-- Layout -->
   <div class="section">
     <div class="section-title">Mise en page</div>
-    <p><strong>Grille :</strong> ${charte.layout?.grid ?? '—'}</p>
-    <p style="margin-top:8px"><strong>Espacement :</strong> ${charte.layout?.spacing ?? '—'}</p>
-    <p style="margin-top:8px"><strong>Marges :</strong> ${charte.layout?.margins ?? '—'}</p>
+    <p><strong>Grille :</strong> ${esc(charte.layout?.grid ?? '—')}</p>
+    <p style="margin-top:8px"><strong>Espacement :</strong> ${esc(charte.layout?.spacing ?? '—')}</p>
+    <p style="margin-top:8px"><strong>Marges :</strong> ${esc(charte.layout?.margins ?? '—')}</p>
   </div>
 
   <!-- Photography -->
   <div class="section">
     <div class="section-title">Direction photographique</div>
-    <p>${charte.photography?.style ?? ''}</p>
-    <p style="margin-top:8px;font-style:italic;color:#666">${charte.photography?.mood ?? ''}</p>
-    <div class="tags" style="margin-top:12px">${(charte.photography?.forbidden ?? []).map(f => `<span class="tag tag-red">✗ ${f}</span>`).join('')}</div>
+    <p>${esc(charte.photography?.style ?? '')}</p>
+    <p style="margin-top:8px;font-style:italic;color:#666">${esc(charte.photography?.mood ?? '')}</p>
+    <div class="tags" style="margin-top:12px">${(charte.photography?.forbidden ?? []).map(f => `<span class="tag tag-red">✗ ${esc(f)}</span>`).join('')}</div>
   </div>
 
   <div class="footer">
-    <span>${brief.name} — Charte Graphique</span>
+    <span>${esc(brief.name)} — Charte Graphique</span>
     <span>Généré avec CLYRO · ${new Date().toLocaleDateString('fr-FR')}</span>
   </div>
 </div>

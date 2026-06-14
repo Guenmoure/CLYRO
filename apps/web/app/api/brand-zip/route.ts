@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     // Always use the authenticated user — never trust a body-supplied id.
     const userId = user.id
 
-    const slug = brief.name.toLowerCase().replace(/\s+/g, '-')
+    const slug = brief.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
 
     const entries: Array<{ path: string; url: string }> = []
     if (logoUrl) entries.push({ path: `logos/${slug}-logo-selected.png`, url: logoUrl })

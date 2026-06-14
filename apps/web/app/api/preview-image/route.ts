@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     // the draft preview. Style reference is only applied in the HD pass (stream-image).
     const endpoint = 'fal-ai/flux/schnell'
 
-    console.log(`[preview-image] Calling https://fal.run/${endpoint}, key=${falKey.slice(0, 6)}...${falKey.slice(-4)}`)
+    console.log(`[preview-image] Calling https://fal.run/${endpoint}`)
 
     const falRes = await fetch(`https://fal.run/${endpoint}`, {
       method: 'POST',

@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     const endpoint = 'fal-ai/flux/schnell'
 
-    console.log(`[stream-image] Calling https://fal.run/${endpoint}, style=${style}, seed=${seed}, key=${falKey.slice(0, 6)}...${falKey.slice(-4)}`)
+    console.log(`[stream-image] Calling https://fal.run/${endpoint}, style=${style}, seed=${seed}`)
 
     const falRes = await fetch(`https://fal.run/${endpoint}`, {
       method: 'POST',
