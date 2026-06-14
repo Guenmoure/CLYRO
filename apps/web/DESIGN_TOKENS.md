@@ -69,13 +69,15 @@ Every interactive element must show a visible focus ring when navigated via keyb
 Use the standardized pattern:
 
 ```ts
-'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary'
+'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
 ```
 
 Form inputs pair `focus-visible:border-primary` with the ring; icon buttons and
-nav items use just the ring (`ring-brand/50` or `ring-[--ring]`). Never use
-`outline-none` without a replacement — it removes keyboard visibility and breaks
-WCAG 2.4.7.
+nav items use just the ring (`ring-ring/50`). Never use `outline-none` without a
+replacement — it removes keyboard visibility and breaks WCAG 2.4.7.
+
+**Selection state** (cards, options, styles) uses `ring-brand` or `ring-primary`
+to indicate the active/selected item — this is distinct from the focus ring.
 
 ## Color tokens
 

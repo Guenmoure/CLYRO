@@ -116,9 +116,10 @@ export const RAIL_BOTTOM_ITEMS: NavEntry[] = [
     labelKey: 'settings',
     href: '/settings',
     children: [
-      { labelKey: 'nav_general',      href: '/settings' },
-      { labelKey: 'billing',          href: '/settings/billing', groupKey: 'nav_grp_workspace' },
-      { labelKey: 'nav_team',         href: '/settings/team',    groupKey: 'nav_grp_workspace' },
+      { labelKey: 'nav_general',       href: '/settings' },
+      { labelKey: 'billing',          href: '/settings/billing',      groupKey: 'nav_grp_workspace' },
+      { labelKey: 'nav_team',         href: '/settings/team',         groupKey: 'nav_grp_workspace' },
+      { labelKey: 'nav_integrations', href: '/settings/integrations', groupKey: 'nav_grp_workspace' },
     ],
   },
 ]

@@ -179,6 +179,71 @@ export interface Database {
           updated_at?: string
         }
       }
+      studio_projects: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          input_type: 'script' | 'youtube_url'
+          input_value: string
+          input_language: string
+          original_script: string | null
+          improved_script: string | null
+          avatar_id: string | null
+          voice_id: string | null
+          format: '16_9' | '9_16' | 'both'
+          background_color: string | null
+          music_track: string | null
+          status: 'draft' | 'analyzing' | 'generating' | 'editing' | 'rendering' | 'done' | 'error'
+          final_video_url: string | null
+          final_video_9_16_url: string | null
+          total_duration: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title?: string
+          input_type: 'script' | 'youtube_url'
+          input_value: string
+          input_language?: string
+          original_script?: string | null
+          improved_script?: string | null
+          avatar_id?: string | null
+          voice_id?: string | null
+          format?: '16_9' | '9_16' | 'both'
+          background_color?: string | null
+          music_track?: string | null
+          status?: 'draft' | 'analyzing' | 'generating' | 'editing' | 'rendering' | 'done' | 'error'
+          final_video_url?: string | null
+          final_video_9_16_url?: string | null
+          total_duration?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          input_type?: 'script' | 'youtube_url'
+          input_value?: string
+          input_language?: string
+          original_script?: string | null
+          improved_script?: string | null
+          avatar_id?: string | null
+          voice_id?: string | null
+          format?: '16_9' | '9_16' | 'both'
+          background_color?: string | null
+          music_track?: string | null
+          status?: 'draft' | 'analyzing' | 'generating' | 'editing' | 'rendering' | 'done' | 'error'
+          final_video_url?: string | null
+          final_video_9_16_url?: string | null
+          total_duration?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       brand_assets: {
         Row: {
           id: string

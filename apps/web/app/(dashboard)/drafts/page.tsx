@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PenLine, Video, Sparkles, Clock, Trash2, Palette, Clapperboard, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -34,13 +34,13 @@ export default function DraftsPage() {
   const [hasMore,    setHasMore]    = useState(false)
   const [page,       setPage]       = useState(0)
   const [filter,     setFilter]     = useState<Filter>('all')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const confirmTimer = useRef<ReturnType<typeof setTimeout>>()
 
   // Single-page fetch. Returns what was appended + whether another page likely exists.
   const fetchPage = useCallback(async (pageIndex: number): Promise<{ rows: DbDraftMeta[]; more: boolean } | null> => {
     const supabase = createBrowserClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: authData } = await (supabase.auth.getSession() as Promise<any>)
-    const session = authData?.session
+    const { data: { session } } = await supabase.auth.getSession()
     if (!session) return null
     const from = pageIndex * DRAFTS_PAGE_SIZE
     const to   = from + DRAFTS_PAGE_SIZE - 1
@@ -136,15 +136,26 @@ export default function DraftsPage() {
         {filtered.length > 0 && (
           <button
             type="button"
-            onClick={handleDeleteAll}
+            onClick={() => {
+              if (confirmDelete) {
+                clearTimeout(confirmTimer.current)
+                setConfirmDelete(false)
+                handleDeleteAll()
+              } else {
+                setConfirmDelete(true)
+                confirmTimer.current = setTimeout(() => setConfirmDelete(false), 3000)
+              }
+            }}
             className={cn(
               'flex items-center gap-2 px-3 py-1.5 rounded-lg',
-              'font-mono text-xs text-[--text-muted] border border-border',
-              'hover:text-error hover:border-error/30 hover:bg-error/5 transition-colors',
+              'font-mono text-xs border transition-colors',
+              confirmDelete
+                ? 'text-error border-error/40 bg-error/10'
+                : 'text-[--text-muted] border-border hover:text-error hover:border-error/30 hover:bg-error/5',
             )}
           >
             <Trash2 size={12} />
-            {t('dr_deleteAll')}
+            {confirmDelete ? t('dr_confirmDeleteAll') : t('dr_deleteAll')}
           </button>
         )}
       </div>

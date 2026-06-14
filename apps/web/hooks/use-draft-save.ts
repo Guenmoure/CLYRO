@@ -90,21 +90,18 @@ export function useDraftSave({
   useEffect(() => {
     const supabase = createBrowserClient()
     let cancelled = false
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    void (supabase.auth.getSession() as Promise<any>).then(({ data }: any) => {
+    void supabase.auth.getSession().then(({ data }) => {
       if (!cancelled) accessTokenRef.current = data?.session?.access_token ?? null
     })
     // Keep the ref fresh on auth state changes (refresh, sign-out).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: sub } = (supabase.auth.onAuthStateChange as any)(
-      (_event: unknown, session: { access_token?: string } | null) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
         accessTokenRef.current = session?.access_token ?? null
       },
     )
     return () => {
       cancelled = true
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(sub as any)?.subscription?.unsubscribe?.()
+      sub?.subscription?.unsubscribe?.()
     }
   }, [])
 
@@ -140,11 +137,11 @@ export function useDraftSave({
       const { module: mod, title: t, style: s, currentStep: step, state: st } = latestRef.current
 
       // Determine expiry: Pro users get no expiry, others get 7 days
-      const { data: profile } = await (supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('plan')
         .eq('id', session.user.id)
-        .single() as Promise<any>)
+        .single()
       const isPro = profile?.plan === 'pro' || profile?.plan === 'business'
       const expiresAt = isPro
         ? null
