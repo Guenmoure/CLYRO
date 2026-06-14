@@ -209,7 +209,7 @@ export default function AutopilotPage() {
                       type="button"
                       onClick={() => handleRun(s)}
                       disabled={busyId === s.id}
-                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                       aria-label={t('auto_aria_run').replace('{name}', s.name)}
                     >
                       <Play size={12} aria-hidden="true" />
@@ -219,7 +219,7 @@ export default function AutopilotPage() {
                       type="button"
                       onClick={() => handleToggle(s)}
                       disabled={busyId === s.id}
-                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                      className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                       aria-label={(s.enabled ? t('auto_aria_pause') : t('auto_aria_resume')).replace('{name}', s.name)}
                     >
                       {s.enabled ? <Pause size={12} aria-hidden="true" /> : <Play size={12} aria-hidden="true" />}

@@ -51,7 +51,7 @@ function AvatarGroupCard({
       <button
         type="button"
         onClick={onClick}
-        className="block text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="block text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-label={`${group.baseName}, ${group.totalLooks} looks`}
       >
         <div className="relative aspect-[3/4] bg-muted overflow-hidden">

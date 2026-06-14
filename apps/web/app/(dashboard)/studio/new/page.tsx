@@ -280,7 +280,7 @@ function StudioNewPageInner() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('titlePlaceholder')}
-            className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors"
+            className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary transition-colors"
             maxLength={120}
           />
         </div>
@@ -297,7 +297,7 @@ function StudioNewPageInner() {
               onChange={(e) => setScript(e.target.value)}
               rows={12}
               placeholder={t('scriptPlaceholder')}
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors resize-y"
+              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary transition-colors resize-y"
             />
             <div className="flex items-center justify-between">
               <p className="font-mono text-xs text-[--text-muted]">
@@ -319,7 +319,7 @@ function StudioNewPageInner() {
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
                 placeholder="https://youtube.com/watch?v=..."
-                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary transition-colors"
               />
             </div>
             <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
@@ -345,7 +345,7 @@ function StudioNewPageInner() {
               id="lang"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors appearance-none cursor-pointer"
+              className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary transition-colors appearance-none cursor-pointer"
             >
               {LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>{l.flag}  {l.label}</option>
@@ -393,7 +393,7 @@ function StudioNewPageInner() {
                       setExpandedGroup(null)
                     }}
                     className={cn(
-                      'px-3 py-1 rounded-full text-xs font-body font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                      'px-3 py-1 rounded-full text-xs font-body font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                       avatarTab === tab.key
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-card text-foreground border-border hover:border-brand/40',
@@ -412,7 +412,7 @@ function StudioNewPageInner() {
                   value={avatarSearch}
                   onChange={(e) => setAvatarSearch(e.target.value)}
                   placeholder={t('searchAvatars')}
-                  className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-colors"
+                  className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary transition-colors"
                 />
               </div>
 
@@ -670,7 +670,7 @@ function StudioAvatarGroupCard({
         onClick={onToggle}
         aria-expanded={isExpanded}
         aria-label={`${group.baseName}, ${group.totalLooks} looks`}
-        className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+        className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <div className="relative aspect-[3/4] bg-muted overflow-hidden group">
           {group.mainPreview ? (
@@ -726,7 +726,7 @@ function StudioAvatarGroupCard({
                   }
                   aria-pressed={isLookSelected}
                   className={cn(
-                    'relative rounded-lg overflow-hidden border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                    'relative rounded-lg overflow-hidden border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                     isLookSelected
                       ? 'border-primary ring-2 ring-brand/30'
                       : 'border-border hover:border-brand/40',

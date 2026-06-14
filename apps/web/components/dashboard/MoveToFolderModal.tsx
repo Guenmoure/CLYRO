@@ -270,7 +270,7 @@ function FolderRowButton({
       onClick={onClick}
       className={cn(
         'flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
         active
           ? 'bg-accent border border-brand/30'
           : 'hover:bg-card border border-transparent',

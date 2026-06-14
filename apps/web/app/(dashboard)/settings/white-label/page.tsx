@@ -108,7 +108,7 @@ export default async function WhiteLabelPage() {
             </div>
             <Link
               href="/brand"
-              className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+              className="inline-flex items-center gap-1.5 font-body text-xs font-medium px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               Manage
             </Link>
@@ -156,7 +156,7 @@ export default async function WhiteLabelPage() {
               </p>
               <Link
                 href="/brand/new"
-                className="inline-flex items-center gap-2 mt-4 bg-primary text-white font-body font-medium px-4 py-2 rounded-xl text-sm hover:bg-brand-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="inline-flex items-center gap-2 mt-4 bg-primary text-white font-body font-medium px-4 py-2 rounded-xl text-sm hover:bg-brand-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Sparkles size={14} aria-hidden="true" />
                 Create a brand kit

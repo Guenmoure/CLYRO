@@ -229,7 +229,7 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
             <label htmlFor="voice-name" className="font-body text-xs font-medium text-[--text-secondary] mb-2 block">{t('name')}</label>
             <input id="voice-name" type="text" value={name} onChange={(e) => setName(e.target.value)}
               placeholder="My main voice"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-all"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary transition-all"
             />
           </div>
           <div>
@@ -484,7 +484,7 @@ export default function VoicesPage() {
                   onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
                   placeholder={t('searchVoices')}
                   aria-label="Search voices"
-                  className="w-full pl-10 pr-9 py-2.5 border border-border bg-card rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary transition-all"
+                  className="w-full pl-10 pr-9 py-2.5 border border-border bg-card rounded-xl text-sm font-body text-foreground placeholder:text-[--text-muted] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary transition-all"
                 />
                 {filters.search && (
                   <button type="button" onClick={() => setFilters((p) => ({ ...p, search: '' }))} aria-label="Clear search"
@@ -502,7 +502,7 @@ export default function VoicesPage() {
                   value={filters.language}
                   onChange={(e) => setFilters((p) => ({ ...p, language: e.target.value }))}
                   aria-label="Filter by language"
-                  className="bg-transparent text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary appearance-none cursor-pointer pr-2"
+                  className="bg-transparent text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary appearance-none cursor-pointer pr-2"
                 >
                   <option value="">{t('languageLabel')}</option>
                   {filterOptions.languages.map((l) => (
@@ -516,7 +516,7 @@ export default function VoicesPage() {
                 value={filters.gender}
                 onChange={(e) => setFilters((p) => ({ ...p, gender: e.target.value }))}
                 aria-label={t('gender')}
-                className="border border-border bg-card rounded-xl px-3 py-2.5 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:border-primary appearance-none cursor-pointer"
+                className="border border-border bg-card rounded-xl px-3 py-2.5 text-sm font-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary appearance-none cursor-pointer"
               >
                 <option value="">{t('gender')}</option>
                 {filterOptions.genders.map((g) => <option key={g} value={g}>{g}</option>)}

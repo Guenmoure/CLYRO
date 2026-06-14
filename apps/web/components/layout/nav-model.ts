@@ -18,7 +18,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Home, Clapperboard, Palette, LayoutGrid,
-  FolderOpen, Settings, Code,
+  FolderOpen, Settings,
 } from 'lucide-react'
 
 export interface NavChild {
@@ -26,8 +26,6 @@ export interface NavChild {
   href:     string
   /** Uppercase group heading key — children sharing one render under it. */
   groupKey?: string
-  /** Optional icon for richer sub-nav display. */
-  icon?: LucideIcon
 }
 
 export interface NavEntry {
@@ -40,7 +38,7 @@ export interface NavEntry {
   children?: NavChild[]
 }
 
-// ── Primary rail — top group (6 items, matching HeyGen) ─────────────────────
+// ── Primary rail — top group (5 items + Settings at bottom) ─────────────────
 
 /** Primary rail — top group. */
 export const RAIL_ITEMS: NavEntry[] = [
@@ -76,9 +74,7 @@ export const RAIL_ITEMS: NavEntry[] = [
     isModule: true,
     children: [
       { labelKey: 'nav_brandSystem', href: '/brand' },
-      { labelKey: 'nav_kits',       href: '/brand',     groupKey: 'nav_grp_manage' },
-      { labelKey: 'nav_catalog',    href: '/brand',     groupKey: 'nav_grp_manage' },
-      { labelKey: 'nav_campaigns',  href: '/brand',     groupKey: 'nav_grp_manage' },
+      { labelKey: 'nav_templates',   href: '/templates',  groupKey: 'nav_grp_manage' },
     ],
   },
 
@@ -89,11 +85,11 @@ export const RAIL_ITEMS: NavEntry[] = [
     labelKey: 'nav_apps',
     href: '/faceless',
     children: [
-      { labelKey: 'npd_faceless_title', href: '/faceless',     groupKey: 'nav_grp_create' },
-      { labelKey: 'npd_motion_title',   href: '/motion',       groupKey: 'nav_grp_create' },
-      { labelKey: 'npd_autopilot_title', href: '/autopilot',   groupKey: 'nav_grp_create' },
-      { labelKey: 'nav_facelessNew',    href: '/faceless/new', groupKey: 'nav_grp_quickStart' },
-      { labelKey: 'nav_motionNew',      href: '/motion/new',   groupKey: 'nav_grp_quickStart' },
+      { labelKey: 'npd_faceless_title',  href: '/faceless',     groupKey: 'nav_grp_create' },
+      { labelKey: 'npd_motion_title',    href: '/motion',       groupKey: 'nav_grp_create' },
+      { labelKey: 'npd_autopilot_title', href: '/autopilot',    groupKey: 'nav_grp_create' },
+      { labelKey: 'nav_facelessNew',     href: '/faceless/new', groupKey: 'nav_grp_quickStart' },
+      { labelKey: 'nav_motionNew',       href: '/motion/new',   groupKey: 'nav_grp_quickStart' },
     ],
   },
 
@@ -120,10 +116,9 @@ export const RAIL_BOTTOM_ITEMS: NavEntry[] = [
     labelKey: 'settings',
     href: '/settings',
     children: [
-      { labelKey: 'nav_general',       href: '/settings' },
-      { labelKey: 'billing',           href: '/settings/billing',      groupKey: 'nav_grp_workspace' },
-      { labelKey: 'nav_team',          href: '/settings/team',         groupKey: 'nav_grp_workspace' },
-      { labelKey: 'nav_integrations',  href: '/settings/integrations', groupKey: 'nav_grp_workspace' },
+      { labelKey: 'nav_general',      href: '/settings' },
+      { labelKey: 'billing',          href: '/settings/billing', groupKey: 'nav_grp_workspace' },
+      { labelKey: 'nav_team',         href: '/settings/team',    groupKey: 'nav_grp_workspace' },
     ],
   },
 ]

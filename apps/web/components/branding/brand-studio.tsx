@@ -1156,7 +1156,7 @@ function LogoConceptCard({
         {bgs.map(({ key, label, bg, url, textColor }) => (
           <div key={key} className="space-y-1">
             <div
-              className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 transition-all relative"
+              className="w-full aspect-square rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50/60 transition-all relative"
               style={{ background: bg }}
               onClick={() => url && onSelectUrl(url)}
               role="button"
@@ -1319,7 +1319,7 @@ function AssetCard({
         </div>
       </div>
       <div
-        className="relative rounded-2xl overflow-hidden border border-border bg-card aspect-video flex items-center justify-center group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+        className="relative rounded-2xl overflow-hidden border border-border bg-card aspect-video flex items-center justify-center group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50/60"
         onClick={() => {
           if (url && !loading) setLightboxOpen(true);
         }}

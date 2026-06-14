@@ -327,7 +327,7 @@ export default function ProjectsPage() {
                   type="button"
                   aria-label={t('proj_collapseNav')}
                   onClick={() => setNavOpen(false)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
                   <PanelLeft size={14} />
                 </button>
@@ -345,7 +345,7 @@ export default function ProjectsPage() {
                       onClick={() => setActiveNav(item.id)}
                       className={cn(
                         'w-full flex items-center gap-3 px-3 py-2 rounded-xl font-body text-sm transition-colors',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                         active
                           ? 'bg-brand/10 text-foreground border border-brand/30'
                           : 'text-[--text-muted] hover:text-foreground hover:bg-muted border border-transparent',
@@ -370,7 +370,7 @@ export default function ProjectsPage() {
                   type="button"
                   aria-label={t('proj_openNav')}
                   onClick={() => setNavOpen(true)}
-                  className="w-9 h-9 rounded-lg border border-border bg-card flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                  className="w-9 h-9 rounded-lg border border-border bg-card flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
                   <PanelLeft size={15} />
                 </button>
@@ -425,7 +425,7 @@ export default function ProjectsPage() {
                   onClick={() => setFilterMenuOpen(v => !v)}
                   className={cn(
                     'rounded-xl border border-border bg-card w-11 h-11 flex items-center justify-center text-foreground transition-colors',
-                    'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                    'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                     activeFiltersCount > 0 && 'ring-2 ring-brand/40',
                   )}
                 >
@@ -497,7 +497,7 @@ export default function ProjectsPage() {
                   aria-label={t('proj_newFolder')}
                   onClick={handleCreateFolder}
                   disabled={creatingFolder}
-                  className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FolderPlus size={14} aria-hidden="true" />
                 </button>
@@ -521,7 +521,7 @@ export default function ProjectsPage() {
                       >
                         <button
                           type="button"
-                          className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                          className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                         >
                           <Folder
                             size={20}
@@ -547,7 +547,7 @@ export default function ProjectsPage() {
                           className={cn(
                             'absolute top-1/2 -translate-y-1/2 right-3 w-9 h-9 rounded-lg flex items-center justify-center transition-all',
                             'text-[--text-muted] hover:text-foreground hover:bg-muted',
-                            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                             isSelected ? 'opacity-100' : 'opacity-60 group-hover:opacity-100',
                           )}
                         >

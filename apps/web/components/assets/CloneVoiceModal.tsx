@@ -210,7 +210,7 @@ export function CloneVoiceModal({
             onClick={onClose}
             disabled={uploading}
             aria-label={t('cv_closeDialog')}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50 shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 shrink-0"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -248,7 +248,7 @@ export function CloneVoiceModal({
               placeholder={t('cv_voiceNamePlaceholder')}
               maxLength={100}
               disabled={uploading || planBlocked || starterLimitReached}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-brand/50 transition-colors disabled:opacity-50"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors disabled:opacity-50"
             />
           </div>
 
@@ -267,7 +267,7 @@ export function CloneVoiceModal({
               />
               <label
                 htmlFor="clone-voice-file"
-                className="flex items-center gap-3 w-full rounded-xl border border-dashed border-border bg-muted/40 px-3 py-3 cursor-pointer hover:border-brand/40 hover:bg-muted/70 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand/50 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"
+                className="flex items-center gap-3 w-full rounded-xl border border-dashed border-border bg-muted/40 px-3 py-3 cursor-pointer hover:border-brand/40 hover:bg-muted/70 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"
               >
                 <Upload size={16} className="text-[--text-muted] shrink-0" aria-hidden="true" />
                 <span className="flex-1 min-w-0 truncate font-body text-sm text-foreground">
@@ -298,7 +298,7 @@ export function CloneVoiceModal({
             type="button"
             onClick={onClose}
             disabled={uploading}
-            className="flex-1 border border-border bg-card text-foreground font-body font-medium py-2.5 rounded-xl text-sm hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            className="flex-1 border border-border bg-card text-foreground font-body font-medium py-2.5 rounded-xl text-sm hover:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             {t('cv_cancel')}
           </button>
@@ -307,7 +307,7 @@ export function CloneVoiceModal({
             onClick={handleSubmit}
             disabled={!name.trim() || !file || uploading || planBlocked || starterLimitReached}
             aria-describedby={planMessage ? 'clone-voice-plan-message' : undefined}
-            className="flex-1 bg-primary text-white font-body font-medium py-2.5 rounded-xl text-sm hover:bg-brand-hover disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+            className="flex-1 bg-primary text-white font-body font-medium py-2.5 rounded-xl text-sm hover:bg-brand-hover disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           >
             {uploading ? t('cv_uploading') : t('cv_cloneVoice')}
           </button>
