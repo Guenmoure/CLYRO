@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  imageUrl: z.string().url().optional(),
+  image_url: z.string().url().optional(),
+  animationPrompt: z.string().min(1).optional(),
+  animation_prompt: z.string().min(1).optional(),
+  duration: z.enum(['5', '10']).optional(),
+  style: z.string().optional(),
+})
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300  // 5 min — Kling v2.5-turbo Standard ~20-40s, Pro ~40-90s
@@ -24,21 +34,18 @@ export async function POST(request: NextRequest) {
   if (!limit.allowed) return rateLimitResponse(limit)
 
   try {
-    const body = await request.json() as {
-      imageUrl?: string
-      image_url?: string
-      animationPrompt?: string
-      animation_prompt?: string
-      duration?: '5' | '10'
-      style?: string
+    const parsed = bodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'imageUrl and animationPrompt are required', code: 'VALIDATION_ERROR' }, { status: 400 })
     }
+    const body = parsed.data
     const imageUrl = body.imageUrl ?? body.image_url
     const animationPrompt = body.animationPrompt ?? body.animation_prompt
     const duration = body.duration ?? '5'
     const style = body.style ?? ''
 
     if (!imageUrl || !animationPrompt) {
-      return NextResponse.json({ error: 'imageUrl and animationPrompt are required' }, { status: 400 })
+      return NextResponse.json({ error: 'imageUrl and animationPrompt are required', code: 'VALIDATION_ERROR' }, { status: 400 })
     }
 
     if (!process.env.FAL_KEY) {

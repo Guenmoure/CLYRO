@@ -142,11 +142,19 @@ export function NotificationPanel() {
     : notifs
 
   useEffect(() => {
+    if (!open) return
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-    if (open) document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
   }, [open])
 
   function markAllRead() {
@@ -174,7 +182,7 @@ export function NotificationPanel() {
         type="button"
         aria-label="Notifications"
         onClick={() => setOpen(v => !v)}
-        className="relative w-9 h-9 rounded-xl bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-secondary] hover:text-foreground transition-colors duration-200"
+        className="relative w-9 h-9 rounded-xl bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-secondary] hover:text-foreground transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <Bell size={15} strokeWidth={1.6} />
         {unread > 0 && (
@@ -217,7 +225,7 @@ export function NotificationPanel() {
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
-                className={`text-xs font-medium py-2.5 mr-5 border-b-2 transition-colors ${
+                className={`text-xs font-medium py-2.5 mr-5 border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-sm ${
                   tab === t.key
                     ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                     : 'border-transparent text-[--text-muted] hover:text-[--text-secondary]'
@@ -273,7 +281,7 @@ export function NotificationPanel() {
                       type="button"
                       onClick={() => dismiss(n.id)}
                       aria-label="Delete"
-                      className="shrink-0 mt-0.5 text-[--text-muted] hover:text-foreground transition-colors"
+                      className="shrink-0 mt-0.5 text-[--text-muted] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded"
                     >
                       <X size={12} />
                     </button>

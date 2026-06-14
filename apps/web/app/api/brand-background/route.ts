@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  source_image_url: z.string().url(),
+  background_prompt: z.string().min(1),
+  brand_kit_id: z.string().uuid().optional(),
+})
 
 export const maxDuration = 60
 
@@ -14,12 +21,11 @@ export async function POST(req: NextRequest) {
   const limit = checkRateLimit('brand-background', user.id, 20)
   if (!limit.allowed) return rateLimitResponse(limit)
 
-  const body = await req.json()
-  const { source_image_url, background_prompt, brand_kit_id } = body
-
-  if (!source_image_url || !background_prompt) {
+  const parsed = bodySchema.safeParse(await req.json())
+  if (!parsed.success) {
     return NextResponse.json({ error: 'source_image_url and background_prompt required', code: 'VALIDATION_ERROR' }, { status: 400 })
   }
+  const { source_image_url, background_prompt, brand_kit_id } = parsed.data
 
   let brandSuffix = ''
   if (brand_kit_id) {

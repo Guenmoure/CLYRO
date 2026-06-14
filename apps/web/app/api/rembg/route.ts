@@ -3,6 +3,11 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  imageUrl: z.string().url(),
+})
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -21,8 +26,9 @@ export async function POST(request: NextRequest) {
     const limit = checkRateLimit('rembg', user.id, 30)
     if (!limit.allowed) return rateLimitResponse(limit)
 
-    const { imageUrl } = await request.json() as { imageUrl: string }
-    if (!imageUrl) return NextResponse.json({ error: 'imageUrl required' }, { status: 400 })
+    const parsed = bodySchema.safeParse(await request.json())
+    if (!parsed.success) return NextResponse.json({ error: 'imageUrl (valid URL) required', code: 'VALIDATION_ERROR' }, { status: 400 })
+    const { imageUrl } = parsed.data
     if (!process.env.FAL_KEY) return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
 
     // BiRefNet v2 — drop-in upgrade over v1 with sharper edge detection

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
+import { z } from 'zod'
 import {
   detectLanguage,
   getStyleVisualGuide,
@@ -255,14 +256,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })
     }
 
-    const body = await request.json() as {
-      script: string; style: string; duration?: string; title?: string; description?: string
+    const storyboardSchema = z.object({
+      script: z.string().min(1),
+      style: z.string().min(1),
+      duration: z.string().optional(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+    })
+    const parsed = storyboardSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'script and style are required', code: 'VALIDATION_ERROR' }, { status: 400 })
     }
-    const { script, style, duration = 'auto', title, description } = body
-
-    if (!script || !style) {
-      return NextResponse.json({ error: 'script and style are required' }, { status: 400 })
-    }
+    const { script, style, duration = 'auto', title, description } = parsed.data
 
     // ── Plan: word count → scene count → chunk count (no caps) ──────────
     // Le script ne doit JAMAIS être raccourci. La durée de la vidéo est

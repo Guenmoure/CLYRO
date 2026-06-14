@@ -23,14 +23,30 @@ export function AssetCard({ url, filename, tags, onDelete, onClick, className }:
   return (
     <div className={cn('group relative aspect-square overflow-hidden rounded-xl border border-border bg-muted', className)}>
       {url ? (
-        // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
-        <img
-          src={url}
-          alt={filename}
-          onClick={onClick}
-          className={cn('w-full h-full object-cover transition-transform', onClick && 'cursor-zoom-in group-hover:scale-105')}
-          loading="lazy"
-        />
+        onClick ? (
+          <button
+            type="button"
+            onClick={onClick}
+            aria-label={filename}
+            className="w-full h-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset rounded-xl"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={url}
+              alt={filename}
+              className="w-full h-full object-cover transition-transform group-hover:scale-105 rounded-xl"
+              loading="lazy"
+            />
+          </button>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={url}
+            alt={filename}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        )
       ) : (
         <div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-[--text-muted]">
           {t('bk_unavailable')}

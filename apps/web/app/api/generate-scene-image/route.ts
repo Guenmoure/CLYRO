@@ -4,6 +4,12 @@ import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
 import { applyAntiHallucination } from '@clyro/shared'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  prompt: z.string().min(1),
+  style: z.string().min(1),
+})
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -41,12 +47,11 @@ export async function POST(request: NextRequest) {
     const limit = checkRateLimit('generate-scene-image', user.id, 60)
     if (!limit.allowed) return rateLimitResponse(limit)
 
-    const body = await request.json() as { prompt: string; style: string }
-    const { prompt, style } = body
-
-    if (!prompt || !style) {
-      return NextResponse.json({ error: 'prompt and style are required' }, { status: 400 })
+    const parsed = bodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'prompt and style are required', code: 'VALIDATION_ERROR' }, { status: 400 })
     }
+    const { prompt, style } = parsed.data
 
     if (!process.env.FAL_KEY) {
       return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })

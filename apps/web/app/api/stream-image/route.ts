@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  prompt: z.string().min(1),
+  style: z.string().min(1),
+  seed: z.number().int().optional(),
+  styleReferenceUrl: z.string().url().optional(),
+})
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -52,14 +60,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
   }
 
-  const body = await request.json() as {
-    prompt: string; style: string; seed?: number; styleReferenceUrl?: string
+  const parsed = bodySchema.safeParse(await request.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'prompt and style are required', code: 'VALIDATION_ERROR' }, { status: 400 })
   }
-  const { prompt, style, seed } = body
-
-  if (!prompt || !style) {
-    return NextResponse.json({ error: 'prompt and style are required' }, { status: 400 })
-  }
+  const { prompt, style, seed } = parsed.data
 
   const styleSuffix = (STYLE_PREFIXES[style] ?? STYLE_PREFIXES['cinematique']).replace(/,$/, '')
   const fullPrompt = `${prompt}, ${styleSuffix}`

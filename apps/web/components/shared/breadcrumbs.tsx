@@ -36,7 +36,7 @@ export function Breadcrumbs({ items, className, homeLink = true }: BreadcrumbsPr
           <Link
             href="/dashboard"
             aria-label="Retour au dashboard"
-            className="inline-flex items-center justify-center w-7 h-7 rounded-lg hover:bg-muted hover:text-foreground transition-colors"
+            className="inline-flex items-center justify-center w-7 h-7 rounded-lg hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <Home size={13} />
           </Link>
@@ -51,7 +51,7 @@ export function Breadcrumbs({ items, className, homeLink = true }: BreadcrumbsPr
             {crumb.href && !isLast ? (
               <Link
                 href={crumb.href}
-                className="hover:text-foreground transition-colors"
+                className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded"
               >
                 {crumb.label}
               </Link>
