@@ -13,20 +13,22 @@ export default function StudioIndexPage() {
   const { t } = useLanguage()
   const [projects, setProjects] = useState<StudioProject[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     async function load() {
       try {
         const supabase = createBrowserClient()
         const { data: { user } } = await supabase.auth.getUser()
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('studio_projects')
           .select('*')
           .eq('user_id', user?.id ?? '')
           .order('created_at', { ascending: false })
+        if (error) throw error
         setProjects((data ?? []) as StudioProject[])
       } catch {
-        setProjects([])
+        setLoadError(true)
       } finally {
         setLoading(false)
       }
@@ -48,6 +50,20 @@ export default function StudioIndexPage() {
     return (
       <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
         <Loader2 size={24} className="animate-spin text-[--text-muted]" />
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <AlertCircle size={28} className="mx-auto text-error" />
+          <p className="font-display text-sm font-semibold text-foreground">{t('loadError')}</p>
+          <button type="button" onClick={() => window.location.reload()} className="font-body text-xs text-primary hover:underline">
+            {t('retry')}
+          </button>
+        </div>
       </div>
     )
   }

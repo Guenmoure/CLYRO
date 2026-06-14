@@ -21,8 +21,10 @@ export async function GET(
   const { id } = params
   const token = req.nextUrl.searchParams.get('token')
 
-  if (!token) {
-    return NextResponse.json({ error: 'Missing token' }, { status: 401 })
+  // Reject missing or obviously malformed tokens before hitting upstream.
+  // Full JWT validation happens in the upstream Express authMiddleware.
+  if (!token || token.split('.').length !== 3) {
+    return NextResponse.json({ error: 'Missing or invalid token' }, { status: 401 })
   }
 
   const upstreamUrl = `${API_URL}/api/v1/videos/${id}/status?token=${encodeURIComponent(token)}`

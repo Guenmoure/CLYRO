@@ -22,26 +22,25 @@ export default function MotionIndexPage() {
   const { t } = useLanguage()
   const [videos, setVideos] = useState<MotionVideo[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     async function load() {
       try {
         const supabase = createBrowserClient()
         const { data: { user } } = await supabase.auth.getUser()
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('videos')
           .select('id, title, status, output_url, thumbnail_url, created_at, duration_seconds')
           .eq('user_id', user?.id ?? '')
-          // Both legacy 'motion' (DynamicComposition) and current 'motion_design'
-          // (F2 MotionComposition agency-quality) videos belong to the same
-          // product surface — surface both in this list.
           .in('module', ['motion', 'motion_design'])
           .neq('status', 'draft')
           .order('created_at', { ascending: false })
           .limit(60)
+        if (error) throw error
         setVideos((data ?? []) as MotionVideo[])
       } catch {
-        setVideos([])
+        setLoadError(true)
       } finally {
         setLoading(false)
       }
@@ -61,6 +60,20 @@ export default function MotionIndexPage() {
     return (
       <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
         <Loader2 size={24} className="animate-spin text-[--text-muted]" />
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <AlertCircle size={28} className="mx-auto text-error" />
+          <p className="font-display text-sm font-semibold text-foreground">{t('loadError')}</p>
+          <button type="button" onClick={() => window.location.reload()} className="font-body text-xs text-primary hover:underline">
+            {t('retry')}
+          </button>
+        </div>
       </div>
     )
   }
@@ -226,12 +239,11 @@ function formatDuration(seconds: number): string {
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return '<1m'
+  if (mins < 60) return `${mins}m`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
+  if (hrs < 24) return `${hrs}h`
   const days = Math.floor(hrs / 24)
-  if (days === 1) return 'yesterday'
-  if (days < 30) return `${days}d ago`
-  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+  if (days < 30) return `${days}d`
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }

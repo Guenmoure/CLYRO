@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Palette, Sparkles, Clapperboard, Star } from 'lucide-react'
+import { Plus, Palette, Sparkles, Clapperboard, Star, AlertCircle } from 'lucide-react'
 import { Loader2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -23,21 +23,23 @@ export default function BrandIndexPage() {
   const { t } = useLanguage()
   const [kits, setKits] = useState<BrandKit[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     async function load() {
       try {
         const supabase = createBrowserClient()
         const { data: { user } } = await supabase.auth.getUser()
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('brand_kits')
           .select('id, name, primary_color, secondary_color, is_default, logo_url, created_at')
           .eq('user_id', user?.id ?? '')
           .order('is_default', { ascending: false })
           .order('created_at', { ascending: false })
+        if (error) throw error
         setKits((data ?? []) as BrandKit[])
       } catch {
-        setKits([])
+        setLoadError(true)
       } finally {
         setLoading(false)
       }
@@ -49,6 +51,20 @@ export default function BrandIndexPage() {
     return (
       <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
         <Loader2 size={24} className="animate-spin text-[--text-muted]" />
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <AlertCircle size={28} className="mx-auto text-error" />
+          <p className="font-display text-sm font-semibold text-foreground">{t('loadError')}</p>
+          <button type="button" onClick={() => window.location.reload()} className="font-body text-xs text-primary hover:underline">
+            {t('retry')}
+          </button>
+        </div>
       </div>
     )
   }
@@ -221,12 +237,11 @@ function BrandKitCard({
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return '<1m'
+  if (mins < 60) return `${mins}m`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
+  if (hrs < 24) return `${hrs}h`
   const days = Math.floor(hrs / 24)
-  if (days === 1) return 'yesterday'
-  if (days < 30) return `${days}d ago`
-  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+  if (days < 30) return `${days}d`
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
