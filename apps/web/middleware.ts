@@ -10,6 +10,14 @@ const PROTECTED_ROUTES = [
   '/history',
   '/voices',
   '/settings',
+  '/brand',
+  '/studio',
+  '/projects',
+  '/analytics',
+  '/autopilot',
+  '/drafts',
+  '/assets',
+  '/templates',
 ]
 
 // Routes accessibles uniquement en non-authentifié (redirigent vers /dashboard si connecté)
