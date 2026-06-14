@@ -41,9 +41,9 @@ export function LoginForm() {
         // separately because acting on it (resending) is the right remedy.
         const raw = (signInError.message ?? '').toLowerCase()
         if (raw.includes('email not confirmed') || raw.includes('not confirmed')) {
-          setError('Please confirm your email address before signing in.')
+          setError(t('auth_emailNotConfirmed'))
         } else {
-          setError('Invalid email or password.')
+          setError(t('auth_invalidCredentials'))
         }
         return
       }
@@ -51,7 +51,7 @@ export function LoginForm() {
       router.push(redirectTo)
       router.refresh()
     } catch {
-      setError('An error occurred. Please try again.')
+      setError(t('auth_genericError'))
     } finally {
       setLoading(false)
     }
@@ -94,7 +94,7 @@ export function LoginForm() {
       {/* Divider */}
       <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-border" />
-        <span className="font-mono text-xs text-[--text-muted] uppercase tracking-widest">or</span>
+        <span className="font-mono text-xs text-[--text-muted] uppercase tracking-widest">{t('or')}</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
@@ -117,7 +117,7 @@ export function LoginForm() {
           <div className="flex items-center justify-between mb-2">
             <label htmlFor="login-password" className="label-mono">{t('password')}</label>
             <a href="/forgot-password" className="text-xs font-body text-primary hover:text-primary/80 transition-colors">
-              Forgot password?
+              {t('forgotPassword')}
             </a>
           </div>
           <input

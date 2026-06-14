@@ -120,7 +120,7 @@ export default async function WhiteLabelPage() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={defaultKit.logo_url}
-                  alt=""
+                  alt={`${defaultKit.name} logo`}
                   className="w-11 h-11 rounded-lg object-contain bg-background border border-border shrink-0"
                 />
               ) : (

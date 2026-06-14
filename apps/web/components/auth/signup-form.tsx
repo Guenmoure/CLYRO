@@ -74,7 +74,7 @@ export function SignupForm() {
           return
         }
         if (raw.includes('password') && raw.includes('short')) {
-          setError('Password must be at least 8 characters.')
+          setError(t('sec_password_too_short'))
           return
         }
         setError(t('errorOccurred'))

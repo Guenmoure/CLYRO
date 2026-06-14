@@ -129,6 +129,9 @@ export const translations = {
     logout: 'Sign out',
     password: 'Password',
     newPassword: 'New password',
+    auth_invalidCredentials: 'Invalid email or password.',
+    auth_emailNotConfirmed: 'Please confirm your email address before signing in.',
+    auth_genericError: 'An error occurred. Please try again.',
 
     // User menu
     userSettings: 'Settings',
@@ -2411,6 +2414,9 @@ export const translations = {
     logout: 'Déconnexion',
     password: 'Mot de passe',
     newPassword: 'Nouveau mot de passe',
+    auth_invalidCredentials: 'E-mail ou mot de passe invalide.',
+    auth_emailNotConfirmed: 'Veuillez confirmer votre adresse e-mail avant de vous connecter.',
+    auth_genericError: 'Une erreur est survenue. Veuillez réessayer.',
 
     userSettings: 'Paramètres',
     userLogout: 'Déconnexion',
@@ -4687,6 +4693,9 @@ export const translations = {
     logout: 'Cerrar sesión',
     password: 'Contraseña',
     newPassword: 'Nueva contraseña',
+    auth_invalidCredentials: 'Correo electrónico o contraseña inválidos.',
+    auth_emailNotConfirmed: 'Confirma tu dirección de correo electrónico antes de iniciar sesión.',
+    auth_genericError: 'Ocurrió un error. Inténtalo de nuevo.',
 
     userSettings: 'Configuración',
     userLogout: 'Cerrar sesión',
@@ -6916,6 +6925,9 @@ export const translations = {
     logout: 'Abmelden',
     password: 'Passwort',
     newPassword: 'Neues Passwort',
+    auth_invalidCredentials: 'Ungültige E-Mail oder Passwort.',
+    auth_emailNotConfirmed: 'Bitte bestätige deine E-Mail-Adresse vor der Anmeldung.',
+    auth_genericError: 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.',
 
     userSettings: 'Einstellungen',
     userLogout: 'Abmelden',
@@ -9145,6 +9157,9 @@ export const translations = {
     logout: 'Sair',
     password: 'Senha',
     newPassword: 'Nova senha',
+    auth_invalidCredentials: 'E-mail ou senha inválidos.',
+    auth_emailNotConfirmed: 'Confirme seu endereço de e-mail antes de fazer login.',
+    auth_genericError: 'Ocorreu um erro. Tente novamente.',
 
     userSettings: 'Configurações',
     userLogout: 'Sair',
