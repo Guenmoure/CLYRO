@@ -37,9 +37,8 @@ export async function GET(
       duplex: 'half',
     })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Upstream unreachable'
-    console.error('[/api/videos/status proxy] fetch error:', msg)
-    return NextResponse.json({ error: msg }, { status: 502 })
+    console.error('[/api/videos/status proxy] fetch error:', err)
+    return NextResponse.json({ error: 'Upstream unreachable', code: 'PROXY_ERROR' }, { status: 502 })
   }
 
   if (!upstreamRes.ok || !upstreamRes.body) {

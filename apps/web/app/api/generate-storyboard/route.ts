@@ -382,7 +382,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[generate-storyboard]', err)
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Storyboard generation failed', code: 'GENERATION_ERROR' },
+      { error: 'Storyboard generation failed', code: 'GENERATION_ERROR' },
       { status: 500 }
     )
   }

@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[generate-scene-image]', err)
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Image generation failed' },
+      { error: 'Image generation failed', code: 'GENERATION_ERROR' },
       { status: 500 }
     )
   }

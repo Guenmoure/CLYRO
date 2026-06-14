@@ -81,7 +81,8 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[brand-background] Error:', err)
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Background edit failed', code: 'GENERATION_ERROR' },
+      // Generic message only — err.message can leak fal.ai account details.
+      { error: 'Background edit failed', code: 'GENERATION_ERROR' },
       { status: 500 }
     )
   }
