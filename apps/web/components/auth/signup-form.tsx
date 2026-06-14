@@ -148,6 +148,7 @@ export function SignupForm() {
             id="signup-name"
             name="full_name"
             type="text"
+            autoComplete="name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="John Doe"
@@ -161,6 +162,7 @@ export function SignupForm() {
             id="signup-email"
             name="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
@@ -174,6 +176,7 @@ export function SignupForm() {
             id="signup-password"
             name="password"
             type="password"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={t('minChars')}

@@ -666,7 +666,7 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-between bg-muted border border-border rounded-xl px-4 py-3 mt-6">
                   <button
                     type="button"
-                    onClick={() => setPage((p) => p - 1)}
+                    onClick={() => { setPage((p) => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                     disabled={page === 0}
                     className="flex items-center gap-1.5 text-xs font-medium text-[--text-muted] disabled:text-[--text-disabled] disabled:cursor-not-allowed hover:text-foreground transition-colors"
                   >
@@ -677,7 +677,7 @@ export default function ProjectsPage() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setPage((p) => p + 1)}
+                    onClick={() => { setPage((p) => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                     disabled={!hasMore}
                     className="flex items-center gap-1.5 text-xs font-medium text-[--text-muted] disabled:text-[--text-disabled] disabled:cursor-not-allowed hover:text-foreground transition-colors"
                   >
