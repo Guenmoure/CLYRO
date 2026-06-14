@@ -10,38 +10,48 @@ import {
 import { createBrowserClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/ui/Logo'
+import { useLanguage } from '@/lib/i18n'
 import type { User } from '@supabase/supabase-js'
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Home',      icon: Home       },
-  { href: '/projects',  label: 'Projects',  icon: FolderOpen },
-  { href: '/faceless',  label: 'Faceless',  icon: Video      },
-  { href: '/motion',    label: 'Motion',    icon: Wand2      },
-  { href: '/voices',    label: 'Voiceover', icon: Mic2       },
-  { href: '/brand',     label: 'Brand Kit', icon: Palette    },
-  { href: '/drafts',    label: 'Drafts',    icon: PenLine    },
-]
+  { href: '/dashboard', labelKey: 'nav_home',      icon: Home       },
+  { href: '/projects',  labelKey: 'nav_projects',  icon: FolderOpen },
+  { href: '/faceless',  labelKey: 'nav_faceless',  icon: Video      },
+  { href: '/motion',    labelKey: 'nav_motion',    icon: Wand2      },
+  { href: '/voices',    labelKey: 'nav_voiceover', icon: Mic2       },
+  { href: '/brand',     labelKey: 'nav_brandKit',  icon: Palette    },
+  { href: '/drafts',    labelKey: 'nav_drafts',    icon: PenLine    },
+] as const
 
 function UserMenu({ user, plan, onSignOut }: {
   user: User
   plan: string
   onSignOut: () => void
 }) {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (!open) return
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-    if (open) document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [open])
 
   const name    = user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'User'
   const email   = user.email ?? ''
   const initials = name.charAt(0).toUpperCase()
-  const planLabel = plan === 'studio' ? 'Studio' : plan === 'pro' ? 'Pro' : 'Free plan'
+  const planLabel = plan === 'studio' ? 'Studio' : plan === 'pro' ? 'Pro' : t('freePlan')
 
   return (
     <div ref={ref} className="relative w-full px-2 pt-2 border-t border-border">
@@ -83,12 +93,12 @@ function UserMenu({ user, plan, onSignOut }: {
 
           {/* Actions */}
           <div className="py-1.5">
-            <MenuItem icon={<Gem size={15} />} label="Upgrade Plan" gold onClick={() => setOpen(false)} href="/settings?tab=plan" />
-            <MenuItem icon={<Settings size={15} />} label="Settings" onClick={() => setOpen(false)} href="/settings" />
+            <MenuItem icon={<Gem size={15} />} label={t('upgradePlan')} gold onClick={() => setOpen(false)} href="/settings?tab=plan" />
+            <MenuItem icon={<Settings size={15} />} label={t('settings')} onClick={() => setOpen(false)} href="/settings" />
           </div>
 
           <div className="border-t border-border py-1.5">
-            <MenuItem icon={<HelpCircle size={15} />} label="Help" chevron onClick={() => setOpen(false)} href="mailto:support@clyro.app" />
+            <MenuItem icon={<HelpCircle size={15} />} label={t('help')} chevron onClick={() => setOpen(false)} href="mailto:support@clyro.app" />
           </div>
 
           <div className="border-t border-border py-1.5">
@@ -98,7 +108,7 @@ function UserMenu({ user, plan, onSignOut }: {
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[--text-muted] hover:bg-border hover:text-foreground transition-colors"
             >
               <LogOut size={15} className="text-[--text-muted]" />
-              Log out
+              {t('logout')}
             </button>
           </div>
         </div>
@@ -136,6 +146,7 @@ function MenuItem({ icon, label, gold, chevron, href, onClick }: {
 }
 
 export function Sidebar() {
+  const { t } = useLanguage()
   const pathname = usePathname()
   const router   = useRouter()
   const supabase = createBrowserClient()
@@ -187,7 +198,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              title={item.label}
+              title={t(item.labelKey)}
               className={cn(
                 'group relative flex flex-col items-center justify-center gap-1 w-full py-2.5 px-1 rounded-xl transition-all duration-150',
                 isActive
@@ -207,7 +218,7 @@ export function Sidebar() {
                 'text-[11px] font-medium leading-none tracking-wide text-center truncate w-full px-0.5',
                 isActive ? 'text-blue-400' : 'text-[--text-muted] group-hover:text-foreground'
               )}>
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </Link>
           )

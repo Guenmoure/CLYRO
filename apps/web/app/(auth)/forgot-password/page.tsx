@@ -7,8 +7,10 @@ import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/button'
 import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 
 export default function ForgotPasswordPage() {
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -38,7 +40,7 @@ export default function ForgotPasswordPage() {
       <div className="flex flex-col items-center gap-3">
         <Logo variant="full" size="lg" href={false} />
         <p className="text-[--text-muted] font-body text-sm">
-          Reset your password
+          {t('resetYourPassword')}
         </p>
       </div>
 
@@ -51,21 +53,21 @@ export default function ForgotPasswordPage() {
             </div>
             <div>
               <h2 className="font-display text-xl font-semibold text-foreground">
-                Check your email
+                {t('checkYourEmail')}
               </h2>
               <p className="text-[--text-secondary] text-sm mt-2 font-body max-w-xs">
-                We sent a password reset link to <strong className="text-foreground">{email}</strong>.
-                Click the link in the email to reset your password.
+                {t('resetEmailSent')} <strong className="text-foreground">{email}</strong>.
+                {' '}{t('resetEmailClick')}
               </p>
             </div>
             <div className="flex flex-col gap-2 w-full mt-2">
               <Button variant="primary" size="md" onClick={() => setSent(false)}>
-                Try another email
+                {t('tryAnotherEmail')}
               </Button>
               <Button variant="ghost" size="md" asChild>
                 <Link href="/login">
                   <ArrowLeft size={14} className="mr-1.5" />
-                  Back to login
+                  {t('backToLogin')}
                 </Link>
               </Button>
             </div>
@@ -74,17 +76,17 @@ export default function ForgotPasswordPage() {
           <>
             <div className="mb-6">
               <h2 className="font-display text-xl font-semibold text-foreground">
-                Forgot password?
+                {t('forgotPassword')}
               </h2>
               <p className="text-[--text-secondary] text-sm mt-1 font-body">
-                Enter your email address and we'll send you a reset link.
+                {t('forgotPasswordDesc')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block font-body text-sm font-medium text-foreground mb-1.5">
-                  Email address
+                  {t('emailAddress')}
                 </label>
                 <div className="relative">
                   <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted]" />
@@ -96,6 +98,7 @@ export default function ForgotPasswordPage() {
                     placeholder="you@example.com"
                     required
                     autoFocus
+                    autoComplete="email"
                     className="w-full rounded-xl border border-border bg-input px-3 py-2.5 pl-10 font-body text-sm text-foreground placeholder:text-[--text-muted] focus:outline-none focus:ring-2 focus:ring-ring/50 transition-shadow"
                   />
                 </div>
@@ -109,9 +112,9 @@ export default function ForgotPasswordPage() {
                 disabled={loading || !email.trim()}
               >
                 {loading ? (
-                  <><Loader2 size={14} className="animate-spin mr-1.5" /> Sending...</>
+                  <><Loader2 size={14} className="animate-spin mr-1.5" /> {t('sending')}</>
                 ) : (
-                  'Send reset link'
+                  t('sendResetLink')
                 )}
               </Button>
             </form>
@@ -122,7 +125,7 @@ export default function ForgotPasswordPage() {
                 className="inline-flex items-center gap-1.5 text-sm font-body text-[--text-secondary] hover:text-foreground transition-colors"
               >
                 <ArrowLeft size={14} />
-                Back to login
+                {t('backToLogin')}
               </Link>
             </div>
           </>

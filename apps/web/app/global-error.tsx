@@ -29,11 +29,6 @@ export default function GlobalError({
               Code : {error.digest}
             </p>
           )}
-          {error.message && (
-            <p style={{ fontSize: 12, color: '#71717a', margin: '0 0 24px', fontFamily: 'monospace' }}>
-              {error.message}
-            </p>
-          )}
           <button
             onClick={() => reset()}
             style={{
