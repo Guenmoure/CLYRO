@@ -492,11 +492,11 @@ function BrandNewPageInner() {
     if (!initialDraftId || restored) return
     async function loadDraft() {
       const supabase = createBrowserClient()
-      const { data } = await (supabase
+      const { data } = await supabase
         .from('videos')
         .select('wizard_step, wizard_state, title')
-        .eq('id', initialDraftId)
-        .single() as Promise<any>)
+        .eq('id', initialDraftId!)
+        .single()
       if (!data) return
       setRestored(true)
       const s = data.wizard_state as Record<string, any>

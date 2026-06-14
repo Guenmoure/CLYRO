@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
+import type { Json } from '@/lib/database.types'
 
 const AUTOSAVE_MS = 30_000   // 30 s interval
 
@@ -142,7 +143,7 @@ export function useDraftSave({
         .select('plan')
         .eq('id', session.user.id)
         .single()
-      const isPro = profile?.plan === 'pro' || profile?.plan === 'business'
+      const isPro = profile?.plan === 'pro' || profile?.plan === 'creator' || profile?.plan === 'studio'
       const expiresAt = isPro
         ? null
         : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -154,7 +155,7 @@ export function useDraftSave({
         title:              t || 'Sans titre',
         status:             'draft' as const,
         wizard_step:        step + 1,
-        wizard_state:       st,
+        wizard_state:       st as Record<string, Json>,
         draft_expires_at:   expiresAt,
         updated_at:         new Date().toISOString(),
       }

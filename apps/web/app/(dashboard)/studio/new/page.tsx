@@ -147,11 +147,11 @@ function StudioNewPageInner() {
     async function loadDraft() {
       try {
         const supabase = createBrowserClient()
-        const { data, error } = await (supabase
+        const { data, error } = await supabase
           .from('videos')
           .select('wizard_state, title')
-          .eq('id', initialDraftId)
-          .single() as Promise<any>)
+          .eq('id', initialDraftId!)
+          .single()
         if (error) {
           console.error('[studio/new] Failed to load draft:', error.message)
           return

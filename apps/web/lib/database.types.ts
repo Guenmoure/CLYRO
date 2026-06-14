@@ -13,61 +13,111 @@ export interface Database {
           id: string
           full_name: string | null
           avatar_url: string | null
-          plan: 'free' | 'starter' | 'studio'
+          plan: 'free' | 'starter' | 'pro' | 'creator' | 'studio'
           credits: number
+          monthly_credits: number
+          subscription_renewed_at: string | null
           created_at: string
+          updated_at: string
         }
         Insert: {
           id: string
           full_name?: string | null
           avatar_url?: string | null
-          plan?: 'free' | 'starter' | 'studio'
+          plan?: 'free' | 'starter' | 'pro' | 'creator' | 'studio'
           credits?: number
+          monthly_credits?: number
+          subscription_renewed_at?: string | null
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           full_name?: string | null
           avatar_url?: string | null
-          plan?: 'free' | 'starter' | 'studio'
+          plan?: 'free' | 'starter' | 'pro' | 'creator' | 'studio'
           credits?: number
+          monthly_credits?: number
+          subscription_renewed_at?: string | null
           created_at?: string
+          updated_at?: string
         }
+        Relationships: []
       }
       videos: {
         Row: {
           id: string
           user_id: string
-          module: 'faceless' | 'motion'
+          module: 'faceless' | 'motion' | 'motion_design' | 'brand' | 'studio'
           style: string
           title: string
-          status: 'pending' | 'processing' | 'storyboard' | 'visuals' | 'audio' | 'assembly' | 'done' | 'error'
+          status: 'draft' | 'pending' | 'processing' | 'generating' | 'storyboard' | 'visuals' | 'audio' | 'animation' | 'assembly' | 'done' | 'completed' | 'error' | 'cancelled'
           output_url: string | null
+          video_url: string | null
           metadata: Json
+          thumbnail_url: string | null
+          duration_seconds: number | null
+          created_by: string | null
+          animation_mode: 'storyboard' | 'fast' | 'pro'
+          animation_overrides: Json
+          wizard_step: number
+          wizard_state: Json
+          draft_expires_at: string | null
+          folder_id: string | null
+          share_token: string | null
+          share_token_expires_at: string | null
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          module: 'faceless' | 'motion'
-          style: string
-          title: string
-          status?: 'pending' | 'processing' | 'storyboard' | 'visuals' | 'audio' | 'assembly' | 'done' | 'error'
+          module: 'faceless' | 'motion' | 'motion_design' | 'brand' | 'studio'
+          style?: string
+          title?: string
+          status?: 'draft' | 'pending' | 'processing' | 'generating' | 'storyboard' | 'visuals' | 'audio' | 'animation' | 'assembly' | 'done' | 'completed' | 'error' | 'cancelled'
           output_url?: string | null
+          video_url?: string | null
           metadata?: Json
+          thumbnail_url?: string | null
+          duration_seconds?: number | null
+          created_by?: string | null
+          animation_mode?: 'storyboard' | 'fast' | 'pro'
+          animation_overrides?: Json
+          wizard_step?: number
+          wizard_state?: Json
+          draft_expires_at?: string | null
+          folder_id?: string | null
+          share_token?: string | null
+          share_token_expires_at?: string | null
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          module?: 'faceless' | 'motion'
+          module?: 'faceless' | 'motion' | 'motion_design' | 'brand' | 'studio'
           style?: string
           title?: string
-          status?: 'pending' | 'processing' | 'storyboard' | 'visuals' | 'audio' | 'assembly' | 'done' | 'error'
+          status?: 'draft' | 'pending' | 'processing' | 'generating' | 'storyboard' | 'visuals' | 'audio' | 'animation' | 'assembly' | 'done' | 'completed' | 'error' | 'cancelled'
           output_url?: string | null
+          video_url?: string | null
           metadata?: Json
+          thumbnail_url?: string | null
+          duration_seconds?: number | null
+          created_by?: string | null
+          animation_mode?: 'storyboard' | 'fast' | 'pro'
+          animation_overrides?: Json
+          wizard_step?: number
+          wizard_state?: Json
+          draft_expires_at?: string | null
+          folder_id?: string | null
+          share_token?: string | null
+          share_token_expires_at?: string | null
           created_at?: string
+          updated_at?: string
         }
+        Relationships: []
       }
       cloned_voices: {
         Row: {
@@ -91,6 +141,7 @@ export interface Database {
           elevenlabs_voice_id?: string
           created_at?: string
         }
+        Relationships: []
       }
       payments: {
         Row: {
@@ -102,6 +153,7 @@ export interface Database {
           status: 'pending' | 'success' | 'failed'
           metadata: Json
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -112,6 +164,7 @@ export interface Database {
           status?: 'pending' | 'success' | 'failed'
           metadata?: Json
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -122,7 +175,9 @@ export interface Database {
           status?: 'pending' | 'success' | 'failed'
           metadata?: Json
           created_at?: string
+          updated_at?: string
         }
+        Relationships: []
       }
       voice_favorites: {
         Row: {
@@ -140,6 +195,7 @@ export interface Database {
           voice_id?: string
           created_at?: string
         }
+        Relationships: []
       }
       brand_kits: {
         Row: {
@@ -151,6 +207,19 @@ export interface Database {
           secondary_color: string | null
           font_family: string | null
           is_default: boolean
+          url: string | null
+          tagline: string | null
+          brand_values: string[]
+          brand_aesthetic: string[]
+          brand_tone_of_voice: string[]
+          business_overview: string | null
+          location: string | null
+          phone: string | null
+          business_hours: string | null
+          keywords: string[]
+          social_links: Json
+          cta_links: Json
+          testimonials: string | null
           created_at: string
           updated_at: string
         }
@@ -163,6 +232,19 @@ export interface Database {
           secondary_color?: string | null
           font_family?: string | null
           is_default?: boolean
+          url?: string | null
+          tagline?: string | null
+          brand_values?: string[]
+          brand_aesthetic?: string[]
+          brand_tone_of_voice?: string[]
+          business_overview?: string | null
+          location?: string | null
+          phone?: string | null
+          business_hours?: string | null
+          keywords?: string[]
+          social_links?: Json
+          cta_links?: Json
+          testimonials?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -175,9 +257,23 @@ export interface Database {
           secondary_color?: string | null
           font_family?: string | null
           is_default?: boolean
+          url?: string | null
+          tagline?: string | null
+          brand_values?: string[]
+          brand_aesthetic?: string[]
+          brand_tone_of_voice?: string[]
+          business_overview?: string | null
+          location?: string | null
+          phone?: string | null
+          business_hours?: string | null
+          keywords?: string[]
+          social_links?: Json
+          cta_links?: Json
+          testimonials?: string | null
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       studio_projects: {
         Row: {
@@ -243,6 +339,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       brand_assets: {
         Row: {
@@ -275,6 +372,31 @@ export interface Database {
           image_url?: string
           created_at?: string
         }
+        Relationships: []
+      }
+      folders: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: Record<string, never>

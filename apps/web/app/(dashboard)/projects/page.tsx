@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
+import type { Database } from '@/lib/database.types'
 import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { DraftsSection } from '@/components/dashboard/DraftsSection'
 import { toast } from '@/components/ui/toast'
@@ -131,12 +132,12 @@ export default function ProjectsPage() {
         if (moduleFilter === 'motion') {
           query = query.in('module', ['motion', 'motion_design'])
         } else {
-          query = query.eq('module', moduleFilter)
+          query = query.eq('module', moduleFilter as Database['public']['Tables']['videos']['Row']['module'])
         }
       }
 
       if (statusMatch && statusMatch.length > 0) {
-        query = query.in('status', statusMatch)
+        query = query.in('status', statusMatch as Database['public']['Tables']['videos']['Row']['status'][])
       }
 
       if (sortOption === 'recent') {

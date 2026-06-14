@@ -501,6 +501,7 @@ function StylePickerDropdown({ value, onChange, onClose }: {
   onChange: (s: FacelessStyle) => void
   onClose: () => void
 }) {
+  const { t } = useLanguage()
   return (
     <div className="absolute left-0 top-full mt-2 z-50 w-[min(480px,calc(100vw-2.5rem))] bg-card border border-border rounded-2xl shadow-xl p-4 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
