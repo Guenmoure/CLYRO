@@ -74,7 +74,7 @@ export function LoginForm() {
     })
 
     if (oauthError) {
-      setError(oauthError.message)
+      setError(t('auth_genericError'))
       setLoading(false)
     }
   }
@@ -85,7 +85,7 @@ export function LoginForm() {
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-3 bg-muted hover:bg-muted/80 border border-border text-foreground font-body font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50"
+        className="w-full flex items-center justify-center gap-3 bg-muted hover:bg-muted/80 border border-border text-foreground font-body font-medium py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <GoogleIcon />
         {t('continueWithGoogle')}
@@ -143,7 +143,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-grad-primary text-white font-display font-semibold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="w-full bg-grad-primary text-white font-display font-semibold py-3 px-4 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           {loading ? t('signingIn') : t('signIn')}
         </button>

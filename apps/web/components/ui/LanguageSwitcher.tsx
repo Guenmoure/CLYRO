@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Globe } from 'lucide-react'
 import { useLanguage, type Language } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -18,13 +18,23 @@ export function LanguageSwitcher() {
   const [open, setOpen] = useState(false)
 
   const currentLang = LANGUAGES.find((l) => l.code === lang)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   return (
-    <div className="relative">
+    <div ref={ref} className="relative">
       {/* Trigger button */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 h-9 px-2.5 rounded-lg border border-border/50 bg-card/40 hover:bg-card/60 text-[--text-secondary] hover:text-foreground transition-all group"
+        className="flex items-center gap-1.5 h-9 px-2.5 rounded-lg border border-border/50 bg-card/40 hover:bg-card/60 text-[--text-secondary] hover:text-foreground transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         aria-label="Language switcher"
         aria-expanded={open}
       >
@@ -51,7 +61,7 @@ export function LanguageSwitcher() {
                   setOpen(false)
                 }}
                 className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-body transition-colors text-left border-b border-border/30 last:border-b-0',
+                  'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-body transition-colors text-left border-b border-border/30 last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
                   lang === lang_item.code
                     ? 'bg-brand/10 text-primary font-semibold'
                     : 'text-[--text-secondary] hover:text-foreground hover:bg-muted/50',

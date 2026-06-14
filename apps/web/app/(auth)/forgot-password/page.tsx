@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
       if (error) throw error
       setSent(true)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Something went wrong')
+      toast.error(t('errorOccurred'))
     } finally {
       setLoading(false)
     }

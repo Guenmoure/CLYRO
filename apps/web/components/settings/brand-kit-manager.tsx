@@ -84,8 +84,8 @@ function BrandKitForm({
 
       toast.success(initial?.id ? 'Brand kit updated.' : 'Brand kit created.')
       onSave(result)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error saving.')
+    } catch {
+      toast.error('Error saving.')
     } finally {
       setSaving(false)
     }

@@ -50,13 +50,15 @@ export function useUser(): UseUserReturn {
         .single()
 
       if (profileError) {
-        setError(profileError.message)
+        console.error('[useUser] profile fetch error:', profileError.message)
+        setError('profile_load_failed')
         return
       }
 
       setProfile(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur inconnue')
+      console.error('[useUser] unexpected error:', err)
+      setError('profile_load_failed')
     } finally {
       setLoading(false)
     }
