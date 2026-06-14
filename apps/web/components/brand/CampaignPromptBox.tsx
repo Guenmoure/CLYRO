@@ -108,7 +108,7 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
                     p.id === productId && 'bg-muted',
                   )}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.image_url} alt="" className="w-8 h-8 rounded-md object-cover border border-border" />
+                  <img src={p.image_url} alt={p.name} className="w-8 h-8 rounded-md object-cover border border-border" />
                   <span className="font-body text-xs text-foreground truncate">{p.name}</span>
                 </button>
               ))}
@@ -144,7 +144,7 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
                     )}>
                     {a.url && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={a.url} alt="" className="w-full h-full object-cover" />
+                      <img src={a.url} alt={a.filename || ''} className="w-full h-full object-cover" />
                     )}
                     {selected && (
                       <span className="absolute top-1 right-1 rounded-full bg-primary text-white text-[9px] w-4 h-4 flex items-center justify-center">

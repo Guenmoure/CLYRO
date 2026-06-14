@@ -168,7 +168,7 @@ export default function DraftsPage() {
             type="button"
             onClick={() => setFilter(f.value)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-all duration-150',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
               filter === f.value
                 ? 'bg-card text-foreground shadow-sm'
                 : 'text-[--text-muted] hover:text-foreground',

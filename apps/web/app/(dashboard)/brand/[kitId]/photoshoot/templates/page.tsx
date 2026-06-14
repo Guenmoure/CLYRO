@@ -351,8 +351,11 @@ function PhotoshootResults({
       </div>
 
       {shoot.status === 'error' && (
-        <div className="rounded-xl border border-error/30 bg-error/5 p-3 font-mono text-[11px] text-error">
-          {String((shoot.metadata as { error_message?: string })?.error_message ?? t('bk_pipelineFailed'))}
+        <div
+          className="rounded-xl border border-error/30 bg-error/5 p-3 font-mono text-[11px] text-error"
+          title={String((shoot.metadata as { error_message?: string })?.error_message ?? '')}
+        >
+          {t('bk_pipelineFailed')}
         </div>
       )}
 

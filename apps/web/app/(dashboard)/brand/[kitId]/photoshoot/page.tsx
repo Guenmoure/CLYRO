@@ -153,10 +153,10 @@ function PhotoshootRow({ shoot, kitId }: { shoot: BrandPhotoshoot; kitId: string
       >
         {shoot.output_urls.length > 0 ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={shoot.output_urls[0]} alt="" className="w-12 h-12 rounded-md object-cover border border-border" />
+          <img src={shoot.output_urls[0]} alt={t('bk_photoshootThumb')} className="w-12 h-12 rounded-md object-cover border border-border" />
         ) : shoot.input_image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={shoot.input_image_url} alt="" className="w-12 h-12 rounded-md object-cover border border-border opacity-70" />
+          <img src={shoot.input_image_url} alt={t('bk_sourceImage')} className="w-12 h-12 rounded-md object-cover border border-border opacity-70" />
         ) : (
           <div className="w-12 h-12 rounded-md border border-border bg-muted flex items-center justify-center text-[--text-muted]">
             <Sparkles size={16} />

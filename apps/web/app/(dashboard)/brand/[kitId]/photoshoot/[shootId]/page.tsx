@@ -222,12 +222,15 @@ export default function BrandPhotoshootDetailPage() {
             <div className="flex items-center gap-2">
               <span className="font-mono text-[10px] text-[--text-muted]">{t('bk_sh_sourceProduct')}</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={shoot.input_image_url} alt="" className="w-10 h-10 rounded-md object-cover border border-border" />
+              <img src={shoot.input_image_url} alt={t('bk_sourceImage')} className="w-10 h-10 rounded-md object-cover border border-border" />
             </div>
           )}
           {shoot.status === 'error' && (
-            <p className="font-mono text-[11px] text-error">
-              {String((shoot.metadata as { error_message?: string })?.error_message ?? t('bk_pipelineFailed'))}
+            <p
+              className="font-mono text-[11px] text-error"
+              title={String((shoot.metadata as { error_message?: string })?.error_message ?? '')}
+            >
+              {t('bk_pipelineFailed')}
             </p>
           )}
         </section>

@@ -219,7 +219,7 @@ export default function BrandAssetsPage() {
           <div className="space-y-2">
             <p className="font-mono text-[10px] uppercase tracking-wider text-[--text-muted]">URL</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={draft.url} alt="" className="w-full max-h-56 object-contain rounded-xl border border-border bg-muted" />
+            <img src={draft.url} alt={t('bk_assets_preview')} className="w-full max-h-56 object-contain rounded-xl border border-border bg-muted" />
             <p className="font-body text-xs text-[--text-muted] truncate">{draft.url}</p>
             <p className="font-body text-[11px] text-[--text-muted]">
               {t('bk_assets_urlNote')}

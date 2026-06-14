@@ -404,7 +404,7 @@ export default function CreativeEditorPage() {
             <BlockSection title={t('bk_ce_imageTitle')} hint={t('bk_ce_imageHint')}>
               <div className="flex items-center gap-3 rounded-xl border border-border bg-muted p-2 relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={creative.image_url} alt="" className="w-16 h-16 rounded-lg object-cover border border-border" />
+                <img src={creative.image_url} alt={creative.header_text || t('bk_ce_imageTitle')} className="w-16 h-16 rounded-lg object-cover border border-border" />
                 <div className="min-w-0 flex-1">
                   <p className="font-mono text-[10px] text-[--text-muted] truncate" title={creative.prompt ?? ''}>
                     {creative.prompt ?? t('bk_ce_noPrompt')}
@@ -623,7 +623,7 @@ function InteractivePreview({
       style={{ width: dim.width, height: dim.height, maxWidth: '100%' }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={creative.image_url} alt="" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+      <img src={creative.image_url} alt={creative.header_text || ''} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-foreground/30 via-transparent to-foreground/40 pointer-events-none" />
 
       {blocks.header && creative.header_text && (
