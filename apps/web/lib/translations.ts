@@ -795,6 +795,14 @@ export const translations = {
     bill_stripeError: 'Stripe error',
     bill_monerooError: 'Moneroo error',
     bill_enterPhone: 'Enter your Mobile Money phone number.',
+    bill_starterCredits: '30 videos/month',
+    bill_studioCredits: 'Unlimited videos',
+    bill_feat_styles: '6 Faceless Videos styles',
+    bill_feat_voices: '2 cloned voices',
+    bill_feat_export: 'MP4 HD export',
+    bill_feat_motion: 'Motion Graphics included',
+    bill_feat_voicesUnlimited: 'Unlimited cloned voices',
+    bill_feat_sso: 'Enterprise SSO',
 
     // White-label page
     wl_active: 'Active',
@@ -3058,6 +3066,14 @@ export const translations = {
     bill_stripeError: 'Erreur Stripe',
     bill_monerooError: 'Erreur Moneroo',
     bill_enterPhone: 'Saisis ton numéro de téléphone Mobile Money.',
+    bill_starterCredits: '30 vidéos/mois',
+    bill_studioCredits: 'Vidéos illimitées',
+    bill_feat_styles: '6 styles Faceless Videos',
+    bill_feat_voices: '2 voix clonées',
+    bill_feat_export: 'Export MP4 HD',
+    bill_feat_motion: 'Motion Graphics inclus',
+    bill_feat_voicesUnlimited: 'Voix clonées illimitées',
+    bill_feat_sso: 'SSO Entreprise',
 
     // White-label page
     wl_active: 'Active',
@@ -5279,6 +5295,14 @@ export const translations = {
     bill_stripeError: 'Error de Stripe',
     bill_monerooError: 'Error de Moneroo',
     bill_enterPhone: 'Ingresa tu número de teléfono de Mobile Money.',
+    bill_starterCredits: '30 videos/mes',
+    bill_studioCredits: 'Videos ilimitados',
+    bill_feat_styles: '6 estilos Faceless Videos',
+    bill_feat_voices: '2 voces clonadas',
+    bill_feat_export: 'Exportación MP4 HD',
+    bill_feat_motion: 'Motion Graphics incluido',
+    bill_feat_voicesUnlimited: 'Voces clonadas ilimitadas',
+    bill_feat_sso: 'SSO Empresarial',
 
     // White-label page
     wl_active: 'Activo',
@@ -7500,6 +7524,14 @@ export const translations = {
     bill_stripeError: 'Stripe-Fehler',
     bill_monerooError: 'Moneroo-Fehler',
     bill_enterPhone: 'Gib deine Mobile Money Telefonnummer ein.',
+    bill_starterCredits: '30 Videos/Monat',
+    bill_studioCredits: 'Unbegrenzte Videos',
+    bill_feat_styles: '6 Faceless-Videos-Stile',
+    bill_feat_voices: '2 geklonte Stimmen',
+    bill_feat_export: 'MP4-HD-Export',
+    bill_feat_motion: 'Motion Graphics inklusive',
+    bill_feat_voicesUnlimited: 'Unbegrenzte geklonte Stimmen',
+    bill_feat_sso: 'Enterprise-SSO',
 
     // White-label page
     wl_active: 'Aktiv',
@@ -9721,6 +9753,14 @@ export const translations = {
     bill_stripeError: 'Erro no Stripe',
     bill_monerooError: 'Erro no Moneroo',
     bill_enterPhone: 'Insira seu número de telefone do Mobile Money.',
+    bill_starterCredits: '30 vídeos/mês',
+    bill_studioCredits: 'Vídeos ilimitados',
+    bill_feat_styles: '6 estilos Faceless Videos',
+    bill_feat_voices: '2 vozes clonadas',
+    bill_feat_export: 'Exportação MP4 HD',
+    bill_feat_motion: 'Motion Graphics incluído',
+    bill_feat_voicesUnlimited: 'Vozes clonadas ilimitadas',
+    bill_feat_sso: 'SSO Empresarial',
 
     // White-label page
     wl_active: 'Ativo',

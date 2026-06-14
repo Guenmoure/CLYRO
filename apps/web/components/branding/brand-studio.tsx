@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Loader2,
   ChevronRight,
@@ -1239,6 +1239,14 @@ function AssetCard({
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  // Dismiss lightbox on Escape
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setLightboxOpen(false); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [lightboxOpen]);
 
   async function handleDownloadAsset(assetUrl: string) {
     setDownloading(true);

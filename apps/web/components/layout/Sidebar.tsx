@@ -105,6 +105,16 @@ export function Sidebar({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
+  // Close mobile drawer on Escape
+  useEffect(() => {
+    if (!mobileOpen) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onMobileClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [mobileOpen, onMobileClose])
+
   // ── Rail navigation: navigate + ensure the panel is shown ────────────────────
   function handleRailSelect(entry: NavEntry) {
     if ((entry.children?.length ?? 0) > 0 && collapsed) onToggle(false)
