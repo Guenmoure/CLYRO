@@ -103,14 +103,14 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
       {isStarter ? (
         <Link
           href="/pricing"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-white hover:bg-brand-hover transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-primary text-white hover:bg-brand-hover transition-colors"
         >
           {t('cb_upgrade')} <ArrowRight size={11} />
         </Link>
       ) : (
         <Link
           href="/settings/billing"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-[--text-secondary] hover:bg-muted/80 transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted text-[--text-secondary] hover:bg-muted/80 transition-colors"
         >
           <ShoppingCart size={11} /> {t('cb_topup')}
         </Link>

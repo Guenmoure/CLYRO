@@ -297,7 +297,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
       // gets its own rounded-t corners so the visual is preserved.
       'group relative rounded-2xl',
       'bg-card border border-border/60',
-      'hover:border-warning/30 hover:shadow-card-hover',
+      'hover:border-border hover:shadow-card-hover',
       'transition-all duration-200',
     )}>
       {/* Amber accent strip — rounded-t to follow the card's corners */}

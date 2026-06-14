@@ -274,7 +274,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
             <MoreHorizontal size={16} />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-border bg-card shadow-2xl z-20 overflow-hidden">
+            <div className="absolute right-0 top-full mt-1 w-48 rounded-2xl border border-border bg-card shadow-2xl z-20 overflow-hidden">
               {project.output_url && (
                 <a
                   href={project.output_url}

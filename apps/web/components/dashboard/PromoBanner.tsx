@@ -50,7 +50,7 @@ export function PromoBanner() {
         <button
           type="button"
           onClick={() => router.push('/assets')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-500/15 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 hover:bg-purple-500/25 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-purple-500/15 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 hover:bg-purple-500/25 transition-colors"
         >
           {t('pb_try')} <ArrowRight size={11} />
         </button>
@@ -58,7 +58,7 @@ export function PromoBanner() {
           type="button"
           onClick={dismiss}
           aria-label={t('pb_close')}
-          className="p-1 rounded-md text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
+          className="p-1 rounded-lg text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
         >
           <X size={14} />
         </button>
