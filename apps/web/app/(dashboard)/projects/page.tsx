@@ -386,7 +386,7 @@ export default function ProjectsPage() {
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t('proj_searchPlaceholder')}
                   aria-label={t('proj_searchPlaceholder')}
-                  className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-card text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:ring-1 focus:ring-brand/50 transition-all"
+                  className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-card text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-primary transition-all"
                 />
                 {search && (
                   <button

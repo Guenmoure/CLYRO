@@ -214,7 +214,7 @@ export function MoveToFolderModal({
                 }}
                 placeholder={t('move_createFolderPlaceholder')}
                 maxLength={80}
-                className="flex-1 px-3 py-2 rounded-lg bg-card border border-border text-sm font-body text-foreground focus:outline-none focus:ring-2 focus:ring-brand/40"
+                className="flex-1 px-3 py-2 rounded-lg bg-card border border-border text-sm font-body text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
               <Button
                 variant="primary"

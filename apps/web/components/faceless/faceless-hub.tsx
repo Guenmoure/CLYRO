@@ -505,7 +505,7 @@ function StylePickerDropdown({ value, onChange, onClose }: {
     <div className="absolute left-0 top-full mt-2 z-50 w-[min(480px,calc(100vw-2.5rem))] bg-card border border-border rounded-2xl shadow-xl p-4 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
         <p className="font-display text-sm font-semibold text-foreground">Style visuel</p>
-        <button type="button" onClick={onClose} aria-label="Fermer" className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
+        <button type="button" onClick={onClose} aria-label={t('close')} className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {STYLE_TEMPLATES.map((s) => {
@@ -557,7 +557,7 @@ function VoicePickerDropdown({ value, voices, onChange, onClose }: {
     <div className="absolute left-0 top-full mt-2 z-50 w-72 max-w-[calc(100vw-2.5rem)] bg-card border border-border rounded-2xl shadow-xl p-3 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <p className="font-display text-sm font-semibold text-foreground">Voix off</p>
-        <button type="button" onClick={onClose} aria-label="Fermer" className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
+        <button type="button" onClick={onClose} aria-label={t('close')} className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
       </div>
       {voices.length === 0 && (
         <p className="text-xs text-[--text-muted] text-center py-3">Chargement des voix…</p>
@@ -707,7 +707,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
           </div>
 
           {/* Description */}
-          <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+          <div className="rounded-2xl border border-border bg-muted overflow-hidden focus-within:ring-2 focus-within:ring-ring/40 transition-shadow">
             <div className="px-4 pt-4 pb-2">
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold mb-2">{t('fh_contentDesc')}</p>
               <textarea
@@ -721,7 +721,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
           </div>
 
           {/* Script / Audio */}
-          <div className="rounded-2xl border border-border bg-muted overflow-hidden">
+          <div className="rounded-2xl border border-border bg-muted overflow-hidden focus-within:ring-2 focus-within:ring-ring/40 transition-shadow">
             {/* Tab bar */}
             <div className="flex items-center gap-1 px-4 pt-3 mb-2">
               <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] flex-1">
@@ -862,7 +862,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
             {/* Title */}
             <input type="text" value={project.title} onChange={(e) => onChange({ title: e.target.value })}
               placeholder={t('fh_titlePlaceholder')}
-              className="w-full sm:w-auto sm:ml-auto sm:flex-1 sm:max-w-xs bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors" />
+              className="w-full sm:w-auto sm:ml-auto sm:flex-1 sm:max-w-xs bg-muted border border-border rounded-xl px-3 py-2 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors" />
           </div>
 
           {/* Generate row — separate from dropdowns to avoid click interception (P0 fix) */}
@@ -3194,7 +3194,7 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
             type="button"
             onClick={() => { setBgGen(null); try { localStorage.removeItem(ACTIVE_GEN_KEY) } catch { /* ignore */ } }}
             className="text-[--text-muted] hover:text-foreground transition-colors ml-1"
-            aria-label="Fermer"
+            aria-label={t('close')}
           >
             <X size={14} />
           </button>

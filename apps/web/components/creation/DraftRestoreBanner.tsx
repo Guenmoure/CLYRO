@@ -47,7 +47,7 @@ export function DraftRestoreBanner({ wasRestored }: DraftRestoreBannerProps) {
       <button
         type="button"
         onClick={() => setVisible(false)}
-        aria-label="Fermer"
+        aria-label="Close"
         className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[--text-muted] hover:text-foreground hover:bg-warning/10 transition-colors"
       >
         <X size={13} />

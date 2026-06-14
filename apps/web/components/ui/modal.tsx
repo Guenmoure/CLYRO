@@ -27,6 +27,8 @@ export interface ModalProps {
   closeOnEscape?: boolean
   children: React.ReactNode
   className?: string
+  /** Accessible label for the close button (defaults to "Close"). */
+  closeLabel?: string
 }
 
 // ── Close button icon ──────────────────────────────────────────────────────────
@@ -59,6 +61,7 @@ function Modal({
   closeOnEscape = true,
   children,
   className,
+  closeLabel = 'Close',
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   // Element that had focus when the modal opened — restored on close.
@@ -161,7 +164,7 @@ function Modal({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Fermer"
+              aria-label={closeLabel}
               className={cn(
                 'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
                 'text-[--text-muted] hover:text-foreground',
@@ -177,8 +180,9 @@ function Modal({
         {/* Close button (sans titre) */}
         {!title && (
           <button
+            type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={closeLabel}
             className={cn(
               'absolute top-4 right-4 z-10 w-8 h-8 rounded-lg flex items-center justify-center',
               'text-[--text-muted] hover:text-foreground',

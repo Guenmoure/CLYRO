@@ -185,7 +185,7 @@ export function ContentTemplateGallery({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={copy.searchPlaceholder}
-              className="w-full pl-9 pr-9 py-2 rounded-xl bg-card border border-border text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-colors"
+              className="w-full pl-9 pr-9 py-2 rounded-xl bg-card border border-border text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
             />
             {search && (
               <button
