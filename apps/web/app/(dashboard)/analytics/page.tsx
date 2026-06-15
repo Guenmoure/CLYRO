@@ -1,13 +1,8 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Activity, Film, Clock, CheckCircle2, XCircle, Sparkles, TrendingUp } from 'lucide-react'
 import type { Database } from '@/lib/database.types'
-import { Card } from '@/components/ui/card'
-import { EmptyState } from '@/components/ui/empty-state'
-import { AnalyticsTimeline } from '@/components/analytics/AnalyticsTimeline'
-import { StyleBreakdown } from '@/components/analytics/StyleBreakdown'
+import { AnalyticsView } from '@/components/analytics/AnalyticsView'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Analytics — CLYRO' }
@@ -23,7 +18,7 @@ type VideoRow = {
   metadata: Record<string, unknown> | null
 }
 
-interface Metrics {
+export interface Metrics {
   total: number
   done: number
   error: number
@@ -118,16 +113,6 @@ function computeMetrics(rows: Array<VideoRow & { title: string }>): Metrics {
   }
 }
 
-function formatDelta(current: number, previous: number): { text: string; positive: boolean } {
-  if (previous === 0) {
-    if (current === 0) return { text: '—', positive: true }
-    return { text: 'new', positive: true }
-  }
-  const pct = Math.round(((current - previous) / previous) * 100)
-  const sign = pct >= 0 ? '+' : ''
-  return { text: `${sign}${pct}%`, positive: pct >= 0 }
-}
-
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default async function AnalyticsPage() {
@@ -157,180 +142,7 @@ export default async function AnalyticsPage() {
     .limit(500)
 
   const videos = (rawVideos ?? []) as Array<VideoRow & { title: string }>
-  const m = computeMetrics(videos)
-  const delta = formatDelta(m.last30, m.prev30)
+  const metrics = computeMetrics(videos)
 
-  if (videos.length === 0) {
-    return (
-      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto">
-        <header className="mb-8">
-          <h1 className="font-display text-2xl font-semibold text-foreground">Analytics</h1>
-          <p className="font-body text-sm text-[--text-muted] mt-1">
-            Track how your videos are performing — renders, styles, success rate.
-          </p>
-        </header>
-        <EmptyState
-          icon={Activity}
-          title="Nothing to chart yet"
-          description="Render your first video and this page lights up — counts, top styles, a 30-day timeline."
-          accent="blue"
-          size="lg"
-          action={
-            <Link
-              href="/faceless/new"
-              className="inline-flex items-center gap-2 bg-primary text-white font-body font-medium px-4 py-2 rounded-xl text-sm hover:bg-brand-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <Sparkles size={14} aria-hidden="true" />
-              Create your first video
-            </Link>
-          }
-        />
-      </div>
-    )
-  }
-
-  return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto">
-      <header className="mb-8 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">Analytics</h1>
-          <p className="font-body text-sm text-[--text-muted] mt-1">
-            Last 60 days · {m.total} videos
-          </p>
-        </div>
-      </header>
-
-      {/* KPI cards */}
-      <section
-        aria-label="Key metrics"
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8"
-      >
-        <KpiCard
-          icon={<Film size={16} aria-hidden="true" />}
-          label="Total videos"
-          value={m.total.toString()}
-          sublabel={`${m.last7} this week`}
-        />
-        <KpiCard
-          icon={<TrendingUp size={16} aria-hidden="true" />}
-          label="Last 30 days"
-          value={m.last30.toString()}
-          sublabel={delta.text === '—' ? 'vs prior 30d' : `${delta.text} vs prior 30d`}
-          sublabelTone={delta.positive ? 'positive' : 'negative'}
-          emphasis
-        />
-        <KpiCard
-          icon={<CheckCircle2 size={16} aria-hidden="true" />}
-          label="Success rate"
-          value={`${m.successRate}%`}
-          sublabel={`${m.done} completed · ${m.error} failed`}
-        />
-        <KpiCard
-          icon={<Clock size={16} aria-hidden="true" />}
-          label="Avg length"
-          value={m.avgDurationMinutes !== null ? `${m.avgDurationMinutes} min` : '—'}
-          sublabel={m.processing > 0 ? `${m.processing} in progress` : 'completed renders'}
-        />
-      </section>
-
-      {/* Activity timeline */}
-      <section aria-labelledby="activity-heading" className="mb-8">
-        <Card variant="default" padding="lg">
-          <div className="flex items-center justify-between mb-4">
-            <h2 id="activity-heading" className="font-display text-sm font-semibold text-foreground">
-              Activity — last 30 days
-            </h2>
-            <span className="font-mono text-[11px] text-[--text-muted]">
-              {m.last30} videos
-            </span>
-          </div>
-          <AnalyticsTimeline points={m.byDay} />
-        </Card>
-      </section>
-
-      {/* Style breakdown + recent done */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card variant="default" padding="lg">
-          <h2 className="font-display text-sm font-semibold text-foreground mb-4">
-            Top styles
-          </h2>
-          {m.byStyle.length === 0 ? (
-            <p className="font-body text-sm text-[--text-muted]">No style data yet.</p>
-          ) : (
-            <StyleBreakdown entries={m.byStyle} total={m.total} />
-          )}
-        </Card>
-
-        <Card variant="default" padding="lg">
-          <h2 className="font-display text-sm font-semibold text-foreground mb-4">
-            Recent renders
-          </h2>
-          {m.topTitles.length === 0 ? (
-            <p className="font-body text-sm text-[--text-muted]">No completed renders yet.</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {m.topTitles.map(v => (
-                <li key={v.id} className="py-2.5 first:pt-0 last:pb-0">
-                  <Link
-                    href={`/videos/${v.id}`}
-                    className="flex items-center justify-between gap-3 hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded"
-                  >
-                    <span className="font-body text-sm text-foreground truncate flex items-center gap-2 min-w-0">
-                      {v.status === 'done' ? (
-                        <CheckCircle2 size={14} className="text-emerald-400 shrink-0" aria-hidden="true" />
-                      ) : (
-                        <XCircle size={14} className="text-red-400 shrink-0" aria-hidden="true" />
-                      )}
-                      <span className="truncate">{v.title || 'Untitled'}</span>
-                    </span>
-                    <span className="font-mono text-[11px] text-[--text-muted] shrink-0">
-                      {new Date(v.created_at).toLocaleDateString()}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </section>
-    </div>
-  )
-}
-
-// ── KPI card ───────────────────────────────────────────────────────────────────
-
-function KpiCard({
-  icon,
-  label,
-  value,
-  sublabel,
-  sublabelTone = 'muted',
-  emphasis = false,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: string
-  sublabel?: string
-  sublabelTone?: 'muted' | 'positive' | 'negative'
-  /** Promote this card visually — used for the KPI with the most momentum. */
-  emphasis?: boolean
-}) {
-  const subClass =
-    sublabelTone === 'positive' ? 'text-emerald-400' :
-    sublabelTone === 'negative' ? 'text-red-400' :
-    'text-[--text-muted]'
-  return (
-    <Card variant={emphasis ? 'highlight' : 'default'} padding="md">
-      <div className="flex items-center gap-2 text-[--text-muted] mb-2">
-        {icon}
-        <span className="font-body text-[11px] uppercase tracking-wide">{label}</span>
-      </div>
-      <p className={`font-display font-semibold text-foreground leading-none ${emphasis ? 'text-3xl' : 'text-2xl'}`}>
-        {value}
-      </p>
-      {sublabel && (
-        <p className={`font-mono text-[11px] mt-2 ${subClass}`}>{sublabel}</p>
-      )}
-    </Card>
-  )
+  return <AnalyticsView metrics={metrics} isEmpty={videos.length === 0} />
 }
