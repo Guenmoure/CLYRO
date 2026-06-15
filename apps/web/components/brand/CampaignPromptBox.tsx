@@ -72,6 +72,7 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
         value={prompt}
         onChange={(e) => onPromptChange(e.target.value.slice(0, MAX_PROMPT_LEN))}
         placeholder={t('bk_pb_placeholder')}
+        aria-label={t('bk_pb_promptLabel')}
         rows={4}
         disabled={submitting}
         className="w-full px-5 py-4 bg-transparent outline-none resize-none font-body text-sm text-foreground placeholder-[--text-muted] leading-relaxed"
@@ -84,6 +85,8 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
             type="button"
             onClick={() => { setProductMenuOpen((o) => !o); setAssetMenuOpen(false) }}
             disabled={submitting || products.length === 0}
+            aria-label={t('bk_pb_selectProduct')}
+            aria-expanded={productMenuOpen}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] transition-colors',
               product ? 'border-foreground/40 bg-muted text-foreground' : 'border-border bg-background text-[--text-muted] hover:text-foreground',
@@ -122,6 +125,8 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
             type="button"
             onClick={() => { setAssetMenuOpen((o) => !o); setProductMenuOpen(false) }}
             disabled={submitting || assets.length === 0}
+            aria-label={t('bk_pb_selectImages')}
+            aria-expanded={assetMenuOpen}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] transition-colors',
               assetIds.length > 0 ? 'border-foreground/40 bg-muted text-foreground' : 'border-border bg-background text-[--text-muted] hover:text-foreground',
@@ -144,7 +149,7 @@ export function CampaignPromptBox({ products, assets, prompt, onPromptChange, on
                     )}>
                     {a.url && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={a.url} alt={a.filename || ''} className="w-full h-full object-cover" />
+                      <img src={a.url} alt={a.filename || t('bk_pb_assetAlt')} className="w-full h-full object-cover" />
                     )}
                     {selected && (
                       <span className="absolute top-1 right-1 rounded-full bg-primary text-white text-[9px] w-4 h-4 flex items-center justify-center">

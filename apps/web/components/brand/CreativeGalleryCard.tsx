@@ -66,7 +66,7 @@ export function CreativeGalleryCard({
           style={{ width: dim.width, height: dim.height }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={creative.image_url} alt={creative.header_text || ''} className="w-full h-full object-cover" />
+          <img src={creative.image_url} alt={creative.header_text || t('bk_ce_imageTitle')} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-foreground/30 via-transparent to-foreground/40 pointer-events-none" />
           {block('header',      creative.header_text)}
           {block('description', creative.description_text)}
@@ -83,7 +83,7 @@ export function CreativeGalleryCard({
           style={{ width: dim.width, height: dim.height }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={creative.image_url} alt={creative.header_text || ''} className="w-full h-full object-cover" />
+          <img src={creative.image_url} alt={creative.header_text || t('bk_ce_imageTitle')} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-foreground/30 via-transparent to-foreground/40 pointer-events-none" />
           {block('header',      creative.header_text)}
           {block('description', creative.description_text)}

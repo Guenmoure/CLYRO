@@ -612,6 +612,7 @@ function InteractivePreview({
   onMove:      (block: keyof CreativeBlocksVisible, pos: BlockPosition) => void
   onCommit:    () => void
 }) {
+  const { t } = useLanguage()
   const dim = ASPECT_PREVIEW[aspectRatio]
   const blocks = creative.blocks_visible
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -623,7 +624,7 @@ function InteractivePreview({
       style={{ width: dim.width, height: dim.height, maxWidth: '100%' }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={creative.image_url} alt={creative.header_text || ''} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+      <img src={creative.image_url} alt={creative.header_text || t('bk_ce_imageTitle')} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-foreground/30 via-transparent to-foreground/40 pointer-events-none" />
 
       {blocks.header && creative.header_text && (
