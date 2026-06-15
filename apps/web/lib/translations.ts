@@ -532,6 +532,14 @@ export const translations = {
     fh_newVersion: 'New version',
     fh_scenes: 'scenes',
     fh_overlayText: 'On-screen text (optional)',
+    fh_loadingVoices: 'Loading voices…',
+    fh_addScene: 'Add a scene',
+    fh_back: 'Back',
+    fh_regenScenes: 'Regenerate {n} scene(s)',
+    fh_loading: 'Loading',
+    fh_sceneRegenError: 'Scene {n} regeneration error',
+    fh_generateVoice: 'Generate voice',
+    fh_editScenes: 'Edit scenes',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Ready',
@@ -911,6 +919,31 @@ export const translations = {
     hh_s3Cta: 'Build my brand',
     hh_prev: 'Previous',
     hh_next: 'Next',
+
+    // ── Voice Library ────────────────────────────────────────────────
+    vl_publicLibrary: 'Public library',
+    vl_myVoices: 'My voices',
+    vl_searchPlaceholder: 'Search a voice…',
+    vl_gender: 'Gender',
+    vl_accent: 'Accent',
+    vl_usage: 'Usage',
+    vl_reset: 'Reset',
+    vl_cloneInfo: 'Clone your own voice to keep your sonic identity across all your videos. Upload an audio sample of at least 30 seconds.',
+    vl_cloneVoice: 'Clone my voice',
+    vl_loading: 'Loading voices…',
+    vl_noCloned: 'You have no cloned voices yet.',
+    vl_noResults: 'No voice matches your search.',
+    vl_removeFav: 'Remove from favorites',
+    vl_addFav: 'Add to favorites',
+    vl_myVoice: 'My voice',
+    vl_stop: 'Stop',
+    vl_listen: 'Listen',
+    vl_selected: 'Selected',
+    vl_use: 'Use',
+
+    // ── Shared / Breadcrumbs ─────────────────────────────────────────
+    breadcrumbs: 'Breadcrumbs',
+    backToDashboard: 'Back to dashboard',
 
     // Billing page
     bill_settings: 'Settings',
@@ -2979,6 +3012,14 @@ export const translations = {
     fh_newVersion: 'Nouvelle version',
     fh_scenes: 'scènes',
     fh_overlayText: 'Texte à l\'écran (optionnel)',
+    fh_loadingVoices: 'Chargement des voix…',
+    fh_addScene: 'Ajouter une scène',
+    fh_back: 'Retour',
+    fh_regenScenes: 'Régénérer {n} scène(s)',
+    fh_loading: 'Chargement',
+    fh_sceneRegenError: 'Erreur régénération scène {n}',
+    fh_generateVoice: 'Générer la voix',
+    fh_editScenes: 'Modifier des scènes',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Prêt',
@@ -3358,6 +3399,31 @@ export const translations = {
     hh_s3Cta: 'Créer mon brand',
     hh_prev: 'Précédent',
     hh_next: 'Suivant',
+
+    // ── Voice Library ────────────────────────────────────────────────
+    vl_publicLibrary: 'Bibliothèque publique',
+    vl_myVoices: 'Mes voix',
+    vl_searchPlaceholder: 'Rechercher une voix…',
+    vl_gender: 'Genre',
+    vl_accent: 'Accent',
+    vl_usage: 'Usage',
+    vl_reset: 'Réinitialiser',
+    vl_cloneInfo: 'Clonez votre propre voix pour garder votre identité sonore sur toutes vos vidéos. Uploadez un sample audio de 30 secondes minimum.',
+    vl_cloneVoice: 'Cloner ma voix',
+    vl_loading: 'Chargement des voix…',
+    vl_noCloned: 'Vous n\'avez pas encore de voix clonées.',
+    vl_noResults: 'Aucune voix ne correspond à votre recherche.',
+    vl_removeFav: 'Retirer des favoris',
+    vl_addFav: 'Ajouter aux favoris',
+    vl_myVoice: 'Ma voix',
+    vl_stop: 'Stop',
+    vl_listen: 'Écouter',
+    vl_selected: 'Sélectionnée',
+    vl_use: 'Utiliser',
+
+    // ── Shared / Breadcrumbs ─────────────────────────────────────────
+    breadcrumbs: 'Fil d\'Ariane',
+    backToDashboard: 'Retour au tableau de bord',
 
     // Billing page
     bill_settings: 'Paramètres',
@@ -5421,6 +5487,14 @@ export const translations = {
     fh_newVersion: 'Nueva versión',
     fh_scenes: 'escenas',
     fh_overlayText: 'Texto en pantalla (opcional)',
+    fh_loadingVoices: 'Cargando voces…',
+    fh_addScene: 'Añadir una escena',
+    fh_back: 'Volver',
+    fh_regenScenes: 'Regenerar {n} escena(s)',
+    fh_loading: 'Cargando',
+    fh_sceneRegenError: 'Error regeneración escena {n}',
+    fh_generateVoice: 'Generar voz',
+    fh_editScenes: 'Editar escenas',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Listo',
@@ -5763,6 +5837,31 @@ export const translations = {
     hh_s3Cta: 'Crear mi marca',
     hh_prev: 'Anterior',
     hh_next: 'Siguiente',
+
+    // ── Voice Library ────────────────────────────────────────────────
+    vl_publicLibrary: 'Biblioteca pública',
+    vl_myVoices: 'Mis voces',
+    vl_searchPlaceholder: 'Buscar una voz…',
+    vl_gender: 'Género',
+    vl_accent: 'Acento',
+    vl_usage: 'Uso',
+    vl_reset: 'Reiniciar',
+    vl_cloneInfo: 'Clona tu propia voz para mantener tu identidad sonora en todos tus videos. Sube una muestra de audio de al menos 30 segundos.',
+    vl_cloneVoice: 'Clonar mi voz',
+    vl_loading: 'Cargando voces…',
+    vl_noCloned: 'Aún no tienes voces clonadas.',
+    vl_noResults: 'Ninguna voz coincide con tu búsqueda.',
+    vl_removeFav: 'Quitar de favoritos',
+    vl_addFav: 'Añadir a favoritos',
+    vl_myVoice: 'Mi voz',
+    vl_stop: 'Parar',
+    vl_listen: 'Escuchar',
+    vl_selected: 'Seleccionada',
+    vl_use: 'Usar',
+
+    // ── Shared / Breadcrumbs ─────────────────────────────────────────
+    breadcrumbs: 'Migas de pan',
+    backToDashboard: 'Volver al panel',
 
     // Billing page
     bill_settings: 'Configuración',
@@ -7826,6 +7925,14 @@ export const translations = {
     fh_newVersion: 'Neue Version',
     fh_scenes: 'Szenen',
     fh_overlayText: 'Bildschirmtext (optional)',
+    fh_loadingVoices: 'Stimmen werden geladen…',
+    fh_addScene: 'Szene hinzufügen',
+    fh_back: 'Zurück',
+    fh_regenScenes: '{n} Szene(n) regenerieren',
+    fh_loading: 'Laden',
+    fh_sceneRegenError: 'Fehler bei Regenerierung Szene {n}',
+    fh_generateVoice: 'Stimme generieren',
+    fh_editScenes: 'Szenen bearbeiten',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Fertig',
@@ -8168,6 +8275,31 @@ export const translations = {
     hh_s3Cta: 'Meine Marke erstellen',
     hh_prev: 'Zurück',
     hh_next: 'Weiter',
+
+    // ── Voice Library ────────────────────────────────────────────────
+    vl_publicLibrary: 'Öffentliche Bibliothek',
+    vl_myVoices: 'Meine Stimmen',
+    vl_searchPlaceholder: 'Stimme suchen…',
+    vl_gender: 'Geschlecht',
+    vl_accent: 'Akzent',
+    vl_usage: 'Verwendung',
+    vl_reset: 'Zurücksetzen',
+    vl_cloneInfo: 'Klone deine eigene Stimme, um deine Klangidentität in allen Videos zu bewahren. Lade ein Audiosample von mindestens 30 Sekunden hoch.',
+    vl_cloneVoice: 'Meine Stimme klonen',
+    vl_loading: 'Stimmen werden geladen…',
+    vl_noCloned: 'Du hast noch keine geklonten Stimmen.',
+    vl_noResults: 'Keine Stimme entspricht deiner Suche.',
+    vl_removeFav: 'Aus Favoriten entfernen',
+    vl_addFav: 'Zu Favoriten hinzufügen',
+    vl_myVoice: 'Meine Stimme',
+    vl_stop: 'Stop',
+    vl_listen: 'Anhören',
+    vl_selected: 'Ausgewählt',
+    vl_use: 'Verwenden',
+
+    // ── Shared / Breadcrumbs ─────────────────────────────────────────
+    breadcrumbs: 'Brotkrümel',
+    backToDashboard: 'Zurück zum Dashboard',
 
     // Billing page
     bill_settings: 'Einstellungen',
@@ -10231,6 +10363,14 @@ export const translations = {
     fh_newVersion: 'Nova versão',
     fh_scenes: 'cenas',
     fh_overlayText: 'Texto na tela (opcional)',
+    fh_loadingVoices: 'Carregando vozes…',
+    fh_addScene: 'Adicionar uma cena',
+    fh_back: 'Voltar',
+    fh_regenScenes: 'Regenerar {n} cena(s)',
+    fh_loading: 'Carregando',
+    fh_sceneRegenError: 'Erro regeneração cena {n}',
+    fh_generateVoice: 'Gerar voz',
+    fh_editScenes: 'Editar cenas',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Pronto',
@@ -10573,6 +10713,31 @@ export const translations = {
     hh_s3Cta: 'Criar minha marca',
     hh_prev: 'Anterior',
     hh_next: 'Próximo',
+
+    // ── Voice Library ────────────────────────────────────────────────
+    vl_publicLibrary: 'Biblioteca pública',
+    vl_myVoices: 'Minhas vozes',
+    vl_searchPlaceholder: 'Buscar uma voz…',
+    vl_gender: 'Gênero',
+    vl_accent: 'Sotaque',
+    vl_usage: 'Uso',
+    vl_reset: 'Redefinir',
+    vl_cloneInfo: 'Clone sua própria voz para manter sua identidade sonora em todos os seus vídeos. Envie uma amostra de áudio de pelo menos 30 segundos.',
+    vl_cloneVoice: 'Clonar minha voz',
+    vl_loading: 'Carregando vozes…',
+    vl_noCloned: 'Você ainda não tem vozes clonadas.',
+    vl_noResults: 'Nenhuma voz corresponde à sua busca.',
+    vl_removeFav: 'Remover dos favoritos',
+    vl_addFav: 'Adicionar aos favoritos',
+    vl_myVoice: 'Minha voz',
+    vl_stop: 'Parar',
+    vl_listen: 'Ouvir',
+    vl_selected: 'Selecionada',
+    vl_use: 'Usar',
+
+    // ── Shared / Breadcrumbs ─────────────────────────────────────────
+    breadcrumbs: 'Navegação',
+    backToDashboard: 'Voltar ao painel',
 
     // Billing page
     bill_settings: 'Configurações',

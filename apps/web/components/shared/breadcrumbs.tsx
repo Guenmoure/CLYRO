@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ChevronRight, Home } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 export interface Crumb {
   label: string
@@ -26,16 +27,17 @@ interface BreadcrumbsProps {
  *   ]} />
  */
 export function Breadcrumbs({ items, className, homeLink = true }: BreadcrumbsProps) {
+  const { t } = useLanguage()
   return (
     <nav
-      aria-label="Fil d'Ariane"
+      aria-label={t('breadcrumbs')}
       className={cn('flex items-center gap-1 text-xs font-mono text-[--text-secondary]', className)}
     >
       {homeLink && (
         <>
           <Link
             href="/dashboard"
-            aria-label="Retour au dashboard"
+            aria-label={t('backToDashboard')}
             className="inline-flex items-center justify-center w-7 h-7 rounded-lg hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <Home size={13} />

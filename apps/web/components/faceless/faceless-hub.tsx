@@ -561,7 +561,7 @@ function VoicePickerDropdown({ value, voices, onChange, onClose }: {
         <button type="button" onClick={onClose} aria-label={t('close')} className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
       </div>
       {voices.length === 0 && (
-        <p className="text-xs text-[--text-muted] text-center py-3">Chargement des voix…</p>
+        <p className="text-xs text-[--text-muted] text-center py-3">{t('fh_loadingVoices')}</p>
       )}
       <div className="space-y-1 max-h-64 overflow-y-auto">
         <button type="button" onClick={() => { onChange(''); onClose() }}
@@ -1073,7 +1073,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                 disabled={scene.imageStatus === 'generating'}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[--text-muted] hover:text-foreground transition-all">
                 {scene.imageStatus === 'generating' ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
-                Régénérer
+                {t('fh_regenerate')}
               </button>
               {/* Merge with next */}
               {i < scenes.length - 1 && (
@@ -1154,14 +1154,14 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
         <button type="button" onClick={addScene}
           className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-dashed border-border/60 text-xs font-body text-[--text-muted] hover:text-foreground hover:border-brand/40 transition-all hover:bg-brand/10">
           <Plus size={14} />
-          Ajouter une scène
+          {t('fh_addScene')}
         </button>
       </div>
 
       {/* Footer navigation */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-t border-border bg-muted shrink-0">
         <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
-          <ArrowLeft size={14} /> Retour
+          <ArrowLeft size={14} /> {t('fh_back')}
         </button>
         <button type="button" onClick={onNext} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white font-display font-semibold text-sm hover:bg-brand-hover transition-all">
           Generate images <ArrowRight size={13} />
@@ -1529,7 +1529,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
           </button>
           <button type="button" onClick={regenerateSelected}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-display font-semibold hover:bg-brand-hover transition-all">
-            <RefreshCw size={11} /> Régénérer {selected.size} scène{selected.size > 1 ? 's' : ''}
+            <RefreshCw size={11} /> {t('fh_regenScenes').replace('{n}', String(selected.size))}
           </button>
         </div>
       )}
@@ -1548,7 +1548,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
             onClick={() => generateImage(scenes.find((s) => s.index === 0)?.id ?? '')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 text-xs font-body text-amber-700 hover:bg-amber-100 transition-all"
           >
-            <RefreshCw size={11} /> Régénérer
+            <RefreshCw size={11} /> {t('fh_regenerate')}
           </button>
           <button
             type="button"
@@ -1778,7 +1778,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                       </button>
                       <button type="button" onClick={() => { generateImage(scene.id); setEditingId(null); setImproveResult(null) }}
                         className="flex-1 py-1.5 rounded-lg bg-primary text-white text-xs font-display font-semibold hover:bg-brand-hover transition-all">
-                        Régénérer
+                        {t('fh_regenerate')}
                       </button>
                     </div>
                   </div>
@@ -1794,7 +1794,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       {/* Footer */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-t border-border bg-muted shrink-0">
         <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
-          <ArrowLeft size={14} /> Retour
+          <ArrowLeft size={14} /> {t('fh_back')}
         </button>
         <div className="flex flex-wrap items-center gap-3">
           {!allDone && (
@@ -1981,7 +1981,7 @@ function ScenePreviewLightbox({
                   onClick={() => onRegenerate(scene.id)}
                   className="mt-2 flex items-center gap-1.5 px-3 h-9 rounded-lg bg-primary hover:bg-brand-hover text-white text-sm font-display font-semibold transition-all"
                 >
-                  <RefreshCw size={13} /> Régénérer
+                  <RefreshCw size={13} /> {t('fh_regenerate')}
                 </button>
               )}
             </div>
@@ -1999,7 +1999,7 @@ function ScenePreviewLightbox({
               />
               {mediaLoading && (
                 <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
-                  <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" aria-label="Chargement" />
+                  <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" aria-label={t('fh_loading')} />
                 </div>
               )}
             </>
@@ -2018,7 +2018,7 @@ function ScenePreviewLightbox({
               />
               {mediaLoading && (
                 <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
-                  <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" aria-label="Chargement" />
+                  <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" aria-label={t('fh_loading')} />
                 </div>
               )}
             </>
@@ -2078,7 +2078,7 @@ function ScenePreviewLightbox({
                 aria-label={t('fh_regenerate')}
                 className="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-primary hover:bg-brand-hover text-white text-sm font-display font-semibold transition-all"
               >
-                <RefreshCw size={13} /> Régénérer
+                <RefreshCw size={13} /> {t('fh_regenerate')}
               </button>
             )}
           </div>
@@ -2213,7 +2213,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       setHasRegenerated(true)
       toast.success(`Scène ${scene.index + 1} régénérée`)
     } catch {
-      toast.error(`Erreur régénération scène ${scene.index + 1}`)
+      toast.error(t('fh_sceneRegenError').replace('{n}', String(scene.index + 1)))
       updateScene(id, { imageStatus: 'error', clipStatus: 'error' })
     }
   }
@@ -2458,7 +2458,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     <RefreshCw size={10} />
                   </button>
                   {videoId && (
-                    <button type="button" aria-label="Régénérer image + clip" onClick={() => regenImageAndClip(scene.id)} disabled={scene.clipStatus === 'generating' || scene.imageStatus === 'generating'}
+                    <button type="button" aria-label={t('fh_regenImageClip')} onClick={() => regenImageAndClip(scene.id)} disabled={scene.clipStatus === 'generating' || scene.imageStatus === 'generating'}
                       title={t('fh_regenImageClip')}
                       className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-brand/80 flex items-center justify-center transition-all disabled:opacity-40">
                       <Sparkles size={10} />
@@ -2483,7 +2483,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                       onClick={() => { generateClip(scene.id); setEditingId(null) }}
                       className="w-full py-1.5 rounded-lg bg-primary text-white text-xs font-display font-semibold hover:bg-brand-hover transition-all"
                     >
-                      Régénérer
+                      {t('fh_regenerate')}
                     </button>
                   </div>
                 ) : (
@@ -2515,7 +2515,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                 <button type="button" onClick={generateVoice} disabled={voiceStatus === 'generating'}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground transition-all disabled:opacity-40">
                   {voiceStatus === 'generating' ? <Loader2 size={11} className="animate-spin" /> : <Play size={11} />}
-                  Générer la voix
+                  {t('fh_generateVoice')}
                 </button>
               )}
             </div>
@@ -2560,7 +2560,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       {/* Footer */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-t border-border bg-muted shrink-0">
         <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
-          <ArrowLeft size={14} /> Retour
+          <ArrowLeft size={14} /> {t('fh_back')}
         </button>
         <div className="flex flex-wrap items-center gap-2">
           {videoId && hasRegenerated && (
@@ -2759,7 +2759,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
               <button type="button" onClick={onEditScenes}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground hover:border-brand/40 transition-all">
                 <Edit3 size={14} />
-                Modifier des scènes
+                {t('fh_editScenes')}
               </button>
             )}
             <button type="button" onClick={onNew}

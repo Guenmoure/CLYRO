@@ -13,6 +13,7 @@
 // ──────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -69,6 +70,8 @@ export default function VoiceLibrary({
   onSelect,
   apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000',
 }: VoiceLibraryProps) {
+
+  const { t } = useLanguage()
 
   // ── State ──────────────────────────────────────────────────
   const [activeTab,    setActiveTab]    = useState<'public' | 'cloned'>('public')
@@ -192,13 +195,13 @@ export default function VoiceLibrary({
           style={{ ...styles.tab, ...(activeTab === 'public' ? styles.tabActive : {}) }}
           onClick={() => setActiveTab('public')}
         >
-          🌍 Bibliothèque publique
+          {t('vl_publicLibrary')}
         </button>
         <button
           style={{ ...styles.tab, ...(activeTab === 'cloned' ? styles.tabActive : {}) }}
           onClick={() => setActiveTab('cloned')}
         >
-          🎙️ Mes voix ({clonedVoices.length})
+          {t('vl_myVoices')} ({clonedVoices.length})
         </button>
       </div>
 
@@ -207,7 +210,7 @@ export default function VoiceLibrary({
         <div style={styles.searchBar}>
           <input
             type="text"
-            placeholder="🔍 Rechercher une voix..."
+            placeholder={t('vl_searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={styles.searchInput}
@@ -217,7 +220,7 @@ export default function VoiceLibrary({
             onChange={e => setFilterGender(e.target.value)}
             style={styles.select}
           >
-            <option value="">Genre</option>
+            <option value="">{t('vl_gender')}</option>
             {filters.genders.map(g => (
               <option key={g} value={g}>{GENDER_LABELS[g] ?? g}</option>
             ))}
@@ -227,7 +230,7 @@ export default function VoiceLibrary({
             onChange={e => setFilterAccent(e.target.value)}
             style={styles.select}
           >
-            <option value="">Accent</option>
+            <option value="">{t('vl_accent')}</option>
             {filters.accents.map(a => (
               <option key={a} value={a}>{a}</option>
             ))}
@@ -237,7 +240,7 @@ export default function VoiceLibrary({
             onChange={e => setFilterUse(e.target.value)}
             style={styles.select}
           >
-            <option value="">Usage</option>
+            <option value="">{t('vl_usage')}</option>
             {filters.useCases.map(u => (
               <option key={u} value={u}>{USE_CASE_LABELS[u] ?? u}</option>
             ))}
@@ -247,7 +250,7 @@ export default function VoiceLibrary({
               style={styles.resetBtn}
               onClick={() => { setSearch(''); setFilterGender(''); setFilterAccent(''); setFilterUse('') }}
             >
-              ✕ Réinitialiser
+              {t('vl_reset')}
             </button>
           )}
         </div>
@@ -257,10 +260,9 @@ export default function VoiceLibrary({
       {activeTab === 'cloned' && (
         <div style={styles.cloneInfo}>
           <p style={styles.cloneInfoText}>
-            Clone ta propre voix pour garder ton identité sonore sur toutes tes vidéos.
-            Uploade un sample audio de <strong>30 secondes minimum</strong>.
+            {t('vl_cloneInfo')}
           </p>
-          <button style={styles.cloneBtn}>+ Cloner ma voix</button>
+          <button style={styles.cloneBtn}>+ {t('vl_cloneVoice')}</button>
         </div>
       )}
 
@@ -268,13 +270,13 @@ export default function VoiceLibrary({
       {loading ? (
         <div style={styles.loading}>
           <div style={styles.spinner} />
-          <span>Chargement des voix...</span>
+          <span>{t('vl_loading')}</span>
         </div>
       ) : voices.length === 0 ? (
         <div style={styles.empty}>
           {activeTab === 'cloned'
-            ? '🎙️ Tu n\'as pas encore de voix clonées.'
-            : '🔍 Aucune voix ne correspond à ta recherche.'}
+            ? t('vl_noCloned')
+            : t('vl_noResults')}
         </div>
       ) : (
         <div style={styles.grid}>
@@ -314,6 +316,7 @@ function VoiceCard({
   onPreview:   (voice: Voice) => void
   onFavorite?: (voice: Voice) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div style={{
       ...styles.card,
@@ -344,7 +347,7 @@ function VoiceCard({
           <button
             style={styles.favoriteBtn}
             onClick={e => { e.stopPropagation(); onFavorite(voice) }}
-            title={voice.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            title={voice.isFavorite ? t('vl_removeFav') : t('vl_addFav')}
           >
             {voice.isFavorite ? '⭐' : '☆'}
           </button>
@@ -365,7 +368,7 @@ function VoiceCard({
           </span>
         )}
         {voice.category === 'cloned' && (
-          <span style={{ ...styles.tag, ...styles.tagCloned }}>Ma voix</span>
+          <span style={{ ...styles.tag, ...styles.tagCloned }}>{t('vl_myVoice')}</span>
         )}
       </div>
 
@@ -378,7 +381,7 @@ function VoiceCard({
           }}
           onClick={e => { e.stopPropagation(); onPreview(voice) }}
         >
-          {isPlaying ? '⏸ Stop' : '▶ Écouter'}
+          {isPlaying ? t('vl_stop') : t('vl_listen')}
         </button>
 
         <button
@@ -388,7 +391,7 @@ function VoiceCard({
           }}
           onClick={() => onSelect(voice)}
         >
-          {isSelected ? '✓ Sélectionnée' : 'Utiliser'}
+          {isSelected ? t('vl_selected') : t('vl_use')}
         </button>
       </div>
     </div>

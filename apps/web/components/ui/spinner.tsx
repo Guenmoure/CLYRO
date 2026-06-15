@@ -29,7 +29,7 @@ function Spinner({
   size = 'md',
   color = 'text-primary',
   variant = 'default',
-  label = 'Chargement…',
+  label = 'Loading…',
   className,
 }: SpinnerProps) {
   if (variant === 'ai') return <SpinnerAI size={size} label={label} className={className} />
@@ -54,7 +54,7 @@ function Spinner({
 
 function SpinnerAI({
   size = 'md',
-  label = 'Génération en cours…',
+  label = 'Generating…',
   className,
 }: Pick<SpinnerProps, 'size' | 'label' | 'className'>) {
   const dim = size === 'xs' ? 12 : size === 'sm' ? 16 : size === 'md' ? 24 : size === 'lg' ? 32 : 48

@@ -221,7 +221,7 @@ function StepBrand({
                   onClick={() => onUpdate({ ...brand, logo_url: undefined })}
                   className="text-xs text-muted-foreground hover:text-error text-left"
                 >
-                  Supprimer
+                  {t('delete')}
                 </button>
               )}
             </div>
