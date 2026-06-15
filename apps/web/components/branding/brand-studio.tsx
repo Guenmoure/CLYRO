@@ -1639,11 +1639,7 @@ export function BrandStudio() {
       setLogos(data);
       setStep("logos");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t("bs_logoGenError"),
-      );
+      toast.error(t("bs_logoGenError"));
     } finally {
       setLoading(false);
       setLoadingMsg("");
@@ -1670,11 +1666,7 @@ export function BrandStudio() {
       setAssets(data);
       setStep("assets");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t("bs_assetGenError"),
-      );
+      toast.error(t("bs_assetGenError"));
     } finally {
       setLoading(false);
       setLoadingMsg("");

@@ -32,13 +32,13 @@ interface DraftCardProps {
 
 const MODULE_CONFIG: Record<string, {
   Icon: React.FC<any>; iconColor: string; iconBg: string
-  label: string; gradFrom: string; gradTo: string; totalSteps: number
+  labelKey: string; gradFrom: string; gradTo: string; totalSteps: number
 }> = {
   faceless: {
     Icon:       Video,
     iconColor:  'text-blue-400',
     iconBg:     'bg-blue-500/10',
-    label:      'Faceless Video',
+    labelKey:   'dash_facelessVideo',
     gradFrom:   'from-blue-500',
     gradTo:     'to-blue-600',
     totalSteps: 6,
@@ -47,7 +47,7 @@ const MODULE_CONFIG: Record<string, {
     Icon:       Sparkles,
     iconColor:  'text-purple-400',
     iconBg:     'bg-purple-500/10',
-    label:      'Motion Design',
+    labelKey:   'dash_motionDesign',
     gradFrom:   'from-purple-500',
     gradTo:     'to-blue-500',
     totalSteps: 5,
@@ -56,7 +56,7 @@ const MODULE_CONFIG: Record<string, {
     Icon:       Palette,
     iconColor:  'text-amber-400',
     iconBg:     'bg-amber-500/10',
-    label:      'Brand Kit',
+    labelKey:   'dash_brandKit',
     gradFrom:   'from-amber-500',
     gradTo:     'to-orange-500',
     totalSteps: 6,
@@ -65,7 +65,7 @@ const MODULE_CONFIG: Record<string, {
     Icon:       Clapperboard,
     iconColor:  'text-emerald-400',
     iconBg:     'bg-emerald-500/10',
-    label:      'AI Studio',
+    labelKey:   'dash_aiStudio',
     gradFrom:   'from-emerald-500',
     gradTo:     'to-teal-500',
     totalSteps: 1,
@@ -322,7 +322,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
                 {t('dc_draft')}
               </span>
             </div>
-            <p className="font-mono text-[11px] text-[--text-muted] mt-0.5">{config.label}</p>
+            <p className="font-mono text-[11px] text-[--text-muted] mt-0.5">{t(config.labelKey)}</p>
           </div>
 
           {/* Inline confirm — quick path when the user wants to delete fast */}
@@ -365,7 +365,7 @@ export function DraftCard({ draft, onDelete }: DraftCardProps) {
               {menuOpen && (
                 <DraftContextMenu
                   draft={draft}
-                  moduleLabel={config.label}
+                  moduleLabel={t(config.labelKey)}
                   onClose={() => setMenuOpen(false)}
                   onDelete={() => setConfirmDelete(true)}
                   onRename={handleRename}

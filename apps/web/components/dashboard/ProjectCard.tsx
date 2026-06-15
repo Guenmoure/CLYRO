@@ -65,11 +65,11 @@ const MODULE_ICON_COLORS: Record<string, string> = {
   studio:   'text-emerald-400',
 }
 
-const MODULE_LABELS: Record<string, string> = {
-  faceless: 'Faceless Video',
-  motion:   'Motion Design',
-  brand:    'Brand Kit',
-  studio:   'AI Studio',
+const MODULE_LABEL_KEYS: Record<string, string> = {
+  faceless: 'dash_facelessVideo',
+  motion:   'dash_motionDesign',
+  brand:    'dash_brandKit',
+  studio:   'dash_aiStudio',
 }
 
 /** Gradient placeholder shown when a project has no thumbnail yet */
@@ -216,7 +216,7 @@ function ContextMenu({
     >
       {/* Header */}
       <p className="px-4 py-2.5 border-b border-border font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">
-        {MODULE_LABELS[project.module ?? ''] ?? t('pc_project')}
+        {t(MODULE_LABEL_KEYS[project.module ?? ''] ?? 'pc_project')}
       </p>
 
       {/* Actions */}
@@ -402,7 +402,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
   const ModuleIcon     = MODULE_ICONS[project.module ?? ''] ?? Video
   const iconColor      = MODULE_ICON_COLORS[project.module ?? ''] ?? 'text-[--text-muted]'
   const moduleGradient = MODULE_GRADIENTS[project.module ?? ''] ?? 'from-slate-900/50 via-slate-800/30 to-slate-900/40'
-  const moduleLabel    = MODULE_LABELS[project.module ?? ''] ?? t('pc_project')
+  const moduleLabel    = t(MODULE_LABEL_KEYS[project.module ?? ''] ?? 'pc_project')
 
   // For brand kit done state: link to brand hub to view results
   const brandHubHref = `/brand/hub?draft=${project.id}`

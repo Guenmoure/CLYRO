@@ -17,6 +17,7 @@ import {
   Plus, ArrowLeft, Wand2, Upload, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { startMotionGeneration, getPublicVoices } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import { useDraftSave } from '@/hooks/use-draft-save'
@@ -663,6 +664,7 @@ export function MotionStudio({
   onVideoCreated?: (id: string, title: string) => void
 }) {
   const router = useRouter()
+  const { t } = useLanguage()
 
   // Hydrate draft state once so the initial render already shows restored values
   const hydrated = initialDraft ? hydrateFromDraft(initialDraft.wizard_state) : {}
@@ -779,7 +781,7 @@ export function MotionStudio({
       setScenes(data.scenes ?? [])
       setPhase('board')
     } catch (e) {
-      setGenError(e instanceof Error ? e.message : 'Unknown error')
+      setGenError(t('mh_genError'))
     } finally {
       setGenLoading(false)
     }
@@ -866,7 +868,7 @@ export function MotionStudio({
       finalize()
       onVideoCreated?.(res.video_id, title)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Launch error')
+      toast.error(t('mh_launchError'))
     } finally {
       setLaunching(false)
     }

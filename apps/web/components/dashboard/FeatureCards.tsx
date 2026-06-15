@@ -3,11 +3,13 @@ import {
   Video, Sparkles, Palette, Mic2, Image as ImageIcon, History, Film,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 interface Feature {
-  category: string
-  title: string
-  description: string
+  id: string
+  catKey: string
+  titleKey: string
+  descKey: string
   href: string
   icon: React.ElementType
   iconColor: string
@@ -18,9 +20,10 @@ interface Feature {
 
 const FEATURES: Feature[] = [
   {
-    category: 'AI Avatar',
-    title: 'Avatar Studio',
-    description: 'Script or YouTube URL → video with your AI avatar + typed scenes + timeline editor.',
+    id: 'avatar',
+    catKey: 'fc_catAvatar',
+    titleKey: 'fc_avatarTitle',
+    descKey: 'fc_avatarDesc',
     href: '/studio/new',
     icon: Film,
     iconColor: 'text-rose-400',
@@ -29,9 +32,10 @@ const FEATURES: Feature[] = [
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(251,113,133,0.3)]',
   },
   {
-    category: 'AI Studio',
-    title: 'Faceless Video',
-    description: 'Turn a script into a faceless video. AI voiceover, AI visuals, auto-edited.',
+    id: 'faceless',
+    catKey: 'fc_catStudio',
+    titleKey: 'fc_facelessTitle',
+    descKey: 'fc_facelessDesc',
     href: '/faceless/new',
     icon: Video,
     iconColor: 'text-blue-400',
@@ -40,9 +44,10 @@ const FEATURES: Feature[] = [
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(59,142,240,0.3)]',
   },
   {
-    category: 'Animation',
-    title: 'Motion Design',
-    description: 'Animate your static images into dynamic clips with Kling, Wan or Runway.',
+    id: 'motion',
+    catKey: 'fc_catAnimation',
+    titleKey: 'fc_motionTitle',
+    descKey: 'fc_motionDesc',
     href: '/motion/new',
     icon: Sparkles,
     iconColor: 'text-purple-400',
@@ -51,9 +56,10 @@ const FEATURES: Feature[] = [
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(155,92,246,0.3)]',
   },
   {
-    category: 'Visual identity',
-    title: 'Brand Kit',
-    description: 'Logo, color palette, typography, guidelines. Build your brand identity in a few clicks.',
+    id: 'brand',
+    catKey: 'fc_catIdentity',
+    titleKey: 'fc_brandTitle',
+    descKey: 'fc_brandDesc',
     href: '/brand',
     icon: Palette,
     iconColor: 'text-teal-500',
@@ -62,9 +68,10 @@ const FEATURES: Feature[] = [
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(56,232,255,0.3)]',
   },
   {
-    category: 'Voice',
-    title: 'My Voices',
-    description: 'Clone your voice once and use it across every creation you make.',
+    id: 'voice',
+    catKey: 'fc_catVoice',
+    titleKey: 'fc_voiceTitle',
+    descKey: 'fc_voiceDesc',
     href: '/voices',
     icon: Mic2,
     iconColor: 'text-emerald-400',
@@ -73,9 +80,10 @@ const FEATURES: Feature[] = [
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(34,197,94,0.3)]',
   },
   {
-    category: 'Assets',
-    title: 'Library',
-    description: 'All your visual assets, brand kits and prompts within reach.',
+    id: 'library',
+    catKey: 'fc_catAssets',
+    titleKey: 'fc_libraryTitle',
+    descKey: 'fc_libraryDesc',
     href: '/projects',
     icon: ImageIcon,
     iconColor: 'text-amber-400',
@@ -84,9 +92,10 @@ const FEATURES: Feature[] = [
     hoverGlow: 'hover:shadow-[0_0_40px_-10px_rgba(245,158,11,0.3)]',
   },
   {
-    category: 'Archive',
-    title: 'History',
-    description: 'All your past projects, ready to edit, duplicate or export.',
+    id: 'history',
+    catKey: 'fc_catArchive',
+    titleKey: 'fc_historyTitle',
+    descKey: 'fc_historyDesc',
     href: '/history',
     icon: History,
     iconColor: 'text-pink-400',
@@ -97,24 +106,23 @@ const FEATURES: Feature[] = [
 ]
 
 export function FeatureCards() {
+  const { t } = useLanguage()
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {FEATURES.map((feature) => {
         const Icon = feature.icon
         return (
           <Link
-            key={feature.title}
+            key={feature.id}
             href={feature.href}
             className={cn(
               'group card-interactive relative overflow-hidden rounded-2xl border border-border/60 bg-card p-6',
               feature.hoverGlow,
             )}
           >
-            {/* Subtle gradient on hover */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <div className="relative space-y-4">
-              {/* Icon */}
               <div className={cn(
                 'inline-flex items-center justify-center w-11 h-11 rounded-xl ring-1 transition-transform duration-300 group-hover:scale-110',
                 feature.iconBg,
@@ -123,19 +131,17 @@ export function FeatureCards() {
                 <Icon size={20} className={feature.iconColor} />
               </div>
 
-              {/* Category */}
               <div>
                 <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5">
-                  {feature.category}
+                  {t(feature.catKey)}
                 </p>
                 <h3 className="font-display text-xl text-foreground leading-tight">
-                  {feature.title}
+                  {t(feature.titleKey)}
                 </h3>
               </div>
 
-              {/* Description */}
               <p className="font-body text-sm text-[--text-secondary] leading-relaxed">
-                {feature.description}
+                {t(feature.descKey)}
               </p>
             </div>
           </Link>
