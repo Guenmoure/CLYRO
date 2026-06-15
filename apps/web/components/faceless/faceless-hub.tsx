@@ -1174,6 +1174,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
 // ── Comparison Slider ──────────────────────────────────────────────────────────
 
 function ComparisonSlider({ before, after, onClose }: { before: string; after: string; onClose: () => void }) {
+  const { t } = useLanguage()
   const [pct, setPct] = useState(50)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -1193,10 +1194,10 @@ function ComparisonSlider({ before, after, onClose }: { before: string; after: s
           onMouseMove={(e) => onMove(e.clientX)}
           onTouchMove={(e) => onMove(e.touches[0].clientX)}>
           {/* Before */}
-          <img src={before} alt="Version précédente" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={before} alt={t('fh_previousVersion')} decoding="async" className="absolute inset-0 w-full h-full object-cover" />
           {/* After — clipped */}
           <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 0 0 ${pct}%)` }}>
-            <img src={after} alt="Nouvelle version" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+            <img src={after} alt={t('fh_newVersion')} decoding="async" className="absolute inset-0 w-full h-full object-cover" />
           </div>
           {/* Divider */}
           <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none"
@@ -1206,13 +1207,13 @@ function ComparisonSlider({ before, after, onClose }: { before: string; after: s
             </div>
           </div>
           {/* Labels */}
-          <span className="absolute top-3 left-3 font-mono text-[11px] uppercase tracking-wider text-white bg-black/60 px-2 py-0.5 rounded-full">Avant</span>
-          <span className="absolute top-3 right-3 font-mono text-[11px] uppercase tracking-wider text-white bg-black/60 px-2 py-0.5 rounded-full">Après</span>
+          <span className="absolute top-3 left-3 font-mono text-[11px] uppercase tracking-wider text-white bg-black/60 px-2 py-0.5 rounded-full">{t('fh_previousVersion')}</span>
+          <span className="absolute top-3 right-3 font-mono text-[11px] uppercase tracking-wider text-white bg-black/60 px-2 py-0.5 rounded-full">{t('fh_newVersion')}</span>
         </div>
         {/* Close */}
         <button type="button" onClick={onClose}
           className="absolute top-3 left-1/2 -translate-x-1/2 translate-y-[calc(var(--aspect-h)+12px)] flex items-center gap-1.5 bg-black/70 text-white px-3 py-1.5 rounded-full text-xs font-body hover:bg-black/90 transition-all">
-          <X size={11} /> Fermer
+          <X size={11} /> {t('close')}
         </button>
       </div>
     </div>
@@ -1707,11 +1708,11 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                       <ArrowRight size={8} className="-translate-x-px" />
                     </button>
                   )}
-                  <button type="button" aria-label="Modifier le prompt" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
+                  <button type="button" aria-label={t('fh_editPrompt')} onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
                     className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-primary text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
                     <Edit3 size={10} />
                   </button>
-                  <button type="button" aria-label="Régénérer l'image" onClick={() => generateImage(scene.id)} disabled={scene.imageStatus === 'generating'}
+                  <button type="button" aria-label={t('fh_regenerate')} onClick={() => generateImage(scene.id)} disabled={scene.imageStatus === 'generating'}
                     className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-black/60 flex items-center justify-center transition-all disabled:opacity-40">
                     <RefreshCw size={10} />
                   </button>
@@ -1731,7 +1732,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                         Évite les textes illisibles générés par flux. Max 200 chars. */}
                     <div className="space-y-1">
                       <label className="block font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
-                        Texte à l'écran (optionnel)
+                        {t('fh_overlayText')}
                       </label>
                       <input
                         type="text"
@@ -2398,7 +2399,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     </div>
                   )
                 ) : scene.clipStatus === 'error' ? (
-                  <button type="button" aria-label="Réessayer le clip" onClick={() => generateClip(scene.id)}
+                  <button type="button" aria-label={t('fh_retryClip')} onClick={() => generateClip(scene.id)}
                     className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 transition-colors group">
                     <div className="w-10 h-10 rounded-full border-2 border-red-300 group-hover:border-red-100 flex items-center justify-center transition-all">
                       <RefreshCw size={14} className="text-red-200 group-hover:text-white transition-colors" />
@@ -2406,7 +2407,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                     <p className="font-mono text-[11px] text-red-300 uppercase tracking-wider">Retry</p>
                   </button>
                 ) : (
-                  <button type="button" aria-label="Générer le clip" onClick={() => generateClip(scene.id)}
+                  <button type="button" aria-label={t('fh_generateClip')} onClick={() => generateClip(scene.id)}
                     className="absolute inset-0 flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-colors group">
                     <div className="w-10 h-10 rounded-full border-2 border-white/30 group-hover:border-white/60 flex items-center justify-center transition-all">
                       <Film size={14} className="text-white/60 group-hover:text-white transition-colors" />
@@ -2443,16 +2444,16 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                       aria-label={t('fh_previewClip')}
                       onClick={() => setPreviewIndex(i)}
                       className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-black/70 flex items-center justify-center transition-all"
-                      title="Prévisualiser le clip en grand"
+                      title={t('fh_previewClip')}
                     >
                       <Wand2 size={10} />
                     </button>
                   )}
-                  <button type="button" aria-label="Modifier le prompt" onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
+                  <button type="button" aria-label={t('fh_editPrompt')} onClick={() => setEditingId(editingId === scene.id ? null : scene.id)}
                     className={cn('w-6 h-6 rounded-lg flex items-center justify-center transition-all', editingId === scene.id ? 'bg-primary text-white' : 'bg-black/40 text-white/70 hover:bg-black/60')}>
                     <Edit3 size={10} />
                   </button>
-                  <button type="button" aria-label="Régénérer le clip" onClick={() => generateClip(scene.id)} disabled={scene.clipStatus === 'generating'}
+                  <button type="button" aria-label={t('fh_regenClip')} onClick={() => generateClip(scene.id)} disabled={scene.clipStatus === 'generating'}
                     className="w-6 h-6 rounded-lg bg-black/40 text-white/70 hover:bg-black/60 flex items-center justify-center transition-all disabled:opacity-40">
                     <RefreshCw size={10} />
                   </button>
@@ -2574,7 +2575,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
               allClipsDone ? 'bg-primary text-white hover:bg-brand-hover' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
             <span>{t('fh_assembleVideo')}</span>
             <span className="font-mono text-[11px] opacity-70 border-l border-white/20 pl-2 hidden sm:inline">
-              ~{estimatedTotalSec}s · {scenes.length} {scenes.length > 1 ? 'scènes' : 'scène'}
+              ~{estimatedTotalSec}s · {scenes.length} {t('fh_scenes')}
             </span>
             <ArrowRight size={13} />
           </button>
@@ -2693,7 +2694,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
             {getStatusLabels(t)[status] ?? t('fh_statusGenerating')}
           </h2>
           <p className="font-body text-sm text-[--text-muted]">
-            {project.title || 'Faceless video'} · {project.scenes.length} scènes · {project.duration}
+            {project.title || 'Faceless video'} · {project.scenes.length} {t('fh_scenes')} · {project.duration}
           </p>
           <ProgressBar value={progress} showLabel status={status} message={getStatusLabels(t)[status] ?? t('fh_statusInProgress')} />
         </div>
@@ -2728,7 +2729,7 @@ function FinalStep({ project, onNew, onRetry, onVideoReady, onEditScenes }: {
           </div>
           <div>
             <h2 className="font-display text-2xl font-bold text-foreground mb-1">Votre vidéo est prête !</h2>
-            <p className="font-body text-sm text-[--text-muted]">{project.title || 'Faceless video'} · {project.scenes.length} scènes · {project.duration}</p>
+            <p className="font-body text-sm text-[--text-muted]">{project.title || 'Faceless video'} · {project.scenes.length} {t('fh_scenes')} · {project.duration}</p>
           </div>
 
           <div className={cn('w-full rounded-2xl overflow-hidden aspect-video bg-gradient-to-br', SCENE_COLORS[0], 'flex items-center justify-center')}>

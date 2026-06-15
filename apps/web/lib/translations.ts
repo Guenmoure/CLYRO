@@ -524,6 +524,14 @@ export const translations = {
     fh_pipelineFailed: 'Generation failed — please try again',
     fh_noScriptOrScene: 'No script or scene to generate. Regenerate scenes or enter a script.',
     fh_videoSaving: 'The video is being saved — try again in a few seconds',
+    fh_editPrompt: 'Edit prompt',
+    fh_retryClip: 'Retry clip',
+    fh_generateClip: 'Generate clip',
+    fh_regenClip: 'Regenerate clip',
+    fh_previousVersion: 'Previous version',
+    fh_newVersion: 'New version',
+    fh_scenes: 'scenes',
+    fh_overlayText: 'On-screen text (optional)',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Ready',
@@ -2884,6 +2892,14 @@ export const translations = {
     fh_pipelineFailed: 'La génération a échoué — veuillez réessayer',
     fh_noScriptOrScene: 'Aucun script ou scène à générer. Régénérez les scènes ou saisissez un script.',
     fh_videoSaving: 'La vidéo est en cours de sauvegarde — réessaie dans quelques secondes',
+    fh_editPrompt: 'Modifier le prompt',
+    fh_retryClip: 'Réessayer le clip',
+    fh_generateClip: 'Générer le clip',
+    fh_regenClip: 'Régénérer le clip',
+    fh_previousVersion: 'Version précédente',
+    fh_newVersion: 'Nouvelle version',
+    fh_scenes: 'scènes',
+    fh_overlayText: 'Texte à l\'écran (optionnel)',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Prêt',
@@ -5239,6 +5255,14 @@ export const translations = {
     fh_pipelineFailed: 'La generación falló — inténtalo de nuevo',
     fh_noScriptOrScene: 'No hay guión ni escena para generar. Regenera las escenas o introduce un guión.',
     fh_videoSaving: 'El video se está guardando — inténtalo de nuevo en unos segundos',
+    fh_editPrompt: 'Editar prompt',
+    fh_retryClip: 'Reintentar clip',
+    fh_generateClip: 'Generar clip',
+    fh_regenClip: 'Regenerar clip',
+    fh_previousVersion: 'Versión anterior',
+    fh_newVersion: 'Nueva versión',
+    fh_scenes: 'escenas',
+    fh_overlayText: 'Texto en pantalla (opcional)',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Listo',
@@ -7557,6 +7581,14 @@ export const translations = {
     fh_pipelineFailed: 'Generierung fehlgeschlagen — bitte erneut versuchen',
     fh_noScriptOrScene: 'Kein Skript oder Szene zum Generieren. Szenen neu generieren oder ein Skript eingeben.',
     fh_videoSaving: 'Das Video wird gespeichert — versuche es in ein paar Sekunden erneut',
+    fh_editPrompt: 'Prompt bearbeiten',
+    fh_retryClip: 'Clip erneut versuchen',
+    fh_generateClip: 'Clip generieren',
+    fh_regenClip: 'Clip regenerieren',
+    fh_previousVersion: 'Vorherige Version',
+    fh_newVersion: 'Neue Version',
+    fh_scenes: 'Szenen',
+    fh_overlayText: 'Bildschirmtext (optional)',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Fertig',
@@ -9875,6 +9907,14 @@ export const translations = {
     fh_pipelineFailed: 'A geração falhou — tente novamente',
     fh_noScriptOrScene: 'Nenhum roteiro ou cena para gerar. Regenere as cenas ou insira um roteiro.',
     fh_videoSaving: 'O vídeo está sendo salvo — tente novamente em alguns segundos',
+    fh_editPrompt: 'Editar prompt',
+    fh_retryClip: 'Tentar clip novamente',
+    fh_generateClip: 'Gerar clip',
+    fh_regenClip: 'Regenerar clip',
+    fh_previousVersion: 'Versão anterior',
+    fh_newVersion: 'Nova versão',
+    fh_scenes: 'cenas',
+    fh_overlayText: 'Texto na tela (opcional)',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Pronto',
