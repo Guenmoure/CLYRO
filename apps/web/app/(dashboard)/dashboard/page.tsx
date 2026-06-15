@@ -1,16 +1,13 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
-import Link from 'next/link'
-import { AlertCircle, RefreshCw } from 'lucide-react'
 import type { Database } from '@/lib/database.types'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 
 // Dashboard components — HeyGen-pattern home: greeting → create tiles → recent projects.
 // The "+ Create" dropdown now lives in the TopBar; HomeHero / HomeFeatureGrid were
 // replaced by CreateTiles (one large tile per module).
 import { CreateTiles }        from '@/components/dashboard/CreateTiles'
 import { CreditsBanner }      from '@/components/dashboard/CreditsBanner'
+import { DashboardErrorCard } from '@/components/dashboard/DashboardErrorCard'
 import { EmptyDashboard }     from '@/components/dashboard/EmptyDashboard'
 import { ProjectsSection }    from '@/components/dashboard/ProjectsSection'
 import { PromptHero }         from '@/components/dashboard/PromptHero'
@@ -108,19 +105,7 @@ export default async function DashboardPage() {
       <CreditsBanner plan={plan} creditsLeft={credits} />
 
       {/* ── Fetch error ──────────────────────────────────────── */}
-      {errorMsg && (
-        <Card variant="elevated" className="flex items-center gap-4 py-5 px-6">
-          <div className="bg-error/10 rounded-xl p-3 shrink-0">
-            <AlertCircle className="text-error" size={20} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-display text-sm text-foreground">Can&apos;t load your projects right now</p>
-          </div>
-          <Button variant="secondary" size="sm" leftIcon={<RefreshCw size={14} />} asChild>
-            <Link href="/dashboard">Retry</Link>
-          </Button>
-        </Card>
-      )}
+      {errorMsg && <DashboardErrorCard />}
 
       {/* ── 4. Recent projects grid (realtime) or empty state ── */}
       {!errorMsg && (

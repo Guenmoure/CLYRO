@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import type { VideoProject } from './ProjectCard'
 
 interface RealtimeProjectsProps {
@@ -13,6 +14,7 @@ interface RealtimeProjectsProps {
 export function RealtimeProjects({ userId, onUpdate }: RealtimeProjectsProps) {
   const supabase    = createBrowserClient()
   const channelRef  = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const { t } = useLanguage()
 
   useEffect(() => {
     if (channelRef.current) return
@@ -37,12 +39,12 @@ export function RealtimeProjects({ userId, onUpdate }: RealtimeProjectsProps) {
               output_url:   updated.output_url,
               thumbnail_url: updated.thumbnail_url,
             })
-            toast.success(`✓ "${updated.title ?? 'Vidéo'}" est prête`)
+            toast.success(t('rt_videoReady'))
           }
 
           if (updated.status === 'error' && prev.status !== 'error') {
             onUpdate(updated.id, { status: 'error' })
-            toast.error(`Erreur sur "${updated.title ?? 'Vidéo'}". Vérifier les détails.`)
+            toast.error(t('rt_videoError'))
           }
 
           if (updated.status !== 'done' && updated.status !== 'error') {
@@ -58,7 +60,7 @@ export function RealtimeProjects({ userId, onUpdate }: RealtimeProjectsProps) {
       supabase.removeChannel(channel)
       channelRef.current = null
     }
-  }, [supabase, userId, onUpdate])
+  }, [supabase, userId, onUpdate, t])
 
   return null
 }

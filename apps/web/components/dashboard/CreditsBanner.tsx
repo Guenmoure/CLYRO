@@ -52,8 +52,8 @@ export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: Cr
   const contextLabel = isEmpty
     ? t('cb_no_credits')
     : isLow
-    ? `~${canDoStoryboard} ${t('cb_storyboard')}${canDoStoryboard !== 1 ? 's' : ''} remaining`
-    : `~${canDoFast} ${t('cb_fast_video')}${canDoFast !== 1 ? 's' : ''} or ~${canDoStoryboard} ${t('cb_storyboard')}`
+    ? t('cb_remaining').replace('{n}', String(canDoStoryboard)).replace('{type}', t('cb_storyboard'))
+    : t('cb_estimate').replace('{fast}', String(canDoFast)).replace('{storyboard}', String(canDoStoryboard))
 
   return (
     <div className={cn(

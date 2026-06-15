@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { useLanguage } from '@/lib/i18n'
 
 export default function DashboardError({
   error,
@@ -13,6 +14,8 @@ export default function DashboardError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const { t } = useLanguage()
+
   useEffect(() => {
     console.error('[Dashboard error boundary]', error)
   }, [error])
@@ -25,28 +28,23 @@ export default function DashboardError({
         </div>
         <div>
           <h1 className="font-display text-xl text-foreground mb-1">
-            Une erreur est survenue
+            {t('db_errorTitle')}
           </h1>
           <p className="font-body text-sm text-[--text-secondary] mb-2">
-            Le dashboard n&apos;a pas pu être chargé.
+            {t('db_errorDesc')}
           </p>
           {error.digest && (
             <p className="font-mono text-[11px] text-[--text-muted]">
-              Code : {error.digest}
-            </p>
-          )}
-          {error.message && (
-            <p className="font-body text-xs text-[--text-muted] mt-2 max-w-md">
-              {error.message}
+              {t('db_errorCode')}: {error.digest}
             </p>
           )}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Button variant="primary" size="md" leftIcon={<RefreshCw size={14} />} onClick={() => reset()}>
-            Réessayer
+            {t('db_retry')}
           </Button>
           <Button variant="secondary" size="md" asChild>
-            <Link href="/login">Se reconnecter</Link>
+            <Link href="/login">{t('db_reconnect')}</Link>
           </Button>
         </div>
       </Card>
