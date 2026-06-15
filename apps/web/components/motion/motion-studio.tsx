@@ -23,7 +23,7 @@ import { useVideoStatus } from '@/hooks/use-video-status'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { toast } from '@/components/ui/toast'
 import { VideoPlayer } from '@/components/ui/video-player'
-import type { VideoFormat, VideoDuration, MotionScene } from '@clyro/shared'
+import type { VideoFormat, VideoDuration, MotionScene, SceneType } from '@clyro/shared'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -339,7 +339,7 @@ function SceneCard({
               <label className="block text-[11px] font-body font-medium text-[--text-muted] mb-1">Scene type</label>
               <select
                 value={scene.scene_type ?? 'text_hero'}
-                onChange={(e) => onChange({ scene_type: e.target.value as any })}
+                onChange={(e) => onChange({ scene_type: e.target.value as SceneType })}
                 className="w-full text-sm font-body text-foreground bg-card border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-primary transition-colors"
               >
                 {Object.entries(SCENE_TYPE_LABELS).map(([id, label]) => (

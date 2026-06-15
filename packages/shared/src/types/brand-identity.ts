@@ -58,6 +58,7 @@ export interface BrandVoice {
 export interface BrandStrategy {
   directions: [BrandDirection, BrandDirection, BrandDirection]
   voice: BrandVoice
+  hybrid?: BrandDirection
 }
 
 // ── Analyst result ──────────────────────────────────────────────────────────

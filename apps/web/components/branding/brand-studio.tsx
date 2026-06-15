@@ -1602,8 +1602,7 @@ export function BrandStudio() {
           strategy.directions[2],
         ],
       } as BrandStrategy;
-      // Add hybrid as a 4th that replaces the selected or appended
-      (next as any).hybrid = hybrid;
+      next.hybrid = hybrid;
       setStrategy(next);
       setSelectedId(hybrid.id);
       toast.success(t("bs_hybridGenerated"));
@@ -1942,15 +1941,15 @@ export function BrandStudio() {
             </div>
 
             {/* Hybrid panel — show if hybrid exists */}
-            {(strategy as any).hybrid && (
+            {strategy.hybrid && (
               <div className="mt-2">
                 <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-3">
                   {t("bs_hybridDirection")}
                 </p>
                 <DirectionCard
-                  direction={(strategy as any).hybrid}
-                  selected={selectedId === (strategy as any).hybrid.id}
-                  onSelect={() => setSelectedId((strategy as any).hybrid.id)}
+                  direction={strategy.hybrid}
+                  selected={selectedId === strategy.hybrid.id}
+                  onSelect={() => setSelectedId(strategy.hybrid!.id)}
                 />
               </div>
             )}
@@ -2076,7 +2075,7 @@ export function BrandStudio() {
                   key={key}
                   assetKey={key}
                   label={t(labelKey)}
-                  url={(assets as any)[key]}
+                  url={assets[key as keyof BrandAssets]}
                   brief={brief}
                   direction={selectedDirection}
                   referenceUrl={referenceUrl}
