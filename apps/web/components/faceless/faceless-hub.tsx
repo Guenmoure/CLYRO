@@ -3088,18 +3088,10 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
       // instead of letting the server respond with the opaque 400.
       const hasPreGen = Array.isArray(sanitizedPreGenerated) && sanitizedPreGenerated.length > 0
       if (!effectiveScript && !hasPreGen) {
-        toast.error('Aucun script ou scène à générer. Régénérez les scènes ou saisissez un script.')
+        toast.error(t('fh_noScriptOrScene'))
         setLoading(false)
         return
       }
-
-      // Debug payload — paste the console output if the 400 reappears.
-      console.log('[goToFinal] payload', {
-        scriptLen: effectiveScript?.length ?? 0,
-        sceneCount: sanitizedPreGenerated?.length ?? 0,
-        animationMode: project.animationMode,
-        inputType: project.inputType,
-      })
 
       const { video_id, script_condensed } = await startFacelessGeneration({
         title: project.title || 'Faceless video',
@@ -3289,7 +3281,7 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
   async function handleSessionDownload(session: VideoSession) {
     // IDs locaux (local-timestamp) = session pas encore en DB, pas de URL disponible
     if (!session.output_url && session.id.startsWith('local-')) {
-      toast.error('La vidéo est en cours de sauvegarde — réessaie dans quelques secondes')
+      toast.error(t('fh_videoSaving'))
       return
     }
     setDownloading(true)

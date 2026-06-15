@@ -116,7 +116,7 @@ export default function BrandCatalogPage() {
       {error && !loading && (
         <div className="flex flex-col items-center gap-2 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error === 'error' ? t('bk_failedLoad') : error}</p>
+          <p className="font-body text-sm text-[--text-muted]">{error}</p>
         </div>
       )}
       {!loading && !error && (

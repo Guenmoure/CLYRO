@@ -12,6 +12,7 @@ import {
 } from '@/lib/api'
 import { createBrowserClient } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
+import { useLanguage } from '@/lib/i18n'
 import type { BrandKit } from '@clyro/shared'
 
 // ── Brand Kit Form ─────────────────────────────────────────────────────────────
@@ -20,10 +21,12 @@ function BrandKitForm({
   initial,
   onSave,
   onCancel,
+  t,
 }: {
   initial?: Partial<BrandKit>
   onSave: (kit: BrandKit) => void
   onCancel: () => void
+  t: (key: string) => string
 }) {
   const [name,           setName]           = useState(initial?.name ?? '')
   const [primaryColor,   setPrimaryColor]   = useState(initial?.primary_color ?? '#6366f1')
@@ -36,12 +39,12 @@ function BrandKitForm({
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleSave() {
-    if (!name.trim()) { toast.error('Name is required.'); return }
+    if (!name.trim()) { toast.error(t('bkm_nameRequired')); return }
     setSaving(true)
     try {
       const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Non authentifié')
+      if (!user) throw new Error('Not authenticated')
 
       let logoUrl = initial?.logo_url ?? undefined
       if (logoFile) {
@@ -82,10 +85,10 @@ function BrandKitForm({
         result = data
       }
 
-      toast.success(initial?.id ? 'Brand kit updated.' : 'Brand kit created.')
+      toast.success(initial?.id ? t('bkm_updated') : t('bkm_created'))
       onSave(result)
     } catch {
-      toast.error('Error saving.')
+      toast.error(t('bkm_saveError'))
     } finally {
       setSaving(false)
     }
@@ -101,19 +104,19 @@ function BrandKitForm({
   return (
     <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
       <h3 className="font-display font-semibold text-foreground">
-        {initial?.id ? 'Edit brand kit' : 'New brand kit'}
+        {initial?.id ? t('bkm_editKit') : t('bkm_newKit')}
       </h3>
 
       {/* Name */}
       <div>
-        <label htmlFor="bkm-name" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">Name</label>
+        <label htmlFor="bkm-name" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">{t('bkm_name')}</label>
         <input
           id="bkm-name"
           name="brand_name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="ex: CLYRO Official"
+          placeholder={t('bkm_namePlaceholder')}
           maxLength={80}
           className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-all"
         />
@@ -123,7 +126,7 @@ function BrandKitForm({
       <div className="flex gap-4 flex-wrap">
         <div className="flex-1 min-w-36">
           <label htmlFor="bkm-primary" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-            Primary color
+            {t('bkm_primaryColor')}
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -139,7 +142,7 @@ function BrandKitForm({
         </div>
         <div className="flex-1 min-w-36">
           <label htmlFor="bkm-secondary" className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-            Secondary color <span className="normal-case">(optional)</span>
+            {t('bkm_secondaryColor')} <span className="normal-case">({t('bkm_optional')})</span>
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -165,13 +168,13 @@ function BrandKitForm({
       {/* Font family */}
       <div>
         <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-          Font <span className="normal-case">(optional)</span>
+          {t('bkm_font')} <span className="normal-case">({t('bkm_optional')})</span>
         </label>
         <input
           type="text"
           value={fontFamily}
           onChange={(e) => setFontFamily(e.target.value)}
-          placeholder="ex: Montserrat, Playfair Display"
+          placeholder={t('bkm_fontPlaceholder')}
           className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground font-body text-sm placeholder:text-[--text-muted] focus:outline-none focus:border-primary transition-all"
         />
       </div>
@@ -179,11 +182,11 @@ function BrandKitForm({
       {/* Logo */}
       <div>
         <label className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-2 block">
-          Logo <span className="normal-case">(optional)</span>
+          {t('bkm_logo')} <span className="normal-case">({t('bkm_optional')})</span>
         </label>
         <div className="flex items-center gap-4">
           {logoPreview && (
-            <img src={logoPreview} alt="Logo preview" className="w-12 h-12 object-contain rounded-lg border border-border bg-muted" />
+            <img src={logoPreview} alt={t('bkm_logoPreview')} className="w-12 h-12 object-contain rounded-lg border border-border bg-muted" />
           )}
           <button
             type="button"
@@ -191,7 +194,7 @@ function BrandKitForm({
             className="flex items-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-xl px-4 py-2.5 text-sm font-body text-[--text-secondary] transition-all"
           >
             <Upload size={14} />
-            {logoPreview ? 'Change' : 'Upload logo'}
+            {logoPreview ? t('bkm_changeLogo') : t('bkm_uploadLogo')}
           </button>
           <input
             ref={fileRef}
@@ -211,7 +214,7 @@ function BrandKitForm({
           onChange={(e) => setIsDefault(e.target.checked)}
           className="w-4 h-4 rounded accent-brand"
         />
-        <span className="font-body text-sm text-[--text-secondary]">Use by default</span>
+        <span className="font-body text-sm text-[--text-secondary]">{t('bkm_useDefault')}</span>
       </label>
 
       {/* Actions */}
@@ -223,14 +226,14 @@ function BrandKitForm({
           className="bg-grad-primary text-white font-display font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 disabled:opacity-50 text-sm transition-opacity flex items-center gap-2"
         >
           {saving && <Loader2 size={13} className="animate-spin" />}
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? t('bkm_saving') : t('save')}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="font-body text-sm text-[--text-muted] hover:text-foreground transition-colors"
         >
-          Cancel
+          {t('cancel')}
         </button>
       </div>
     </div>
@@ -244,11 +247,13 @@ function BrandKitCard({
   onEdit,
   onDelete,
   onSetDefault,
+  t,
 }: {
   kit: BrandKit
   onEdit: (kit: BrandKit) => void
   onDelete: (id: string) => void
   onSetDefault: (id: string) => void
+  t: (key: string) => string
 }) {
   return (
     <div className={cn(
@@ -267,7 +272,7 @@ function BrandKitCard({
           <div>
             <p className="font-display font-semibold text-foreground text-sm">{kit.name}</p>
             {kit.is_default && (
-              <span className="font-mono text-[11px] uppercase tracking-wider text-primary">Default</span>
+              <span className="font-mono text-[11px] uppercase tracking-wider text-primary">{t('bkm_default')}</span>
             )}
           </div>
         </div>
@@ -275,7 +280,7 @@ function BrandKitCard({
           {!kit.is_default && (
             <button
               type="button"
-              title="Set as default"
+              title={t('bkm_setDefault')}
               onClick={() => onSetDefault(kit.id)}
               className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-warning transition-colors"
             >
@@ -284,7 +289,7 @@ function BrandKitCard({
           )}
           <button
             type="button"
-            title="Edit"
+            title={t('bkm_edit')}
             onClick={() => onEdit(kit)}
             className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors font-mono text-xs"
           >
@@ -292,7 +297,7 @@ function BrandKitCard({
           </button>
           <button
             type="button"
-            title="Delete"
+            title={t('bkm_delete')}
             onClick={() => onDelete(kit.id)}
             className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 border border-border flex items-center justify-center text-[--text-muted] hover:text-error transition-colors"
           >
@@ -306,13 +311,13 @@ function BrandKitCard({
         <div
           className="w-6 h-6 rounded-lg border border-white/10 shadow-sm"
           style={{ background: kit.primary_color }}
-          title={`Primary: ${kit.primary_color}`}
+          title={`${t('bkm_primaryColor')}: ${kit.primary_color}`}
         />
         {kit.secondary_color && (
           <div
             className="w-6 h-6 rounded-lg border border-white/10 shadow-sm"
             style={{ background: kit.secondary_color }}
-            title={`Secondary: ${kit.secondary_color}`}
+            title={`${t('bkm_secondaryColor')}: ${kit.secondary_color}`}
           />
         )}
         {kit.font_family && (
@@ -326,6 +331,7 @@ function BrandKitCard({
 // ── Main Manager ───────────────────────────────────────────────────────────────
 
 export function BrandKitManager() {
+  const { t } = useLanguage()
   const [kits,       setKits]       = useState<BrandKit[]>([])
   const [loading,    setLoading]    = useState(true)
   const [showForm,   setShowForm]   = useState(false)
@@ -334,7 +340,7 @@ export function BrandKitManager() {
   useEffect(() => {
     getBrandKits()
       .then(({ data }) => setKits(data))
-      .catch(() => toast.error('Unable to load brand kits.'))
+      .catch(() => toast.error(t('bkm_loadError')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -354,9 +360,9 @@ export function BrandKitManager() {
     try {
       await deleteBrandKit(id)
       setKits((prev) => prev.filter((k) => k.id !== id))
-      toast.success('Brand kit deleted.')
+      toast.success(t('bkm_deleted'))
     } catch {
-      toast.error('Unable to delete.')
+      toast.error(t('bkm_deleteError'))
     }
   }
 
@@ -367,7 +373,7 @@ export function BrandKitManager() {
         prev.map((k) => ({ ...k, is_default: k.id === data.id }))
       )
     } catch {
-      toast.error('Unable to set as default.')
+      toast.error(t('bkm_defaultError'))
     }
   }
 
@@ -391,6 +397,7 @@ export function BrandKitManager() {
           onEdit={(k) => { setEditingKit(k); setShowForm(false) }}
           onDelete={handleDelete}
           onSetDefault={handleSetDefault}
+          t={t}
         />
       ))}
 
@@ -400,6 +407,7 @@ export function BrandKitManager() {
           initial={editingKit}
           onSave={handleSaved}
           onCancel={() => setEditingKit(null)}
+          t={t}
         />
       )}
 
@@ -408,6 +416,7 @@ export function BrandKitManager() {
         <BrandKitForm
           onSave={handleSaved}
           onCancel={() => setShowForm(false)}
+          t={t}
         />
       )}
 
@@ -419,7 +428,7 @@ export function BrandKitManager() {
           className="w-full flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 border border-border rounded-2xl py-4 text-sm font-body text-[--text-muted] hover:text-foreground border-2 border-dashed border-border transition-all"
         >
           <Plus size={15} />
-          New brand kit
+          {t('bkm_newKit')}
         </button>
       )}
     </div>
