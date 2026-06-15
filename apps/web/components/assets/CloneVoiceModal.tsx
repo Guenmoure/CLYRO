@@ -170,7 +170,7 @@ export function CloneVoiceModal({
       onCloned?.()
       onClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('cv_cloneError'))
+      toast.error(t('cv_cloneError'))
     } finally {
       setUploading(false)
     }

@@ -223,7 +223,7 @@ function StudioNewPageInner() {
       toast.success(`${result.sceneCount} ${t('sceneSplit')}`)
       router.push(`/studio/${result.projectId}/editor`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('analysisError'))
+      toast.error(t('analysisError'))
     } finally {
       setAnalyzing(false)
       setStep('')

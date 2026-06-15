@@ -48,7 +48,7 @@ export default function StudioEditorPage() {
         }
       })
       .catch((err) => {
-        toast.error(err instanceof Error ? err.message : t('st_loadProjectFailed'))
+        toast.error(t('st_loadProjectFailed'))
         router.push('/dashboard')
       })
       .finally(() => setLoading(false))
@@ -97,7 +97,7 @@ export default function StudioEditorPage() {
       await generateAllStudioScenes(project.id)
       toast.success(t('st_generationStarted'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('st_generationStartFailed'))
+      toast.error(t('st_generationStartFailed'))
     } finally {
       setStarting(false)
     }
@@ -117,7 +117,7 @@ export default function StudioEditorPage() {
       })
       toast.success(t('st_regenQueued'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('st_regenFailed'))
+      toast.error(t('st_regenFailed'))
     }
   }, [project, t])
 
@@ -130,7 +130,7 @@ export default function StudioEditorPage() {
       setScenes(fresh.scenes as StudioScene[])
       toast.success(t('st_sceneAdded'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('st_sceneAddFailed'))
+      toast.error(t('st_sceneAddFailed'))
     }
   }, [project, t])
 
@@ -145,7 +145,7 @@ export default function StudioEditorPage() {
       if (selectedId === sceneId) setSelectedId(null)
       toast.success(t('st_sceneDeleted'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('st_sceneDeleteFailed'))
+      toast.error(t('st_sceneDeleteFailed'))
     }
   }, [selectedId, t])
 
@@ -202,8 +202,7 @@ export default function StudioEditorPage() {
             toast.success(t('st_renderStarted').replace('{n}', String(result.sceneCount)))
             setProject((p) => (p ? { ...p, status: 'rendering' } : p))
           } catch (err) {
-            const msg = err instanceof Error ? err.message : t('st_renderFailed')
-            toast.error(msg)
+            toast.error(t('st_renderFailed'))
           }
         }}
         onPreview={() => router.push(`/studio/${project.id}/preview`)}

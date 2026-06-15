@@ -342,7 +342,7 @@ function StepVoice({
   useEffect(() => {
     getPublicVoices()
       .then(({ voices }) => setVoices(voices as VoiceItem[]))
-      .catch((err) => toast.error(err instanceof Error ? err.message : t('md_voiceLoadError')))
+      .catch((err) => toast.error(t('md_voiceLoadError')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -536,7 +536,7 @@ export function MotionDesignWizard() {
       setVideoId(video_id)
       setStep(6)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('md_launchError'))
+      toast.error(t('md_launchError'))
     } finally {
       setLaunching(false)
     }

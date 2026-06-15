@@ -135,9 +135,8 @@ function StepScript({
       )
       setSource('text')  // show the imported text so users can edit before continuing
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t('fn_toast_unknownError')
-      setImportError(msg)
-      toast.error(msg)
+      setImportError(t('fn_toast_unknownError'))
+      toast.error(t('fn_toast_unknownError'))
     } finally {
       setImporting(false)
     }
@@ -1012,9 +1011,8 @@ function FacelessNewPageInner() {
       // output. finalize() above already muted the save hook.
       setResultOpen(true)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t('fn_toast_unknownError')
       console.error('[faceless/new] generation failed:', err)
-      toast.error(t('fn_toast_generationFailed').replace('{msg}', msg))
+      toast.error(t('fn_toast_generationFailed').replace('{msg}', t('fn_toast_unknownError')))
       setGenerating(false)
     }
   }

@@ -30,8 +30,6 @@ interface Profile {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
-  console.log('[DashboardPage] Starting render')
-
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     console.error('[DashboardPage] Missing Supabase env vars')
     return (
@@ -56,7 +54,8 @@ export default async function DashboardPage() {
     const { data: authData, error: authError } = await supabase.auth.getUser()
 
     if (authError) {
-      errorMsg = `Auth: ${authError.message}`
+      console.error('[DashboardPage] Auth error:', authError.message)
+      errorMsg = 'auth_failed'
     } else if (!authData?.user) {
       return null
     } else {
@@ -84,9 +83,8 @@ export default async function DashboardPage() {
       if (videosResult.error)   console.error('[DashboardPage] Videos error:', videosResult.error.message)
     }
   } catch (err) {
-    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
-    console.error('[DashboardPage] Uncaught error:', msg)
-    errorMsg = msg
+    console.error('[DashboardPage] Uncaught error:', err)
+    errorMsg = 'load_failed'
   }
 
   if (!userId) return null
@@ -117,7 +115,6 @@ export default async function DashboardPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-display text-sm text-foreground">Can&apos;t load your projects right now</p>
-            <p className="font-body text-xs text-[--text-muted] mt-1 font-mono">{errorMsg}</p>
           </div>
           <Button variant="secondary" size="sm" leftIcon={<RefreshCw size={14} />} asChild>
             <Link href="/dashboard">Retry</Link>

@@ -431,7 +431,7 @@ function StepVoice({
   useEffect(() => {
     getPublicVoices()
       .then(({ voices }) => setVoices(voices as VoiceItem[]))
-      .catch((err) => toast.error(err instanceof Error ? err.message : t('mw_voiceLoadError')))
+      .catch((err) => toast.error(t('mw_voiceLoadError')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -647,7 +647,7 @@ export function MotionWizard() {
       setVideoId(video_id)
       setStep(7)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('mw_launchError'))
+      toast.error(t('mw_launchError'))
     } finally {
       setLaunching(false)
     }

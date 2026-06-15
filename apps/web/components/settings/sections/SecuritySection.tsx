@@ -55,7 +55,7 @@ export function SecuritySection() {
       setConfirmPass('')
       setShowForm(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('sec_error'))
+      toast.error(t('sec_error'))
     } finally {
       setSaving(false)
     }
@@ -73,7 +73,7 @@ export function SecuritySection() {
       toast.success(t('sec_email_sent'))
       setTimeout(() => setResetSent(false), 10_000)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('sec_error'))
+      toast.error(t('sec_error'))
     } finally {
       setResetting(false)
     }
@@ -114,7 +114,7 @@ export function SecuritySection() {
               <button
                 type="button"
                 onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-body font-medium text-foreground hover:bg-muted transition-colors"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-body font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
               >
                 {t('sec_change_password')}
               </button>

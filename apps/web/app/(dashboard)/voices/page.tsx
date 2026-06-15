@@ -215,7 +215,7 @@ function CloneVoiceModal({ onClose, onCloned }: { onClose: () => void; onCloned:
       toast.success(t('voiceCloned'))
       onCloned(); onClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('errorCloningVoice'))
+      toast.error(t('errorCloningVoice'))
     } finally { setUploading(false) }
   }
 
@@ -272,7 +272,7 @@ function PersonalVoiceCard({ voice, onDeleted }: { voice: ClonedVoice; onDeleted
       toast.success(t('voiceDeleted'))
       onDeleted(voice.id)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('errorOccurred'))
+      toast.error(t('errorOccurred'))
       setDeleting(false); setShowConfirm(false)
     }
   }
@@ -385,7 +385,7 @@ export default function VoicesPage() {
       setPublicVoices(voices)
     } catch (err) {
       console.error('[voices/public]', err)
-      toast.error(err instanceof Error ? err.message : t('failedLoadVoices'))
+      toast.error(t('failedLoadVoices'))
     } finally { setLoadingPublic(false) }
   }, [filters, activeCategory, t])
 
@@ -399,7 +399,7 @@ export default function VoicesPage() {
       .then(({ personal }) => setPersonalVoices(personal as ClonedVoice[]))
       .catch((err) => {
         console.error('[voices/personal]', err)
-        toast.error(err instanceof Error ? err.message : t('failedLoadClonedVoices'))
+        toast.error(t('failedLoadClonedVoices'))
       })
       .finally(() => setLoadingPersonal(false))
   }, [tab, t])
@@ -423,7 +423,7 @@ export default function VoicesPage() {
     try {
       await toggleVoiceFavorite(voiceId, isFavorite ? 'remove' : 'add')
       setPublicVoices((prev) => prev.map((v) => v.id === voiceId ? { ...v, isFavorite: !isFavorite } : v))
-    } catch (err) { toast.error(err instanceof Error ? err.message : t('errorOccurred')) }
+    } catch (err) { toast.error(t('errorOccurred')) }
   }
 
   const TABS = [

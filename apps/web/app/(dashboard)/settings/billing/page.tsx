@@ -52,7 +52,7 @@ export default function BillingPage() {
     try {
       const { checkout_url } = await createStripeCheckout({ plan: targetPlan })
       if (checkout_url) window.location.href = checkout_url
-    } catch (err) { toast.error(err instanceof Error ? err.message : t('bill_stripeError')) }
+    } catch { toast.error(t('bill_stripeError')) }
     finally { setLoadingPlan(null) }
   }
 
@@ -62,7 +62,7 @@ export default function BillingPage() {
     try {
       const { payment_url } = await createMonerooCheckout({ plan: targetPlan, phone, currency: 'XOF' })
       if (payment_url) window.location.href = payment_url
-    } catch (err) { toast.error(err instanceof Error ? err.message : t('bill_monerooError')) }
+    } catch { toast.error(t('bill_monerooError')) }
     finally { setLoadingPlan(null); setShowMobileMoneyModal(null) }
   }
 

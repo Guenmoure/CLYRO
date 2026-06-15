@@ -55,7 +55,7 @@ export function AccountSection() {
       if (error) throw error
       toast.success(t('acc_profile_updated'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('acc_save_error'))
+      toast.error(t('acc_save_error'))
     } finally {
       setSaving(false)
     }
@@ -73,7 +73,7 @@ export function AccountSection() {
       toast.success(t('acc_email_sent'))
       setTimeout(() => setResetSent(false), 10_000)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('acc_error'))
+      toast.error(t('acc_error'))
     } finally {
       setResetting(false)
     }

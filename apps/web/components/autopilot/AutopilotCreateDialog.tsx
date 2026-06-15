@@ -105,7 +105,7 @@ export function AutopilotCreateDialog({ isOpen, onClose, onCreate }: Props) {
       })
       onClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('auto_dialog_creation_failed'))
+      toast.error(t('auto_dialog_creation_failed'))
     } finally {
       setSubmitting(false)
     }

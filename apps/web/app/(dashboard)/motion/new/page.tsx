@@ -590,9 +590,8 @@ function MotionNewPageInner() {
       // the user's video. finalize() above already muted the hook.
       setResultOpen(true)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t('mn_toast_unknownError')
       console.error('[motion/new] generation failed:', err)
-      toast.error(t('mn_toast_generationFailed').replace('{msg}', msg))
+      toast.error(t('mn_toast_generationFailed').replace('{msg}', t('mn_toast_unknownError')))
       setGenerating(false)
     }
   }

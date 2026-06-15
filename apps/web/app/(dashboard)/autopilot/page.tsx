@@ -43,7 +43,7 @@ export default function AutopilotPage() {
       const { data } = await getAutopilotSeries()
       setSeries(data ?? [])
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('auto_load_failed'))
+      toast.error(t('auto_load_failed'))
     } finally {
       setLoading(false)
     }
@@ -66,7 +66,7 @@ export default function AutopilotPage() {
       const { data } = await updateAutopilotSeries(s.id, { enabled: !s.enabled })
       setSeries(prev => prev.map(x => x.id === s.id ? data : x))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('auto_update_failed'))
+      toast.error(t('auto_update_failed'))
     } finally {
       setBusyId(null)
     }
@@ -79,7 +79,7 @@ export default function AutopilotPage() {
       setSeries(prev => prev.map(x => x.id === s.id ? data : x))
       toast.success(t('auto_run_queued'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('auto_run_failed'))
+      toast.error(t('auto_run_failed'))
     } finally {
       setBusyId(null)
     }
@@ -92,7 +92,7 @@ export default function AutopilotPage() {
       setSeries(prev => prev.filter(x => x.id !== s.id))
       toast.success(t('auto_series_deleted'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('auto_delete_failed'))
+      toast.error(t('auto_delete_failed'))
     } finally {
       setBusyId(null)
     }

@@ -438,7 +438,7 @@ function CreationForm({ onGenerated }: { onGenerated: (id: string, title: string
       })
       onGenerated(video_id, title)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('mh_launchError'))
+      toast.error(t('mh_launchError'))
     } finally {
       setLaunching(false)
     }

@@ -32,7 +32,7 @@ export default function SettingsPage() {
       toast.success(t('set_emailSentToast'))
       setTimeout(() => setResetSent(false), 10_000)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('set_sendError'))
+      toast.error(t('set_sendError'))
     } finally {
       setResetting(false)
     }
@@ -126,7 +126,7 @@ export default function SettingsPage() {
               type="button"
               onClick={handlePasswordReset}
               disabled={resetting || resetSent}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 font-body text-sm font-medium transition-all ${
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 font-body text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
                 resetSent
                   ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 cursor-default'
                   : 'bg-muted border border-border text-foreground hover:bg-border hover:border-border disabled:opacity-60'
