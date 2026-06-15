@@ -1539,7 +1539,7 @@ export function BrandStudio() {
         setStep("brief");
       } else {
         toast.error(
-          err instanceof Error ? err.message : t("bs_genError"),
+          t("bs_genError"),
         );
       }
     } finally {
@@ -1567,7 +1567,7 @@ export function BrandStudio() {
         setStep("brief");
       } else {
         toast.error(
-          err instanceof Error ? err.message : t("bs_genError"),
+          t("bs_genError"),
         );
       }
     } finally {
@@ -1618,7 +1618,7 @@ export function BrandStudio() {
       setStep("logos");
       toast.success(t("bs_logosRegenerated"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("bs_hybridError"));
+      toast.error(t("bs_hybridError"));
     } finally {
       setLoading(false);
       setLoadingMsg("");
@@ -1702,7 +1702,7 @@ export function BrandStudio() {
       setStep("charte");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : t("bs_charteGenError"),
+        t("bs_charteGenError"),
       );
     } finally {
       setLoading(false);
@@ -1798,7 +1798,7 @@ export function BrandStudio() {
       setShareUrl(data.signedUrl);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : t("bs_shareError"),
+        t("bs_shareError"),
       );
     } finally {
       setSharing(false);

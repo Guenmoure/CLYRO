@@ -76,7 +76,7 @@ export default function BrandPhotoshootTemplateInfosPage() {
         setTemplates(tpl.data)
         setUserId(u.data.user?.id ?? '')
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
+      .catch(() => setError(t('errorOccurred')))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -118,7 +118,7 @@ export default function BrandPhotoshootTemplateInfosPage() {
       if (!signed?.signedUrl) throw new Error('Could not sign URL')
       setInputImageUrl(signed.signedUrl)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_uploadFailed'))
+      toast.error(t('bk_uploadFailed'))
     } finally {
       setInputUploading(false)
     }
@@ -137,7 +137,7 @@ export default function BrandPhotoshootTemplateInfosPage() {
       })
       setShoot(res.data)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_generationFailed'))
+      toast.error(t('bk_generationFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -167,7 +167,7 @@ export default function BrandPhotoshootTemplateInfosPage() {
       })
       toast.success(t('bk_savedToAssets'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_saveFailed'))
+      toast.error(t('bk_saveFailed'))
     }
   }
 
@@ -185,7 +185,7 @@ export default function BrandPhotoshootTemplateInfosPage() {
       <BrandKitLayout kitId={kitId}>
         <div className="flex flex-col items-center gap-2 py-20">
           <AlertCircle size={24} className="text-error" />
-          <p className="font-body text-sm text-[--text-muted]">{error === 'error' ? t('bk_failedLoad') : error}</p>
+          <p className="font-body text-sm text-[--text-muted]">{error}</p>
         </div>
       </BrandKitLayout>
     )

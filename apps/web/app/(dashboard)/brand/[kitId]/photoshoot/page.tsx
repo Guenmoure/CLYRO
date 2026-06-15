@@ -36,7 +36,7 @@ export default function BrandPhotoshootLandingPage() {
     setError(null)
     Promise.all([getBrandKit(kitId), listBrandPhotoshoots(kitId)])
       .then(([k, p]) => { setKit(k.data); setPhotoshoots(p.data) })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
+      .catch((err: unknown) => setError(t('errorOccurred')))
       .finally(() => setLoading(false))
   }, [kitId])
 

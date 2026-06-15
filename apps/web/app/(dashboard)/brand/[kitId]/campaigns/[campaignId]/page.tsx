@@ -62,7 +62,7 @@ export default function BrandCampaignDetailPage() {
       setCampaign(res.data.campaign)
       setCreatives(res.data.creatives)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'error')
+      setError(t('errorOccurred'))
     }
   }, [campaignId])
 
@@ -121,7 +121,7 @@ export default function BrandCampaignDetailPage() {
       const res = await addCreativeToBrandCampaign(campaignId)
       setCreatives((cur) => [...cur, res.data.creative])
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_cd_addFailed'))
+      toast.error(t('bk_cd_addFailed'))
     } finally {
       setAddingCreative(false)
     }
@@ -136,7 +136,7 @@ export default function BrandCampaignDetailPage() {
       // son statut. (Le détail player live n'existe pas comme route MVP.)
       router.push(`/motion?launched=${res.data.video_id}`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_cd_animateFailed'))
+      toast.error(t('bk_cd_animateFailed'))
       setAnimatingId(null)
     }
   }

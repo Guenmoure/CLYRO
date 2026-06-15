@@ -1365,9 +1365,8 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
         setLocalStyleRef(data.imageUrl)
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error(`[generateImage] Scene ${scene.index}:`, msg)
-      toast.error(`Scene ${scene.index + 1}: ${msg.slice(0, 120)}`)
+      console.error(`[generateImage] Scene ${scene.index}:`, err)
+      toast.error(t('fh_imageGenFailed'))
       updateScene(id, { imageStatus: 'error', streamLog: undefined, qualityHint: undefined })
     }
   }
@@ -2184,9 +2183,8 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
         updateScene(id, { clipStatus: 'done', clipUrl: data.videoUrl })
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error(`[generateClip scene=${id}]`, msg, err)
-      toast.error(`Scène ${scene.index + 1} : ${msg}`)
+      console.error(`[generateClip scene=${id}]`, err)
+      toast.error(t('fh_clipGenFailed'))
       updateScene(id, { clipStatus: 'error' })
     }
   }
@@ -3151,14 +3149,8 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
       // finalize() above already disabled the autosave hook so no fresh
       // draft can be re-INSERTed.
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error('[goToFinal] Pipeline start failed:', msg, err)
-      // Si session expirée → message explicite pour que l'utilisateur se reconnecte
-      if (msg.includes('Session expired') || msg.includes('reconnecter')) {
-        toast.error('Session expirée — reconnecte-toi puis relance la génération')
-      } else {
-        toast.error(`La génération a échoué : ${msg}`)
-      }
+      console.error('[goToFinal] Pipeline start failed:', err)
+      toast.error(t('fh_pipelineFailed'))
     } finally {
       setLoading(false)
     }

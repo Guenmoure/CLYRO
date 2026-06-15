@@ -53,8 +53,7 @@ export default function BrandDnaPage() {
     getBrandKit(kitId)
       .then((r) => setKit(r.data))
       .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : t('bk_failedLoad')
-        setLoadError(msg)
+        setLoadError(t('bk_failedLoad'))
       })
       .finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps

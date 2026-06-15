@@ -519,6 +519,9 @@ export const translations = {
     fh_pipelineImages: 'Images',
     fh_pipelineClips: 'Clips',
     fh_pipelineVideo: 'Video',
+    fh_imageGenFailed: 'Image generation failed — try again',
+    fh_clipGenFailed: 'Clip generation failed — try again',
+    fh_pipelineFailed: 'Generation failed — please try again',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Ready',
@@ -2835,6 +2838,9 @@ export const translations = {
     fh_pipelineImages: 'Images',
     fh_pipelineClips: 'Clips',
     fh_pipelineVideo: 'Vidéo',
+    fh_imageGenFailed: 'Échec de la génération d\'image — réessayez',
+    fh_clipGenFailed: 'Échec de la génération du clip — réessayez',
+    fh_pipelineFailed: 'La génération a échoué — veuillez réessayer',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Prêt',
@@ -5146,6 +5152,9 @@ export const translations = {
     fh_pipelineImages: 'Imágenes',
     fh_pipelineClips: 'Clips',
     fh_pipelineVideo: 'Video',
+    fh_imageGenFailed: 'Error al generar la imagen — inténtalo de nuevo',
+    fh_clipGenFailed: 'Error al generar el clip — inténtalo de nuevo',
+    fh_pipelineFailed: 'La generación falló — inténtalo de nuevo',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Listo',
@@ -7420,6 +7429,9 @@ export const translations = {
     fh_pipelineImages: 'Bilder',
     fh_pipelineClips: 'Clips',
     fh_pipelineVideo: 'Video',
+    fh_imageGenFailed: 'Bildgenerierung fehlgeschlagen — erneut versuchen',
+    fh_clipGenFailed: 'Clip-Generierung fehlgeschlagen — erneut versuchen',
+    fh_pipelineFailed: 'Generierung fehlgeschlagen — bitte erneut versuchen',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Fertig',
@@ -9694,6 +9706,9 @@ export const translations = {
     fh_pipelineImages: 'Imagens',
     fh_pipelineClips: 'Clips',
     fh_pipelineVideo: 'Vídeo',
+    fh_imageGenFailed: 'Falha na geração da imagem — tente novamente',
+    fh_clipGenFailed: 'Falha na geração do clipe — tente novamente',
+    fh_pipelineFailed: 'A geração falhou — tente novamente',
 
     // ── Motion Hub ────────────────────────────────────────────────────────
     mh_ready: 'Pronto',

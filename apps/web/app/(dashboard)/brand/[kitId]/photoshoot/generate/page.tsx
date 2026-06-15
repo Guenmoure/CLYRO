@@ -72,7 +72,7 @@ export default function PhotoshootGeneratePage() {
         setMedia(m.data)
         setUserId(u.data.user?.id ?? '')
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : null))
+      .catch(() => setError(t('errorOccurred')))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -94,7 +94,7 @@ export default function PhotoshootGeneratePage() {
       if (!signed?.signedUrl) throw new Error('Could not sign URL')
       setReferenceUrl(signed.signedUrl)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_uploadFailed'))
+      toast.error(t('bk_uploadFailed'))
     } finally {
       setReferenceUploading(false)
     }
@@ -119,7 +119,7 @@ export default function PhotoshootGeneratePage() {
       // Navigation immédiate vers le detail — le polling y prendra le relais.
       router.push(`/brand/${kitId}/photoshoot/${res.data.id}`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_generationFailed'))
+      toast.error(t('bk_generationFailed'))
       setSubmitting(false)
     }
   }

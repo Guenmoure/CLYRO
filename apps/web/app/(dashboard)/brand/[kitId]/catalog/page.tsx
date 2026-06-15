@@ -50,7 +50,7 @@ export default function BrandCatalogPage() {
         setKit(k.data)
         setItems(c.data)
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
+      .catch(() => setError(t('errorOccurred')))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -252,7 +252,7 @@ function ManualCreateModal({
                     category: category.trim() || undefined,
                   })
                 } catch (err) {
-                  toast.error(err instanceof Error ? err.message : t('bk_cat_addFailed'))
+                  toast.error(t('bk_cat_addFailed'))
                 } finally {
                   setSubmitting(false)
                 }

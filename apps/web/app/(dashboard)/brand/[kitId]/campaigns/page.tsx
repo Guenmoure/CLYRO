@@ -76,7 +76,7 @@ export default function BrandCampaignsPage() {
         setProducts(p.data)
         setAssets(a.data)
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
+      .catch((err: unknown) => setError(t('errorOccurred')))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -146,7 +146,7 @@ export default function BrandCampaignsPage() {
       setCampaigns((cur) => [res.data.campaign, ...cur])
       setPrompt('')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_cmp_createFailed'))
+      toast.error(t('bk_cmp_createFailed'))
     } finally {
       setSubmitting(false)
     }

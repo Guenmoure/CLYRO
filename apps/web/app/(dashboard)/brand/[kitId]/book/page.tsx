@@ -65,7 +65,7 @@ export default function BrandBookPage() {
         setKit(k.data)
         if (b) setBook(b.data)
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : null))
+      .catch(() => setError(t('errorOccurred')))
       .finally(() => setLoading(false))
   }, [kitId])
 
@@ -77,7 +77,7 @@ export default function BrandBookPage() {
       const res = await generateBrandBook(kitId)
       setBook(res.data)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_generationFailed'))
+      toast.error(t('bk_generationFailed'))
     } finally {
       setGenerating(false)
     }
@@ -92,7 +92,7 @@ export default function BrandBookPage() {
         : await publishBrandBook(book.id)
       setBook(res.data)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_book_publishFailed'))
+      toast.error(t('bk_book_publishFailed'))
     } finally {
       setTogglingPublish(false)
     }

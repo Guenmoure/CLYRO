@@ -78,7 +78,7 @@ export default function BrandAssetsPage() {
         setItems(m.data)
         setUserId(u.data.user?.id ?? '')
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('bk_failedLoad')))
+      .catch((err: unknown) => setError(t('bk_failedLoad')))
       .finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitId])

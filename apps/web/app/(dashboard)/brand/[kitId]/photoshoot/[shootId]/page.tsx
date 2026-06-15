@@ -69,7 +69,7 @@ export default function BrandPhotoshootDetailPage() {
         setShoot(s.data)
         setUserId(u.data.user?.id ?? '')
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : null))
+      .catch(() => setError(t('errorOccurred')))
       .finally(() => setLoading(false))
   }, [shootId, kitId])
 
@@ -121,7 +121,7 @@ export default function BrandPhotoshootDetailPage() {
       })
       toast.success(t('bk_savedToAssets'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_saveFailed'))
+      toast.error(t('bk_saveFailed'))
     } finally {
       setSavingIndex(null)
     }
@@ -134,7 +134,7 @@ export default function BrandPhotoshootDetailPage() {
       const res = await animateBrandPhotoshoot(shootId, index)
       router.push(`/motion?launched=${res.data.video_id}`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_sh_animationFailed'))
+      toast.error(t('bk_sh_animationFailed'))
       setAnimatingIndex(null)
     }
   }
@@ -144,7 +144,7 @@ export default function BrandPhotoshootDetailPage() {
       await deleteBrandPhotoshoot(shootId)
       router.push(`/brand/${kitId}/photoshoot`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_deleteFailed'))
+      toast.error(t('bk_deleteFailed'))
     }
   }
 

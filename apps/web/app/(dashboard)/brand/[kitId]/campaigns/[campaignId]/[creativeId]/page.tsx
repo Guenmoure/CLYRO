@@ -129,7 +129,7 @@ export default function CreativeEditorPage() {
         // Lazy-load media list pour le swap (séparé pour ne pas retarder le load principal)
         listBrandMedia(kitId).then((m) => setMedia(m.data)).catch(() => null)
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'error'))
+      .catch(() => setError(t('errorOccurred')))
       .finally(() => setLoading(false))
   }, [creativeId, kitId])
 
@@ -200,7 +200,7 @@ export default function CreativeEditorPage() {
       setVersions((cur) => [res.data, ...cur])
       if (creative) setCreative({ ...creative, current_version: res.data.version_num })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_ce_saveVersionFailed'))
+      toast.error(t('bk_ce_saveVersionFailed'))
     } finally {
       setSavingVersion(false)
     }
@@ -213,7 +213,7 @@ export default function CreativeEditorPage() {
       const res = await restoreBrandCreativeVersion(creativeId, versionNum)
       setCreative(res.data)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_ce_restoreFailed'))
+      toast.error(t('bk_ce_restoreFailed'))
     } finally {
       setRestoringVersion(null)
     }
@@ -252,7 +252,7 @@ export default function CreativeEditorPage() {
       setCreative(res.data)
       setEditPromptOpen(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_ce_regenFailed'))
+      toast.error(t('bk_ce_regenFailed'))
     } finally {
       setRegenLoading(false)
     }
@@ -265,7 +265,7 @@ export default function CreativeEditorPage() {
       const res = await fixBrandCreativeLayout(creativeId)
       setCreative(res.data)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_ce_fixLayoutFailed'))
+      toast.error(t('bk_ce_fixLayoutFailed'))
     } finally {
       setFixLayoutLoading(false)
     }
@@ -287,7 +287,7 @@ export default function CreativeEditorPage() {
         filename:    `${safeTitle}-v${creative.current_version}.png`,
       })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_ce_downloadFailed'))
+      toast.error(t('bk_ce_downloadFailed'))
     } finally {
       setDownloadLoading(false)
     }

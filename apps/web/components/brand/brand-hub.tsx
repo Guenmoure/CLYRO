@@ -102,7 +102,7 @@ function BrandKitForm({
       toast.success(initial?.id ? t('bh_kitUpdated') : t('bh_kitCreated'))
       onSave(result)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bh_errorSaving'))
+      toast.error(t('bh_errorSaving'))
     } finally {
       setSaving(false)
     }
@@ -202,7 +202,7 @@ function AssetGenerator({ kit, onGenerated }: { kit: BrandKit; onGenerated: (ass
       onGenerated(data)
       setPrompt('')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bh_generationError'))
+      toast.error(t('bh_generationError'))
     } finally {
       setLoading(false)
     }
@@ -488,7 +488,7 @@ function CatalogPanel({ kit }: { kit: BrandKit }) {
       setName(''); setDesc(''); setCategory(''); setImageFile(null); setImagePreview('')
       toast.success(t('bh_productAdded'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_cat_addFailed'))
+      toast.error(t('bk_cat_addFailed'))
     } finally { setSaving(false) }
   }
 
@@ -617,7 +617,7 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
       setConcepts(campaigns)
       toast.success(t('bh_ideasGenerated').replace('{count}', String(campaigns.length)))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bh_ideasFailed'))
+      toast.error(t('bh_ideasFailed'))
     } finally { setLoading(false) }
   }
 
@@ -631,7 +631,7 @@ function CampaignPanel({ kit }: { kit: BrandKit }) {
       setAssets(generated)
       toast.success(t('bh_assetsGenerated').replace('{count}', String(generated.length)))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bh_assetsFailed'))
+      toast.error(t('bh_assetsFailed'))
     } finally { setGenerating(false) }
   }
 
@@ -764,7 +764,7 @@ function PhotoshootPanel({ kit }: { kit: BrandKit }) {
       setResults((prev) => [{ url: data.image_url, template: data.template }, ...prev])
       toast.success(t('bh_photoshootDone'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bh_photoshootFailed'))
+      toast.error(t('bh_photoshootFailed'))
     } finally { setLoading(false) }
   }
 
@@ -882,7 +882,7 @@ function AnimatePanel({ kit }: { kit: BrandKit }) {
       setResults((prev) => [{ url: data.video_url, type: data.motion_type }, ...prev])
       toast.success(t('bh_animationDone'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bk_sh_animationFailed'))
+      toast.error(t('bk_sh_animationFailed'))
     } finally { setLoading(false) }
   }
 
@@ -1004,7 +1004,7 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
       setMessages([...updatedMessages, { role: 'assistant', content: reply }])
       if (sug) setSuggestions(sug)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bh_agentError'))
+      toast.error(t('bh_agentError'))
     } finally { setLoading(false) }
   }
 
@@ -1133,7 +1133,7 @@ function BackgroundPanel({ kit }: { kit: BrandKit }) {
       setResult(res)
       toast.success(t('bh_bgReplaced'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('bh_bgFailed'))
+      toast.error(t('bh_bgFailed'))
     } finally { setLoading(false) }
   }
 

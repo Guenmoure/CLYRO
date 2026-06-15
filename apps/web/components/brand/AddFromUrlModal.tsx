@@ -50,7 +50,7 @@ export function AddFromUrlModal<TDraft>({
       setDraft(result)
       setPhase('idle')
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : t('bk_url_scrapeFailed'))
+      setErrorMsg(t('bk_url_scrapeFailed'))
       setPhase('error')
     }
   }
@@ -63,7 +63,7 @@ export function AddFromUrlModal<TDraft>({
       reset()
       onClose()
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : t('bk_saveFailed'))
+      setErrorMsg(t('bk_saveFailed'))
       setPhase('error')
     }
   }

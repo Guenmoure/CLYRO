@@ -59,7 +59,7 @@ export function DragDropUploader({ onUpload, multiple = true, disabled = false, 
         await onUpload(list[i])
         setProgress({ done: i + 1, total: list.length })
       } catch (err) {
-        setError(t('bk_dd_uploadFailed').replace('{message}', err instanceof Error ? err.message : 'unknown'))
+        setError(t('bk_dd_uploadFailed').replace('{message}', ''))
         break
       }
     }
