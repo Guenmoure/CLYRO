@@ -3,6 +3,14 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import type { BrandBrief, BrandDirection, BrandCharte } from '@clyro/shared'
 import { buildCharteHtml } from '@/lib/brand-charte-html'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  brief:     z.record(z.string(), z.unknown()),
+  direction: z.record(z.string(), z.unknown()),
+  charte:    z.record(z.string(), z.unknown()),
+  logoUrl:   z.string().url().optional(),
+})
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -25,13 +33,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json() as {
-      brief: BrandBrief
-      direction: BrandDirection
-      charte: BrandCharte
-      logoUrl?: string
+    const parsed = bodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request body', code: 'VALIDATION_ERROR' }, { status: 400 })
     }
-    const { brief, direction, charte, logoUrl } = body
+    const { brief, direction, charte, logoUrl } = parsed.data as unknown as {
+      brief: BrandBrief; direction: BrandDirection; charte: BrandCharte; logoUrl?: string
+    }
     const slug = brief.name.toLowerCase().replace(/\s+/g, '-')
 
     const html = buildCharteHtml(brief, direction, charte, logoUrl)

@@ -1,5 +1,16 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  draftId:     z.string().uuid(),
+  accessToken: z.string().min(1),
+  module:      z.string().min(1),
+  title:       z.string(),
+  style:       z.string(),
+  currentStep: z.number().int().min(0),
+  state:       z.record(z.string(), z.unknown()),
+})
 
 const SUPABASE_URL         = process.env.NEXT_PUBLIC_SUPABASE_URL         ?? ''
 const SUPABASE_ANON_KEY    = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY    ?? ''
@@ -27,19 +38,11 @@ export async function POST(req: NextRequest) {
     }
 
     const raw = await req.text()
-    const parsed = JSON.parse(raw) as {
-      draftId:      string
-      accessToken?: string
-      module:       string
-      title:        string
-      style:        string
-      currentStep:  number
-      state:        Record<string, unknown>
+    const parsed = bodySchema.safeParse(JSON.parse(raw))
+    if (!parsed.success) {
+      return NextResponse.json({ ok: false, error: 'Invalid request body' }, { status: 400 })
     }
-    const { draftId, accessToken, module, title, style, currentStep, state } = parsed
-
-    if (!draftId)     return NextResponse.json({ ok: false, error: 'Missing draftId' },     { status: 400 })
-    if (!accessToken) return NextResponse.json({ ok: false, error: 'Missing accessToken' }, { status: 401 })
+    const { draftId, accessToken, module, title, style, currentStep, state } = parsed.data
 
     // 1) Verify the access_token via the anon client + getUser(jwt).
     //    Returns the auth.users row for this JWT, or null if invalid /

@@ -1,6 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { z } from 'zod'
+
+const createFolderSchema = z.object({
+  name: z.string().trim().min(1, 'Name cannot be empty').max(80, 'Name too long (max 80 chars)'),
+})
 
 /**
  * GET /api/folders
@@ -45,28 +50,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: { name?: unknown }
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
-  }
-
-  if (typeof body.name !== 'string') {
-    return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-  }
-
-  const trimmed = body.name.trim()
-  if (trimmed.length === 0) {
-    return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 })
-  }
-  if (trimmed.length > 80) {
-    return NextResponse.json({ error: 'Name too long (max 80 chars)' }, { status: 400 })
+  const parsed = createFolderSchema.safeParse(await req.json().catch(() => ({})))
+  if (!parsed.success) {
+    const msg = parsed.error.issues[0]?.message ?? 'Invalid request body'
+    return NextResponse.json({ error: msg }, { status: 400 })
   }
 
   const { data, error } = await supabase
     .from('folders')
-    .insert({ user_id: user.id, name: trimmed })
+    .insert({ user_id: user.id, name: parsed.data.name })
     .select('id, name, created_at')
     .single()
 

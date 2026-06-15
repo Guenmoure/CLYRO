@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+
+const regenScenePromptsSchema = z.object({
+  scriptText: z.string().min(1),
+  style:      z.string().min(1),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,14 +28,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const parsed = regenScenePromptsSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request body', code: 'VALIDATION_ERROR' }, { status: 400 })
+    }
     const res = await fetch(`${API_URL}/api/v1/generate/regen-scene-prompts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(parsed.data),
     })
 
     const data = await res.json()

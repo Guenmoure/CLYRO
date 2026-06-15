@@ -4,6 +4,14 @@ import { cookies } from 'next/headers'
 import { createFalClient } from '@fal-ai/client'
 import type { BrandBrief, BrandDirection } from '@clyro/shared'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  brief:         z.record(z.string(), z.unknown()),
+  direction:     z.record(z.string(), z.unknown()),
+  conceptIndex:  z.number().int().min(0).optional(),
+  bg:            z.enum(['white', 'brand', 'black']).optional(),
+})
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -142,15 +150,13 @@ export async function POST(request: NextRequest) {
     const limit = checkRateLimit('brand-logos', user.id, 20)
     if (!limit.allowed) return rateLimitResponse(limit)
 
-    const body = await request.json() as {
-      brief:         BrandBrief
-      direction:     BrandDirection
-      conceptIndex?: number
-      bg?:           'white' | 'brand' | 'black'
+    const parsed = bodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request body', code: 'VALIDATION_ERROR' }, { status: 400 })
     }
-    const { brief, direction, conceptIndex, bg } = body
-
-    if (!brief || !direction) return NextResponse.json({ error: 'brief and direction required' }, { status: 400 })
+    const { brief, direction, conceptIndex, bg } = parsed.data as unknown as {
+      brief: BrandBrief; direction: BrandDirection; conceptIndex?: number; bg?: 'white' | 'brand' | 'black'
+    }
     if (!process.env.FAL_KEY) return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
 
     const primaryBg = direction.palette.primary

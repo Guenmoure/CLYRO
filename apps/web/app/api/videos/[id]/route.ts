@@ -1,6 +1,14 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { z } from 'zod'
+
+const patchVideoSchema = z.object({
+  title:     z.string().trim().min(1).max(200).optional(),
+  folder_id: z.string().uuid().nullable().optional(),
+}).refine(d => d.title !== undefined || d.folder_id !== undefined, {
+  message: 'No supported fields to update',
+})
 
 /**
  * PATCH /api/videos/:id
@@ -24,33 +32,24 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: { title?: unknown; folder_id?: unknown }
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  const parsed = patchVideoSchema.safeParse(await req.json().catch(() => ({})))
+  if (!parsed.success) {
+    const msg = parsed.error.issues[0]?.message ?? 'Invalid request body'
+    return NextResponse.json({ error: msg }, { status: 400 })
   }
 
   const patch: Record<string, unknown> = {}
 
-  if (typeof body.title === 'string') {
-    const trimmed = body.title.trim()
-    if (trimmed.length === 0) {
-      return NextResponse.json({ error: 'Title cannot be empty' }, { status: 400 })
-    }
-    if (trimmed.length > 200) {
-      return NextResponse.json({ error: 'Title too long' }, { status: 400 })
-    }
-    patch.title = trimmed
+  if (parsed.data.title !== undefined) {
+    patch.title = parsed.data.title
   }
 
-  // folder_id may be present as null (unfile) or as a uuid (move).
-  // Distinguish "explicitly set to null" vs "not provided" via hasOwnProperty.
-  if (Object.prototype.hasOwnProperty.call(body, 'folder_id')) {
-    const fid = body.folder_id
+  // folder_id may be null (unfile) or a uuid (move).
+  if (parsed.data.folder_id !== undefined) {
+    const fid = parsed.data.folder_id
     if (fid === null) {
       patch.folder_id = null
-    } else if (typeof fid === 'string' && fid.length > 0) {
+    } else {
       // Verify the folder belongs to this user before assigning.
       const { data: folder, error: folderErr } = await supabase
         .from('folders')
@@ -63,13 +62,7 @@ export async function PATCH(
         return NextResponse.json({ error: 'Folder not found' }, { status: 400 })
       }
       patch.folder_id = fid
-    } else {
-      return NextResponse.json({ error: 'folder_id must be a uuid or null' }, { status: 400 })
     }
-  }
-
-  if (Object.keys(patch).length === 0) {
-    return NextResponse.json({ error: 'No supported fields to update' }, { status: 400 })
   }
 
   patch.updated_at = new Date().toISOString()

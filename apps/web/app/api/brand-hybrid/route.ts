@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+
+const bodySchema = z.object({
+  directions: z.array(z.record(z.string(), z.unknown())).min(1),
+  palette_from: z.number().int().min(0).optional(),
+  typography_from: z.number().int().min(0).optional(),
+  logo_from: z.number().int().min(0).optional(),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,14 +30,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const parsed = bodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request body', code: 'VALIDATION_ERROR' }, { status: 400 })
+    }
+
     const res = await fetch(`${API_URL}/api/v1/generate/brand-hybrid`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(parsed.data),
     })
 
     const data = await res.json()

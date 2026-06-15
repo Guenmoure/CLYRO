@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+
+const bodySchema = z.object({
+  brief: z.record(z.string(), z.unknown()),
+  direction: z.record(z.string(), z.unknown()),
+  logos: z.record(z.string(), z.unknown()).optional(),
+  voice: z.record(z.string(), z.unknown()).optional(),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +30,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const parsed = bodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request body', code: 'VALIDATION_ERROR' }, { status: 400 })
+    }
+
     const wantsStream = request.headers.get('accept')?.includes('text/event-stream')
 
     const res = await fetch(`${API_URL}/api/v1/generate/brand-charte`, {
@@ -32,7 +44,7 @@ export async function POST(request: NextRequest) {
         Accept: wantsStream ? 'text/event-stream' : 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(parsed.data),
     })
 
     if (wantsStream && res.body) {

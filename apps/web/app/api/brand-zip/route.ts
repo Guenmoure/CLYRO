@@ -4,6 +4,17 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import type { BrandBrief, BrandDirection, BrandCharte } from '@clyro/shared'
 import { buildCharteHtml } from '@/lib/brand-charte-html'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  brief:     z.record(z.string(), z.unknown()),
+  direction: z.record(z.string(), z.unknown()),
+  charte:    z.record(z.string(), z.unknown()),
+  assets:    z.record(z.string(), z.string().optional()),
+  logoUrl:   z.string().url().optional(),
+  userEmail: z.string().email().optional(),
+  share:     z.boolean().optional(),
+})
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -144,16 +155,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json() as {
-      brief: BrandBrief
-      direction: BrandDirection
-      charte: BrandCharte
-      assets: Record<string, string | undefined>
-      logoUrl?: string
-      userEmail?: string
-      share?: boolean
+    const parsed = bodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request body', code: 'VALIDATION_ERROR' }, { status: 400 })
     }
-    const { brief, direction, charte, assets, logoUrl, share } = body
+    const { brief, direction, charte, assets, logoUrl, share } = parsed.data as unknown as {
+      brief: BrandBrief; direction: BrandDirection; charte: BrandCharte
+      assets: Record<string, string | undefined>; logoUrl?: string; share?: boolean
+    }
     // Always use the authenticated user — never trust a body-supplied id.
     const userId = user.id
 
@@ -288,13 +297,13 @@ export async function POST(request: NextRequest) {
       }
 
       // Send notification email if user email is provided
-      if (body.userEmail) {
+      if (parsed.data.userEmail) {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
         fetch(`${apiUrl}/api/v1/notify/brand-kit-ready`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: body.userEmail,
+            email: parsed.data.userEmail,
             brandName: brief.name,
             downloadUrl: signed.signedUrl,
           }),
