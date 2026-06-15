@@ -1,5 +1,8 @@
+'use client';
+
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
+import { useLanguage } from '@/lib/i18n';
 
 const testimonials = [
   {
@@ -46,9 +49,9 @@ const testimonials = [
   },
 ];
 
-function StarRating() {
+function StarRating({ ariaLabel }: { ariaLabel: string }) {
   return (
-    <div className="flex gap-0.5" aria-label="5 out of 5 stars">
+    <div className="flex gap-0.5" aria-label={ariaLabel}>
       {Array.from({ length: 5 }).map((_, i) => (
         <svg
           key={i}
@@ -65,11 +68,12 @@ function StarRating() {
 }
 
 export function Testimonials() {
+  const { t } = useLanguage();
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 stagger">
-      {testimonials.map((t) => (
+      {testimonials.map((item) => (
         <Card
-          key={t.name}
+          key={item.name}
           className={cn(
             "reveal",
             "bg-card border border-border/50 rounded-2xl p-6",
@@ -87,12 +91,12 @@ export function Testimonials() {
 
           {/* Quote text */}
           <p className="mt-2 font-body text-sm text-[--text-secondary] leading-relaxed">
-            {t.quote}
+            {item.quote}
           </p>
 
           {/* Star rating */}
           <div className="mt-4">
-            <StarRating />
+            <StarRating ariaLabel={t('lp_stars5')} />
           </div>
 
           {/* Author */}
@@ -105,14 +109,14 @@ export function Testimonials() {
                 "font-display text-sm font-semibold text-white"
               )}
             >
-              {t.initial}
+              {item.initial}
             </div>
             <div>
               <p className="font-display text-sm font-semibold text-foreground">
-                {t.name}
+                {item.name}
               </p>
               <p className="font-mono text-xs text-[--text-muted]">
-                {t.role}
+                {item.role}
               </p>
             </div>
           </div>

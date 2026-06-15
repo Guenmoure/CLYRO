@@ -1,21 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
-/**
- * Sticky bottom CTA — visible sur mobile uniquement (lg:hidden).
- * Apparaît dès que le hero sort du viewport (via IntersectionObserver).
- * Disparaît si l'utilisateur scroll jusqu'au footer (évite overlap).
- *
- * Usage : <StickyMobileCta heroId="hero" />
- */
 export function StickyMobileCta({ heroId = 'hero' }: { heroId?: string }) {
-  const router             = useRouter()
+  const router = useRouter()
   const [visible, setVisible] = useState(false)
+  const { t } = useLanguage()
 
   useEffect(() => {
     const hero = document.getElementById(heroId)
@@ -47,9 +42,9 @@ export function StickyMobileCta({ heroId = 'hero' }: { heroId?: string }) {
         fullWidth
         rightIcon={<ArrowRight size={14} />}
         onClick={() => router.push('/signup')}
-        aria-label="Get started free — 250 credits included"
+        aria-label={t('lp_stickyCta')}
       >
-        Get started free — 250 credits included
+        {t('lp_stickyCta')}
       </Button>
     </div>
   )

@@ -8,30 +8,34 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { formatNumber } from './pricing-data'
 
-interface Topup {
+interface TopupConfig {
   id: string
   name: string
   credits: number
   priceEur: number
   perCreditEur: number
-  headBadge?: React.ReactNode
-  badge: React.ReactNode
-  equivalents: string[]
+  headBadgeKey?: string
+  headBadgeVariant?: React.ComponentProps<typeof Badge>['variant']
+  badgeKey: string
+  badgeVariant: React.ComponentProps<typeof Badge>['variant']
+  equivKeys: string[]
   variant: 'default' | 'elevated' | 'gradient'
   primary?: boolean
 }
 
-const TOPUPS: Topup[] = [
+const TOPUPS: TopupConfig[] = [
   {
     id: 'boost',
     name: 'Boost',
     credits: 500,
     priceEur: 8,
     perCreditEur: 0.016,
-    badge: <Badge variant="neutral">Perfect pour essayer</Badge>,
-    equivalents: ['≈ 4 vidéos Fast 5min', 'ou 6 vidéos Storyboard 10min'],
+    badgeKey: 'pr_topBadge1',
+    badgeVariant: 'neutral',
+    equivKeys: ['pr_topEquiv1_1', 'pr_topEquiv1_2'],
     variant: 'elevated',
   },
   {
@@ -40,8 +44,9 @@ const TOPUPS: Topup[] = [
     credits: 1500,
     priceEur: 20,
     perCreditEur: 0.013,
-    badge: <Badge variant="info">Bon rapport</Badge>,
-    equivalents: ['≈ 12 vidéos Fast 5min', 'ou 1 vidéo Pro 15min + reste'],
+    badgeKey: 'pr_topBadge2',
+    badgeVariant: 'info',
+    equivKeys: ['pr_topEquiv2_1', 'pr_topEquiv2_2'],
     variant: 'elevated',
   },
   {
@@ -50,9 +55,11 @@ const TOPUPS: Topup[] = [
     credits: 5000,
     priceEur: 55,
     perCreditEur: 0.011,
-    headBadge: <Badge variant="purple">Le plus choisi</Badge>,
-    badge: <Badge variant="purple">Meilleure valeur</Badge>,
-    equivalents: ['≈ 41 vidéos Fast 5min', 'ou 4 vidéos Pro 15min'],
+    headBadgeKey: 'pr_topHead3',
+    headBadgeVariant: 'purple',
+    badgeKey: 'pr_topBadge3',
+    badgeVariant: 'purple',
+    equivKeys: ['pr_topEquiv3_1', 'pr_topEquiv3_2'],
     variant: 'gradient',
     primary: true,
   },
@@ -62,83 +69,80 @@ const TOPUPS: Topup[] = [
     credits: 15000,
     priceEur: 130,
     perCreditEur: 0.0087,
-    badge: <Badge variant="success">Volume</Badge>,
-    equivalents: ['≈ 125 vidéos Fast 5min', 'ou 12 vidéos Pro 15min'],
+    badgeKey: 'pr_topBadge4',
+    badgeVariant: 'success',
+    equivKeys: ['pr_topEquiv4_1', 'pr_topEquiv4_2'],
     variant: 'elevated',
   },
 ]
 
 export function CreditTopups() {
+  const { t } = useLanguage()
+
   return (
     <section className="bg-muted/30 px-6 py-20">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-10 space-y-3">
           <div className="flex justify-center">
             <Badge variant="neutral">Top-ups</Badge>
           </div>
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-            Besoin de plus de crédits ?
+            {t('pr_topTitle')}
           </h2>
           <p className="font-body text-[--text-secondary] max-w-2xl mx-auto">
-            Achète des crédits supplémentaires à tout moment. Disponibles pour tous les abonnés payants.
-            Les crédits n&apos;expirent jamais.
+            {t('pr_topSubtitle')}
           </p>
         </div>
 
-        {/* 4 top-up cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {TOPUPS.map((t) => (
-            <div key={t.id} className="relative">
-              {t.headBadge && (
+          {TOPUPS.map((item) => (
+            <div key={item.id} className="relative">
+              {item.headBadgeKey && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  {t.headBadge}
+                  <Badge variant={item.headBadgeVariant!}>{t(item.headBadgeKey)}</Badge>
                 </div>
               )}
               <Card
-                variant={t.variant}
+                variant={item.variant}
                 padding="md"
                 hoverable
                 className={cn(
                   'h-full flex flex-col',
-                  t.primary && 'border-2 border-blue-500/50 shadow-[0_0_30px_-8px_rgba(59,142,240,0.3)]',
+                  item.primary && 'border-2 border-blue-500/50 shadow-[0_0_30px_-8px_rgba(59,142,240,0.3)]',
                 )}
               >
-                {/* Credits (large) */}
                 <p className="font-display text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                  {formatNumber(t.credits)}
+                  {formatNumber(item.credits)}
                 </p>
-                <p className="font-body text-xs text-[--text-secondary] -mt-1">crédits</p>
+                <p className="font-body text-xs text-[--text-secondary] -mt-1">{t('pr_topCredits')}</p>
 
-                {/* Price */}
                 <div className="mt-4">
-                  <p className="font-display text-xl font-bold text-foreground">{t.priceEur}€</p>
+                  <p className="font-display text-xl font-bold text-foreground">{item.priceEur}€</p>
                   <p className="font-mono text-[10px] text-[--text-muted]">
-                    {t.perCreditEur.toFixed(t.perCreditEur < 0.01 ? 4 : 3)}€ / crédit
+                    {item.perCreditEur.toFixed(item.perCreditEur < 0.01 ? 4 : 3)}€ / {t('pr_topPerCredit')}
                   </p>
                 </div>
 
-                {/* Badge */}
-                <div className="mt-3">{t.badge}</div>
+                <div className="mt-3">
+                  <Badge variant={item.badgeVariant}>{t(item.badgeKey)}</Badge>
+                </div>
 
-                {/* Equivalents */}
                 <ul className="mt-3 space-y-1 flex-1">
-                  {t.equivalents.map((e) => (
-                    <li key={e} className="font-body text-[11px] text-[--text-secondary] leading-relaxed">
-                      {e}
+                  {item.equivKeys.map((ek) => (
+                    <li key={ek} className="font-body text-[11px] text-[--text-secondary] leading-relaxed">
+                      {t(ek)}
                     </li>
                   ))}
                 </ul>
 
-                {/* CTA */}
                 <div className="mt-4">
                   <Button
-                    variant={t.primary ? 'primary' : 'secondary'}
+                    variant={item.primary ? 'primary' : 'secondary'}
                     size="sm"
                     fullWidth
                     asChild
                   >
-                    <Link href="/settings?tab=billing&topup=true">Ajouter</Link>
+                    <Link href="/settings?tab=billing&topup=true">{t('pr_topCta')}</Link>
                   </Button>
                 </div>
               </Card>
@@ -146,49 +150,46 @@ export function CreditTopups() {
           ))}
         </div>
 
-        {/* Reassurance row */}
         <div className="flex items-center justify-center flex-wrap gap-x-6 gap-y-2 mt-10 font-mono text-xs text-[--text-secondary]">
           <span className="inline-flex items-center gap-1.5">
             <Shield size={13} className="text-success" />
-            Crédits sans expiration
+            {t('pr_topNoExpiry')}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <RefreshCw size={13} className="text-blue-400" />
-            S&apos;ajoutent à votre solde existant
+            {t('pr_topAddBalance')}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <CreditCard size={13} className="text-purple-400" />
-            Paiement sécurisé via Stripe
+            {t('pr_topStripe')}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Smartphone size={13} className="text-amber-400" />
-            Mobile Money (Studio)
+            {t('pr_topMobileMoney')}
           </span>
         </div>
 
-        {/* Comparison card — abonnement vs top-up (calculs basés sur pricing-data.ts) */}
         <Card variant="glass" padding="lg" className="mt-10 max-w-lg mx-auto text-center">
           <p className="font-body text-sm text-foreground">
-            Les crédits d&apos;abonnement restent plus avantageux que les top-ups.
+            {t('pr_topCompareTitle')}
           </p>
           <div className="grid grid-cols-2 gap-3 mt-4">
             <div className="rounded-xl border border-border bg-muted/40 px-3 py-3">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Abonnement Creator</p>
-              <p className="font-display text-lg font-bold text-foreground mt-1">0,0077€ / crédit</p>
-              <p className="font-mono text-[10px] text-[--text-muted] mt-0.5">69€ / 9 000 crédits</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t('pr_topCompSub')}</p>
+              <p className="font-display text-lg font-bold text-foreground mt-1">{t('pr_topCompSubPrice')}</p>
+              <p className="font-mono text-[10px] text-[--text-muted] mt-0.5">{t('pr_topCompSubDetail')}</p>
             </div>
             <div className="rounded-xl border border-border bg-muted/40 px-3 py-3">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">Top-up Power</p>
-              <p className="font-display text-lg font-bold text-foreground mt-1">0,011€ / crédit</p>
-              <p className="font-mono text-[10px] text-[--text-muted] mt-0.5">55€ / 5 000 crédits</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">{t('pr_topCompTopup')}</p>
+              <p className="font-display text-lg font-bold text-foreground mt-1">{t('pr_topCompTopupPrice')}</p>
+              <p className="font-mono text-[10px] text-[--text-muted] mt-0.5">{t('pr_topCompTopupDetail')}</p>
             </div>
           </div>
           <div className="mt-4 flex justify-center">
-            <Badge variant="success">L&apos;abonnement reste imbattable</Badge>
+            <Badge variant="success">{t('pr_topCompWinner')}</Badge>
           </div>
           <p className="font-body text-xs text-[--text-secondary] mt-3 leading-relaxed">
-            Les top-ups sont parfaits pour absorber un pic de production ponctuel.
-            Au-delà, passer à l&apos;abonnement supérieur fait toujours baisser le coût par crédit.
+            {t('pr_topCompDesc')}
           </p>
         </Card>
       </div>

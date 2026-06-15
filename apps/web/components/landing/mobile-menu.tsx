@@ -6,24 +6,26 @@ import { X, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 const NAV_LINKS = [
-  { label: 'Features',   href: '#features' },
-  { label: 'Use Cases',  href: '#use-cases' },
-  { label: 'Styles',     href: '#styles' },
-  { label: 'Pricing',    href: '/pricing' },
-  { label: 'FAQ',        href: '#faq' },
+  { labelKey: 'lp_navFeatures',  href: '#features' },
+  { labelKey: 'lp_navUseCases',  href: '#use-cases' },
+  { labelKey: 'lp_navStyles',    href: '#styles' },
+  { labelKey: 'lp_navPricing',   href: '/pricing' },
+  { labelKey: 'lp_navFaq',       href: '#faq' },
 ]
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false)
+  const { t } = useLanguage()
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Open menu"
+        aria-label={t('lp_openMenu')}
         className="flex items-center justify-center w-9 h-9 rounded-xl text-[--text-secondary] hover:text-foreground hover:bg-muted transition-colors md:hidden"
       >
         <Menu size={20} />
@@ -52,7 +54,7 @@ export function MobileMenu() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Close menu"
+                aria-label={t('lp_closeMenu')}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors"
               >
                 <X size={16} />
@@ -67,21 +69,21 @@ export function MobileMenu() {
                   onClick={() => setOpen(false)}
                   className="font-body text-sm text-[--text-secondary] hover:text-foreground px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
                 >
-                  {link.label}
+                  {t(link.labelKey)}
                 </a>
               ))}
             </nav>
 
             <div className="mt-auto flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="font-body text-xs text-[--text-muted]">Appearance</span>
+                <span className="font-body text-xs text-[--text-muted]">{t('lp_appearance')}</span>
                 <ThemeToggle />
               </div>
               <Link href="/login">
-                <Button variant="secondary" fullWidth>Sign in</Button>
+                <Button variant="secondary" fullWidth>{t('lp_signIn')}</Button>
               </Link>
               <Link href="/signup">
-                <Button variant="primary" fullWidth>Get started free</Button>
+                <Button variant="primary" fullWidth>{t('lp_getStartedFree')}</Button>
               </Link>
             </div>
           </div>

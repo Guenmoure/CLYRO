@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
 
 const companies = [
   'TechCorp',
@@ -18,6 +19,8 @@ const companies = [
 ];
 
 export function LogoBar({ className }: { className?: string }) {
+  const { t } = useLanguage();
+
   return (
     <section
       className={cn(
@@ -27,7 +30,7 @@ export function LogoBar({ className }: { className?: string }) {
     >
       {/* Heading */}
       <p className="mb-8 text-center font-body text-sm tracking-wide text-[--text-muted]">
-        Trusted by 10,000+ creators worldwide
+        {t('lp_trustedBy')}
       </p>
 
       {/* Scrolling track */}

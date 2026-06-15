@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -111,7 +112,7 @@ function ShowcaseCard({ video, onPlay }: { video: ShowcaseVideo; onPlay: () => v
         'transition-all duration-200 group text-left',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
       )}
-      aria-label={`Watch ${video.title}`}
+      aria-label={video.title}
     >
       {/* Thumbnail */}
       <div className="relative aspect-video overflow-hidden">
@@ -179,6 +180,7 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
   const videoRef                = useRef<HTMLVideoElement>(null)
   const dialogRef               = useRef<HTMLDivElement>(null)
   const closeBtnRef             = useRef<HTMLButtonElement>(null)
+  const { t } = useLanguage()
 
   // Focus trap + Escape
   useEffect(() => {
@@ -219,7 +221,7 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
         {/* Placeholder gradient — visible si erreur ou avant chargement */}
         {errored && (
           <div className={cn('aspect-video bg-gradient-to-br flex items-center justify-center', video.placeholderGradient)}>
-            <p className="font-mono text-xs text-white/50">Preview not available yet</p>
+            <p className="font-mono text-xs text-white/50">{t('lp_previewNotAvail')}</p>
           </div>
         )}
 
@@ -242,7 +244,7 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
           <button
             type="button"
             onClick={() => setMuted((m) => !m)}
-            aria-label={muted ? 'Enable sound' : 'Mute'}
+            aria-label={muted ? t('lp_enableSound') : t('lp_mute')}
             className="absolute bottom-[4.5rem] left-3 bg-black/60 backdrop-blur-sm rounded-full p-2 hover:bg-black/80 transition-colors text-white z-10"
           >
             {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
@@ -259,7 +261,7 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
           </div>
           <Link href="/signup" className="shrink-0">
             <Button variant="primary" size="sm" rightIcon={<ArrowRight size={14} />}>
-              Create the same
+              {t('lp_createSame')}
             </Button>
           </Link>
         </div>
@@ -268,7 +270,7 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
         <button
           ref={closeBtnRef}
           type="button"
-          aria-label="Close preview"
+          aria-label={t('lp_closePreview')}
           onClick={onClose}
           className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm rounded-full p-2 hover:bg-black/80 transition-colors text-white"
         >
@@ -284,6 +286,7 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
 export function VideoShowcase() {
   const carouselRef                     = useRef<HTMLDivElement>(null)
   const [playingVideo, setPlayingVideo] = useState<ShowcaseVideo | null>(null)
+  const { t } = useLanguage()
 
   function scrollCarousel(dir: -1 | 1) {
     carouselRef.current?.scrollBy({ left: dir * 300, behavior: 'smooth' })
@@ -292,7 +295,7 @@ export function VideoShowcase() {
   return (
     <section
       className="relative bg-card border-y border-border/50 py-12 overflow-hidden"
-      aria-label="Made with CLYRO — video showcase"
+      aria-label={t('lp_madeWith')}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
@@ -302,9 +305,9 @@ export function VideoShowcase() {
               <Play className="text-blue-400" size={16} />
             </div>
             <div>
-              <h2 className="font-display text-lg font-bold text-foreground">Made with CLYRO</h2>
+              <h2 className="font-display text-lg font-bold text-foreground">{t('lp_madeWith')}</h2>
               <p className="font-mono text-xs text-[--text-muted] mt-0.5">
-                Videos generated with the exact same tools you&apos;re about to use
+                {t('lp_madeWithDesc')}
               </p>
             </div>
           </div>
@@ -314,7 +317,7 @@ export function VideoShowcase() {
             <button
               type="button"
               onClick={() => scrollCarousel(-1)}
-              aria-label="Previous videos"
+              aria-label={t('lp_prevVideos')}
               className="p-2 rounded-lg bg-muted border border-border hover:bg-background transition-colors"
             >
               <ChevronLeft size={16} className="text-[--text-secondary]" />
@@ -322,7 +325,7 @@ export function VideoShowcase() {
             <button
               type="button"
               onClick={() => scrollCarousel(1)}
-              aria-label="Next videos"
+              aria-label={t('lp_nextVideos')}
               className="p-2 rounded-lg bg-muted border border-border hover:bg-background transition-colors"
             >
               <ChevronRight size={16} className="text-[--text-secondary]" />

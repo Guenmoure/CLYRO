@@ -5,28 +5,23 @@ import { useRouter } from 'next/navigation'
 import { Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createBrowserClient } from '@/lib/supabase'
-
-const SUGGESTIONS = [
-  'Les 5 habitudes des millionnaires',
-  'Comment fonctionne Bitcoin en 2 minutes',
-  'Les secrets du sommeil profond',
-]
+import { useLanguage } from '@/lib/i18n'
 
 export function HeroScript() {
   const router               = useRouter()
   const [script, setScript]  = useState('')
   const [focused, setFocused] = useState(false)
   const [isAuthed, setIsAuthed] = useState(false)
+  const { t } = useLanguage()
 
-  // Detect whether the visitor already has a session so we can skip /signup.
   useEffect(() => {
     let cancelled = false
     try {
       const supabase = createBrowserClient()
       supabase.auth.getSession().then(({ data }: any) => {
         if (!cancelled) setIsAuthed(!!data?.session)
-      }).catch(() => { /* ignore — treat as logged-out */ })
-    } catch { /* ignore */ }
+      }).catch(() => {})
+    } catch {}
     return () => { cancelled = true }
   }, [])
 
@@ -38,13 +33,10 @@ export function HeroScript() {
     if (!ready) return
     const trimmed = script.trim()
 
-    // Persist directly so the script survives any redirect round-trip
-    // (auth callback, email confirmation, etc.) without URL-encoding issues.
     try {
       localStorage.setItem('clyro_prefilled_script', trimmed)
-    } catch { /* privacy mode — fall back to URL param */ }
+    } catch {}
 
-    // Logged-in users skip /signup and jump straight into the faceless flow.
     if (isAuthed) {
       router.push('/faceless/new')
       return
@@ -55,13 +47,11 @@ export function HeroScript() {
   }
 
   function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // Cmd/Ctrl+Enter → génère
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleGenerate()
   }
 
   return (
     <div className="space-y-3 w-full">
-      {/* Conteneur textarea + barre d'action */}
       <div
         className={cn(
           'relative rounded-2xl border transition-all duration-200',
@@ -77,9 +67,9 @@ export function HeroScript() {
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onKeyDown={handleKey}
-          placeholder={"Colle ton script ici...\n\nExemple : \"Les pieuvres sont les animaux les plus intelligents de l'océan. Elles peuvent ouvrir des bocaux, résoudre des labyrinthes et changer de couleur en une fraction de seconde...\""}
+          placeholder={t('lp_hsPlaceholder')}
           rows={4}
-          aria-label="Colle ton script vidéo"
+          aria-label={t('lp_hsAriaLabel')}
           className={cn(
             'w-full bg-transparent px-4 pt-4 pb-14',
             'font-body text-sm text-foreground',
@@ -88,9 +78,7 @@ export function HeroScript() {
           )}
         />
 
-        {/* Barre du bas */}
         <div className="absolute bottom-0 inset-x-0 px-3 py-2.5 flex items-center justify-between border-t border-border/30">
-          {/* Compteur de mots */}
           <span
             className={cn(
               'font-mono text-xs transition-colors select-none',
@@ -98,16 +86,15 @@ export function HeroScript() {
             )}
           >
             {wordCount > 0
-              ? `${wordCount} mots · vidéo ~${estMin} min`
-              : 'Minimum 5 mots'}
+              ? t('lp_hsWordCount').replace('{n}', String(wordCount)).replace('{min}', String(estMin))
+              : t('lp_hsMinWords')}
           </span>
 
-          {/* Bouton Générer */}
           <button
             type="button"
             onClick={handleGenerate}
             disabled={!ready}
-            aria-label="Générer ma vidéo"
+            aria-label={t('lp_hsGenerate')}
             className={cn(
               'flex items-center gap-1.5 px-4 py-1.5 rounded-xl',
               'font-display text-sm font-medium transition-all duration-200',
@@ -117,15 +104,14 @@ export function HeroScript() {
             )}
           >
             <Zap size={13} />
-            Générer ma vidéo →
+            {t('lp_hsGenerate')}
           </button>
         </div>
       </div>
 
-      {/* Suggestions rapides */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-xs text-[--text-muted]/60 shrink-0">Essayer :</span>
-        {SUGGESTIONS.map((s) => (
+        <span className="font-mono text-xs text-[--text-muted]/60 shrink-0">{t('lp_hsTry')}</span>
+        {[t('lp_hsSugg1'), t('lp_hsSugg2'), t('lp_hsSugg3')].map((s) => (
           <button
             key={s}
             type="button"

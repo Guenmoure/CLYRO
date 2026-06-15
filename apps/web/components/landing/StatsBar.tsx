@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
 
 /* ------------------------------------------------------------------ */
 /*  easeOutExpo: fast start, gentle deceleration                      */
@@ -54,14 +55,14 @@ interface StatItem {
   suffix: string;
   prefix: string;
   display?: string; // static display override
-  label: string;
+  labelKey: string;
 }
 
 const stats: StatItem[] = [
-  { value: 50000, suffix: '+', prefix: '', label: 'Videos Generated' },
-  { value: 14, suffix: '', prefix: '', label: 'Visual Styles' },
-  { value: 32, suffix: '+', prefix: '', label: 'AI Languages' },
-  { value: null, suffix: '', prefix: '', display: '< 5 min', label: 'Average Generation Time' },
+  { value: 50000, suffix: '+', prefix: '', labelKey: 'lp_statVideos' },
+  { value: 14, suffix: '', prefix: '', labelKey: 'lp_statStyles' },
+  { value: 32, suffix: '+', prefix: '', labelKey: 'lp_statLanguages' },
+  { value: null, suffix: '', prefix: '', display: '< 5 min', labelKey: 'lp_statGenTime' },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -71,7 +72,7 @@ function AnimatedStat({
   item,
   inView,
 }: {
-  item: StatItem;
+  item: StatItem & { translatedLabel: string };
   inView: boolean;
 }) {
   const { value: animatedValue, start } = useCountUp(item.value ?? 0, 2000);
@@ -98,7 +99,7 @@ function AnimatedStat({
         {displayValue}
       </span>
       <span className="font-body text-sm text-[--text-secondary]">
-        {item.label}
+        {item.translatedLabel}
       </span>
     </div>
   );
@@ -108,6 +109,7 @@ function AnimatedStat({
 /*  StatsBar                                                           */
 /* ------------------------------------------------------------------ */
 export function StatsBar() {
+  const { t } = useLanguage();
   const sectionRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
 
@@ -142,7 +144,7 @@ export function StatsBar() {
       <div className="mx-auto max-w-6xl px-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
           {stats.map((item) => (
-            <AnimatedStat key={item.label} item={item} inView={inView} />
+            <AnimatedStat key={item.labelKey} item={{ ...item, translatedLabel: t(item.labelKey) }} inView={inView} />
           ))}
         </div>
       </div>

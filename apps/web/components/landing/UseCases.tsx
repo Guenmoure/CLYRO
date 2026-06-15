@@ -4,64 +4,55 @@ import { useState } from 'react';
 import { Video, BarChart3, Building2, Rocket, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
+import { useLanguage } from '@/lib/i18n';
 
-const useCases = [
+interface UseCaseConfig {
+  labelKey: string;
+  icon: React.ElementType;
+  titleKey: string;
+  descKey: string;
+  bulletKeys: string[];
+  gradient: string;
+}
+
+const useCases: UseCaseConfig[] = [
   {
-    label: 'Content Creators',
+    labelKey: 'lp_ucLabel1',
     icon: Video,
-    title: 'Scale your content without scaling your team',
-    description:
-      'Create faceless videos for YouTube, TikTok, and Instagram in minutes. Choose from 14 visual styles, add AI voiceover, and publish daily without burnout.',
-    bullets: [
-      '14 visual styles including Cinematic, 2D Animation, Whiteboard',
-      'AI voiceover in 32+ languages with karaoke subtitles',
-      'Regenerate individual scenes — no need to restart from scratch',
-    ],
+    titleKey: 'lp_ucTitle1',
+    descKey: 'lp_ucDesc1',
+    bulletKeys: ['lp_ucBullet1_1', 'lp_ucBullet1_2', 'lp_ucBullet1_3'],
     gradient: 'from-purple-500/20 via-pink-500/20 to-rose-500/20',
   },
   {
-    label: 'Marketing Teams',
+    labelKey: 'lp_ucLabel2',
     icon: BarChart3,
-    title: 'Professional video ads without the agency price tag',
-    description:
-      'Launch product demos, social ads, and animated presentations. Motion Design module gives you After Effects\u2013quality output from a simple text brief.',
-    bullets: [
-      'Motion Design for product launches and animated ads',
-      'All formats: 16:9, 9:16, 1:1 — ready for every platform',
-      'Brand Kit ensures visual consistency across all assets',
-    ],
+    titleKey: 'lp_ucTitle2',
+    descKey: 'lp_ucDesc2',
+    bulletKeys: ['lp_ucBullet2_1', 'lp_ucBullet2_2', 'lp_ucBullet2_3'],
     gradient: 'from-blue-500/20 via-cyan-500/20 to-teal-500/20',
   },
   {
-    label: 'Agencies',
+    labelKey: 'lp_ucLabel3',
     icon: Building2,
-    title: 'Deliver more to clients with less overhead',
-    description:
-      'White-label video production and brand identity generation. Create complete brand kits with logos, color palettes, and guidelines PDF in 15 minutes.',
-    bullets: [
-      'Complete brand identity from a text brief',
-      '3 creative directions with WCAG-compliant palettes',
-      'Export brand kit ZIP: logos, colors, fonts, charter PDF',
-    ],
+    titleKey: 'lp_ucTitle3',
+    descKey: 'lp_ucDesc3',
+    bulletKeys: ['lp_ucBullet3_1', 'lp_ucBullet3_2', 'lp_ucBullet3_3'],
     gradient: 'from-amber-500/20 via-orange-500/20 to-red-500/20',
   },
   {
-    label: 'Entrepreneurs',
+    labelKey: 'lp_ucLabel4',
     icon: Rocket,
-    title: 'Launch your brand and content from day one',
-    description:
-      'Whether you\u2019re in Lagos, Paris, or S\u00e3o Paulo \u2014 CLYRO gives you studio-quality video and branding tools at a fraction of the cost. Mobile Money supported.',
-    bullets: [
-      '250 free credits on signup — no credit card required',
-      'Mobile Money payments: Orange Money, Wave, MTN',
-      'AI Avatar Studio for professional presentations',
-    ],
+    titleKey: 'lp_ucTitle4',
+    descKey: 'lp_ucDesc4',
+    bulletKeys: ['lp_ucBullet4_1', 'lp_ucBullet4_2', 'lp_ucBullet4_3'],
     gradient: 'from-emerald-500/20 via-green-500/20 to-lime-500/20',
   },
 ];
 
 export function UseCases() {
   const [activeTab, setActiveTab] = useState(0);
+  const { t } = useLanguage();
   const current = useCases[activeTab];
   const IconComponent = current.icon;
 
@@ -76,7 +67,7 @@ export function UseCases() {
             return (
               <button
                 type="button"
-                key={useCase.label}
+                key={useCase.labelKey}
                 onClick={() => setActiveTab(index)}
                 className={cn(
                   'relative flex items-center gap-2 px-5 py-3 text-sm font-body rounded-lg transition-colors duration-200',
@@ -86,8 +77,7 @@ export function UseCases() {
                 )}
               >
                 <TabIcon className="h-4 w-4" />
-                {useCase.label}
-                {/* Gradient underline for active tab */}
+                {t(useCase.labelKey)}
                 {isActive && (
                   <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 rounded-full" />
                 )}
@@ -108,24 +98,24 @@ export function UseCases() {
                 <IconComponent className="h-5 w-5 text-purple-400" />
               </div>
               <span className="font-mono text-xs uppercase tracking-wider text-[--text-secondary]">
-                {current.label}
+                {t(current.labelKey)}
               </span>
             </div>
 
             <h3 className="font-display text-2xl md:text-3xl font-bold">
-              {current.title}
+              {t(current.titleKey)}
             </h3>
 
             <p className="font-body text-[--text-secondary] leading-relaxed">
-              {current.description}
+              {t(current.descKey)}
             </p>
 
             <ul className="space-y-4 pt-2">
-              {current.bullets.map((bullet) => (
-                <li key={bullet} className="flex items-start gap-3">
+              {current.bulletKeys.map((key) => (
+                <li key={key} className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 mt-0.5 shrink-0 text-emerald-400" />
                   <span className="font-body text-sm text-[--text-secondary]">
-                    {bullet}
+                    {t(key)}
                   </span>
                 </li>
               ))}

@@ -1,11 +1,15 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/lib/i18n'
 
 export function FinalCTA() {
+  const { t } = useLanguage()
+
   return (
     <section className="relative px-6 py-24 overflow-hidden">
-      {/* Glow background */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 left-1/3 h-96 w-96 rounded-full bg-blue-500/15 blur-3xl" />
         <div className="absolute -bottom-40 right-1/3 h-96 w-96 rounded-full bg-purple-500/15 blur-3xl" />
@@ -13,33 +17,27 @@ export function FinalCTA() {
 
       <div className="relative max-w-3xl mx-auto text-center space-y-6">
         <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground leading-tight">
-          Commence avec{' '}
+          {t('pr_finalCtaTitle1')}{' '}
           <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            250 crédits gratuits
+            {t('pr_finalCtaAccent')}
           </span>
         </h2>
 
         <p className="font-body text-lg text-[--text-secondary] max-w-xl mx-auto">
-          Aucune carte bancaire. Aucun engagement. Juste 250 crédits pour voir ce que CLYRO peut faire.
+          {t('pr_finalCtaDesc')}
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Button variant="primary" size="lg" rightIcon={<ArrowRight size={16} />} asChild>
-            <Link href="/signup">Créer mon compte gratuitement</Link>
+            <Link href="/signup">{t('pr_finalCtaPrimary')}</Link>
           </Button>
           <Button variant="ghost" size="lg" asChild>
-            <Link href="/#examples">Voir les exemples →</Link>
+            <Link href="/#examples">{t('pr_finalCtaSecondary')}</Link>
           </Button>
         </div>
 
-        {/* Honest positioning — audit P0: no fake social proof numbers.
-            We lead with differentiators we actually ship instead of inflated
-            user counts (competitors cheat on these all day, we won't). */}
         <p className="font-mono text-xs text-[--text-muted] pt-2">
-          ✓ Avatars + faceless + motion dans 1 seul outil
-          {' · '}✓ Paiement Mobile Money
-          {' · '}✓ Crédits sans expiration
-          {' · '}✓ Support réactif
+          {t('pr_finalCtaFootnote')}
         </p>
       </div>
     </section>

@@ -6,9 +6,9 @@ import { PricingFAQ } from '@/components/pricing/PricingFAQ'
 import { FinalCTA } from '@/components/pricing/FinalCTA'
 
 export const metadata = {
-  title: 'Tarifs — CLYRO',
+  title: 'Pricing — CLYRO',
   description:
-    'Crée. Publie. Répète. Des crédits simples, un roll-over permanent, et des modes d\'animation adaptés à tous les créateurs.',
+    'Simple credits, permanent rollover, and animation modes for every creator. Start free with 250 credits.',
 }
 
 export default function PricingPage() {

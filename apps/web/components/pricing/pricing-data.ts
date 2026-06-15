@@ -1,123 +1,131 @@
 /**
  * Source unique de vérité pour les prix CLYRO.
  * Utilisée par toutes les sections de /pricing et par le calculateur de crédits.
+ *
+ * NOTE: All user-facing strings use translation key references (xxxKey fields).
+ * Consumers must call t(key) at render time to get the translated string.
  */
 
 export type PlanId = 'free' | 'starter' | 'pro' | 'creator' | 'studio'
 export type Mode   = 'storyboard' | 'fast' | 'pro'
 
+export interface Perk {
+  labelKey: string
+  included: boolean
+}
+
 export interface Plan {
   id: PlanId
-  name: string
-  subtitle: string
-  monthly: number            // prix mensuel en €
-  yearly: number             // prix équivalent mensuel avec annuel (-20%)
-  credits: number            // crédits alloués par mois
-  perks: Array<{ label: string; included: boolean }>
-  ctaLabel: string
-  highlight?: boolean        // Pro — mise en avant
-  teamBadge?: boolean        // Studio — badge "Équipes"
-  forever?: boolean          // Free — "pour toujours"
+  name: string                // Brand name — not translated
+  subtitleKey: string
+  monthly: number
+  yearly: number
+  credits: number
+  perks: Perk[]
+  ctaLabelKey: string
+  highlight?: boolean
+  teamBadge?: boolean
+  forever?: boolean
 }
 
 export const PLANS: Plan[] = [
   {
     id: 'free',
     name: 'Free',
-    subtitle: 'Pour tester CLYRO',
+    subtitleKey: 'pr_freeSub',
     monthly: 0,
     yearly: 0,
     credits: 250,
     forever: true,
-    ctaLabel: 'Commencer gratuitement',
+    ctaLabelKey: 'pr_freeCta',
     perks: [
-      { label: '1 vidéo au total',                        included: true  },
-      { label: 'Modes Storyboard + Fast Animation',       included: true  },
-      { label: 'Durée max 5 min par vidéo',               included: true  },
-      { label: 'Export 720p',                             included: true  },
-      { label: 'Watermark CLYRO',                         included: false },
-      { label: 'Pas de top-ups disponibles',              included: false },
-      { label: 'F3 Brand Kit non disponible',             included: false },
+      { labelKey: 'pr_perk_1video',           included: true  },
+      { labelKey: 'pr_perk_storyFast',        included: true  },
+      { labelKey: 'pr_perk_5minMax',          included: true  },
+      { labelKey: 'pr_perk_720p',             included: true  },
+      { labelKey: 'pr_perk_watermark',        included: false },
+      { labelKey: 'pr_perk_noTopups',         included: false },
+      { labelKey: 'pr_perk_noBrandKit',       included: false },
     ],
   },
   {
     id: 'starter',
     name: 'Starter',
-    subtitle: 'Pour les créateurs réguliers',
+    subtitleKey: 'pr_starterSub',
     monthly: 9,
     yearly: 7,
     credits: 800,
-    ctaLabel: 'Commencer',
+    ctaLabelKey: 'pr_starterCta',
     perks: [
-      { label: 'Modes Storyboard + Fast Animation',        included: true  },
-      { label: "Vidéos jusqu'à 8 min",                     included: true  },
-      { label: 'Export 1080p',                             included: true  },
-      { label: 'Sans watermark',                           included: true  },
-      { label: 'Crédits roll-over (report automatique)',   included: true  },
-      { label: 'Top-ups disponibles',                      included: true  },
-      { label: 'Pro Animation non disponible',             included: false },
-      { label: 'F3 Brand Kit non disponible',              included: false },
+      { labelKey: 'pr_perk_storyFast',        included: true  },
+      { labelKey: 'pr_perk_8minMax',          included: true  },
+      { labelKey: 'pr_perk_1080p',            included: true  },
+      { labelKey: 'pr_perk_noWatermark',      included: true  },
+      { labelKey: 'pr_perk_rollover',         included: true  },
+      { labelKey: 'pr_perk_topupsAvail',      included: true  },
+      { labelKey: 'pr_perk_noProAnim',        included: false },
+      { labelKey: 'pr_perk_noBrandKit',       included: false },
     ],
   },
   {
     id: 'pro',
     name: 'Pro',
-    subtitle: 'Pour les YouTubeurs sérieux',
+    subtitleKey: 'pr_proSub',
     monthly: 29,
     yearly: 23,
     credits: 3000,
     highlight: true,
-    ctaLabel: 'Essayer Pro',
+    ctaLabelKey: 'pr_proCta',
     perks: [
-      { label: "TOUS les modes d'animation",               included: true },
-      { label: "Vidéos jusqu'à 15 min",                    included: true },
-      { label: 'Export 1080p + 4K',                        included: true },
-      { label: 'Sans watermark',                           included: true },
-      { label: 'Crédits roll-over',                        included: true },
-      { label: 'Top-ups disponibles',                      included: true },
-      { label: 'F3 Brand Kit — 5 identités/mois',          included: true },
-      { label: '2 voix clonées',                           included: true },
-      { label: 'Tous les styles premium (6 styles)',       included: true },
-      { label: 'Régénération scène par scène illimitée',   included: true },
+      { labelKey: 'pr_perk_allModes',         included: true },
+      { labelKey: 'pr_perk_15minMax',         included: true },
+      { labelKey: 'pr_perk_1080p4k',          included: true },
+      { labelKey: 'pr_perk_noWatermark',      included: true },
+      { labelKey: 'pr_perk_rollover',         included: true },
+      { labelKey: 'pr_perk_topupsAvail',      included: true },
+      { labelKey: 'pr_perk_brandKit5',        included: true },
+      { labelKey: 'pr_perk_2voices',          included: true },
+      { labelKey: 'pr_perk_premiumStyles',    included: true },
+      { labelKey: 'pr_perk_unlimitedRegen',   included: true },
     ],
   },
   {
     id: 'creator',
     name: 'Creator',
-    subtitle: 'Pour scaler sa production',
+    subtitleKey: 'pr_creatorSub',
     monthly: 69,
     yearly: 55,
     credits: 9000,
-    ctaLabel: 'Passer Creator',
+    ctaLabelKey: 'pr_creatorCta',
     perks: [
-      { label: 'Tout le plan Pro',                         included: true },
-      { label: 'F3 Brand Kit illimité',                    included: true },
-      { label: 'Voix clonées illimitées',                  included: true },
-      { label: 'API access (automatisation)',              included: true },
-      { label: 'Téléchargement des clips individuels',     included: true },
-      { label: 'Rendu prioritaire (file dédiée)',          included: true },
-      { label: 'Liens de partage brand kit',               included: true },
-      { label: 'Support prioritaire',                      included: true },
+      { labelKey: 'pr_perk_allPro',           included: true },
+      { labelKey: 'pr_perk_brandKitUnlim',    included: true },
+      { labelKey: 'pr_perk_voicesUnlim',      included: true },
+      { labelKey: 'pr_perk_apiAccess',        included: true },
+      { labelKey: 'pr_perk_clipDownload',     included: true },
+      { labelKey: 'pr_perk_priorityRender',   included: true },
+      { labelKey: 'pr_perk_brandKitLinks',    included: true },
+      { labelKey: 'pr_perk_prioritySupport',  included: true },
     ],
   },
   {
     id: 'studio',
     name: 'Studio',
-    subtitle: 'Pour les agences et équipes',
+    subtitleKey: 'pr_studioSub',
     monthly: 149,
     yearly: 119,
     credits: 25000,
     teamBadge: true,
-    ctaLabel: "Contacter l'équipe",
+    ctaLabelKey: 'pr_studioCta',
     perks: [
-      { label: 'Tout le plan Creator',                     included: true },
-      { label: "Gestion d'équipe (5 membres)",             included: true },
-      { label: 'Dashboard équipe partagé',                 included: true },
-      { label: 'Crédits partagés entre membres',           included: true },
-      { label: 'Facturation consolidée',                   included: true },
-      { label: 'Paiement Mobile Money (Moneroo)',          included: true },
-      { label: 'SSO optionnel',                            included: true },
-      { label: 'Account Manager dédié',                    included: true },
+      { labelKey: 'pr_perk_allCreator',       included: true },
+      { labelKey: 'pr_perk_team5',            included: true },
+      { labelKey: 'pr_perk_teamDashboard',    included: true },
+      { labelKey: 'pr_perk_sharedCredits',    included: true },
+      { labelKey: 'pr_perk_consolidatedBill', included: true },
+      { labelKey: 'pr_perk_mobileMoney',      included: true },
+      { labelKey: 'pr_perk_sso',              included: true },
+      { labelKey: 'pr_perk_accountManager',   included: true },
     ],
   },
 ]
@@ -129,10 +137,10 @@ export const CREDIT_COST_PER_MIN: Record<Mode, number> = {
   pro:        80,
 }
 
-export const MODE_META: Record<Mode, { label: string; color: string; accent: string }> = {
-  storyboard: { label: 'Storyboard',     color: 'text-[--text-secondary]', accent: 'border-border'           },
-  fast:       { label: 'Fast Animation', color: 'text-amber-400',          accent: 'border-amber-500/30'     },
-  pro:        { label: 'Pro Animation',  color: 'text-purple-400',         accent: 'border-purple-500/30'    },
+export const MODE_META: Record<Mode, { labelKey: string; color: string; accent: string }> = {
+  storyboard: { labelKey: 'pr_modeStoryboard', color: 'text-[--text-secondary]', accent: 'border-border'           },
+  fast:       { labelKey: 'pr_modeFast',        color: 'text-amber-400',          accent: 'border-amber-500/30'     },
+  pro:        { labelKey: 'pr_modePro',         color: 'text-purple-400',         accent: 'border-purple-500/30'    },
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
