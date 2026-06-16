@@ -42,7 +42,7 @@ export default function StudioIndexPage() {
     generating: { label: t('sl_statusGenerating'), color: 'bg-amber-500/15 text-amber-500',   icon: <Loader2 size={10} className="animate-spin" /> },
     editing:    { label: t('sl_statusReadyToEdit'),color: 'bg-brand/15 text-brand' },
     rendering:  { label: t('sl_statusRendering'),  color: 'bg-purple-500/15 text-purple-500', icon: <Loader2 size={10} className="animate-spin" /> },
-    done:       { label: t('sl_statusReady'),      color: 'bg-emerald-500/15 text-emerald-500', icon: <Check size={10} /> },
+    done:       { label: t('sl_statusReady'),      color: 'bg-success/15 text-success', icon: <Check size={10} /> },
     error:      { label: t('sl_statusError'),      color: 'bg-error/15 text-error',           icon: <AlertCircle size={10} /> },
   }
 
@@ -86,8 +86,7 @@ export default function StudioIndexPage() {
           </div>
 
           <Link href="/studio/new" className="group relative">
-            <div className="absolute -inset-0.5 rounded-xl bg-brand/40 opacity-0 blur-sm group-hover:opacity-70 transition-opacity duration-300" />
-            <div className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold shadow-sm group-hover:bg-brand-hover transition-colors">
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-grad-cta text-white font-body text-sm font-semibold shadow-lg">
               <Plus size={16} className="group-hover:rotate-90 transition-transform duration-200" />
               {t('sl_newProject')}
             </div>
@@ -110,8 +109,7 @@ export default function StudioIndexPage() {
               </p>
             </div>
             <Link href="/studio/new" className="group relative mt-2">
-              <div className="absolute -inset-1 rounded-2xl bg-brand/40 opacity-0 blur-md group-hover:opacity-60 transition-opacity duration-300" />
-              <div className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-primary text-primary-foreground font-body text-base font-semibold shadow-sm group-hover:bg-brand-hover transition-colors">
+              <div className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-grad-cta text-white font-body text-base font-semibold shadow-xl">
                 <Clapperboard size={18} />
                 {t('sl_createFirst')}
                 <Sparkles size={14} className="opacity-80" />

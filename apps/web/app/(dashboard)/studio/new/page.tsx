@@ -3,9 +3,10 @@
 import { useState, useEffect, useMemo, Suspense, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
-  FileText, Youtube, ArrowRight, Loader2, Sparkles,
+  FileText, Youtube, ArrowRight, ArrowLeft, Loader2, Sparkles,
   Globe, Wand2, Info, Check, Search, ChevronDown, ChevronUp, Mic,
 } from 'lucide-react'
+import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -233,6 +234,15 @@ function StudioNewPageInner() {
   return (
     <div className="min-h-screen bg-background px-6 py-10">
       <div className="max-w-3xl mx-auto space-y-8">
+
+        {/* Back link */}
+        <Link
+          href="/studio"
+          className="inline-flex items-center gap-1.5 font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors"
+        >
+          <ArrowLeft size={14} />
+          {t('sn_backToStudio')}
+        </Link>
 
         {/* Header */}
         <div className="text-center space-y-2">

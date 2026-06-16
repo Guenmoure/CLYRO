@@ -5,6 +5,7 @@ import { Check, Film, Mic2, Clock, Palette } from 'lucide-react'
 import { getPublicVoices, type ClyroVoice } from '@/lib/api'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 type Duration = '15s' | '30s' | '60s' | '90s'
 type Format = '9:16' | '1:1' | '16:9'
@@ -19,13 +20,14 @@ const STYLES = [
 ] as const
 
 const DURATIONS: Duration[] = ['15s', '30s', '60s', '90s']
-const FORMATS: Array<{ id: Format; label: string; ratio: string }> = [
-  { id: '9:16', label: 'Vertical', ratio: 'aspect-[9/16] w-6' },
-  { id: '1:1',  label: 'Square',    ratio: 'aspect-square w-8'   },
-  { id: '16:9', label: 'Landscape',  ratio: 'aspect-video w-12'   },
+const FORMATS: Array<{ id: Format; labelKey: string; ratio: string }> = [
+  { id: '9:16', labelKey: 'ps_vertical',  ratio: 'aspect-[9/16] w-6' },
+  { id: '1:1',  labelKey: 'ps_square',    ratio: 'aspect-square w-8'   },
+  { id: '16:9', labelKey: 'ps_landscape', ratio: 'aspect-video w-12'   },
 ]
 
 export function PersonalizationSection() {
+  const { t } = useLanguage()
   const [voices, setVoices] = useState<ClyroVoice[]>([])
   const [loadingVoices, setLoadingVoices] = useState(true)
 
@@ -51,27 +53,27 @@ export function PersonalizationSection() {
 
   function save<T>(key: string, value: T, label: string) {
     localStorage.setItem(key, String(value))
-    toast.success(`${label} updated`)
+    toast.success(t('ps_updated').replace('{label}', label))
   }
 
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Personalization</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">{t('ps_title')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Your default preferences to save time on every new creation.
+          {t('ps_description')}
         </p>
       </div>
 
       {/* Default voice */}
-      <Field icon={Mic2} label="Default voice" description="Applied automatically when starting a new project.">
+      <Field icon={Mic2} label={t('ps_defaultVoice')} description={t('ps_defaultVoiceDesc')}>
         <select
           value={defaultVoice}
-          onChange={(e) => { setDefaultVoice(e.target.value); save('clyro_default_voice', e.target.value, 'Voix') }}
+          onChange={(e) => { setDefaultVoice(e.target.value); save('clyro_default_voice', e.target.value, t('ps_defaultVoice')) }}
           disabled={loadingVoices}
           className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-body text-foreground focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer disabled:opacity-60"
         >
-          <option value="">— None (choose each time)</option>
+          <option value="">{t('ps_voiceNone')}</option>
           {voices.map((v) => (
             <option key={v.id} value={v.id}>
               {v.languageFlag ?? '🌐'}  {v.name} {v.accent ? `· ${v.accent}` : ''}
@@ -81,7 +83,7 @@ export function PersonalizationSection() {
       </Field>
 
       {/* Default style */}
-      <Field icon={Palette} label="Default visual style" description="The style that will be pre-selected when you create a Faceless video.">
+      <Field icon={Palette} label={t('ps_defaultStyle')} description={t('ps_defaultStyleDesc')}>
         <div className="flex flex-wrap gap-2">
           {STYLES.map((s) => {
             const active = defaultStyle === s.id
@@ -89,7 +91,7 @@ export function PersonalizationSection() {
               <button
                 key={s.id}
                 type="button"
-                onClick={() => { setDefaultStyle(s.id); save('clyro_default_style', s.id, 'Style') }}
+                onClick={() => { setDefaultStyle(s.id); save('clyro_default_style', s.id, t('ps_defaultStyle')) }}
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-body transition-all',
                   active ? `${s.color} font-semibold` : 'bg-background border-border text-[--text-secondary] hover:text-foreground',
@@ -105,7 +107,7 @@ export function PersonalizationSection() {
       </Field>
 
       {/* Default duration */}
-      <Field icon={Clock} label="Default duration" description="Target length of your videos.">
+      <Field icon={Clock} label={t('ps_defaultDuration')} description={t('ps_defaultDurationDesc')}>
         <div className="inline-flex items-center gap-1 rounded-full border border-border bg-background p-1">
           {DURATIONS.map((d) => {
             const active = defaultDuration === d
@@ -113,7 +115,7 @@ export function PersonalizationSection() {
               <button
                 key={d}
                 type="button"
-                onClick={() => { setDefaultDuration(d); save('clyro_default_duration', d, 'Durée') }}
+                onClick={() => { setDefaultDuration(d); save('clyro_default_duration', d, t('ps_defaultDuration')) }}
                 className={cn(
                   'px-4 py-1.5 rounded-full text-xs font-mono transition-all',
                   active ? 'bg-foreground text-background font-semibold' : 'text-[--text-secondary] hover:text-foreground',
@@ -127,7 +129,7 @@ export function PersonalizationSection() {
       </Field>
 
       {/* Default format */}
-      <Field icon={Film} label="Default format" description="Aspect ratio used when creating.">
+      <Field icon={Film} label={t('ps_defaultFormat')} description={t('ps_defaultFormatDesc')}>
         <div className="flex items-end gap-3">
           {FORMATS.map((f) => {
             const active = defaultFormat === f.id
@@ -135,7 +137,7 @@ export function PersonalizationSection() {
               <button
                 key={f.id}
                 type="button"
-                onClick={() => { setDefaultFormat(f.id); save('clyro_default_format', f.id, 'Format') }}
+                onClick={() => { setDefaultFormat(f.id); save('clyro_default_format', f.id, t('ps_defaultFormat')) }}
                 className={cn(
                   'flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all',
                   active ? 'border-primary bg-brand/5 ring-2 ring-brand/20' : 'border-border bg-background hover:border-border',
@@ -145,7 +147,7 @@ export function PersonalizationSection() {
                 <div className={cn('rounded border border-border bg-muted', f.ratio)} />
                 <div className="text-center">
                   <p className={cn('font-mono text-[11px]', active ? 'text-foreground font-semibold' : 'text-[--text-secondary]')}>{f.id}</p>
-                  <p className="font-body text-[10px] text-[--text-muted]">{f.label}</p>
+                  <p className="font-body text-[10px] text-[--text-muted]">{t(f.labelKey as Parameters<typeof t>[0])}</p>
                 </div>
               </button>
             )
@@ -154,10 +156,10 @@ export function PersonalizationSection() {
       </Field>
 
       {/* Auto-advance */}
-      <Field label="Auto-advance" description="Move to the next step as soon as a step finishes generating.">
+      <Field label={t('ps_autoAdvance')} description={t('ps_autoAdvanceDesc')}>
         <button
           type="button"
-          onClick={() => { const next = !autoAdvance; setAutoAdvance(next); save('clyro_auto_advance', next, 'Avancement automatique') }}
+          onClick={() => { const next = !autoAdvance; setAutoAdvance(next); save('clyro_auto_advance', next, t('ps_autoAdvance')) }}
           className={cn(
             'relative inline-flex items-center w-11 h-6 rounded-full transition-colors',
             autoAdvance ? 'bg-primary' : 'bg-muted border border-border',

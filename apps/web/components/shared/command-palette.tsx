@@ -18,6 +18,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,76 +41,77 @@ interface CommandItem {
 function useCommandItems(): CommandItem[] {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
+  const { t } = useLanguage()
 
   return [
     // Navigation
     {
       id: 'nav-dashboard',
-      label: 'Dashboard',
-      category: 'Navigation',
+      label: t('cp_dashboard'),
+      category: t('cp_catNavigation'),
       icon: <LayoutDashboard size={16} strokeWidth={1.5} />,
       shortcut: 'G D',
       href: '/dashboard',
     },
     {
       id: 'nav-projects',
-      label: 'Projects',
-      category: 'Navigation',
+      label: t('cp_projects'),
+      category: t('cp_catNavigation'),
       icon: <FolderOpen size={16} strokeWidth={1.5} />,
       shortcut: 'G P',
       href: '/projects',
     },
     {
       id: 'nav-assets',
-      label: 'Assets',
-      category: 'Navigation',
+      label: t('cp_assets'),
+      category: t('cp_catNavigation'),
       icon: <Image size={16} strokeWidth={1.5} />,
       href: '/assets',
     },
     {
       id: 'nav-settings',
-      label: 'Settings',
-      category: 'Navigation',
+      label: t('cp_settings'),
+      category: t('cp_catNavigation'),
       icon: <Settings size={16} strokeWidth={1.5} />,
       shortcut: 'G S',
       href: '/settings',
     },
     {
       id: 'nav-billing',
-      label: 'Billing',
-      category: 'Navigation',
+      label: t('cp_billing'),
+      category: t('cp_catNavigation'),
       icon: <CreditCard size={16} strokeWidth={1.5} />,
       href: '/settings/billing',
     },
     // Create
     {
       id: 'create-faceless',
-      label: 'New Faceless Video',
-      category: 'Create',
+      label: t('cp_newFaceless'),
+      category: t('cp_catCreate'),
       icon: <Video size={16} strokeWidth={1.5} />,
       shortcut: 'N F',
       href: '/faceless/new',
     },
     {
       id: 'create-motion',
-      label: 'New Motion Design',
-      category: 'Create',
+      label: t('cp_newMotion'),
+      category: t('cp_catCreate'),
       icon: <Sparkles size={16} strokeWidth={1.5} />,
       shortcut: 'N M',
       href: '/motion/new',
     },
     {
       id: 'create-avatar',
-      label: 'New Avatar Video',
-      category: 'Create',
+      label: t('cp_newAvatar'),
+      category: t('cp_catCreate'),
       icon: <UserSquare2 size={16} strokeWidth={1.5} />,
       shortcut: 'N A',
       href: '/studio/new',
     },
     {
       id: 'create-brand',
-      label: 'New Brand Kit',
-      category: 'Create',
+      label: t('cp_newBrand'),
+      category: t('cp_catCreate'),
       icon: <Palette size={16} strokeWidth={1.5} />,
       shortcut: 'N B',
       href: '/brand/new',
@@ -117,15 +119,15 @@ function useCommandItems(): CommandItem[] {
     // Quick
     {
       id: 'quick-theme',
-      label: 'Toggle Theme',
-      category: 'Quick',
+      label: t('cp_toggleTheme'),
+      category: t('cp_catQuick'),
       icon: <SunMoon size={16} strokeWidth={1.5} />,
       action: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
     },
     {
       id: 'quick-analytics',
-      label: 'View Analytics',
-      category: 'Quick',
+      label: t('cp_viewAnalytics'),
+      category: t('cp_catQuick'),
       icon: <BarChart3 size={16} strokeWidth={1.5} />,
       href: '/analytics',
     },
@@ -156,6 +158,7 @@ function flattenGroups(groups: Map<string, CommandItem[]>): CommandItem[] {
 
 export function CommandPalette() {
   const router = useRouter()
+  const { t } = useLanguage()
   const allItems = useCommandItems()
 
   const [open, setOpen]     = useState(false)
@@ -277,7 +280,7 @@ export function CommandPalette() {
               setQuery(e.target.value)
               setActive(0)
             }}
-            placeholder="Search or type a command..."
+            placeholder={t('cp_search')}
             className={cn(
               'flex-1 bg-transparent outline-none',
               'font-body text-sm text-foreground placeholder:text-[--text-muted]',
@@ -301,7 +304,7 @@ export function CommandPalette() {
         >
           {flatList.length === 0 ? (
             <li className="px-4 py-8 text-center font-body text-sm text-[--text-muted]">
-              No results for &ldquo;{query}&rdquo;
+              {t('cp_noResults')} &ldquo;{query}&rdquo;
             </li>
           ) : (
             Array.from(groups.entries()).map(([category, items]) => {
@@ -377,15 +380,15 @@ export function CommandPalette() {
         <div className="flex items-center gap-4 px-4 py-2 border-t border-border">
           <span className="font-mono text-[10px] text-[--text-muted]">
             <kbd className="bg-muted px-1 py-0.5 rounded mr-1">↑↓</kbd>
-            navigate
+            {t('cp_navigate')}
           </span>
           <span className="font-mono text-[10px] text-[--text-muted]">
             <kbd className="bg-muted px-1 py-0.5 rounded mr-1">↵</kbd>
-            select
+            {t('cp_select')}
           </span>
           <span className="font-mono text-[10px] text-[--text-muted] ml-auto">
             <kbd className="bg-muted px-1 py-0.5 rounded mr-1">⌘K</kbd>
-            toggle
+            {t('cp_toggle')}
           </span>
         </div>
       </div>

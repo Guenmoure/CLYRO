@@ -156,7 +156,7 @@ export function ShareLinkModal({ isOpen, onClose, videoId }: ShareLinkModalProps
                 </p>
               )}
             </div>
-            {token && <Badge variant="success">Live</Badge>}
+            {token && <Badge variant="success">{t('share_live')}</Badge>}
           </div>
 
           {/* Link row + copy / open */}

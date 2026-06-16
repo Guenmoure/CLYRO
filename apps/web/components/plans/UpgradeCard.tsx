@@ -1,6 +1,9 @@
+'use client'
+
 import { ArrowRight, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
+import { useLanguage } from '@/lib/i18n'
 
 /**
  * Reusable "locked — upgrade to unlock" card used across plan-gated pages.
@@ -32,9 +35,11 @@ export function UpgradeCard({
   description,
   plans,
   ctaHref = '/settings/billing',
-  ctaLabel = 'See plans',
+  ctaLabel,
   className,
 }: UpgradeCardProps) {
+  const { t } = useLanguage()
+  const resolvedCtaLabel = ctaLabel ?? t('uc_seePlans')
   return (
     <Card variant="gradient" padding="lg" className={className}>
       <div className="flex items-start gap-4">
@@ -52,11 +57,11 @@ export function UpgradeCard({
             {description}
             {plans && plans.length > 0 && (
               <>
-                {' '}Included on{' '}
+                {' '}{t('uc_includedOn')}{' '}
                 {plans.map((p, i) => (
                   <span key={p}>
                     <strong className="text-foreground">{p}</strong>
-                    {i < plans.length - 2 ? ', ' : i === plans.length - 2 ? ', and ' : ''}
+                    {i < plans.length - 2 ? ', ' : i === plans.length - 2 ? ` ${t('uc_and')} ` : ''}
                   </span>
                 ))}
                 .
@@ -67,7 +72,7 @@ export function UpgradeCard({
             href={ctaHref}
             className="inline-flex items-center gap-2 mt-4 bg-blue-500 text-white font-body font-medium px-4 py-2 rounded-xl text-sm hover:bg-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            {ctaLabel}
+            {resolvedCtaLabel}
             <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </div>

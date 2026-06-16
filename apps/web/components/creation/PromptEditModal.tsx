@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -28,8 +29,10 @@ export function PromptEditModal({
   prompt,
   onApply,
   onImprove,
-  title = 'Edit prompt',
+  title,
 }: PromptEditModalProps) {
+  const { t } = useLanguage()
+  const resolvedTitle = title ?? t('pe_editPrompt')
   const [editedPrompt,  setEditedPrompt]  = useState(prompt)
   const [feedback,      setFeedback]      = useState('')
   const [improving,     setImproving]     = useState(false)
@@ -51,7 +54,7 @@ export function PromptEditModal({
       setEditedPrompt(improved)
       setFeedback('')
     } catch {
-      setImproveError('Unable to improve prompt. Try again.')
+      setImproveError(t('pe_improveError'))
     } finally {
       setImproving(false)
     }
@@ -66,7 +69,7 @@ export function PromptEditModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={title}
+      title={resolvedTitle}
       size="lg"
       closeOnOverlayClick={!improving}
     >
@@ -78,7 +81,7 @@ export function PromptEditModal({
             htmlFor="prompt-edit-textarea"
             className="font-mono text-xs text-[--text-muted] uppercase tracking-wider"
           >
-            Prompt
+            {t('pe_promptLabel')}
           </label>
           <textarea
             id="prompt-edit-textarea"
@@ -88,10 +91,10 @@ export function PromptEditModal({
             onChange={e => setEditedPrompt(e.target.value)}
             rows={6}
             className="w-full bg-muted border border-border rounded-xl px-4 py-3 font-body text-sm text-foreground placeholder-[--text-muted] resize-none focus:outline-none focus:border-primary transition-colors"
-            placeholder="Describe what you want to generate…"
+            placeholder={t('pe_placeholder')}
           />
           <p className="font-mono text-[11px] text-[--text-muted] text-right">
-            {editedPrompt.length} characters
+            {t('pe_characters').replace('{n}', String(editedPrompt.length))}
           </p>
         </div>
 
@@ -102,10 +105,10 @@ export function PromptEditModal({
               htmlFor="prompt-edit-feedback"
               className="font-mono text-xs text-[--text-muted] uppercase tracking-wider"
             >
-              Improve with AI
+              {t('pe_improveLabel')}
             </label>
             <p className="font-body text-xs text-[--text-muted]">
-              Tell me what you'd like to change and the AI will update the prompt.
+              {t('pe_improveHelp')}
             </p>
             <div className="flex gap-2">
               <input
@@ -116,7 +119,7 @@ export function PromptEditModal({
                 value={feedback}
                 onChange={e => setFeedback(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && feedback.trim() && handleImprove()}
-                placeholder="Ex: make it more dramatic, add a female voice…"
+                placeholder={t('pe_improvePlaceholder')}
                 className="flex-1 bg-muted border border-border rounded-xl px-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-primary transition-colors"
                 disabled={improving}
               />
@@ -128,7 +131,7 @@ export function PromptEditModal({
                 loading={improving}
                 leftIcon={<Sparkles size={14} />}
               >
-                Improve
+                {t('pe_improveBtn')}
               </Button>
             </div>
             {improveError && (
@@ -142,10 +145,10 @@ export function PromptEditModal({
       {/* Footer */}
       <div className="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-border/50">
         <Button variant="ghost" onClick={onClose} disabled={improving}>
-          Cancel
+          {t('pe_cancel')}
         </Button>
         <Button variant="primary" onClick={handleApply} disabled={!editedPrompt.trim() || improving}>
-          Apply
+          {t('pe_apply')}
         </Button>
       </div>
     </Modal>

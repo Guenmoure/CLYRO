@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, Monitor } from 'lucide-react'
+import { Loader2, Monitor, Coins } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n'
 import { StudioTopBar } from '@/components/studio/StudioTopBar'
 import { PreviewPlayer } from '@/components/studio/PreviewPlayer'
@@ -16,9 +16,21 @@ import {
   getStudioProject, generateAllStudioScenes, regenerateStudioScene,
   addStudioScene, deleteStudioScene, renderStudioFinal, ApiError,
 } from '@/lib/api'
+import { useCredits } from '@/hooks/use-credits'
+import { creditCostForVideo, type AnimationMode } from '@clyro/shared'
 import type {
   StudioProject, StudioScene, StudioSceneType,
 } from '@/lib/studio-types'
+
+/** Maps scene type → animation mode for cost estimation (mirrors API). */
+const SCENE_TYPE_MODE: Record<StudioSceneType, AnimationMode> = {
+  avatar:      'pro',
+  split:       'pro',
+  infographic: 'fast',
+  demo:        'fast',
+  typography:  'fast',
+  broll:       'storyboard',
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +46,7 @@ export default function StudioEditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
   const [sceneToDelete, setSceneToDelete] = useState<string | null>(null)
+  const { credits, isUnlimited, loading: creditsLoading } = useCredits()
 
   // ── Scroll reset on mount ─────────────────────────────────────────────
   // After script analysis on /studio/new (a long scrollable page), the
@@ -96,6 +109,16 @@ export default function StudioEditorPage() {
   const selectedScene = scenes.find((s) => s.id === selectedId) ?? null
   const scenesDone = scenes.filter((s) => s.status === 'done').length
   const totalDuration = scenes.reduce((acc, s) => acc + (s.duration_actual ?? s.duration_est ?? 0), 0)
+
+  // Estimated credit cost for all pending scenes
+  const estimatedCost = scenes
+    .filter((s) => s.status === 'pending')
+    .reduce((acc, s) => {
+      const dur = s.duration_est ?? 5
+      const mode = SCENE_TYPE_MODE[s.type]
+      return acc + creditCostForVideo(dur, mode)
+    }, 0)
+  const canAfford = isUnlimited || credits >= estimatedCost
 
   const startGeneration = useCallback(async () => {
     if (!project || starting) return
@@ -245,15 +268,23 @@ export default function StudioEditorPage() {
       {/* Call-to-action strip if scenes haven't been generated yet */}
       {scenes.every((s) => s.status === 'pending') && (
         <div className="shrink-0 px-4 py-2.5 bg-brand/10 border-b border-brand/30 flex items-center justify-between gap-4">
-          <p className="font-body text-sm text-foreground">
-            <span className="font-semibold">{t('st_scenesReadyCount').replace('{n}', String(scenes.length))}</span>{' '}
-            <span className="text-[--text-secondary]">{t('st_clickGenerate')}</span>
-          </p>
+          <div className="flex items-center gap-4 min-w-0">
+            <p className="font-body text-sm text-foreground">
+              <span className="font-semibold">{t('st_scenesReadyCount').replace('{n}', String(scenes.length))}</span>{' '}
+              <span className="text-[--text-secondary]">{t('st_clickGenerate')}</span>
+            </p>
+            {!creditsLoading && !isUnlimited && (
+              <span className={`inline-flex items-center gap-1.5 font-mono text-xs shrink-0 ${canAfford ? 'text-[--text-secondary]' : 'text-error font-semibold'}`}>
+                <Coins size={12} />
+                {t('st_costEstimate').replace('{cost}', String(estimatedCost)).replace('{balance}', String(credits))}
+              </span>
+            )}
+          </div>
           <button
             type="button"
             onClick={startGeneration}
-            disabled={starting}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-1.5 font-display text-sm font-semibold hover:bg-brand-hover disabled:opacity-60 transition-colors"
+            disabled={starting || !canAfford}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-1.5 font-display text-sm font-semibold hover:bg-brand-hover disabled:opacity-60 transition-colors shrink-0"
           >
             {starting ? <Loader2 size={13} className="animate-spin" /> : '⚡'}
             {t('st_generateAll')}

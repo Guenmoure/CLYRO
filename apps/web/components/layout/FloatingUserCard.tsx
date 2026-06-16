@@ -100,13 +100,13 @@ export function FloatingUserCard() {
                 <Badge variant="purple">{planLabel}</Badge>
               ) : (
                 <>
-                  <Badge variant="warning">{planLabel} · {credits} credit{credits !== 1 ? 's' : ''}</Badge>
+                  <Badge variant="warning">{planLabel} · {t('fuc_credits').replace('{n}', String(credits)).replace('{s}', credits !== 1 ? 's' : '')}</Badge>
                   <Link
                     href="/pricing"
                     onClick={() => setOpen(false)}
                     className="ml-auto inline-flex items-center gap-1 rounded-lg bg-grad-primary text-white px-2 py-1 text-[11px] font-display font-semibold hover:opacity-90 transition-opacity"
                   >
-                    <Zap size={11} /> Upgrade
+                    <Zap size={11} /> {t('fuc_upgrade')}
                   </Link>
                 </>
               )}
@@ -116,13 +116,13 @@ export function FloatingUserCard() {
           {/* Account nav (workspace nav lives in the right sidebar) */}
           <div className="p-2">
             <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] px-2 py-1.5">
-              Account
+              {t('fuc_account')}
             </p>
             {ACCOUNT_ITEMS.map((item) => (
               <NavLink
                 key={item.href}
                 href={item.href}
-                label={item.label === 'Settings' ? t('userSettings') : item.label}
+                label={item.label === 'Settings' ? t('userSettings') : t('fuc_help')}
                 icon={item.icon}
                 active={false}
                 external={'external' in item ? item.external : false}

@@ -178,7 +178,7 @@ export default function DraftsPage() {
             {t(f.tKey as Parameters<typeof t>[0])}
             {f.value !== 'all' && (
               <span className="text-[10px] opacity-60">
-                {drafts.filter(d => d.module === f.value).length}
+                {loading ? '—' : drafts.filter(d => d.module === f.value).length}
               </span>
             )}
           </button>

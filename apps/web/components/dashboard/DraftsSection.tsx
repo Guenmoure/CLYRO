@@ -12,7 +12,7 @@ const PREVIEW_LIMIT = 4
 export function DraftsSection() {
   const { t } = useLanguage()
   const [drafts,     setDrafts]     = useState<DbDraftMeta[]>([])
-  const [totalCount, setTotalCount] = useState(0)
+  const [totalCount, setTotalCount] = useState<number | null>(null)
 
   useEffect(() => {
     const supabase = createBrowserClient()
@@ -45,7 +45,7 @@ export function DraftsSection() {
     const supabase = createBrowserClient()
     supabase.from('videos').delete().eq('id', id).then(() => {
       setDrafts(prev => prev.filter(d => d.id !== id))
-      setTotalCount(prev => Math.max(0, prev - 1))
+      setTotalCount(prev => Math.max(0, (prev ?? 0) - 1))
     })
   }
 
@@ -58,10 +58,10 @@ export function DraftsSection() {
         <PenLine size={15} className="text-warning" strokeWidth={1.8} />
         <h2 className="font-display text-base font-semibold text-foreground">{t('ds_drafts')}</h2>
         <span className="font-mono text-[11px] font-bold text-warning bg-warning/10 border border-warning/20 rounded-full px-2 py-0.5 leading-none">
-          {totalCount}
+          {totalCount ?? '—'}
         </span>
 
-        {totalCount > PREVIEW_LIMIT && (
+        {(totalCount ?? 0) > PREVIEW_LIMIT && (
           <Link
             href="/drafts"
             className="ml-auto flex items-center gap-1 text-xs font-medium text-[--text-muted] hover:text-foreground transition-colors"
@@ -84,14 +84,14 @@ export function DraftsSection() {
       </div>
 
       {/* Footer — "Voir tous" when truncated */}
-      {totalCount > PREVIEW_LIMIT && (
+      {(totalCount ?? 0) > PREVIEW_LIMIT && (
         <div className="mt-3 flex justify-center">
           <Link
             href="/drafts"
             className="inline-flex items-center gap-1.5 text-xs font-medium text-[--text-muted] border border-border rounded-xl px-4 py-2 hover:bg-muted hover:text-foreground transition-colors"
           >
             <PenLine size={12} />
-            {totalCount - PREVIEW_LIMIT} {totalCount - PREVIEW_LIMIT > 1 ? t('ds_drafts_plural') : t('ds_draft_singular')} {totalCount - PREVIEW_LIMIT > 1 ? t('ds_additional_plural') : t('ds_additional_singular')}
+            {(totalCount ?? 0) - PREVIEW_LIMIT} {(totalCount ?? 0) - PREVIEW_LIMIT > 1 ? t('ds_drafts_plural') : t('ds_draft_singular')} {(totalCount ?? 0) - PREVIEW_LIMIT > 1 ? t('ds_additional_plural') : t('ds_additional_singular')}
             <ArrowRight size={12} />
           </Link>
         </div>
