@@ -8,12 +8,13 @@ import { ProjectCard, type VideoProject } from '@/components/dashboard/ProjectCa
 import { NewProjectCard } from '@/components/dashboard/NewProjectCard'
 import { RealtimeProjects } from '@/components/dashboard/RealtimeProjects'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Module config (client-side only — icons are functions, not serialisable) ───
 
 interface ModuleConfig {
   key:       'faceless' | 'motion' | 'brand'
-  label:     string
+  labelKey:  string
   icon:      React.ElementType
   iconColor: string
   iconBg:    string
@@ -24,7 +25,7 @@ interface ModuleConfig {
 const MODULES: readonly ModuleConfig[] = [
   {
     key:       'faceless',
-    label:     'Faceless Videos',
+    labelKey:  'dash_facelessVideo',
     icon:      Video,
     iconColor: 'text-blue-400',
     iconBg:    'bg-blue-500/10',
@@ -33,7 +34,7 @@ const MODULES: readonly ModuleConfig[] = [
   },
   {
     key:       'motion',
-    label:     'Motion Design',
+    labelKey:  'dash_motionDesign',
     icon:      Sparkles,
     iconColor: 'text-purple-400',
     iconBg:    'bg-purple-500/10',
@@ -42,7 +43,7 @@ const MODULES: readonly ModuleConfig[] = [
   },
   {
     key:       'brand',
-    label:     'Brand Kit',
+    labelKey:  'dash_brandKit',
     icon:      Palette,
     iconColor: 'text-teal-500',
     iconBg:    'bg-teal-500/10',
@@ -67,6 +68,7 @@ function ModuleSection({
   projects: VideoProject[]
   total: number
 }) {
+  const { t } = useLanguage()
   const Icon = config.icon
 
   return (
@@ -78,16 +80,18 @@ function ModuleSection({
             <Icon size={18} className={config.iconColor} />
           </div>
           <div>
-            <h2 className="font-display text-lg text-foreground leading-none">{config.label}</h2>
+            <h2 className="font-display text-lg text-foreground leading-none">{t(config.labelKey)}</h2>
             <p className="font-mono text-xs text-[--text-muted] mt-0.5">
-              {total} projet{total !== 1 ? 's' : ''} au total
+              {total === 1
+                ? t('ps_projectCount').replace('{n}', '1')
+                : t('ps_projectsCount').replace('{n}', String(total))}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {total > 4 && (
             <Button variant="ghost" size="sm" asChild>
-              <Link href={config.href}>Voir tout →</Link>
+              <Link href={config.href}>{t('ps_viewAll')}</Link>
             </Button>
           )}
           <Button
@@ -96,7 +100,7 @@ function ModuleSection({
             leftIcon={<Plus size={13} />}
             asChild
           >
-            <Link href={config.newHref}>Créer</Link>
+            <Link href={config.newHref}>{t('ps_create')}</Link>
           </Button>
         </div>
       </div>
@@ -119,6 +123,7 @@ function ModuleSection({
 // ── Empty state ────────────────────────────────────────────────────────────────
 
 function EmptyState({ config }: { config: ModuleConfig }) {
+  const { t } = useLanguage()
   const Icon = config.icon
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border bg-card/50">
@@ -126,13 +131,13 @@ function EmptyState({ config }: { config: ModuleConfig }) {
         <Icon size={32} className={config.iconColor} />
       </div>
       <p className="font-display text-base text-foreground">
-        Aucun projet {config.label} pour l'instant
+        {t('ps_noProjects').replace('{module}', t(config.labelKey))}
       </p>
       <p className="font-body text-sm text-[--text-muted] mt-2 max-w-xs">
-        Crée ton premier projet en moins de 5 minutes.
+        {t('ps_firstProjectHint')}
       </p>
       <Button variant="primary" size="md" leftIcon={<Plus size={15} />} className="mt-4" asChild>
-        <Link href={config.newHref}>Créer mon premier projet</Link>
+        <Link href={config.newHref}>{t('ps_createFirst')}</Link>
       </Button>
     </div>
   )

@@ -28,10 +28,10 @@ const MODULE_COLORS: Record<string, string> = {
   motion:   'text-purple-400 bg-purple-500/10',
   brand:    'text-teal-500 bg-teal-500/10',
 }
-const MODULE_LABELS: Record<string, string> = {
-  faceless: 'Faceless',
-  motion:   'Motion',
-  brand:    'Brand Kit',
+const MODULE_LABEL_KEYS: Record<string, string> = {
+  faceless: 'dash_facelessVideo',
+  motion:   'dash_motionDesign',
+  brand:    'dash_brandKit',
 }
 
 function formatRelativeDate(dateStr: string, t: (key: string) => string): string {
@@ -180,7 +180,8 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
 
   const ModuleIcon  = MODULE_ICONS[project.module ?? ''] ?? Video
   const moduleColor = MODULE_COLORS[project.module ?? ''] ?? 'text-[--text-muted] bg-muted'
-  const moduleLabel = MODULE_LABELS[project.module ?? ''] ?? 'Projet'
+  const moduleLabelKey = MODULE_LABEL_KEYS[project.module ?? '']
+  const moduleLabel = moduleLabelKey ? t(moduleLabelKey) : t('pc_project')
 
   async function handleDelete() {
     setDeleting(true)

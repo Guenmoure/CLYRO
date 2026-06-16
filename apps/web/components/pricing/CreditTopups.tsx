@@ -84,7 +84,7 @@ export function CreditTopups() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-10 space-y-3">
           <div className="flex justify-center">
-            <Badge variant="neutral">Top-ups</Badge>
+            <Badge variant="neutral">{t('pr_topBadgeHeader')}</Badge>
           </div>
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
             {t('pr_topTitle')}

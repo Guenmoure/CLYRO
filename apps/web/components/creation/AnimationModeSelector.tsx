@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import type { AnimationMode } from '@clyro/shared'
 import { ANIMATION_MODES } from '@clyro/shared'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ───────────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,20 @@ interface AnimationModeSelectorProps {
   compact?:            boolean
   /** Estimated script duration in minutes — used to compute credit cost */
   scriptDurationMin?:  number
+}
+
+// ── i18n key maps for mode label / description (shared config is French-only) ─
+
+const MODE_LABEL_KEYS: Record<AnimationMode, string> = {
+  storyboard: 'ams_labelStoryboard',
+  fast:       'ams_labelFast',
+  pro:        'ams_labelPro',
+}
+
+const MODE_DESC_KEYS: Record<AnimationMode, string> = {
+  storyboard: 'ams_descStoryboard',
+  fast:       'ams_descFast',
+  pro:        'ams_descPro',
 }
 
 // ── Mode indicator (GIF preview) ───────────────────────────────────────────────
@@ -56,6 +71,7 @@ export default function AnimationModeSelector({
   compact = false,
   scriptDurationMin,
 }: AnimationModeSelectorProps) {
+  const { t } = useLanguage()
   const MODES: AnimationMode[] = ['storyboard', 'fast', 'pro']
 
   return (
@@ -86,7 +102,7 @@ export default function AnimationModeSelector({
             {/* "Recommandé" badge on Fast */}
             {mode === 'fast' && !compact && (
               <Badge variant="success" className="absolute -top-2.5 left-4">
-                Recommandé
+                {t('ams_recommended')}
               </Badge>
             )}
 
@@ -94,7 +110,7 @@ export default function AnimationModeSelector({
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
                 <ModeIndicator mode={mode} locked={locked} />
-                <span className="font-display text-sm text-foreground">{config.label}</span>
+                <span className="font-display text-sm text-foreground">{t(MODE_LABEL_KEYS[mode])}</span>
               </div>
 
               {locked ? (
@@ -110,7 +126,7 @@ export default function AnimationModeSelector({
             {/* Description — hidden in compact mode */}
             {!compact && (
               <p className="font-body text-xs text-[--text-muted] mt-2 leading-relaxed">
-                {config.description}
+                {t(MODE_DESC_KEYS[mode])}
               </p>
             )}
 
@@ -134,13 +150,13 @@ export default function AnimationModeSelector({
             {credits !== null && !compact && (
               <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
                 <span className="font-mono text-[11px] text-[--text-muted]">
-                  Estimé ({scriptDurationMin} min)
+                  {t('ams_estimated').replace('{n}', String(scriptDurationMin))}
                 </span>
                 <span className={cn(
                   'font-mono text-xs font-medium',
                   active ? 'text-primary' : 'text-[--text-secondary]',
                 )}>
-                  ~{credits} crédits
+                  ~{credits} {t('ams_credits')}
                 </span>
               </div>
             )}
@@ -149,7 +165,7 @@ export default function AnimationModeSelector({
             {locked && !compact && (
               <div className="mt-3 pt-3 border-t border-border/50">
                 <p className="font-mono text-[11px] text-violet-500">
-                  Disponible à partir du plan Pro →
+                  {t('ams_lockedHint')}
                 </p>
               </div>
             )}

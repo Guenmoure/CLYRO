@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 interface Connection {
   id: string
   name: string
-  description: string
+  descKey: string
   iconBg: string
   iconComponent: React.ReactNode
   status: 'available' | 'coming'
@@ -18,7 +18,7 @@ const CONNECTIONS: Connection[] = [
   {
     id: 'slack',
     name: 'Slack',
-    description: 'Get notified when your videos are ready, directly in your channel of choice.',
+    descKey: 'conn_slackDesc',
     iconBg: 'bg-[#4A154B]',
     iconComponent: <span className="text-white font-display font-black text-base">S</span>,
     status: 'coming',
@@ -26,7 +26,7 @@ const CONNECTIONS: Connection[] = [
   {
     id: 'youtube',
     name: 'YouTube',
-    description: 'Publish your Faceless and Motion videos directly to your YouTube channel in one click.',
+    descKey: 'conn_youtubeDesc',
     iconBg: 'bg-red-600',
     iconComponent: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="currentColor" aria-hidden="true">
@@ -38,7 +38,7 @@ const CONNECTIONS: Connection[] = [
   {
     id: 'linkedin',
     name: 'LinkedIn',
-    description: 'Share your videos and brand kit directly to your LinkedIn profile or company page.',
+    descKey: 'conn_linkedinDesc',
     iconBg: 'bg-[#0A66C2]',
     iconComponent: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="currentColor" aria-hidden="true">
@@ -58,7 +58,7 @@ export function ConnectionsSection() {
     setPending(id)
     // Stub — backend connectors not yet wired
     setTimeout(() => {
-      toast.info(`Connection ${id} — coming soon`)
+      toast.info(t('connectionSoon'))
       setPending(null)
     }, 300)
   }
@@ -68,7 +68,7 @@ export function ConnectionsSection() {
       <div>
         <h2 className="font-display text-2xl font-bold text-foreground">{t('connections')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Connect Clyro to your tools to publish and automate.
+          {t('conn_subtitle')}
         </p>
       </div>
 
@@ -91,7 +91,7 @@ export function ConnectionsSection() {
                 )}
               </div>
               <p className="font-body text-xs text-[--text-secondary] leading-relaxed">
-                {c.description}
+                {t(c.descKey)}
               </p>
               <button
                 type="button"
@@ -104,7 +104,7 @@ export function ConnectionsSection() {
                     : 'bg-foreground text-background hover:opacity-90',
                 )}
               >
-                {c.status === 'coming' ? t('connectionSoon') : 'Connect'}
+                {c.status === 'coming' ? t('connectionSoon') : t('conn_connect')}
               </button>
             </div>
           </div>
@@ -112,7 +112,7 @@ export function ConnectionsSection() {
       </div>
 
       <p className="font-body text-xs text-[--text-muted]">
-        Need another integration? Contact us at{' '}
+        {t('conn_needMore')}{' '}
         <a href="mailto:support@clyro.app" className="text-primary hover:underline">support@clyro.app</a>.
       </p>
     </div>

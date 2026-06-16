@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/ui/page-header'
 import { EmptyState } from '@/components/ui/empty-state'
 import { createBrowserClient } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ───────────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,7 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
 // ── Page ────────────────────────────────────────────────────────────────────────
 
 export default function TeamPage() {
+  const { t } = useLanguage()
   const [ownerEmail, setOwnerEmail] = useState<string | null>(null)
   const [ownerName, setOwnerName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -89,6 +91,9 @@ export default function TeamPage() {
   ]
 
   const onlyOwner = members.length === 1
+  const memberCountLabel = members.length === 1
+    ? t('tm_memberCount').replace('{n}', '1')
+    : t('tm_membersCount').replace('{n}', String(members.length))
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-3xl mx-auto">
@@ -100,22 +105,22 @@ export default function TeamPage() {
           className="inline-flex items-center gap-1.5 font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors"
         >
           <ArrowLeft size={14} />
-          Settings
+          {t('tm_backSettings')}
         </Link>
 
         <PageHeader
-          eyebrow="Settings"
-          title="Team & Seats"
-          description="Manage your team members and collaboration access"
+          eyebrow={t('tm_eyebrow')}
+          title={t('tm_title')}
+          description={t('tm_description')}
           action={
-            <Tooltip label="Coming soon">
+            <Tooltip label={t('tm_comingSoon')}>
               <Button
                 variant="primary"
                 size="md"
                 disabled
                 leftIcon={<UserPlus size={15} />}
               >
-                Invite member
+                {t('tm_invite')}
               </Button>
             </Tooltip>
           }
@@ -128,9 +133,9 @@ export default function TeamPage() {
               <Users size={16} className="text-primary" />
             </div>
             <div>
-              <h2 className="font-display font-semibold text-foreground">Members</h2>
+              <h2 className="font-display font-semibold text-foreground">{t('tm_members')}</h2>
               <p className="font-body text-xs text-[--text-secondary]">
-                {members.length} member{members.length !== 1 ? 's' : ''}
+                {memberCountLabel}
               </p>
             </div>
           </header>
@@ -172,19 +177,19 @@ export default function TeamPage() {
               <div className="px-6 pb-6 pt-2">
                 <EmptyState
                   icon={Users}
-                  title="No team members yet"
-                  description="Invite your team to collaborate on projects, share assets, and review videos together."
+                  title={t('tm_noTeamTitle')}
+                  description={t('tm_noTeamDesc')}
                   accent="blue"
                   size="sm"
                   action={
-                    <Tooltip label="Coming soon">
+                    <Tooltip label={t('tm_comingSoon')}>
                       <Button
                         variant="secondary"
                         size="sm"
                         disabled
                         leftIcon={<UserPlus size={13} />}
                       >
-                        Send an invite
+                        {t('tm_sendInvite')}
                       </Button>
                     </Tooltip>
                   }
@@ -202,14 +207,14 @@ export default function TeamPage() {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-display font-semibold text-foreground">
-                Team features require Pro or Studio
+                {t('tm_upgradeTitle')}
               </h3>
               <p className="font-body text-sm text-[--text-secondary] mt-1">
-                Upgrade your plan to invite collaborators, assign roles, and manage shared workspaces.
+                {t('tm_upgradeDesc')}
               </p>
               <div className="mt-4">
                 <Button variant="primary" size="sm" asChild>
-                  <Link href="/pricing">View plans</Link>
+                  <Link href="/pricing">{t('tm_viewPlans')}</Link>
                 </Button>
               </div>
             </div>

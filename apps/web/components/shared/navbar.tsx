@@ -5,9 +5,11 @@ import { useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Logo } from '@/components/ui/Logo'
+import { useLanguage } from '@/lib/i18n'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
+  const { t } = useLanguage()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30)
@@ -34,9 +36,9 @@ export function Navbar() {
 
         <nav className="hidden md:flex items-center gap-8">
           {[
-            { href: '#modules',      label: 'Modules' },
-            { href: '#how-it-works', label: 'Comment ça marche' },
-            { href: '#pricing',      label: 'Tarifs' },
+            { href: '#modules',      label: t('nav_modules') },
+            { href: '#how-it-works', label: t('nav_howItWorks') },
+            { href: '#pricing',      label: t('nav_pricing') },
           ].map(({ href, label }) => (
             <a
               key={href}
@@ -54,13 +56,13 @@ export function Navbar() {
             href="/login"
             className="font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors duration-200 px-3 py-1.5"
           >
-            Connexion
+            {t('nav_login')}
           </Link>
           <Link
             href="/signup"
             className="shimmer font-body text-sm font-medium bg-grad-cta text-white px-4 py-1.5 rounded-xl hover:opacity-90 transition-opacity duration-200 flex items-center gap-1.5"
           >
-            Commencer gratuitement <ArrowRight size={13} />
+            {t('nav_getStarted')} <ArrowRight size={13} />
           </Link>
         </div>
       </div>

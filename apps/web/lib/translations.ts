@@ -136,6 +136,12 @@ export const translations = {
     auth_invalidCredentials: 'Invalid email or password.',
     auth_emailNotConfirmed: 'Please confirm your email address before signing in.',
     auth_genericError: 'An error occurred. Please try again.',
+    auth_loginTagline: 'Content to video in minutes',
+    auth_signupTagline: 'From script to video in 10 minutes',
+    auth_noAccount: "Don't have an account?",
+    auth_hasAccount: 'Already signed up?',
+    auth_createTitle: 'Create a free account',
+    auth_freeCredits: '250 free credits on signup. No credit card required.',
 
     // User menu
     userSettings: 'Settings',
@@ -165,6 +171,12 @@ export const translations = {
     // Notifications & Connections
     connections: 'Connections',
     connectionSoon: 'soon available',
+    conn_subtitle: 'Connect Clyro to your tools to publish and automate.',
+    conn_slackDesc: 'Get notified when your videos are ready, directly in your channel of choice.',
+    conn_youtubeDesc: 'Publish your Faceless and Motion videos directly to your YouTube channel in one click.',
+    conn_linkedinDesc: 'Share your videos and brand kit directly to your LinkedIn profile or company page.',
+    conn_connect: 'Connect',
+    conn_needMore: 'Need another integration? Contact us at',
 
     // Landing page
     createMyFirstVideoFree: 'Create my first video for free',
@@ -1364,6 +1376,65 @@ export const translations = {
     mn_toast_briefTooShort: 'Brief must contain at least 20 characters',
     mn_toast_generationFailed: 'Generation failed — {msg}',
     mn_toast_unknownError: 'Unknown error',
+
+    // Wizard shared
+    wiz_back: 'Back',
+    wiz_save: 'Save',
+    wiz_previous: 'Previous',
+    wiz_newProject: 'New project',
+    wiz_notSaved: 'Not saved',
+    wiz_saving: 'Saving\u2026',
+    wiz_draftSaved: 'Draft saved',
+    wiz_justNow: 'just now',
+    wiz_minAgo: '{n} min ago',
+    wiz_hAgo: '{n}h ago',
+
+    // Voice picker
+    vpk_title: 'Choose a voice',
+    vpk_tabLibrary: 'Public library',
+    vpk_tabCloned: 'My cloned voices',
+    vpk_searchLabel: 'Search for a voice',
+    vpk_searchPlaceholder: 'Search for a voice\u2026',
+    vpk_noCloned: 'No cloned voices yet',
+    vpk_cloneHint: 'Upload a 30 s audio sample to create your own AI voice.',
+    vpk_cloneBtn: 'Clone a voice',
+    vpk_noResults: 'No voices found',
+    vpk_cancel: 'Cancel',
+    vpk_confirm: 'Confirm',
+    vpk_pause: 'Pause',
+    vpk_listen: 'Listen',
+
+    // navbar (landing page)
+    nav_modules: 'Modules',
+    nav_howItWorks: 'How it works',
+    nav_pricing: 'Pricing',
+    nav_login: 'Log in',
+    nav_getStarted: 'Get started free',
+
+    // credit topups
+    pr_topBadgeHeader: 'Top-ups',
+
+    // animation mode selector
+    ams_recommended: 'Recommended',
+    ams_estimated: 'Est. ({n} min)',
+    ams_credits: 'credits',
+    ams_lockedHint: 'Available from Pro plan \u2192',
+    ams_labelStoryboard: 'Storyboard',
+    ams_labelFast: 'Fast Animation',
+    ams_labelPro: 'Pro Animation',
+    ams_descStoryboard: 'Static images with Ken Burns. Fast, affordable, ideal for testing.',
+    ams_descFast: 'Hailuo 2.3 Standard 5\u201310s clips. Best quality/credit ratio.',
+    ams_descPro: 'Kling v3 Pro 8s clips. SOTA motion fluidity, max photorealistic quality.',
+
+    // project sections (dashboard)
+    ps_projectCount: '{n} project total',
+    ps_projectsCount: '{n} projects total',
+    ps_viewAll: 'View all \u2192',
+    ps_create: 'Create',
+    ps_noProjects: 'No {module} projects yet',
+    ps_firstProjectHint: 'Create your first project in under 5 minutes.',
+    ps_createFirst: 'Create my first project',
+
     // brand/new
     bn_step_brief: 'Brief',
     bn_step_visuals: 'Visual identity',
@@ -2909,6 +2980,7 @@ export const translations = {
   integ_available: 'Available',
   integ_manage: 'Manage',
   integ_connect: 'Connect',
+  integ_comingSoon: 'Coming soon',
   integ_youtubeDesc: 'Upload directly to your YouTube channel',
   integ_tiktokDesc: 'Auto-publish short-form videos to TikTok',
   integ_instagramDesc: 'Share reels and stories to your profile',
@@ -2921,6 +2993,23 @@ export const translations = {
   integ_requestDesc: 'Don\'t see a tool you need? Let us know and we\'ll consider it for a future release.',
   integ_requestPlaceholder: 'e.g. Webflow, Airtable, HubSpot…',
   integ_submit: 'Submit',
+
+  // Team page
+  tm_backSettings: 'Settings',
+  tm_eyebrow: 'Settings',
+  tm_title: 'Team & Seats',
+  tm_description: 'Manage your team members and collaboration access',
+  tm_invite: 'Invite member',
+  tm_members: 'Members',
+  tm_memberCount: '{n} member',
+  tm_membersCount: '{n} members',
+  tm_noTeamTitle: 'No team members yet',
+  tm_noTeamDesc: 'Invite your team to collaborate on projects, share assets, and review videos together.',
+  tm_sendInvite: 'Send an invite',
+  tm_comingSoon: 'Coming soon',
+  tm_upgradeTitle: 'Team features require Pro or Studio',
+  tm_upgradeDesc: 'Upgrade your plan to invite collaborators, assign roles, and manage shared workspaces.',
+  tm_viewPlans: 'View plans',
   },
 
   fr: {
@@ -3051,6 +3140,12 @@ export const translations = {
     auth_invalidCredentials: 'E-mail ou mot de passe invalide.',
     auth_emailNotConfirmed: 'Veuillez confirmer votre adresse e-mail avant de vous connecter.',
     auth_genericError: 'Une erreur est survenue. Veuillez réessayer.',
+    auth_loginTagline: 'Du contenu à la vidéo en quelques minutes',
+    auth_signupTagline: 'Du script à la vidéo en 10 minutes',
+    auth_noAccount: 'Pas encore de compte ?',
+    auth_hasAccount: 'Déjà inscrit ?',
+    auth_createTitle: 'Créer un compte gratuit',
+    auth_freeCredits: '250 crédits gratuits à l\'inscription. Aucune carte bancaire requise.',
 
     userSettings: 'Paramètres',
     userLogout: 'Déconnexion',
@@ -3075,6 +3170,12 @@ export const translations = {
 
     connections: 'Connexions',
     connectionSoon: 'bientôt disponible',
+    conn_subtitle: 'Connectez Clyro à vos outils pour publier et automatiser.',
+    conn_slackDesc: 'Recevez des notifications quand vos vidéos sont prêtes, directement dans votre canal.',
+    conn_youtubeDesc: 'Publiez vos vidéos Faceless et Motion directement sur votre chaîne YouTube en un clic.',
+    conn_linkedinDesc: 'Partagez vos vidéos et votre kit de marque sur votre profil ou page entreprise LinkedIn.',
+    conn_connect: 'Connecter',
+    conn_needMore: 'Besoin d\'une autre intégration ? Contactez-nous à',
 
     createMyFirstVideoFree: 'Créer ma première vidéo gratuitement',
     createFreeAccount: 'Créer mon compte gratuitement',
@@ -4268,6 +4369,65 @@ export const translations = {
     mn_toast_briefTooShort: 'Le brief doit contenir au moins 20 caractères',
     mn_toast_generationFailed: 'Génération échouée — {msg}',
     mn_toast_unknownError: 'Erreur inconnue',
+
+    // Wizard shared
+    wiz_back: 'Retour',
+    wiz_save: 'Sauvegarder',
+    wiz_previous: 'Précédent',
+    wiz_newProject: 'Nouveau projet',
+    wiz_notSaved: 'Non sauvegardé',
+    wiz_saving: 'Sauvegarde\u2026',
+    wiz_draftSaved: 'Brouillon sauvegardé',
+    wiz_justNow: 'à l\'instant',
+    wiz_minAgo: 'il y a {n} min',
+    wiz_hAgo: 'il y a {n}h',
+
+    // Voice picker
+    vpk_title: 'Choisir une voix',
+    vpk_tabLibrary: 'Bibliothèque publique',
+    vpk_tabCloned: 'Mes voix clonées',
+    vpk_searchLabel: 'Rechercher une voix',
+    vpk_searchPlaceholder: 'Rechercher une voix\u2026',
+    vpk_noCloned: 'Pas encore de voix clonée',
+    vpk_cloneHint: 'Importez un échantillon audio de 30 s pour créer votre propre voix IA.',
+    vpk_cloneBtn: 'Cloner une voix',
+    vpk_noResults: 'Aucune voix trouvée',
+    vpk_cancel: 'Annuler',
+    vpk_confirm: 'Confirmer',
+    vpk_pause: 'Pause',
+    vpk_listen: 'Écouter',
+
+    // navbar (landing page)
+    nav_modules: 'Modules',
+    nav_howItWorks: 'Comment ça marche',
+    nav_pricing: 'Tarifs',
+    nav_login: 'Connexion',
+    nav_getStarted: 'Commencer gratuitement',
+
+    // credit topups
+    pr_topBadgeHeader: 'Recharges',
+
+    // animation mode selector
+    ams_recommended: 'Recommandé',
+    ams_estimated: 'Estimé ({n} min)',
+    ams_credits: 'crédits',
+    ams_lockedHint: 'Disponible à partir du plan Pro \u2192',
+    ams_labelStoryboard: 'Storyboard',
+    ams_labelFast: 'Fast Animation',
+    ams_labelPro: 'Pro Animation',
+    ams_descStoryboard: 'Images fixes avec Ken Burns. Rapide, économique, idéal pour tester.',
+    ams_descFast: 'Clips Hailuo 2.3 Standard 5\u201310 s. Meilleur rapport qualité/crédits.',
+    ams_descPro: 'Clips Kling v3 Pro 8 s. Fluidité de mouvement SOTA, qualité photoréaliste max.',
+
+    // project sections (dashboard)
+    ps_projectCount: '{n} projet au total',
+    ps_projectsCount: '{n} projets au total',
+    ps_viewAll: 'Voir tout \u2192',
+    ps_create: 'Créer',
+    ps_noProjects: 'Aucun projet {module} pour l\u2019instant',
+    ps_firstProjectHint: 'Crée ton premier projet en moins de 5 minutes.',
+    ps_createFirst: 'Créer mon premier projet',
+
     // brand/new
     bn_step_brief: 'Brief',
     bn_step_visuals: 'Identité visuelle',
@@ -5813,6 +5973,7 @@ export const translations = {
   integ_available: 'Disponible',
   integ_manage: 'Gérer',
   integ_connect: 'Connecter',
+  integ_comingSoon: 'Bientôt',
   integ_youtubeDesc: 'Publiez directement sur votre chaîne YouTube',
   integ_tiktokDesc: 'Publiez automatiquement des vidéos courtes sur TikTok',
   integ_instagramDesc: 'Partagez des reels et stories sur votre profil',
@@ -5825,6 +5986,23 @@ export const translations = {
   integ_requestDesc: 'Vous ne trouvez pas l\'outil qu\'il vous faut ? Dites-le nous et nous l\'envisagerons pour une future version.',
   integ_requestPlaceholder: 'ex. Webflow, Airtable, HubSpot…',
   integ_submit: 'Envoyer',
+
+  // Team page
+  tm_backSettings: 'Paramètres',
+  tm_eyebrow: 'Paramètres',
+  tm_title: 'Équipe & Places',
+  tm_description: 'Gérez les membres de votre équipe et les accès collaboratifs',
+  tm_invite: 'Inviter un membre',
+  tm_members: 'Membres',
+  tm_memberCount: '{n} membre',
+  tm_membersCount: '{n} membres',
+  tm_noTeamTitle: 'Aucun membre pour l\'instant',
+  tm_noTeamDesc: 'Invitez votre équipe pour collaborer sur les projets, partager les assets et revoir les vidéos ensemble.',
+  tm_sendInvite: 'Envoyer une invitation',
+  tm_comingSoon: 'Bientôt disponible',
+  tm_upgradeTitle: 'Les fonctions d\'équipe nécessitent Pro ou Studio',
+  tm_upgradeDesc: 'Passez à un plan supérieur pour inviter des collaborateurs, attribuer des rôles et gérer des espaces partagés.',
+  tm_viewPlans: 'Voir les plans',
   },
 
   es: {
@@ -5960,6 +6138,12 @@ export const translations = {
     auth_invalidCredentials: 'Correo electrónico o contraseña inválidos.',
     auth_emailNotConfirmed: 'Confirma tu dirección de correo electrónico antes de iniciar sesión.',
     auth_genericError: 'Ocurrió un error. Inténtalo de nuevo.',
+    auth_loginTagline: 'De contenido a vídeo en minutos',
+    auth_signupTagline: 'Del guion al vídeo en 10 minutos',
+    auth_noAccount: '¿No tienes cuenta?',
+    auth_hasAccount: '¿Ya tienes cuenta?',
+    auth_createTitle: 'Crea una cuenta gratis',
+    auth_freeCredits: '250 créditos gratis al registrarte. Sin tarjeta de crédito.',
 
     userSettings: 'Configuración',
     userLogout: 'Cerrar sesión',
@@ -5984,6 +6168,12 @@ export const translations = {
 
     connections: 'Conexiones',
     connectionSoon: 'próximamente disponible',
+    conn_subtitle: 'Conecta Clyro a tus herramientas para publicar y automatizar.',
+    conn_slackDesc: 'Recibe notificaciones cuando tus vídeos estén listos, directamente en tu canal.',
+    conn_youtubeDesc: 'Publica tus vídeos Faceless y Motion directamente en tu canal de YouTube con un clic.',
+    conn_linkedinDesc: 'Comparte tus vídeos y tu kit de marca en tu perfil o página de empresa de LinkedIn.',
+    conn_connect: 'Conectar',
+    conn_needMore: 'Necesitas otra integración? Contáctanos en',
 
     createMyFirstVideoFree: 'Crear mi primer video gratis',
     createFreeAccount: 'Crear mi cuenta gratis',
@@ -7130,6 +7320,63 @@ export const translations = {
     mn_toast_briefTooShort: 'El brief debe contener al menos 20 caracteres',
     mn_toast_generationFailed: 'Generación fallida — {msg}',
     mn_toast_unknownError: 'Error desconocido',
+
+    wiz_back: 'Volver',
+    wiz_save: 'Guardar',
+    wiz_previous: 'Anterior',
+    wiz_newProject: 'Nuevo proyecto',
+    wiz_notSaved: 'No guardado',
+    wiz_saving: 'Guardando\u2026',
+    wiz_draftSaved: 'Borrador guardado',
+    wiz_justNow: 'ahora mismo',
+    wiz_minAgo: 'hace {n} min',
+    wiz_hAgo: 'hace {n}h',
+
+    vpk_title: 'Elegir una voz',
+    vpk_tabLibrary: 'Biblioteca pública',
+    vpk_tabCloned: 'Mis voces clonadas',
+    vpk_searchLabel: 'Buscar una voz',
+    vpk_searchPlaceholder: 'Buscar una voz\u2026',
+    vpk_noCloned: 'Aún no hay voces clonadas',
+    vpk_cloneHint: 'Sube una muestra de audio de 30 s para crear tu propia voz IA.',
+    vpk_cloneBtn: 'Clonar una voz',
+    vpk_noResults: 'No se encontraron voces',
+    vpk_cancel: 'Cancelar',
+    vpk_confirm: 'Confirmar',
+    vpk_pause: 'Pausa',
+    vpk_listen: 'Escuchar',
+
+    // navbar (landing page)
+    nav_modules: 'Módulos',
+    nav_howItWorks: 'Cómo funciona',
+    nav_pricing: 'Precios',
+    nav_login: 'Iniciar sesión',
+    nav_getStarted: 'Empezar gratis',
+
+    // credit topups
+    pr_topBadgeHeader: 'Recargas',
+
+    // animation mode selector
+    ams_recommended: 'Recomendado',
+    ams_estimated: 'Est. ({n} min)',
+    ams_credits: 'créditos',
+    ams_lockedHint: 'Disponible desde el plan Pro \u2192',
+    ams_labelStoryboard: 'Storyboard',
+    ams_labelFast: 'Fast Animation',
+    ams_labelPro: 'Pro Animation',
+    ams_descStoryboard: 'Imágenes fijas con Ken Burns. Rápido, económico, ideal para probar.',
+    ams_descFast: 'Clips Hailuo 2.3 Standard 5\u201310 s. Mejor relación calidad/créditos.',
+    ams_descPro: 'Clips Kling v3 Pro 8 s. Fluidez de movimiento SOTA, calidad fotorrealista máxima.',
+
+    // project sections (dashboard)
+    ps_projectCount: '{n} proyecto en total',
+    ps_projectsCount: '{n} proyectos en total',
+    ps_viewAll: 'Ver todo \u2192',
+    ps_create: 'Crear',
+    ps_noProjects: 'Aún no hay proyectos {module}',
+    ps_firstProjectHint: 'Crea tu primer proyecto en menos de 5 minutos.',
+    ps_createFirst: 'Crear mi primer proyecto',
+
     // brand/new
     bn_step_brief: 'Brief',
     bn_step_visuals: 'Identidad visual',
@@ -8666,6 +8913,7 @@ export const translations = {
   integ_available: 'Disponible',
   integ_manage: 'Gestionar',
   integ_connect: 'Conectar',
+  integ_comingSoon: 'Próximamente',
   integ_youtubeDesc: 'Sube directamente a tu canal de YouTube',
   integ_tiktokDesc: 'Publica automáticamente vídeos cortos en TikTok',
   integ_instagramDesc: 'Comparte reels y stories en tu perfil',
@@ -8678,6 +8926,23 @@ export const translations = {
   integ_requestDesc: '¿No ves la herramienta que necesitas? Dínoslo y la consideraremos para una futura versión.',
   integ_requestPlaceholder: 'ej. Webflow, Airtable, HubSpot…',
   integ_submit: 'Enviar',
+
+  // Team page
+  tm_backSettings: 'Ajustes',
+  tm_eyebrow: 'Ajustes',
+  tm_title: 'Equipo y Plazas',
+  tm_description: 'Gestiona los miembros del equipo y el acceso colaborativo',
+  tm_invite: 'Invitar miembro',
+  tm_members: 'Miembros',
+  tm_memberCount: '{n} miembro',
+  tm_membersCount: '{n} miembros',
+  tm_noTeamTitle: 'Aún no hay miembros',
+  tm_noTeamDesc: 'Invita a tu equipo para colaborar en proyectos, compartir recursos y revisar vídeos juntos.',
+  tm_sendInvite: 'Enviar invitación',
+  tm_comingSoon: 'Próximamente',
+  tm_upgradeTitle: 'Las funciones de equipo requieren Pro o Studio',
+  tm_upgradeDesc: 'Actualiza tu plan para invitar colaboradores, asignar roles y gestionar espacios compartidos.',
+  tm_viewPlans: 'Ver planes',
   },
 
   de: {
@@ -8813,6 +9078,12 @@ export const translations = {
     auth_invalidCredentials: 'Ungültige E-Mail oder Passwort.',
     auth_emailNotConfirmed: 'Bitte bestätige deine E-Mail-Adresse vor der Anmeldung.',
     auth_genericError: 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.',
+    auth_loginTagline: 'Vom Inhalt zum Video in Minuten',
+    auth_signupTagline: 'Vom Skript zum Video in 10 Minuten',
+    auth_noAccount: 'Noch kein Konto?',
+    auth_hasAccount: 'Bereits registriert?',
+    auth_createTitle: 'Kostenloses Konto erstellen',
+    auth_freeCredits: '250 Gratis-Credits bei der Anmeldung. Keine Kreditkarte erforderlich.',
 
     userSettings: 'Einstellungen',
     userLogout: 'Abmelden',
@@ -8837,6 +9108,12 @@ export const translations = {
 
     connections: 'Verbindungen',
     connectionSoon: 'bald verfügbar',
+    conn_subtitle: 'Verbinde Clyro mit deinen Tools zum Veröffentlichen und Automatisieren.',
+    conn_slackDesc: 'Erhalte Benachrichtigungen, wenn deine Videos fertig sind, direkt in deinem Kanal.',
+    conn_youtubeDesc: 'Veröffentliche deine Faceless- und Motion-Videos direkt auf deinem YouTube-Kanal mit einem Klick.',
+    conn_linkedinDesc: 'Teile deine Videos und dein Brand-Kit direkt auf deinem LinkedIn-Profil oder deiner Unternehmensseite.',
+    conn_connect: 'Verbinden',
+    conn_needMore: 'Brauchst du eine andere Integration? Kontaktiere uns unter',
 
     createMyFirstVideoFree: 'Mein erstes Video kostenlos erstellen',
     createFreeAccount: 'Kostenloses Konto erstellen',
@@ -9983,6 +10260,63 @@ export const translations = {
     mn_toast_briefTooShort: 'Der Brief muss mindestens 20 Zeichen enthalten',
     mn_toast_generationFailed: 'Generierung fehlgeschlagen — {msg}',
     mn_toast_unknownError: 'Unbekannter Fehler',
+
+    wiz_back: 'Zurück',
+    wiz_save: 'Speichern',
+    wiz_previous: 'Zurück',
+    wiz_newProject: 'Neues Projekt',
+    wiz_notSaved: 'Nicht gespeichert',
+    wiz_saving: 'Speichern\u2026',
+    wiz_draftSaved: 'Entwurf gespeichert',
+    wiz_justNow: 'gerade eben',
+    wiz_minAgo: 'vor {n} Min.',
+    wiz_hAgo: 'vor {n} Std.',
+
+    vpk_title: 'Stimme wählen',
+    vpk_tabLibrary: 'Öffentliche Bibliothek',
+    vpk_tabCloned: 'Meine geklonten Stimmen',
+    vpk_searchLabel: 'Stimme suchen',
+    vpk_searchPlaceholder: 'Stimme suchen\u2026',
+    vpk_noCloned: 'Noch keine geklonten Stimmen',
+    vpk_cloneHint: 'Lade ein 30-Sekunden-Audiobeispiel hoch, um deine eigene KI-Stimme zu erstellen.',
+    vpk_cloneBtn: 'Stimme klonen',
+    vpk_noResults: 'Keine Stimmen gefunden',
+    vpk_cancel: 'Abbrechen',
+    vpk_confirm: 'Bestätigen',
+    vpk_pause: 'Pause',
+    vpk_listen: 'Anhören',
+
+    // navbar (landing page)
+    nav_modules: 'Module',
+    nav_howItWorks: 'So funktioniert es',
+    nav_pricing: 'Preise',
+    nav_login: 'Anmelden',
+    nav_getStarted: 'Kostenlos starten',
+
+    // credit topups
+    pr_topBadgeHeader: 'Aufladungen',
+
+    // animation mode selector
+    ams_recommended: 'Empfohlen',
+    ams_estimated: 'Gesch. ({n} Min.)',
+    ams_credits: 'Credits',
+    ams_lockedHint: 'Verfügbar ab dem Pro-Plan \u2192',
+    ams_labelStoryboard: 'Storyboard',
+    ams_labelFast: 'Fast Animation',
+    ams_labelPro: 'Pro Animation',
+    ams_descStoryboard: 'Standbilder mit Ken Burns. Schnell, günstig, ideal zum Testen.',
+    ams_descFast: 'Hailuo 2.3 Standard Clips 5\u201310 s. Bestes Qualität/Credits-Verhältnis.',
+    ams_descPro: 'Kling v3 Pro Clips 8 s. SOTA Bewegungsfluss, maximale fotorealistische Qualität.',
+
+    // project sections (dashboard)
+    ps_projectCount: '{n} Projekt insgesamt',
+    ps_projectsCount: '{n} Projekte insgesamt',
+    ps_viewAll: 'Alle anzeigen \u2192',
+    ps_create: 'Erstellen',
+    ps_noProjects: 'Noch keine {module}-Projekte',
+    ps_firstProjectHint: 'Erstelle dein erstes Projekt in unter 5 Minuten.',
+    ps_createFirst: 'Mein erstes Projekt erstellen',
+
     // brand/new
     bn_step_brief: 'Brief',
     bn_step_visuals: 'Visuelle Identität',
@@ -11519,6 +11853,7 @@ export const translations = {
   integ_available: 'Verfügbar',
   integ_manage: 'Verwalten',
   integ_connect: 'Verbinden',
+  integ_comingSoon: 'Demnächst',
   integ_youtubeDesc: 'Direkt auf deinen YouTube-Kanal hochladen',
   integ_tiktokDesc: 'Kurzvideos automatisch auf TikTok veröffentlichen',
   integ_instagramDesc: 'Reels und Stories auf deinem Profil teilen',
@@ -11531,6 +11866,23 @@ export const translations = {
   integ_requestDesc: 'Siehst du ein Tool nicht, das du brauchst? Sag uns Bescheid und wir erwägen es für eine zukünftige Version.',
   integ_requestPlaceholder: 'z.B. Webflow, Airtable, HubSpot…',
   integ_submit: 'Absenden',
+
+  // Team page
+  tm_backSettings: 'Einstellungen',
+  tm_eyebrow: 'Einstellungen',
+  tm_title: 'Team & Plätze',
+  tm_description: 'Verwalten Sie Teammitglieder und gemeinsame Zugänge',
+  tm_invite: 'Mitglied einladen',
+  tm_members: 'Mitglieder',
+  tm_memberCount: '{n} Mitglied',
+  tm_membersCount: '{n} Mitglieder',
+  tm_noTeamTitle: 'Noch keine Teammitglieder',
+  tm_noTeamDesc: 'Laden Sie Ihr Team ein, um gemeinsam an Projekten zu arbeiten, Assets zu teilen und Videos zu überprüfen.',
+  tm_sendInvite: 'Einladung senden',
+  tm_comingSoon: 'Demnächst verfügbar',
+  tm_upgradeTitle: 'Teamfunktionen erfordern Pro oder Studio',
+  tm_upgradeDesc: 'Upgraden Sie Ihren Plan, um Mitarbeiter einzuladen, Rollen zuzuweisen und gemeinsame Arbeitsbereiche zu verwalten.',
+  tm_viewPlans: 'Pläne ansehen',
   },
 
   pt: {
@@ -11666,6 +12018,12 @@ export const translations = {
     auth_invalidCredentials: 'E-mail ou senha inválidos.',
     auth_emailNotConfirmed: 'Confirme seu endereço de e-mail antes de fazer login.',
     auth_genericError: 'Ocorreu um erro. Tente novamente.',
+    auth_loginTagline: 'De conteúdo a vídeo em minutos',
+    auth_signupTagline: 'Do roteiro ao vídeo em 10 minutos',
+    auth_noAccount: 'Não tem conta?',
+    auth_hasAccount: 'Já se registou?',
+    auth_createTitle: 'Criar conta gratuita',
+    auth_freeCredits: '250 créditos grátis no registo. Sem cartão de crédito.',
 
     userSettings: 'Configurações',
     userLogout: 'Sair',
@@ -11690,6 +12048,12 @@ export const translations = {
 
     connections: 'Conexões',
     connectionSoon: 'em breve disponível',
+    conn_subtitle: 'Conecte o Clyro às suas ferramentas para publicar e automatizar.',
+    conn_slackDesc: 'Receba notificações quando seus vídeos estiverem prontos, diretamente no seu canal.',
+    conn_youtubeDesc: 'Publique seus vídeos Faceless e Motion diretamente no seu canal do YouTube com um clique.',
+    conn_linkedinDesc: 'Partilhe os seus vídeos e kit de marca no seu perfil ou página de empresa do LinkedIn.',
+    conn_connect: 'Conectar',
+    conn_needMore: 'Precisa de outra integração? Contacte-nos em',
 
     createMyFirstVideoFree: 'Criar meu primeiro vídeo gratuitamente',
     createFreeAccount: 'Criar minha conta gratuitamente',
@@ -12836,6 +13200,63 @@ export const translations = {
     mn_toast_briefTooShort: 'O brief deve conter pelo menos 20 caracteres',
     mn_toast_generationFailed: 'Geração falhou — {msg}',
     mn_toast_unknownError: 'Erro desconhecido',
+
+    wiz_back: 'Voltar',
+    wiz_save: 'Guardar',
+    wiz_previous: 'Anterior',
+    wiz_newProject: 'Novo projeto',
+    wiz_notSaved: 'Não guardado',
+    wiz_saving: 'Guardando\u2026',
+    wiz_draftSaved: 'Rascunho guardado',
+    wiz_justNow: 'agora mesmo',
+    wiz_minAgo: 'há {n} min',
+    wiz_hAgo: 'há {n}h',
+
+    vpk_title: 'Escolher uma voz',
+    vpk_tabLibrary: 'Biblioteca pública',
+    vpk_tabCloned: 'Minhas vozes clonadas',
+    vpk_searchLabel: 'Pesquisar uma voz',
+    vpk_searchPlaceholder: 'Pesquisar uma voz\u2026',
+    vpk_noCloned: 'Ainda sem vozes clonadas',
+    vpk_cloneHint: 'Envie uma amostra de áudio de 30 s para criar a sua própria voz IA.',
+    vpk_cloneBtn: 'Clonar uma voz',
+    vpk_noResults: 'Nenhuma voz encontrada',
+    vpk_cancel: 'Cancelar',
+    vpk_confirm: 'Confirmar',
+    vpk_pause: 'Pausa',
+    vpk_listen: 'Ouvir',
+
+    // navbar (landing page)
+    nav_modules: 'Módulos',
+    nav_howItWorks: 'Como funciona',
+    nav_pricing: 'Preços',
+    nav_login: 'Entrar',
+    nav_getStarted: 'Começar grátis',
+
+    // credit topups
+    pr_topBadgeHeader: 'Recargas',
+
+    // animation mode selector
+    ams_recommended: 'Recomendado',
+    ams_estimated: 'Est. ({n} min)',
+    ams_credits: 'créditos',
+    ams_lockedHint: 'Disponível a partir do plano Pro \u2192',
+    ams_labelStoryboard: 'Storyboard',
+    ams_labelFast: 'Fast Animation',
+    ams_labelPro: 'Pro Animation',
+    ams_descStoryboard: 'Imagens fixas com Ken Burns. Rápido, económico, ideal para testar.',
+    ams_descFast: 'Clips Hailuo 2.3 Standard 5\u201310 s. Melhor relação qualidade/créditos.',
+    ams_descPro: 'Clips Kling v3 Pro 8 s. Fluidez de movimento SOTA, qualidade fotorrealista máxima.',
+
+    // project sections (dashboard)
+    ps_projectCount: '{n} projeto no total',
+    ps_projectsCount: '{n} projetos no total',
+    ps_viewAll: 'Ver tudo \u2192',
+    ps_create: 'Criar',
+    ps_noProjects: 'Nenhum projeto {module} ainda',
+    ps_firstProjectHint: 'Cria o teu primeiro projeto em menos de 5 minutos.',
+    ps_createFirst: 'Criar o meu primeiro projeto',
+
     // brand/new
     bn_step_brief: 'Brief',
     bn_step_visuals: 'Identidade visual',
@@ -14372,6 +14793,7 @@ export const translations = {
   integ_available: 'Disponível',
   integ_manage: 'Gerenciar',
   integ_connect: 'Conectar',
+  integ_comingSoon: 'Em breve',
   integ_youtubeDesc: 'Envie diretamente para seu canal do YouTube',
   integ_tiktokDesc: 'Publique automaticamente vídeos curtos no TikTok',
   integ_instagramDesc: 'Compartilhe reels e stories no seu perfil',
@@ -14384,5 +14806,22 @@ export const translations = {
   integ_requestDesc: 'Não encontra a ferramenta que precisa? Nos avise e consideraremos para uma versão futura.',
   integ_requestPlaceholder: 'ex. Webflow, Airtable, HubSpot…',
   integ_submit: 'Enviar',
+
+  // Team page
+  tm_backSettings: 'Configurações',
+  tm_eyebrow: 'Configurações',
+  tm_title: 'Equipa & Lugares',
+  tm_description: 'Gerir membros da equipa e acessos colaborativos',
+  tm_invite: 'Convidar membro',
+  tm_members: 'Membros',
+  tm_memberCount: '{n} membro',
+  tm_membersCount: '{n} membros',
+  tm_noTeamTitle: 'Sem membros ainda',
+  tm_noTeamDesc: 'Convide a sua equipa para colaborar em projetos, partilhar recursos e rever vídeos em conjunto.',
+  tm_sendInvite: 'Enviar convite',
+  tm_comingSoon: 'Em breve',
+  tm_upgradeTitle: 'Funcionalidades de equipa requerem Pro ou Studio',
+  tm_upgradeDesc: 'Atualize o seu plano para convidar colaboradores, atribuir funções e gerir espaços partilhados.',
+  tm_viewPlans: 'Ver planos',
   },
 } as const

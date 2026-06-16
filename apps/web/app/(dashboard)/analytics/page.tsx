@@ -121,7 +121,7 @@ export default async function AnalyticsPage() {
       <div className="px-4 sm:px-6 lg:px-8 py-16 max-w-2xl mx-auto">
         <div className="bg-muted border border-border rounded-2xl p-6">
           <p className="font-display text-sm text-foreground mb-1">Missing configuration</p>
-          <p className="font-body text-xs text-[--text-muted]">Supabase environment variables are not set.</p>
+          <p className="font-body text-xs text-[--text-muted]">Supabase environment variables are not configured.</p>
         </div>
       </div>
     )

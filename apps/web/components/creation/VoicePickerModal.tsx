@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { ClyroVoice } from '@/lib/api'
+import { useLanguage } from '@/lib/i18n'
 
 export type { ClyroVoice }
 
@@ -123,7 +124,7 @@ function VoiceRow({
           'bg-border hover:bg-border transition-colors',
           'disabled:opacity-30 disabled:pointer-events-none',
         )}
-        aria-label={playing ? 'Pause' : 'Listen'}
+        aria-label={playing ? 'Pause' : 'Play'}
       >
         {playing
           ? <Pause size={13} className="text-primary" />
@@ -182,6 +183,7 @@ export function VoicePickerModal({
   loading = false,
   onRequestClone,
 }: VoicePickerModalProps) {
+  const { t } = useLanguage()
   const [tab,        setTab]        = useState<'library' | 'cloned'>('library')
   const [search,     setSearch]     = useState('')
   const [gender,     setGender]     = useState('All')
@@ -222,18 +224,18 @@ export function VoicePickerModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Choose a voice"
+      title={t('vpk_title')}
       size="xl"
     >
       <div className="space-y-4">
 
         {/* Tabs */}
         <div className="flex gap-1 bg-muted rounded-xl p-1">
-          {([['library', 'Public library'], ['cloned', 'My cloned voices']] as const).map(([key, label]) => (
+          {([['library', t('vpk_tabLibrary')], ['cloned', t('vpk_tabCloned')]] as [string, string][]).map(([key, label]) => (
             <button
               key={key}
               type="button"
-              onClick={() => setTab(key)}
+              onClick={() => setTab(key as 'library' | 'cloned')}
               className={cn(
                 'flex-1 rounded-lg py-1.5 font-mono text-xs transition-all duration-150',
                 tab === key
@@ -252,7 +254,7 @@ export function VoicePickerModal({
         {/* Search */}
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted]" />
-          <label htmlFor="voice-picker-search" className="sr-only">Rechercher une voix</label>
+          <label htmlFor="voice-picker-search" className="sr-only">{t('vpk_searchLabel')}</label>
           <input
             id="voice-picker-search"
             name="voice-search"
@@ -260,7 +262,7 @@ export function VoicePickerModal({
             autoComplete="off"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search for a voice…"
+            placeholder={t('vpk_searchPlaceholder')}
             className="w-full bg-muted border border-border rounded-xl pl-9 pr-4 py-2 font-body text-sm text-foreground placeholder-[--text-muted] focus:outline-none focus:border-primary transition-colors"
           />
         </div>
@@ -289,9 +291,9 @@ export function VoicePickerModal({
                   <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center mx-auto mb-3" aria-hidden="true">
                     <Mic2 size={16} className="text-primary" />
                   </div>
-                  <p className="font-body text-sm text-foreground mb-1">No cloned voices yet</p>
+                  <p className="font-body text-sm text-foreground mb-1">{t('vpk_noCloned')}</p>
                   <p className="font-mono text-xs text-[--text-muted] mb-4">
-                    Upload a 30 s audio sample to create your own AI voice.
+                    {t('vpk_cloneHint')}
                   </p>
                   <Button
                     variant="primary"
@@ -299,11 +301,11 @@ export function VoicePickerModal({
                     leftIcon={<Plus size={13} />}
                     onClick={onRequestClone}
                   >
-                    Clone a voice
+                    {t('vpk_cloneBtn')}
                   </Button>
                 </>
               ) : (
-                <p className="font-mono text-sm text-[--text-muted]">No voices found</p>
+                <p className="font-mono text-sm text-[--text-muted]">{t('vpk_noResults')}</p>
               )}
             </div>
           )}
@@ -320,9 +322,9 @@ export function VoicePickerModal({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/50">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>{t('vpk_cancel')}</Button>
           <Button variant="primary" disabled={!localSel} onClick={handleConfirm}>
-            Confirm
+            {t('vpk_confirm')}
           </Button>
         </div>
 

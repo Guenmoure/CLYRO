@@ -30,6 +30,7 @@ export function NewProjectCard({ feature, className }: NewProjectCardProps) {
         'rounded-2xl border-2 border-dashed border-border',
         'hover:border-brand/50 hover:bg-muted/50',
         'cursor-pointer transition-all duration-200',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
         'aspect-[4/3] w-full',
         className,
       )}

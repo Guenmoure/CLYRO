@@ -80,8 +80,9 @@ export default function IntegrationsPage() {
                   <Button
                     variant={integration.status === 'Connected' ? 'secondary' : 'outline'}
                     size="sm"
+                    disabled={integration.status !== 'Connected'}
                   >
-                    {integration.status === 'Connected' ? t('integ_manage') : t('integ_connect')}
+                    {integration.status === 'Connected' ? t('integ_manage') : t('integ_comingSoon')}
                   </Button>
                 </div>
               </div>

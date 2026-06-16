@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Breadcrumbs } from '@/components/shared/breadcrumbs'
 import { StepSidebar, type WizardStep } from './StepSidebar'
 import { DraftRestoreBanner } from './DraftRestoreBanner'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ interface WizardLayoutProps {
 function WizardTopBar({
   featureTitle,
   featureHref,
-  currentPageLabel = 'New project',
+  currentPageLabel,
   onBack,
   onSave,
   isSaving,
@@ -59,6 +60,7 @@ function WizardTopBar({
   isSaving?: boolean
 }) {
   const router = useRouter()
+  const { t } = useLanguage()
 
   function handleBack() {
     if (onBack) {
@@ -75,7 +77,7 @@ function WizardTopBar({
           type="button"
           onClick={handleBack}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-[--text-secondary] hover:text-foreground hover:bg-muted transition-colors shrink-0"
-          aria-label="Back"
+          aria-label={t('wiz_back')}
         >
           <ArrowLeft size={16} />
         </button>
@@ -83,7 +85,7 @@ function WizardTopBar({
         <Breadcrumbs
           items={[
             { label: featureTitle, href: featureHref },
-            { label: currentPageLabel },
+            { label: currentPageLabel || t('wiz_newProject') },
           ]}
         />
       </div>
@@ -96,7 +98,7 @@ function WizardTopBar({
           onClick={() => onSave()}
           leftIcon={<Save size={12} />}
         >
-          Save
+          {t('wiz_save')}
         </Button>
       )}
     </header>
@@ -110,7 +112,7 @@ function WizardBottomBar({
   canNext,
   onPrev,
   onNext,
-  nextLabel = 'Next',
+  nextLabel,
   isNextLoading,
   currentStep,
   totalSteps,
@@ -124,6 +126,7 @@ function WizardBottomBar({
   currentStep: number
   totalSteps: number
 }) {
+  const { t } = useLanguage()
   const isLast = currentStep >= totalSteps - 1
 
   return (
@@ -134,7 +137,7 @@ function WizardBottomBar({
         disabled={!canPrev}
         onClick={onPrev}
       >
-        Previous
+        {t('wiz_previous')}
       </Button>
 
       {/* Step dots */}

@@ -4,34 +4,35 @@ import { useRef, useState } from 'react'
 import { CheckCircle, HelpCircle, Check, Cloud } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
+import { useLanguage } from '@/lib/i18n'
 
 // ── AutoSaveIndicator ──────────────────────────────────────────────────────────
 
-function formatRelativeSave(date: Date): string {
+function formatRelativeSave(date: Date, t: (k: string) => string): string {
   const diffMin = Math.round((Date.now() - date.getTime()) / 60_000)
-  if (diffMin < 1) return "just now"
-  if (diffMin === 1) return '1 min ago'
-  if (diffMin < 60)  return `${diffMin} min ago`
-  return `${Math.round(diffMin / 60)}h ago`
+  if (diffMin < 1) return t('wiz_justNow')
+  if (diffMin < 60) return t('wiz_minAgo').replace('{n}', String(diffMin))
+  return t('wiz_hAgo').replace('{n}', String(Math.round(diffMin / 60)))
 }
 
 function AutoSaveIndicator({ lastSaved, isSaving }: { lastSaved?: Date | null; isSaving?: boolean }) {
+  const { t } = useLanguage()
   if (!lastSaved && !isSaving) {
-    return <p className="font-mono text-[11px] text-[--text-muted] mt-1">Not saved</p>
+    return <p className="font-mono text-[11px] text-[--text-muted] mt-1">{t('wiz_notSaved')}</p>
   }
   return (
     <div className="flex items-center gap-1.5 mt-1" aria-live="polite">
       {isSaving ? (
         <>
           <Cloud size={11} className="text-primary animate-pulse" strokeWidth={1.8} />
-          <span className="font-mono text-[11px] text-[--text-muted]">Saving…</span>
+          <span className="font-mono text-[11px] text-[--text-muted]">{t('wiz_saving')}</span>
         </>
       ) : lastSaved ? (
         <>
           <Check size={11} className="text-success shrink-0" strokeWidth={2.2} />
           <span className="font-mono text-[11px] text-[--text-muted]">
-            Draft saved{' '}
-            <span className="opacity-60">{formatRelativeSave(lastSaved)}</span>
+            {t('wiz_draftSaved')}{' '}
+            <span className="opacity-60">{formatRelativeSave(lastSaved, t)}</span>
           </span>
         </>
       ) : null}
@@ -87,6 +88,7 @@ function DesktopSidebar({
   steps, currentStep, projectName, onProjectNameChange,
   contextualHelp, lastSaved, isSaving, onStepClick,
 }: StepSidebarProps) {
+  const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -111,6 +113,7 @@ function DesktopSidebar({
             onChange={e => onProjectNameChange(e.target.value)}
             onBlur={stopEdit}
             onKeyDown={e => e.key === 'Enter' && stopEdit()}
+            aria-label={t('wiz_newProject')}
             className="w-full bg-muted border border-primary rounded-lg px-2 py-1 font-display text-sm text-foreground focus:outline-none"
             autoFocus
           />
@@ -120,7 +123,7 @@ function DesktopSidebar({
             onClick={startEdit}
             className="w-full text-left font-display text-sm text-foreground hover:text-primary transition-colors truncate"
           >
-            {projectName || 'New project'}
+            {projectName || t('wiz_newProject')}
           </button>
         )}
         <AutoSaveIndicator lastSaved={lastSaved} isSaving={isSaving} />
