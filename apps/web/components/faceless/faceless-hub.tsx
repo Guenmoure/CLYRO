@@ -485,8 +485,8 @@ function StepIndicator({ current, savedState }: { current: PipelineStep; savedSt
           savedState === 'saving' ? 'text-[--text-muted]' : 'text-success'
         )}>
           {savedState === 'saving'
-            ? <><Loader2 size={10} className="animate-spin" /> Sauvegarde…</>
-            : <><Check size={10} /> Sauvegardé</>
+            ? <><Loader2 size={10} className="animate-spin" /> {t('fh_saving')}</>
+            : <><Check size={10} /> {t('fh_saved')}</>
           }
         </div>
       )}
@@ -505,7 +505,7 @@ function StylePickerDropdown({ value, onChange, onClose }: {
   return (
     <div className="absolute left-0 top-full mt-2 z-50 w-[min(480px,calc(100vw-2.5rem))] bg-card border border-border rounded-2xl shadow-xl p-4 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
-        <p className="font-display text-sm font-semibold text-foreground">Style visuel</p>
+        <p className="font-display text-sm font-semibold text-foreground">{t('fh_stylePickerTitle')}</p>
         <button type="button" onClick={onClose} aria-label={t('close')} className="text-[--text-muted] hover:text-foreground transition-colors"><X size={14} /></button>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1025,13 +1025,13 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b border-border shrink-0">
         <div>
-          <h2 className="font-display text-base font-bold text-foreground">Scènes de ta vidéo</h2>
-          <p className="font-body text-xs text-[--text-muted]">{scenes.length} scènes générées — modifie le script et les prompts avant de générer les images</p>
+          <h2 className="font-display text-base font-bold text-foreground">{t('fh_scenesCardTitle')}</h2>
+          <p className="font-body text-xs text-[--text-muted]">{t('fh_scenesCardSubtitle').replace('{n}', String(scenes.length))}</p>
         </div>
         <button type="button" onClick={regenAll} disabled={generating}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs font-body text-[--text-muted] hover:text-foreground hover:border-brand/40 transition-all">
           {generating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-          Tout régénérer
+          {t('fh_regenAll')}
         </button>
       </div>
 
@@ -1057,7 +1057,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
               <GripVertical size={14} className="text-[--text-muted]/40 cursor-grab active:cursor-grabbing shrink-0" />
               <div className="flex items-center gap-1.5">
                 <span className="font-mono text-[11px] font-bold text-primary bg-brand/10 px-2 py-0.5 rounded-full">
-                  Scène {i + 1}
+                  {t('fh_sceneLabel').replace('{n}', String(i + 1))}
                 </span>
                 <span className="font-mono text-[11px] font-bold text-[--text-secondary] bg-muted px-2 py-0.5 rounded-full">
                   ~{calculateSceneDuration(scene.scriptText)}s
@@ -1103,7 +1103,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
             <div className="p-4 space-y-3">
               {/* Script text */}
               <div>
-                <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5">Script de la scène</p>
+                <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted] mb-1.5">{t('fh_sceneScriptHeader')}</p>
                 {editingId === scene.id ? (
                   <textarea value={scene.scriptText} onChange={(e) => updateScene(scene.id, { scriptText: e.target.value })}
                     rows={3} placeholder={t('fh_scriptTextPlaceholder')}
@@ -1120,7 +1120,7 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
                     <div className="w-3 h-3 rounded bg-sky-200 flex items-center justify-center">
                       <span className="text-[8px]">🖼</span>
                     </div>
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">Prompt image</p>
+                    <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-muted]">{t('fh_promptImageHeader')}</p>
                   </div>
                   {editingId === scene.id ? (
                     <textarea value={scene.imagePrompt} onChange={(e) => updateScene(scene.id, { imagePrompt: e.target.value })}
@@ -1489,8 +1489,8 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b border-border shrink-0">
         <div>
-          <h2 className="font-display text-base font-bold text-foreground">Génération des images</h2>
-          <p className="font-body text-xs text-[--text-muted]">{doneCnt}/{scenes.length} images générées</p>
+          <h2 className="font-display text-base font-bold text-foreground">{t('fh_imagesGenTitle')}</h2>
+          <p className="font-body text-xs text-[--text-muted]">{t('fh_imagesGenProgress').replace('{done}', String(doneCnt)).replace('{total}', String(scenes.length))}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -1662,7 +1662,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
 
                 {/* Scene badge */}
                 <span className={cn('absolute font-mono text-[11px] uppercase tracking-wider bg-black/50 text-white px-2 py-0.5 rounded-full transition-all', batchMode ? 'top-2 left-8' : 'top-2 left-2')}>
-                  Scène {i + 1}
+                  {t('fh_sceneLabel').replace('{n}', String(i + 1))}
                 </span>
 
                 {/* Quality badge */}
@@ -2030,7 +2030,7 @@ function ScenePreviewLightbox({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-mono text-[11px] uppercase tracking-widest bg-white/10 text-white px-2 py-0.5 rounded-full">
-                Scène {index + 1} / {scenes.length}
+                {t('fh_sceneLabel').replace('{n}', String(index + 1))} / {scenes.length}
               </span>
               {effectiveMode === 'image' && scene.qualityHint === 'hd' && (
                 <span className="font-mono text-[10px] uppercase tracking-wider bg-success/80 text-white px-1.5 py-0.5 rounded-full">HD</span>
@@ -2418,7 +2418,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
 
                 {/* Scene badge */}
                 <span className="absolute top-2 left-2 font-mono text-[11px] uppercase tracking-wider bg-black/50 text-white px-2 py-0.5 rounded-full">
-                  Scène {i + 1}
+                  {t('fh_sceneLabel').replace('{n}', String(i + 1))}
                 </span>
 
                 {/* Status badge (bottom-left) */}
@@ -3153,8 +3153,8 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <Loader2 size={32} className="text-primary animate-spin" />
-        <p className="font-display text-base font-semibold text-foreground">Découpage du script en scènes…</p>
-        <p className="font-body text-sm text-[--text-muted]">L'IA analyse ton script et génère les prompts visuels.</p>
+        <p className="font-display text-base font-semibold text-foreground">{t('fh_splittingTitle')}</p>
+        <p className="font-body text-sm text-[--text-muted]">{t('fh_splittingDesc')}</p>
       </div>
     )
   }
@@ -3166,7 +3166,7 @@ function FacelessPipeline({ onGenerated, onVideoReady, initialDraft, resumeVideo
         <div className="flex items-center gap-3 px-4 py-3 bg-brand/10 border-b border-brand/20 shrink-0">
           <Loader2 size={14} className="text-primary animate-spin shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="font-body text-sm font-medium text-foreground">Votre vidéo tourne en arrière-plan</p>
+            <p className="font-body text-sm font-medium text-foreground">{t('fh_bgGenBanner')}</p>
             <p className="font-mono text-xs text-[--text-muted] truncate">{bgGen.title}</p>
           </div>
           <button

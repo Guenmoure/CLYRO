@@ -18,6 +18,7 @@ import {
   tScript,
 } from '@/lib/faceless-content-templates'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 // Same vocabulary as the Style gallery (see faceless-hub.tsx STYLE_TEMPLATES).
 // Bilingual labels for the category filter pills surfaced above the niche row.
@@ -47,40 +48,30 @@ export function ContentTemplateGallery({
   onSelect,
   defaultLanguage = 'fr',
 }: ContentTemplateGalleryProps) {
+  // `lang` (FR/EN) controls the LANGUAGE of the templates shown (their copy
+  // bodies). Interface chrome (headers, CTAs) follows the UI language via t().
+  // Audit 16/06/26: previously the entire chrome was a French/English fork
+  // gated on the template language picker, which leaked French into EN UI.
+  const { t } = useLanguage()
   const [lang, setLang] = useState<ContentLang>(defaultLanguage)
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>('all')
   const [activeNiche, setActiveNiche] = useState<string>('all')
   const [search, setSearch] = useState('')
 
-  const copy = lang === 'fr'
-    ? {
-        eyebrow: 'Démarrage rapide',
-        title: 'Choisis un template inspiré',
-        intro:
-          'Des formats éprouvés, inspirés des chaînes YouTube faceless qui cartonnent en 2026. Sélectionne-en un et la description, le style et la structure se remplissent tout seuls.',
-        searchPlaceholder: 'Cherche un template, un tag, une niche…',
-        allNiches: 'Toutes les niches',
-        categoryHeader: 'Style visuel',
-        nicheHeader: 'Niche',
-        noResults: 'Aucun template ne correspond à ces critères.',
-        scenes: 'scènes',
-        selectedTag: '✓ Template sélectionné',
-        selectCta: 'Cliquer pour utiliser →',
-      }
-    : {
-        eyebrow: 'Quick start',
-        title: 'Pick a proven template',
-        intro:
-          'Battle-tested formats inspired by the faceless YouTube channels trending in 2026. Pick one and the description, style, and structure fill themselves in.',
-        searchPlaceholder: 'Search by template, tag, or niche…',
-        allNiches: 'All niches',
-        categoryHeader: 'Visual style',
-        nicheHeader: 'Niche',
-        noResults: 'No template matches these filters.',
-        scenes: 'scenes',
-        selectedTag: '✓ Template selected',
-        selectCta: 'Click to use →',
-      }
+  const copy = {
+    eyebrow:            t('ctg_eyebrow'),
+    title:              t('ctg_title'),
+    intro:              t('ctg_intro'),
+    searchPlaceholder:  t('ctg_searchPlaceholder'),
+    allNiches:          t('ctg_allNiches'),
+    categoryHeader:     t('ctg_categoryHeader'),
+    nicheHeader:        t('ctg_nicheHeader'),
+    noResults:          t('ctg_noResults'),
+    scenes:             t('ctg_scenes'),
+    selectedTag:        t('ctg_selectedTag'),
+    selectCta:          t('ctg_selectCta'),
+    clear:              t('ctg_clear'),
+  }
 
   // Build category list — only show categories that have at least one template.
   // 'all' is always first; the rest are sorted by template count desc.
@@ -191,7 +182,7 @@ export function ContentTemplateGallery({
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                aria-label={lang === 'fr' ? 'Effacer' : 'Clear'}
+                aria-label={copy.clear}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[--text-muted] hover:text-foreground"
               >
                 <X size={14} />

@@ -117,9 +117,12 @@ const NICHE_LABELS: Record<string, NicheGroup> = {
   psychology_contrarian:    { id: 'psychology_contrarian',    label_en: 'Contrarian psych',     label_fr: 'Psycho contrarian',    emoji: '🧩' },
   psychology_reframing:     { id: 'psychology_reframing',     label_en: 'Reframing',            label_fr: 'Psycho reframing',     emoji: '💡' },
   spirituality_wellness:    { id: 'spirituality_wellness',    label_en: 'Spirituality',         label_fr: 'Spiritualité',         emoji: '✨' },
-  self_improvement:         { id: 'self_improvement',         label_en: 'Self-improvement',     label_fr: 'Développement perso',  emoji: '🔥' },
-  mental_health:            { id: 'mental_health',            label_en: 'Mental health',        label_fr: 'Santé mentale',        emoji: '💛' },
-  personal_development:     { id: 'personal_development',     label_en: 'Personal dev',         label_fr: 'Développement perso',  emoji: '📈' },
+  // Audit 16/06/26 W2 — both niches used to render as « Développement perso »
+  // in French with only the emoji to distinguish them. We split the labels so
+  // the niche row stops looking like a duplicated catalog entry.
+  self_improvement:         { id: 'self_improvement',         label_en: 'Self-improvement',     label_fr: 'Discipline & habitudes', emoji: '🔥' },
+  mental_health:            { id: 'mental_health',            label_en: 'Mental health',        label_fr: 'Santé mentale',          emoji: '💛' },
+  personal_development:     { id: 'personal_development',     label_en: 'Personal growth',      label_fr: 'Croissance perso',       emoji: '📈' },
   productivity:             { id: 'productivity',             label_en: 'Productivity',         label_fr: 'Productivité',         emoji: '⚡' },
   productivity_mindfulness: { id: 'productivity_mindfulness', label_en: 'Productivity (calm)',  label_fr: 'Productivité douce',   emoji: '🌊' },
   knowledge_education:      { id: 'knowledge_education',      label_en: 'Education',            label_fr: 'Éducation',            emoji: '📚' },

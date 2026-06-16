@@ -143,21 +143,26 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {/* Notifications (placeholder — could become a full section later) */}
-        <section className="rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-            <Bell size={15} className="text-amber-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-body text-sm text-foreground">{t('set_notifications')}</p>
-            <p className="font-body text-xs text-[--text-secondary] mt-0.5">
-              {t('set_notifDesc')}
-            </p>
-          </div>
-          <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-muted border border-border text-[--text-muted]">
-            {t('set_soon')}
-          </span>
-        </section>
+        {/* Notifications — gated behind NEXT_PUBLIC_FEATURE_EMAIL_NOTIFS so
+            unfinished surface area doesn't ship to production. Set the env
+            var to "1" to expose the placeholder during internal testing.
+            Audit 16/06/26 W2 — removed the "SOON" badge from the public UI. */}
+        {process.env.NEXT_PUBLIC_FEATURE_EMAIL_NOTIFS === '1' && (
+          <section className="rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+              <Bell size={15} className="text-amber-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-sm text-foreground">{t('set_notifications')}</p>
+              <p className="font-body text-xs text-[--text-secondary] mt-0.5">
+                {t('set_notifDesc')}
+              </p>
+            </div>
+            <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-muted border border-border text-[--text-muted]">
+              {t('set_soon')}
+            </span>
+          </section>
+        )}
 
       </div>
     </div>

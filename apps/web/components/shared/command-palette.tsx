@@ -303,8 +303,41 @@ export function CommandPalette() {
           className="overflow-y-auto max-h-[min(60vh,380px)] py-2"
         >
           {flatList.length === 0 ? (
-            <li className="px-4 py-8 text-center font-body text-sm text-[--text-muted]">
-              {t('cp_noResults')} &ldquo;{query}&rdquo;
+            // Audit 16/06/26 W2 — natural-language fallback. When the typed
+            // query reads more like a video brief than a command, offer to
+            // send it to the Studio script editor instead of dead-ending on
+            // "no results". Heuristic: query has ≥ 3 words. The Studio /new
+            // page picks `?script=…` up via useSearchParams.
+            <li className="px-3 py-4">
+              <p className="px-3 pb-3 text-center font-body text-sm text-[--text-muted]">
+                {t('cp_noResults')} &ldquo;{query}&rdquo;
+              </p>
+              {query.trim().split(/\s+/).length >= 3 && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    close()
+                    router.push(`/studio/new?script=${encodeURIComponent(query.trim())}`)
+                  }}
+                  className={cn(
+                    'group w-full mx-0 flex items-start gap-3 rounded-xl border border-border bg-card px-3 py-3 text-left',
+                    'hover:border-brand/40 hover:bg-muted transition-all',
+                  )}
+                >
+                  <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-brand/10 text-primary">
+                    <Sparkles size={14} strokeWidth={1.5} />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-display text-sm font-semibold text-foreground">
+                      {t('cp_nlCreateCta')}
+                    </span>
+                    <span className="block font-mono text-[11px] text-[--text-muted] mt-0.5">
+                      {t('cp_nlCreateHint')}
+                    </span>
+                  </span>
+                </button>
+              )}
             </li>
           ) : (
             Array.from(groups.entries()).map(([category, items]) => {

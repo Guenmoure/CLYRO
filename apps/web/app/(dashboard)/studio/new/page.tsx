@@ -49,9 +49,15 @@ function StudioNewPageInner() {
   const initialDraftId = searchParams.get('draft')
   const { t } = useLanguage()
 
+  // Audit 16/06/26 W2 — the command palette's natural-language fallback
+  // redirects here with ?script=… so the user's free-text query lands
+  // directly in the script box. We read the param once at mount; if the
+  // user later edits the script they own the change, no rebind to the URL.
+  const initialScript = searchParams.get('script') ?? ''
+
   const [mode, setMode] = useState<Mode>('script')
   const [title, setTitle] = useState('')
-  const [script, setScript] = useState('')
+  const [script, setScript] = useState(initialScript)
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [language, setLanguage] = useState('fr')
   const [analyzing, setAnalyzing] = useState(false)
@@ -426,8 +432,13 @@ function StudioNewPageInner() {
                 />
               </div>
 
-              {/* Scrollable grid — one card per base name, expandable to reveal looks */}
-              <div className="max-h-[480px] overflow-y-auto rounded-xl pr-1 scrollbar-thin">
+              {/* Avatar grid — flat inside the page flow. Audit 16/06/26 W2:
+                  used to be a nested `max-h-[480px] overflow-y-auto` scroll
+                  container, which created a double-scroll trap when the user
+                  wanted to reach the « Analyze my script » button below.
+                  Filtering + the search input above already keep the grid
+                  manageable on long catalogs. */}
+              <div className="rounded-xl pr-1">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {avatarGroups.map((group) => {
                     const isExpanded   = expandedGroup === group.baseName

@@ -247,6 +247,15 @@ export default function StudioEditorPage() {
           // F5-011: all scenes must be 'done' before we can assemble.
           const notReady = scenes.filter((s) => s.status !== 'done' || !s.video_url)
           if (notReady.length > 0) {
+            // Audit 16/06/26 W1 — surface the real cause when credits are
+            // the blocker, instead of the generic "scenes not ready".
+            // If NO scene has been generated AND the user can't afford even
+            // one, we know it's a credit wall, not user inaction.
+            const anyDone = scenes.some((s) => s.status === 'done')
+            if (!anyDone && !canAfford) {
+              toast.error(t('st_scenesNotReadyNoCredits'))
+              return
+            }
             toast.error(t('st_scenesNotReady').replace('{n}', String(notReady.length)))
             return
           }
@@ -303,6 +312,12 @@ export default function StudioEditorPage() {
           scene={selectedScene}
           onRegenerate={handleRegenerate}
           onDelete={handleDeleteScene}
+          // Audit 16/06/26 W1 — sync preview badge + timeline thumbnail to
+          // the inspector type picker without waiting for Regenerate. The
+          // user can still click Regenerate to actually re-render the video.
+          onTypeChange={(sceneId, type) => setScenes((prev) =>
+            prev.map((s) => (s.id === sceneId ? { ...s, type } : s)),
+          )}
         />
       </div>
 

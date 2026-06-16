@@ -17,7 +17,9 @@ const VOICE_CATEGORIES = [
   { key: 'social media',   translationKey: 'socialMedia',    icon: Video },
   { key: 'educational',    translationKey: 'educational',    icon: GraduationCap },
   { key: 'news',           translationKey: 'news',           icon: Radio },
-  { key: 'video games',    translationKey: 'characters',     icon: Film },
+  // Audit 16/06/26 W2 — was duplicating the "Characters" pill (same
+  // translationKey). Distinct key so video games gets its own label.
+  { key: 'video games',    translationKey: 'videoGames',     icon: Film },
 ]
 
 // Fallback gender keys — translated at render time via t()
