@@ -80,9 +80,9 @@ export function SceneInspector({ scene, onRegenerate, onDelete, onRestore }: Sce
           <div className="flex items-center gap-2">
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-white"
-              style={{ backgroundColor: SCENE_TYPE_COLORS[scene.type] }}
+              style={{ backgroundColor: SCENE_TYPE_COLORS[type] }}
             >
-              {SCENE_TYPE_LABELS[scene.type]}
+              {SCENE_TYPE_LABELS[type]}
             </span>
             <span className="font-display text-sm font-semibold text-foreground">
               {t('si_sceneLabel')} {scene.index + 1}

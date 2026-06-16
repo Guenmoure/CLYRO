@@ -13,6 +13,18 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
+/** Typed API error — preserves the machine-readable `code` from the response. */
+export class ApiError extends Error {
+  code: string
+  status: number
+  constructor(message: string, code: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.code = code
+    this.status = status
+  }
+}
+
 /**
  * Récupère le token JWT Supabase de la session courante
  */
@@ -79,7 +91,11 @@ async function apiFetch<T>(
       error: 'Erreur réseau',
       code: 'NETWORK_ERROR',
     }))
-    throw new Error(errorBody.error ?? `HTTP ${response.status}`)
+    throw new ApiError(
+      errorBody.error ?? `HTTP ${response.status}`,
+      errorBody.code ?? 'UNKNOWN',
+      response.status,
+    )
   }
 
   return response.json() as Promise<T>

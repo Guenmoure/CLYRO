@@ -206,7 +206,7 @@ export default function AvatarsPage() {
                 'font-body text-[10px] rounded-full px-1.5 py-0.5',
                 activeTab === key ? 'bg-brand/15 text-primary' : 'bg-muted text-[--text-muted]',
               )}>
-                {count}
+                {loading ? '—' : count}
               </span>
             </button>
           ))}

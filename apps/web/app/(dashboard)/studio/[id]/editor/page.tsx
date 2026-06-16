@@ -14,7 +14,7 @@ import { toast } from '@/components/ui/toast'
 import { createBrowserClient } from '@/lib/supabase'
 import {
   getStudioProject, generateAllStudioScenes, regenerateStudioScene,
-  addStudioScene, deleteStudioScene, renderStudioFinal,
+  addStudioScene, deleteStudioScene, renderStudioFinal, ApiError,
 } from '@/lib/api'
 import type {
   StudioProject, StudioScene, StudioSceneType,
@@ -34,6 +34,13 @@ export default function StudioEditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
   const [sceneToDelete, setSceneToDelete] = useState<string | null>(null)
+
+  // ── Scroll reset on mount ─────────────────────────────────────────────
+  // After script analysis on /studio/new (a long scrollable page), the
+  // browser may retain the scroll position when navigating here.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   // ── Initial fetch ─────────────────────────────────────────────────────
 
@@ -97,7 +104,11 @@ export default function StudioEditorPage() {
       await generateAllStudioScenes(project.id)
       toast.success(t('st_generationStarted'))
     } catch (err) {
-      toast.error(t('st_generationStartFailed'))
+      if (err instanceof ApiError && err.code === 'INSUFFICIENT_CREDITS') {
+        toast.error(t('st_insufficientCredits'))
+      } else {
+        toast.error(t('st_generationStartFailed'))
+      }
     } finally {
       setStarting(false)
     }
@@ -107,6 +118,19 @@ export default function StudioEditorPage() {
     sceneId: string; script?: string; feedback?: string; type?: StudioSceneType
   }) => {
     if (!project) return
+    // Optimistically update the scene so the badge + timeline reflect the
+    // new type / script immediately, before the Realtime event arrives.
+    setScenes((prev) =>
+      prev.map((s) => {
+        if (s.id !== payload.sceneId) return s
+        return {
+          ...s,
+          ...(payload.type   ? { type: payload.type }     : {}),
+          ...(payload.script ? { script: payload.script } : {}),
+          status: 'regenerating' as const,
+        }
+      }),
+    )
     try {
       await regenerateStudioScene({
         projectId: project.id,
@@ -117,6 +141,12 @@ export default function StudioEditorPage() {
       })
       toast.success(t('st_regenQueued'))
     } catch (err) {
+      // Revert the optimistic update on failure — refetch from the server
+      // so we don't leave the UI in a stale state.
+      try {
+        const fresh = await getStudioProject(project.id)
+        setScenes(fresh.scenes as StudioScene[])
+      } catch { /* Realtime will eventually correct it */ }
       toast.error(t('st_regenFailed'))
     }
   }, [project, t])
@@ -202,7 +232,11 @@ export default function StudioEditorPage() {
             toast.success(t('st_renderStarted').replace('{n}', String(result.sceneCount)))
             setProject((p) => (p ? { ...p, status: 'rendering' } : p))
           } catch (err) {
-            toast.error(t('st_renderFailed'))
+            if (err instanceof ApiError && err.code === 'INSUFFICIENT_CREDITS') {
+              toast.error(t('st_insufficientCredits'))
+            } else {
+              toast.error(t('st_renderFailed'))
+            }
           }
         }}
         onPreview={() => router.push(`/studio/${project.id}/preview`)}

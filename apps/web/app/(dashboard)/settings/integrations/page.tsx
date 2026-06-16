@@ -71,7 +71,7 @@ export default function IntegrationsPage() {
                       {integration.name}
                     </h3>
                     <Badge variant={integration.status === 'Connected' ? 'success' : 'neutral'}>
-                      {integration.status === 'Connected' ? t('integ_connected') : t('integ_available')}
+                      {integration.status === 'Connected' ? t('integ_connected') : t('integ_comingSoon')}
                     </Badge>
                   </div>
                   <p className="font-body text-xs text-[--text-secondary] leading-relaxed mb-3">
@@ -82,7 +82,7 @@ export default function IntegrationsPage() {
                     size="sm"
                     disabled={integration.status !== 'Connected'}
                   >
-                    {integration.status === 'Connected' ? t('integ_manage') : t('integ_comingSoon')}
+                    {integration.status === 'Connected' ? t('integ_manage') : t('integ_notifyMe')}
                   </Button>
                 </div>
               </div>

@@ -564,7 +564,7 @@ function StudioNewPageInner() {
 
         <p className="font-mono text-[11px] text-[--text-muted] text-center">
           <Wand2 size={10} className="inline mr-1" />
-          Powered by HeyGen · ElevenLabs · Remotion · Claude
+          {t('st_poweredByClyro')}
         </p>
       </div>
     </div>

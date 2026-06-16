@@ -11,14 +11,14 @@ import { useLanguage } from '@/lib/i18n'
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface ShowcaseVideo {
-  title:          string
+  titleKey:       string
   thumbnail:      string
   videoUrl:       string
-  style:          string
+  styleKey:       string
   styleBadge:     React.ComponentProps<typeof Badge>['variant']
-  feature:        string
+  featureKey:     string
   duration:       string
-  generationTime: string
+  genTimeMin:     number
   /** CSS gradient for placeholder when no thumbnail image exists yet */
   placeholderGradient: string
 }
@@ -29,69 +29,69 @@ interface ShowcaseVideo {
 
 const SHOWCASE_VIDEOS: ShowcaseVideo[] = [
   {
-    title:               'The 5 habits of millionaires',
+    titleKey:            'lp_sc1Title',
     thumbnail:           '/demo/showcase/millionaires-thumb.jpg',
     videoUrl:            '/demo/showcase/millionaires.mp4',
-    style:               '2D Animation',
+    styleKey:            'lp_style2dAnim',
     styleBadge:          'info',
-    feature:             'Faceless Video',
+    featureKey:          'lp_featFaceless',
     duration:            '2:14',
-    generationTime:      'Generated in 4 min',
+    genTimeMin:          4,
     placeholderGradient: 'from-orange-500/40 via-amber-500/20 to-yellow-500/10',
   },
   {
-    title:               'Nova Headset — product launch',
+    titleKey:            'lp_sc2Title',
     thumbnail:           '/demo/showcase/casque-thumb.jpg',
     videoUrl:            '/demo/showcase/casque.mp4',
-    style:               'Motion Design',
+    styleKey:            'lp_styleMotion',
     styleBadge:          'purple',
-    feature:             'Motion Design',
+    featureKey:          'lp_featMotionDesign',
     duration:            '0:32',
-    generationTime:      'Generated in 2 min',
+    genTimeMin:          2,
     placeholderGradient: 'from-violet-500/40 via-purple-500/20 to-indigo-500/10',
   },
   {
-    title:               'How Bitcoin works',
+    titleKey:            'lp_sc3Title',
     thumbnail:           '/demo/showcase/bitcoin-thumb.jpg',
     videoUrl:            '/demo/showcase/bitcoin.mp4',
-    style:               'Infographics',
+    styleKey:            'lp_styleInfogr',
     styleBadge:          'info',
-    feature:             'Faceless Video',
+    featureKey:          'lp_featFaceless',
     duration:            '3:45',
-    generationTime:      'Generated in 6 min',
+    genTimeMin:          6,
     placeholderGradient: 'from-primary/40 via-secondary/20 to-teal-500/10',
   },
   {
-    title:               'Startup pitch — Avatar Studio',
+    titleKey:            'lp_sc4Title',
     thumbnail:           '/demo/showcase/avatar-pitch-thumb.jpg',
     videoUrl:            '/demo/showcase/avatar-pitch.mp4',
-    style:               'AI Avatar',
+    styleKey:            'lp_styleAvatar',
     styleBadge:          'success',
-    feature:             'Avatar Studio',
+    featureKey:          'lp_featAvatarStudio',
     duration:            '1:20',
-    generationTime:      'Generated in 3 min',
+    genTimeMin:          3,
     placeholderGradient: 'from-emerald-500/40 via-green-500/20 to-teal-500/10',
   },
   {
-    title:               'Volta Energy — brand identity',
+    titleKey:            'lp_sc5Title',
     thumbnail:           '/demo/showcase/volta-thumb.jpg',
     videoUrl:            '/demo/showcase/volta.mp4',
-    style:               'Brand Kit',
+    styleKey:            'lp_styleBrandKit',
     styleBadge:          'neutral',
-    feature:             'Brand Kit',
+    featureKey:          'lp_featBrandKit',
     duration:            '0:45',
-    generationTime:      'Generated in 8 min',
+    genTimeMin:          8,
     placeholderGradient: 'from-slate-500/40 via-zinc-500/20 to-gray-500/10',
   },
   {
-    title:               'The secret of deep sleep',
+    titleKey:            'lp_sc6Title',
     thumbnail:           '/demo/showcase/sleep-thumb.jpg',
     videoUrl:            '/demo/showcase/sleep.mp4',
-    style:               'Cinematic',
+    styleKey:            'lp_styleCinematic',
     styleBadge:          'purple',
-    feature:             'Faceless Video',
+    featureKey:          'lp_featFaceless',
     duration:            '4:12',
-    generationTime:      'Generated in 7 min',
+    genTimeMin:          7,
     placeholderGradient: 'from-indigo-900/60 via-violet-900/40 to-purple-900/20',
   },
 ]
@@ -100,6 +100,8 @@ const SHOWCASE_VIDEOS: ShowcaseVideo[] = [
 
 function ShowcaseCard({ video, onPlay }: { video: ShowcaseVideo; onPlay: () => void }) {
   const [imgError, setImgError] = useState(false)
+  const { t } = useLanguage()
+  const title = t(video.titleKey)
 
   return (
     <button
@@ -112,7 +114,7 @@ function ShowcaseCard({ video, onPlay }: { video: ShowcaseVideo; onPlay: () => v
         'transition-all duration-200 group text-left',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
       )}
-      aria-label={video.title}
+      aria-label={title}
     >
       {/* Thumbnail */}
       <div className="relative aspect-video overflow-hidden">
@@ -133,7 +135,7 @@ function ShowcaseCard({ video, onPlay }: { video: ShowcaseVideo; onPlay: () => v
         {!imgError && (
           <img
             src={video.thumbnail}
-            alt={video.title}
+            alt={title}
             onError={() => setImgError(true)}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -148,7 +150,7 @@ function ShowcaseCard({ video, onPlay }: { video: ShowcaseVideo; onPlay: () => v
 
         {/* Style badge — top left */}
         <Badge variant={video.styleBadge} className="absolute top-2 left-2 text-xs backdrop-blur-sm">
-          {video.style}
+          {t(video.styleKey)}
         </Badge>
 
         {/* Duration — bottom right */}
@@ -159,9 +161,9 @@ function ShowcaseCard({ video, onPlay }: { video: ShowcaseVideo; onPlay: () => v
 
       {/* Info */}
       <div className="p-3">
-        <p className="font-display text-sm text-foreground truncate">{video.title}</p>
+        <p className="font-display text-sm text-foreground truncate">{title}</p>
         <p className="font-mono text-xs text-[--text-muted] mt-0.5">
-          {video.feature} · {video.generationTime}
+          {t(video.featureKey)} · {t('lp_genTime').replace('{n}', String(video.genTimeMin))}
         </p>
       </div>
     </button>
@@ -209,7 +211,7 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Preview: ${video.title}`}
+      aria-label={`Preview: ${t(video.titleKey)}`}
       className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8"
       onClick={onClose}
     >
@@ -254,9 +256,9 @@ function VideoModal({ video, onClose }: { video: ShowcaseVideo; onClose: () => v
         {/* Info bar */}
         <div className="bg-card px-5 py-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-display text-base text-foreground truncate">{video.title}</p>
+            <p className="font-display text-base text-foreground truncate">{t(video.titleKey)}</p>
             <p className="font-mono text-xs text-[--text-muted] mt-0.5">
-              {video.feature} · {video.style} · {video.generationTime}
+              {t(video.featureKey)} · {t(video.styleKey)} · {t('lp_genTime').replace('{n}', String(video.genTimeMin))}
             </p>
           </div>
           <Link href="/signup" className="shrink-0">

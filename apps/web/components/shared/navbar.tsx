@@ -29,9 +29,6 @@ export function Navbar() {
               the competitive audit. Using the shared gradient Logo ensures
               "CLYRO" reads as a single brand mark instead of "[C] LYRO". */}
           <Logo variant="full" size="sm" href={false} />
-          <span className="font-mono text-[11px] uppercase tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">
-            Beta
-          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">

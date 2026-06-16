@@ -117,7 +117,14 @@ export function Sidebar({
 
   // ── Rail navigation: navigate + ensure the panel is shown ────────────────────
   function handleRailSelect(entry: NavEntry) {
-    if ((entry.children?.length ?? 0) > 0 && collapsed) onToggle(false)
+    const isActive = entry.id === activeId
+    const entryHasChildren = (entry.children?.length ?? 0) > 0
+    // Re-clicking the active section → toggle the panel instead of re-navigating
+    if (isActive && entryHasChildren) {
+      onToggle(!collapsed)
+      return
+    }
+    if (entryHasChildren && collapsed) onToggle(false)
     router.push(entry.href)
   }
 

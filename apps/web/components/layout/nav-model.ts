@@ -83,7 +83,7 @@ export const RAIL_ITEMS: NavEntry[] = [
     id: 'apps',
     icon: LayoutGrid,
     labelKey: 'nav_apps',
-    href: '/faceless',
+    href: '/apps',
     children: [
       { labelKey: 'npd_faceless_title',  href: '/faceless',     groupKey: 'nav_grp_create' },
       { labelKey: 'npd_motion_title',    href: '/motion',       groupKey: 'nav_grp_create' },

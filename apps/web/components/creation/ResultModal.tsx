@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,7 @@ export function ResultModal({
   assets = [],
   onNewProject,
 }: ResultModalProps) {
+  const { t } = useLanguage()
   const [sharing, setSharing] = useState(false)
 
   async function handleShare() {
@@ -133,7 +135,7 @@ export function ResultModal({
           <BrandResult assets={assets} />
         ) : (
           <div className="rounded-xl bg-muted border border-border p-8 flex items-center justify-center">
-            <p className="font-mono text-sm text-[--text-muted]">Result not available</p>
+            <p className="font-mono text-sm text-[--text-muted]">{t('rm_notAvailable')}</p>
           </div>
         )}
 
@@ -141,7 +143,7 @@ export function ResultModal({
         <div className="flex flex-wrap gap-2 justify-end pt-2 border-t border-border/50">
           {onNewProject && (
             <Button variant="ghost" onClick={onNewProject}>
-              New project
+              {t('rm_newProject')}
             </Button>
           )}
 
@@ -153,7 +155,7 @@ export function ResultModal({
                 loading={sharing}
                 onClick={handleShare}
               >
-                Share
+                {t('rm_share')}
               </Button>
               <Button
                 variant="secondary"
@@ -161,7 +163,7 @@ export function ResultModal({
                 asChild
               >
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer">
-                  Open
+                  {t('rm_open')}
                 </a>
               </Button>
               <Button
@@ -170,7 +172,7 @@ export function ResultModal({
                 asChild
               >
                 <a href={videoUrl} download>
-                  Download
+                  {t('rm_download')}
                 </a>
               </Button>
             </>
@@ -187,7 +189,7 @@ export function ResultModal({
                 link.click()
               })}
             >
-              Download all
+              {t('rm_downloadAll')}
             </Button>
           )}
         </div>

@@ -4,49 +4,13 @@ import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from '@/lib/i18n';
 
-const testimonials = [
-  {
-    quote:
-      "CLYRO cut our video production time by 90%. We went from one video per week to five per day.",
-    name: "Sarah M.",
-    role: "Content Creator, YouTube · 1.2M subs",
-    initial: "S",
-  },
-  {
-    quote:
-      "The Avatar Studio is a game-changer. Our sales demos look professional without hiring actors.",
-    name: "Marcus K.",
-    role: "Head of Marketing, TechFlow",
-    initial: "M",
-  },
-  {
-    quote:
-      "We generate all our social media content with CLYRO. The ROI is insane — $49/mo replaces a $3,000/mo agency.",
-    name: "Amara O.",
-    role: "Founder, GrowthLab",
-    initial: "A",
-  },
-  {
-    quote:
-      "The Faceless video quality blew my mind. Cinematic style looks like a Netflix trailer.",
-    name: "David L.",
-    role: "YouTuber · 850K subs",
-    initial: "D",
-  },
-  {
-    quote:
-      "Brand Kit saved us weeks of back-and-forth with designers. We got our complete identity in 15 minutes.",
-    name: "Fatou D.",
-    role: "CEO, AfriPay",
-    initial: "F",
-  },
-  {
-    quote:
-      "Motion Design module is perfect for our product launches. We create professional ads in minutes, not weeks.",
-    name: "James R.",
-    role: "Marketing Director, NovaTech",
-    initial: "J",
-  },
+const TESTIMONIALS = [
+  { quoteKey: 'lp_test1Quote', name: 'Sarah M.',  roleKey: 'lp_test1Role', initial: 'S' },
+  { quoteKey: 'lp_test2Quote', name: 'Marcus K.', roleKey: 'lp_test2Role', initial: 'M' },
+  { quoteKey: 'lp_test3Quote', name: 'Amara O.',  roleKey: 'lp_test3Role', initial: 'A' },
+  { quoteKey: 'lp_test4Quote', name: 'David L.',  roleKey: 'lp_test4Role', initial: 'D' },
+  { quoteKey: 'lp_test5Quote', name: 'Fatou D.',  roleKey: 'lp_test5Role', initial: 'F' },
+  { quoteKey: 'lp_test6Quote', name: 'James R.',  roleKey: 'lp_test6Role', initial: 'J' },
 ];
 
 function StarRating({ ariaLabel }: { ariaLabel: string }) {
@@ -71,7 +35,7 @@ export function Testimonials() {
   const { t } = useLanguage();
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 stagger">
-      {testimonials.map((item) => (
+      {TESTIMONIALS.map((item) => (
         <Card
           key={item.name}
           className={cn(
@@ -91,7 +55,7 @@ export function Testimonials() {
 
           {/* Quote text */}
           <p className="mt-2 font-body text-sm text-[--text-secondary] leading-relaxed">
-            {item.quote}
+            {t(item.quoteKey)}
           </p>
 
           {/* Star rating */}
@@ -116,7 +80,7 @@ export function Testimonials() {
                 {item.name}
               </p>
               <p className="font-mono text-xs text-[--text-muted]">
-                {item.role}
+                {t(item.roleKey)}
               </p>
             </div>
           </div>
