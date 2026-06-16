@@ -1,7 +1,6 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-import type { Database } from '@/lib/database.types'
 
 /**
  * OAuth callback handler pour Google / Apple / SSO
@@ -20,7 +19,28 @@ export async function GET(request: NextRequest) {
   const redirectTo = safeRedirect(requestUrl.searchParams.get('redirectTo'))
 
   if (code) {
-    const supabase = createRouteHandlerClient<Database>({ cookies })
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              try {
+                cookieStore.set(name, value, options)
+              } catch {
+                // set() may throw in a Server Component context — safe to ignore
+                // in route handlers it works fine
+              }
+            })
+          },
+        },
+      },
+    )
     try {
       await supabase.auth.exchangeCodeForSession(code)
     } catch {

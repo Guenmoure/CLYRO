@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -24,20 +24,38 @@ const PROTECTED_ROUTES = [
 const AUTH_ROUTES = ['/login', '/signup']
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
+  let res = NextResponse.next()
 
-  // createMiddlewareClient lit et écrit les cookies de session correctement
-  const supabase = createMiddlewareClient({ req, res })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            req.cookies.set(name, value),
+          )
+          res = NextResponse.next({ request: req })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options),
+          )
+        },
+      },
+    },
+  )
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const pathname = req.nextUrl.pathname
 
   // Rediriger vers /login si route protégée et non authentifié
   const isProtected = PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
-  if (isProtected && !session) {
+  if (isProtected && !user) {
     const loginUrl = new URL('/login', req.url)
     loginUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(loginUrl)
@@ -45,7 +63,7 @@ export async function middleware(req: NextRequest) {
 
   // Rediriger vers /dashboard si déjà authentifié et tente d'accéder à auth routes
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route))
-  if (isAuthRoute && session) {
+  if (isAuthRoute && user) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 

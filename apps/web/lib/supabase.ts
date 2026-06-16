@@ -1,4 +1,4 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
@@ -7,11 +7,16 @@ const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
 /**
  * Client Supabase pour les composants React (browser-side).
- * Utilise @supabase/auth-helpers-nextjs pour partager le même format de
- * cookies que le middleware et les route handlers (auth-helpers-shared).
+ * Utilise @supabase/ssr qui gère la session dans les cookies du navigateur.
  */
 export function createBrowserClient() {
-  return createClientComponentClient<Database>()
+  if (!SUPABASE_URL || !SUPABASE_ANON) {
+    return createSSRBrowserClient<Database>(
+      'https://placeholder.supabase.co',
+      'placeholder-anon-key',
+    )
+  }
+  return createSSRBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON)
 }
 
 /**
