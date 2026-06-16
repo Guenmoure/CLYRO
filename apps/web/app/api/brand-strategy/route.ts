@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -14,7 +13,7 @@ const bodySchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = createSSRClient()
     // getUser() revalidates the JWT with the Supabase Auth server (getSession
     // only trusts the local cookie). getSession is then used solely to read
     // the access_token forwarded to apps/api — never for authentication.

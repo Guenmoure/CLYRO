@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import { randomUUID } from 'crypto'
 import { z } from 'zod'
 
@@ -29,7 +28,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -72,7 +71,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -147,7 +146,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

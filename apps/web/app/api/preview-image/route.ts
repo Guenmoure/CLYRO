@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { z } from 'zod'
 
@@ -41,7 +40,7 @@ const STYLE_PREFIXES: Record<string, string> = {
  */
 export async function POST(request: NextRequest) {
   // SECURITY: calls fal.ai flux/schnell (billable compute). Auth required.
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -8,9 +8,7 @@
  * This avoids each page re-fetching user data and keeps the shell reactive.
  */
 
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import type { Database } from '@/lib/database.types'
+import { createSSRClient } from '@/lib/supabase-server'
 import { DashboardShell, type SidebarUser } from '@/components/layout/DashboardShell'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -55,7 +53,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let draftsCount   = 0
 
   try {
-    const supabase = createServerComponentClient<Database>({ cookies })
+    const supabase = createSSRClient()
 
     const { data: { user } } = await supabase.auth.getUser()
 

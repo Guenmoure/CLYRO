@@ -1,7 +1,5 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
-import type { Database } from '@/lib/database.types'
 import { AnalyticsView } from '@/components/analytics/AnalyticsView'
 
 export const dynamic = 'force-dynamic'
@@ -127,7 +125,7 @@ export default async function AnalyticsPage() {
     )
   }
 
-  const supabase = createServerComponentClient<Database>({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login?next=/analytics')
 

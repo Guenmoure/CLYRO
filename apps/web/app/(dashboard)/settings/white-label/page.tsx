@@ -1,11 +1,9 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import {
   Sparkles, Check, Lock, Palette, Globe, Mail, Image as ImageIcon,
 } from 'lucide-react'
-import type { Database } from '@/lib/database.types'
 import { Card } from '@/components/ui/card'
 import { UpgradeCard } from '@/components/plans/UpgradeCard'
 import { hasWhitelabel, planLabel, type UserPlan } from '@/lib/plans'
@@ -31,7 +29,7 @@ export default async function WhiteLabelPage() {
     )
   }
 
-  const supabase = createServerComponentClient<Database>({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login?next=/settings/white-label')
 

@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 
 /**
  * POST /api/videos/:id/revert-draft
@@ -15,7 +14,7 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -83,7 +82,7 @@ export async function POST(
     .from('videos')
     .update({
       status:       'draft',
-      wizard_state: wizardState,
+      wizard_state: wizardState as any,
       wizard_step:  1,
       output_url:   null,
       updated_at:   new Date().toISOString(),

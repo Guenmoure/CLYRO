@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import { z } from 'zod'
 
 const createFolderSchema = z.object({
@@ -14,7 +13,7 @@ const createFolderSchema = z.object({
  * Response: { folders: Array<{ id, name, created_at }> }
  */
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -43,7 +42,7 @@ export async function GET() {
  * (case-insensitive) already exists.
  */
 export async function POST(req: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -24,7 +23,7 @@ export async function POST(request: NextRequest) {
   try {
     // Auth check — getUser() revalide le JWT côté serveur Supabase
     // (getSession ne fait que lire le cookie local).
-    const supabaseAuth = createRouteHandlerClient({ cookies })
+    const supabaseAuth = createSSRClient()
     const { data: { user } } = await supabaseAuth.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })

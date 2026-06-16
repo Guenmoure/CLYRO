@@ -1,6 +1,4 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import type { Database } from '@/lib/database.types'
+import { createSSRClient } from '@/lib/supabase-server'
 
 // Dashboard components — HeyGen-pattern home: greeting → create tiles → recent projects.
 // The "+ Create" dropdown now lives in the TopBar; HomeHero / HomeFeatureGrid were
@@ -46,7 +44,7 @@ export default async function DashboardPage() {
   let errorMsg: string | null = null
 
   try {
-    const supabase = createServerComponentClient<Database>({ cookies })
+    const supabase = createSSRClient()
 
     const { data: authData, error: authError } = await supabase.auth.getUser()
 

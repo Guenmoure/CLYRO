@@ -1,13 +1,11 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import type { Database } from '@/lib/database.types'
+import { createSSRClient } from '@/lib/supabase-server'
 import { BrandHub } from '@/components/brand/brand-hub'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Brand Hub — CLYRO' }
 
 export default async function BrandHubPage() {
-  const supabase = createServerComponentClient<Database>({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   // Load user's brand kits
@@ -18,5 +16,5 @@ export default async function BrandHubPage() {
     .order('is_default', { ascending: false })
     .order('created_at', { ascending: false })
 
-  return <BrandHub initialKits={brandKits ?? []} />
+  return <BrandHub initialKits={(brandKits ?? []) as any} />
 }

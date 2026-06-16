@@ -1,6 +1,4 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import type { Database } from '@/lib/database.types'
+import { createSSRClient } from '@/lib/supabase-server'
 import { FacelessHub } from '@/components/faceless/faceless-hub'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +9,7 @@ export default async function FacelessHubPage({
 }: {
   searchParams?: { draft?: string; resume?: string }
 }) {
-  const supabase = createServerComponentClient<Database>({ cookies })
+  const supabase = createSSRClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import type { BrandBrief, BrandDirection, BrandCharte } from '@clyro/shared'
 import { buildCharteHtml } from '@/lib/brand-charte-html'
 import { z } from 'zod'
@@ -149,7 +148,7 @@ export async function POST(request: NextRequest) {
     // the body to attribute the share — anyone could spoof another
     // user's id. Now we derive the user from the session and IGNORE any
     // userId in the body.
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = createSSRClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

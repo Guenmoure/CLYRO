@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 
 /**
  * POST /api/videos/:id/duplicate
@@ -44,7 +43,7 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -258,7 +257,7 @@ export async function POST(
       output_url:    source.output_url,
       thumbnail_url: source.thumbnail_url,
       metadata:      source.metadata,
-      wizard_state:  wizardState,
+      wizard_state:  wizardState as any,
       wizard_step:   wizardStep,
     })
     .select('id, module')

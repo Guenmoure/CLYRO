@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import { z } from 'zod'
 
 const patchVideoSchema = z.object({
@@ -25,7 +24,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -69,7 +68,7 @@ export async function PATCH(
 
   const { data, error } = await supabase
     .from('videos')
-    .update(patch)
+    .update(patch as any)
     .eq('id', params.id)
     .eq('user_id', user.id)
     .select('id, title, folder_id')
@@ -91,7 +90,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = createSSRClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

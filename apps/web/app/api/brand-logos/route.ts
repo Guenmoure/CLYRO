@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import { createFalClient } from '@fal-ai/client'
 import type { BrandBrief, BrandDirection } from '@clyro/shared'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
@@ -140,7 +139,7 @@ export async function POST(request: NextRequest) {
     // (~$0.04/image × up to 9 images per call). Without auth, anyone
     // could loop curl on this endpoint and burn our credit balance.
     // See .claude/rules/security.md → "Cost-amplification protection".
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = createSSRClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

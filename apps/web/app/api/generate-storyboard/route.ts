@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 import Anthropic from '@anthropic-ai/sdk'
 import { z } from 'zod'
 import {
@@ -245,7 +244,7 @@ export async function POST(request: NextRequest) {
   try {
     // getUser() revalidates the JWT with the Supabase Auth server —
     // getSession() only trusts the local cookie.
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = createSSRClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })

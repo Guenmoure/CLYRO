@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSSRClient } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -16,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Vérification utilisateur — getUser() revalide le JWT côté serveur
     // Supabase (getSession ne fait que lire le cookie local).
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = createSSRClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
