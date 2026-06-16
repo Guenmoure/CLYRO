@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 interface VideoItem {
   id: string
@@ -27,6 +28,7 @@ const MODULE_META: Record<string, { label: string; icon: React.ElementType; colo
 }
 
 export function UsageHistorySection() {
+  const { t, lang } = useLanguage()
   const supabase = createBrowserClient()
   const [loading, setLoading] = useState(true)
   const [tab,  setTab]  = useState<Tab>('usage')
@@ -82,7 +84,8 @@ export function UsageHistorySection() {
     const months: { label: string; count: number }[] = []
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const label = d.toLocaleDateString('fr-FR', { month: 'short' })
+      const localeMap: Record<string, string> = { en: 'en-US', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', pt: 'pt-BR' }
+      const label = d.toLocaleDateString(localeMap[lang] ?? 'en-US', { month: 'short' })
       const count = videos.filter((v) => {
         const created = new Date(v.created_at)
         return created.getFullYear() === d.getFullYear() && created.getMonth() === d.getMonth()
@@ -122,28 +125,28 @@ export function UsageHistorySection() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Usage & Historique</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">{t('uh_title')}</h2>
         <p className="font-body text-sm text-[--text-secondary] mt-1">
-          Statistiques d&apos;utilisation et détail de tes générations.
+          {t('uh_description')}
         </p>
       </div>
 
       {/* Tabs — Usage | Historique */}
       <div className="flex items-center gap-6 border-b border-border">
-        {(['usage', 'history'] as const).map((t) => (
+        {(['usage', 'history'] as const).map((tabId) => (
           <button
-            key={t}
+            key={tabId}
             type="button"
-            onClick={() => setTab(t)}
+            onClick={() => setTab(tabId)}
             className={cn(
               'relative pb-3 text-sm font-body transition-colors',
-              tab === t
+              tab === tabId
                 ? 'text-foreground font-semibold'
                 : 'text-[--text-secondary] hover:text-foreground',
             )}
           >
-            {t === 'usage' ? 'Usage' : 'Historique'}
-            {tab === t && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />}
+            {tabId === 'usage' ? t('uh_tabUsage') : t('uh_tabHistory')}
+            {tab === tabId && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />}
           </button>
         ))}
       </div>
@@ -153,32 +156,32 @@ export function UsageHistorySection() {
           {/* Quota cards */}
           <UsageQuotaCard
             icon={Zap}
-            label="Crédits restants"
-            description={`Plan ${plan.charAt(0).toUpperCase() + plan.slice(1)}`}
+            label={t('uh_creditsRemaining')}
+            description={t('uh_planLabel').replace('{plan}', plan.charAt(0).toUpperCase() + plan.slice(1))}
             used={plan === 'studio' ? 0 : Math.max(0, 10 - credits)}
             total={plan === 'studio' ? null : 10}
             color="warning"
           />
           <UsageQuotaCard
             icon={Video}
-            label="Vidéos Faceless"
-            description="Générations terminées avec succès"
+            label={t('uh_facelessVideos')}
+            description={t('uh_genSuccess')}
             used={stats.byModule.faceless}
             total={null}
             color="blue"
           />
           <UsageQuotaCard
             icon={Sparkles}
-            label="Vidéos Motion"
-            description="Générations terminées avec succès"
+            label={t('uh_motionVideos')}
+            description={t('uh_genSuccess')}
             used={stats.byModule.motion}
             total={null}
             color="purple"
           />
           <UsageQuotaCard
             icon={Clock}
-            label="Durée totale générée"
-            description={`${formatDuration(stats.totalSeconds)} de contenu vidéo`}
+            label={t('uh_totalDuration')}
+            description={t('uh_durationDesc').replace('{d}', formatDuration(stats.totalSeconds))}
             used={Math.round(stats.totalSeconds / 60)}
             total={null}
             color="emerald"
@@ -207,7 +210,7 @@ export function UsageHistorySection() {
                     )}
                   >
                     <Icon size={12} />
-                    {v === 'table' ? 'Tableau' : 'Graphique'}
+                    {v === 'table' ? t('uh_viewTable') : t('uh_viewGraph')}
                   </button>
                 )
               })}
@@ -218,11 +221,11 @@ export function UsageHistorySection() {
               disabled={videos.length === 0}
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-body text-foreground hover:bg-muted transition-colors disabled:opacity-50"
             >
-              <Download size={12} /> Exporter CSV
+              <Download size={12} /> {t('uh_exportCsv')}
             </button>
           </div>
 
-          {view === 'table' ? <HistoryTable videos={videos} /> : <HistoryGraph data={monthlyData} max={maxMonthlyCount} total={videos.length} />}
+          {view === 'table' ? <HistoryTable videos={videos} t={t} language={lang} /> : <HistoryGraph data={monthlyData} max={maxMonthlyCount} total={videos.length} t={t} />}
         </div>
       )}
     </div>
@@ -280,21 +283,24 @@ function UsageQuotaCard({
 
 // ── History table ──────────────────────────────────────────────────────
 
-function HistoryTable({ videos }: { videos: VideoItem[] }) {
+function HistoryTable({ videos, t, language }: { videos: VideoItem[]; t: (key: string) => string; language: string }) {
+  const localeMap: Record<string, string> = { en: 'en-US', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', pt: 'pt-BR' }
+  const locale = localeMap[language] ?? 'en-US'
+
   if (videos.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card px-4 py-12 text-center">
-        <p className="font-body text-sm text-[--text-secondary]">Aucune génération pour l&apos;instant.</p>
+        <p className="font-body text-sm text-[--text-secondary]">{t('uh_noGenerations')}</p>
       </div>
     )
   }
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="grid grid-cols-[1fr_auto_auto_auto] md:grid-cols-[1fr_100px_120px_100px] gap-3 px-4 py-3 border-b border-border bg-muted/40">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold">Titre</span>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold">Module</span>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold">Date</span>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold text-right">Durée</span>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('uh_colTitle')}</span>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('uh_colModule')}</span>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('uh_colDate')}</span>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold text-right">{t('uh_colDuration')}</span>
       </div>
       <div className="divide-y divide-border max-h-[380px] overflow-y-auto">
         {videos.slice(0, 50).map((v) => {
@@ -303,13 +309,13 @@ function HistoryTable({ videos }: { videos: VideoItem[] }) {
           return (
             <div key={v.id} className="grid grid-cols-[1fr_auto_auto_auto] md:grid-cols-[1fr_100px_120px_100px] gap-3 px-4 py-3 items-center hover:bg-muted/30 transition-colors">
               <span className="font-body text-sm text-foreground truncate">
-                {v.title ?? 'Sans titre'}
+                {v.title ?? t('uh_untitled')}
               </span>
               <span className={cn('inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider', meta?.color ?? 'text-[--text-muted]')}>
                 <ModuleIcon size={11} /> {meta?.label ?? v.module ?? '—'}
               </span>
               <span className="font-mono text-[11px] text-[--text-secondary]">
-                {new Date(v.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {new Date(v.created_at).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
               </span>
               <span className="font-mono text-[11px] text-[--text-secondary] text-right">
                 {v.duration_seconds ? formatDuration(v.duration_seconds) : '—'}
@@ -325,19 +331,20 @@ function HistoryTable({ videos }: { videos: VideoItem[] }) {
 // ── History graph ──────────────────────────────────────────────────────
 
 function HistoryGraph({
-  data, max, total,
+  data, max, total, t,
 }: {
   data: { label: string; count: number }[]
   max: number
   total: number
+  t: (key: string) => string
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold">Vidéos créées</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('uh_videosCreated')}</p>
           <p className="font-display text-2xl font-bold text-foreground mt-1">{total}</p>
-          <p className="font-body text-xs text-[--text-secondary]">sur les 6 derniers mois</p>
+          <p className="font-body text-xs text-[--text-secondary]">{t('uh_last6Months')}</p>
         </div>
       </div>
       {/* Bar chart */}
@@ -350,7 +357,7 @@ function HistoryGraph({
                 <div
                   className="w-full rounded-t-lg bg-gradient-to-t from-brand to-violet-500 transition-all duration-500"
                   style={{ height: `${Math.max(height, 3)}%` }}
-                  title={`${m.count} vidéos`}
+                  title={t('uh_videosTooltip').replace('{n}', String(m.count))}
                 />
               </div>
               <span className="font-mono text-[10px] text-[--text-muted] uppercase">{m.label}</span>

@@ -7,6 +7,7 @@ import {
   Lock, Code, Plug,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { AccountSection } from './sections/AccountSection'
 import { PreferencesSection } from './sections/PreferencesSection'
 import { PlanBillingSection } from './sections/PlanBillingSection'
@@ -25,23 +26,23 @@ export type SettingsSectionId =
 
 interface SettingsNavItem {
   id: SettingsSectionId
-  label: string
+  labelKey: string
   icon: React.ElementType
 }
 
 const PROFILE_SECTIONS: SettingsNavItem[] = [
-  { id: 'account',         label: 'Account',         icon: User      },
-  { id: 'preferences',     label: 'Preferences',     icon: Settings2 },
-  { id: 'personalization', label: 'Personalization', icon: BookOpen  },
+  { id: 'account',         labelKey: 'sm_account',         icon: User      },
+  { id: 'preferences',     labelKey: 'sm_preferences',     icon: Settings2 },
+  { id: 'personalization', labelKey: 'sm_personalization', icon: BookOpen  },
 ]
 
 const WORKSPACE_SECTIONS: SettingsNavItem[] = [
-  { id: 'general',     label: 'General',         icon: Cog        },
-  { id: 'billing',     label: 'Plan & Billing',  icon: CreditCard },
-  { id: 'usage',       label: 'Usage & History', icon: Activity   },
-  { id: 'security',    label: 'Security',        icon: Lock       },
-  { id: 'api',         label: 'API',             icon: Code       },
-  { id: 'connections', label: 'Connections',     icon: Plug       },
+  { id: 'general',     labelKey: 'sm_general',       icon: Cog        },
+  { id: 'billing',     labelKey: 'sm_planBilling',    icon: CreditCard },
+  { id: 'usage',       labelKey: 'sm_usageHistory',   icon: Activity   },
+  { id: 'security',    labelKey: 'sm_security',       icon: Lock       },
+  { id: 'api',         labelKey: 'sm_api',            icon: Code       },
+  { id: 'connections', labelKey: 'sm_connections',     icon: Plug       },
 ]
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ interface SettingsModalProps {
 export function SettingsModal({
   open, onOpenChange, initialSection = 'account',
 }: SettingsModalProps) {
+  const { t } = useLanguage()
   const [active, setActive] = useState<SettingsSectionId>(initialSection)
 
   // Reset to initial section when modal opens
@@ -73,15 +75,15 @@ export function SettingsModal({
           className="fixed inset-0 z-50 flex items-center justify-center p-4 focus:outline-none"
           aria-describedby={undefined}
         >
-          <Dialog.Title className="sr-only">Settings</Dialog.Title>
+          <Dialog.Title className="sr-only">{t('sm_settings')}</Dialog.Title>
 
           {/* Actual modal box — animation lives HERE, not on the wrapper */}
           <div className="w-full h-full max-w-[1100px] max-h-[760px] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fade-up">
             {/* Left sidebar nav */}
             <aside className="shrink-0 w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-muted/30 overflow-y-auto">
               <nav className="p-4 space-y-5">
-                <SectionGroup label="Profile" items={PROFILE_SECTIONS} active={active} onSelect={setActive} />
-                <SectionGroup label="Workspace" items={WORKSPACE_SECTIONS} active={active} onSelect={setActive} />
+                <SectionGroup label={t('sm_profile')} items={PROFILE_SECTIONS} active={active} onSelect={setActive} t={t} />
+                <SectionGroup label={t('sm_workspace')} items={WORKSPACE_SECTIONS} active={active} onSelect={setActive} t={t} />
               </nav>
             </aside>
 
@@ -112,12 +114,13 @@ export function SettingsModal({
 // ── Section group (nav list) ──────────────────────────────────────────────────
 
 function SectionGroup({
-  label, items, active, onSelect,
+  label, items, active, onSelect, t,
 }: {
   label: string
   items: SettingsNavItem[]
   active: SettingsSectionId
   onSelect: (id: SettingsSectionId) => void
+  t: (key: string) => string
 }) {
   return (
     <div>
@@ -141,7 +144,7 @@ function SectionGroup({
                 )}
               >
                 <Icon size={16} className={isActive ? 'text-primary' : 'text-[--text-muted]'} />
-                {item.label}
+                {t(item.labelKey)}
               </button>
             </li>
           )

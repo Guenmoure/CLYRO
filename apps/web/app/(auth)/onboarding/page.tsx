@@ -1,21 +1,16 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/button'
 import { createBrowserClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type Step = 1 | 2 | 3 | 4
-
-interface NicheOption {
-  id: string
-  emoji: string
-  label: string
-}
 
 interface PlanFeature {
   text: string
@@ -35,68 +30,70 @@ interface Plan {
 
 // ── Data ───────────────────────────────────────────────────────────────────────
 
-const NICHE_OPTIONS: NicheOption[] = [
-  { id: 'education',  emoji: '🎓', label: 'Education'  },
-  { id: 'ecommerce',  emoji: '🛒', label: 'E-commerce'  },
-  { id: 'tech',       emoji: '💻', label: 'Tech'        },
-  { id: 'finance',    emoji: '📊', label: 'Finance'     },
-  { id: 'lifestyle',  emoji: '✨', label: 'Lifestyle'   },
-  { id: 'marketing',  emoji: '📣', label: 'Marketing'   },
-  { id: 'news',       emoji: '📰', label: 'News'        },
-  { id: 'other',      emoji: '🎯', label: 'Other'       },
+const NICHE_OPTIONS: Array<{ id: string; emoji: string; labelKey: string }> = [
+  { id: 'education',  emoji: '🎓', labelKey: 'ob_nicheEducation'  },
+  { id: 'ecommerce',  emoji: '🛒', labelKey: 'ob_nicheEcommerce'  },
+  { id: 'tech',       emoji: '💻', labelKey: 'ob_nicheTech'        },
+  { id: 'finance',    emoji: '📊', labelKey: 'ob_nicheFinance'     },
+  { id: 'lifestyle',  emoji: '✨', labelKey: 'ob_nicheLifestyle'   },
+  { id: 'marketing',  emoji: '📣', labelKey: 'ob_nicheMarketing'   },
+  { id: 'news',       emoji: '📰', labelKey: 'ob_nicheNews'        },
+  { id: 'other',      emoji: '🎯', labelKey: 'ob_nicheOther'       },
 ]
 
-const PLANS: Plan[] = [
-  {
-    id: 'starter',
-    label: 'Starter',
-    price: 'Free',
-    priceNote: 'Forever free',
-    highlighted: false,
-    cta: 'Start free',
-    features: [
-      { text: '250 credits / month',        included: true  },
-      { text: '5 video projects',           included: true  },
-      { text: 'Faceless video generation',  included: true  },
-      { text: 'CLYRO watermark',            included: true  },
-      { text: 'Voice cloning',              included: false },
-      { text: 'Autopilot scheduling',       included: false },
-    ],
-  },
-  {
-    id: 'pro',
-    label: 'Pro',
-    badge: 'Most popular',
-    price: '$29',
-    priceNote: 'per month',
-    highlighted: true,
-    cta: 'Try Pro free',
-    features: [
-      { text: '2,000 credits / month',      included: true },
-      { text: 'Unlimited projects',         included: true },
-      { text: 'All video modules',          included: true },
-      { text: 'White-label exports',        included: true },
-      { text: '2 cloned voices',            included: true },
-      { text: 'Autopilot scheduling',       included: false },
-    ],
-  },
-  {
-    id: 'studio',
-    label: 'Studio',
-    price: '$79',
-    priceNote: 'per month',
-    highlighted: false,
-    cta: 'Try Studio free',
-    features: [
-      { text: '10,000 credits / month',     included: true },
-      { text: 'Unlimited projects',         included: true },
-      { text: 'All video modules',          included: true },
-      { text: 'White-label + brand kit',    included: true },
-      { text: 'Unlimited voice cloning',    included: true },
-      { text: 'Autopilot scheduling',       included: true },
-    ],
-  },
-]
+function buildPlans(t: (k: string) => string): Plan[] {
+  return [
+    {
+      id: 'starter',
+      label: t('ob_planStarter'),
+      price: t('ob_free'),
+      priceNote: t('ob_foreverFree'),
+      highlighted: false,
+      cta: t('ob_startFreeBtn'),
+      features: [
+        { text: t('ob_feat_250credits'),  included: true  },
+        { text: t('ob_feat_5projects'),   included: true  },
+        { text: t('ob_feat_faceless'),    included: true  },
+        { text: t('ob_feat_watermark'),   included: true  },
+        { text: t('ob_feat_voiceClone'),  included: false },
+        { text: t('ob_feat_autopilot'),   included: false },
+      ],
+    },
+    {
+      id: 'pro',
+      label: t('ob_planPro'),
+      badge: t('ob_mostPopular'),
+      price: '$29',
+      priceNote: t('ob_perMonth'),
+      highlighted: true,
+      cta: t('ob_tryProFree'),
+      features: [
+        { text: t('ob_feat_2000credits'), included: true },
+        { text: t('ob_feat_unlimited'),   included: true },
+        { text: t('ob_feat_allModules'),  included: true },
+        { text: t('ob_feat_whiteLabel'),  included: true },
+        { text: t('ob_feat_2voices'),     included: true },
+        { text: t('ob_feat_autopilot'),   included: false },
+      ],
+    },
+    {
+      id: 'studio',
+      label: t('ob_planStudio'),
+      price: '$79',
+      priceNote: t('ob_perMonth'),
+      highlighted: false,
+      cta: t('ob_tryStudioFree'),
+      features: [
+        { text: t('ob_feat_10000credits'),    included: true },
+        { text: t('ob_feat_unlimited'),       included: true },
+        { text: t('ob_feat_allModules'),      included: true },
+        { text: t('ob_feat_brandKit'),        included: true },
+        { text: t('ob_feat_unlimitedVoice'),  included: true },
+        { text: t('ob_feat_autopilot'),       included: true },
+      ],
+    },
+  ]
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -109,7 +106,7 @@ function stepPercent(step: Step): number {
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 /** Animated progress bar using the brand CTA gradient */
-function ProgressBar({ step }: { step: Step }) {
+function ProgressBar({ step, t }: { step: Step; t: (k: string) => string }) {
   return (
     <div className="w-full h-[3px] bg-border rounded-full overflow-hidden">
       <div
@@ -119,7 +116,7 @@ function ProgressBar({ step }: { step: Step }) {
         aria-valuenow={step}
         aria-valuemin={1}
         aria-valuemax={TOTAL_STEPS}
-        aria-label={`Step ${step} of ${TOTAL_STEPS}`}
+        aria-label={t('ob_stepOf').replace('{step}', String(step)).replace('{total}', String(TOTAL_STEPS))}
       />
     </div>
   )
@@ -212,44 +209,44 @@ function ArrowRightIcon() {
 interface Step1Props {
   firstName: string
   onNext: () => void
+  t: (k: string) => string
 }
 
-function Step1Welcome({ firstName, onNext }: Step1Props) {
+function Step1Welcome({ firstName, onNext, t }: Step1Props) {
   return (
     <div className="animate-fade-up flex flex-col items-center text-center gap-6">
       {/* Greeting */}
       <div className="space-y-2">
         <p className="font-mono text-xs uppercase tracking-widest text-primary opacity-80">
-          Welcome to CLYRO
+          {t('ob_welcomeTo')}
         </p>
         <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
-          {firstName ? `Hey ${firstName},` : 'Hey there,'}{' '}
+          {firstName ? t('ob_heyName').replace('{name}', firstName) : t('ob_heyThere')}{' '}
           <span
             className="bg-gradient-to-r from-brand via-purple-500 to-brand-hover bg-clip-text text-transparent"
           >
-            let&apos;s get you set up
+            {t('ob_letsSetUp')}
           </span>
         </h1>
         <p className="font-body text-[--text-secondary] text-sm leading-relaxed max-w-xs mx-auto">
-          This quick setup takes under two minutes and helps CLYRO
-          deliver the best content experience for you.
+          {t('ob_welcomeDesc')}
         </p>
       </div>
 
       {/* Illustrated cards row */}
       <div className="w-full grid grid-cols-3 gap-2.5 my-2">
         {[
-          { emoji: '🎯', label: 'Your niche'   },
-          { emoji: '🎨', label: 'Your brand'   },
-          { emoji: '🚀', label: 'Your plan'    },
-        ].map(({ emoji, label }) => (
+          { emoji: '🎯', labelKey: 'ob_yourNiche' },
+          { emoji: '🎨', labelKey: 'ob_yourBrand' },
+          { emoji: '🚀', labelKey: 'ob_yourPlan'  },
+        ].map(({ emoji, labelKey }) => (
           <div
-            key={label}
+            key={labelKey}
             className="bg-muted border border-border rounded-xl py-4 px-2 flex flex-col items-center gap-2"
           >
-            <span className="text-2xl" role="img" aria-label={label}>{emoji}</span>
+            <span className="text-2xl" role="img" aria-label={t(labelKey)}>{emoji}</span>
             <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
-              {label}
+              {t(labelKey)}
             </span>
           </div>
         ))}
@@ -263,11 +260,11 @@ function Step1Welcome({ firstName, onNext }: Step1Props) {
         onClick={onNext}
         rightIcon={<ArrowRightIcon />}
       >
-        Get Started
+        {t('ob_getStarted')}
       </Button>
 
       <p className="font-body text-[--text-muted] text-xs">
-        You can change these settings any time in your profile.
+        {t('ob_canChange')}
       </p>
     </div>
   )
@@ -281,26 +278,27 @@ interface Step2Props {
   onNext: () => void
   onBack: () => void
   saving: boolean
+  t: (k: string) => string
 }
 
-function Step2Niche({ selected, onToggle, onNext, onBack, saving }: Step2Props) {
+function Step2Niche({ selected, onToggle, onNext, onBack, saving, t }: Step2Props) {
   return (
     <div className="animate-fade-up flex flex-col gap-6">
       <div className="space-y-1">
         <p className="font-mono text-xs uppercase tracking-widest text-primary opacity-80">
-          Step 2 of 4
+          {t('ob_step2of4')}
         </p>
         <h2 className="font-display text-xl font-bold text-foreground tracking-tight">
-          What kind of content do you create?
+          {t('ob_whatContent')}
         </h2>
         <p className="font-body text-[--text-secondary] text-sm">
-          Select all that apply — we&apos;ll tailor templates and suggestions for you.
+          {t('ob_selectAll')}
         </p>
       </div>
 
       {/* Niche grid */}
-      <div className="grid grid-cols-2 gap-2.5" role="group" aria-label="Content niches">
-        {NICHE_OPTIONS.map(({ id, emoji, label }) => {
+      <div className="grid grid-cols-2 gap-2.5" role="group" aria-label={t('ob_whatContent')}>
+        {NICHE_OPTIONS.map(({ id, emoji, labelKey }) => {
           const isSelected = selected.includes(id)
           return (
             <button
@@ -327,7 +325,7 @@ function Step2Niche({ selected, onToggle, onNext, onBack, saving }: Step2Props) 
                   isSelected ? 'text-primary' : 'text-foreground',
                 )}
               >
-                {label}
+                {t(labelKey)}
               </span>
 
               {/* Selected checkmark */}
@@ -343,7 +341,7 @@ function Step2Niche({ selected, onToggle, onNext, onBack, saving }: Step2Props) 
 
       {selected.length === 0 && (
         <p className="font-body text-xs text-[--text-muted] text-center -mt-2">
-          Pick at least one to continue
+          {t('ob_pickOne')}
         </p>
       )}
 
@@ -358,7 +356,7 @@ function Step2Niche({ selected, onToggle, onNext, onBack, saving }: Step2Props) 
           loading={saving}
           rightIcon={!saving ? <ArrowRightIcon /> : undefined}
         >
-          {saving ? 'Saving…' : 'Continue'}
+          {saving ? t('ob_saving') : t('ob_continue')}
         </Button>
         <Button
           variant="ghost"
@@ -367,7 +365,7 @@ function Step2Niche({ selected, onToggle, onNext, onBack, saving }: Step2Props) 
           onClick={onBack}
           disabled={saving}
         >
-          Back
+          {t('ob_back')}
         </Button>
       </div>
     </div>
@@ -386,6 +384,7 @@ interface Step3Props {
   onSkip:       () => void
   onBack:       () => void
   saving:       boolean
+  t:            (k: string) => string
 }
 
 function Step3Brand({
@@ -398,6 +397,7 @@ function Step3Brand({
   onSkip,
   onBack,
   saving,
+  t,
 }: Step3Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -433,20 +433,20 @@ function Step3Brand({
     <div className="animate-fade-up flex flex-col gap-6">
       <div className="space-y-1">
         <p className="font-mono text-xs uppercase tracking-widest text-primary opacity-80">
-          Step 3 of 4
+          {t('ob_step3of4')}
         </p>
         <h2 className="font-display text-xl font-bold text-foreground tracking-tight">
-          Set up your brand
+          {t('ob_setupBrand')}
         </h2>
         <p className="font-body text-[--text-secondary] text-sm">
-          Optional — you can always update this in Brand Kit settings.
+          {t('ob_brandOptional')}
         </p>
       </div>
 
       {/* Logo dropzone */}
       <div className="flex flex-col gap-2">
         <label className="font-mono text-xs uppercase tracking-wider text-[--text-secondary]">
-          Logo
+          {t('ob_logo')}
         </label>
 
         {logoPreview ? (
@@ -455,7 +455,7 @@ function Step3Brand({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={logoPreview}
-              alt="Logo preview"
+              alt={t('ob_logoPreview')}
               className="w-14 h-14 object-contain rounded-lg border border-border bg-card"
             />
             <div className="flex-1 min-w-0">
@@ -473,9 +473,9 @@ function Step3Brand({
                 if (fileInputRef.current) fileInputRef.current.value = ''
               }}
               className="shrink-0 text-xs font-mono uppercase tracking-wider text-[--text-muted] hover:text-foreground transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] rounded"
-              aria-label="Remove logo"
+              aria-label={t('ob_remove')}
             >
-              Remove
+              {t('ob_remove')}
             </button>
           </div>
         ) : (
@@ -483,7 +483,7 @@ function Step3Brand({
           <div
             role="button"
             tabIndex={0}
-            aria-label="Upload logo — click or drag and drop"
+            aria-label={t('ob_uploadOrDrag')}
             onClick={() => fileInputRef.current?.click()}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click() }}
             onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
@@ -500,10 +500,10 @@ function Step3Brand({
             <UploadIcon />
             <div className="text-center">
               <p className="font-body text-sm text-foreground">
-                Click to upload or drag &amp; drop
+                {t('ob_uploadOrDrag')}
               </p>
               <p className="font-body text-xs text-[--text-muted] mt-0.5">
-                PNG, SVG or JPG — max 2 MB
+                {t('ob_uploadFormats')}
               </p>
             </div>
           </div>
@@ -526,7 +526,7 @@ function Step3Brand({
           htmlFor="brand-color"
           className="font-mono text-xs uppercase tracking-wider text-[--text-secondary]"
         >
-          Primary brand color
+          {t('ob_brandColor')}
         </label>
         <div className="flex items-center gap-3">
           {/* Native color swatch */}
@@ -596,7 +596,7 @@ function Step3Brand({
           loading={saving}
           rightIcon={!saving ? <ArrowRightIcon /> : undefined}
         >
-          {saving ? 'Saving…' : 'Save & Continue'}
+          {saving ? t('ob_saving') : t('ob_saveAndContinue')}
         </Button>
         <div className="flex items-center gap-2">
           <Button
@@ -606,7 +606,7 @@ function Step3Brand({
             onClick={onBack}
             disabled={saving}
           >
-            Back
+            {t('ob_back')}
           </Button>
           <button
             type="button"
@@ -614,7 +614,7 @@ function Step3Brand({
             disabled={saving}
             className="flex-1 h-9 rounded-xl font-body text-sm text-[--text-muted] hover:text-foreground transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] disabled:opacity-40"
           >
-            Skip for now
+            {t('ob_skipForNow')}
           </button>
         </div>
       </div>
@@ -627,26 +627,28 @@ function Step3Brand({
 interface Step4Props {
   onSelectPlan: (planId: string) => void
   selecting: string | null
+  t: (k: string) => string
 }
 
-function Step4Plan({ onSelectPlan, selecting }: Step4Props) {
+function Step4Plan({ onSelectPlan, selecting, t }: Step4Props) {
+  const plans = useMemo(() => buildPlans(t), [t])
   return (
     <div className="animate-fade-up flex flex-col gap-6">
       <div className="space-y-1 text-center">
         <p className="font-mono text-xs uppercase tracking-widest text-primary opacity-80">
-          Step 4 of 4
+          {t('ob_step4of4')}
         </p>
         <h2 className="font-display text-xl font-bold text-foreground tracking-tight">
-          Choose your plan
+          {t('ob_choosePlan')}
         </h2>
         <p className="font-body text-[--text-secondary] text-sm">
-          Start free — upgrade anytime, cancel anytime.
+          {t('ob_startFree')}
         </p>
       </div>
 
       {/* Plan cards */}
       <div className="flex flex-col gap-3">
-        {PLANS.map((plan) => (
+        {plans.map((plan) => (
           <div
             key={plan.id}
             className={cn(
@@ -688,7 +690,7 @@ function Step4Plan({ onSelectPlan, selecting }: Step4Props) {
                 onClick={() => onSelectPlan(plan.id)}
                 className="shrink-0 mt-0.5"
               >
-                {selecting === plan.id ? 'Loading…' : plan.cta}
+                {selecting === plan.id ? t('ob_loading') : plan.cta}
               </Button>
             </div>
 
@@ -718,12 +720,12 @@ function Step4Plan({ onSelectPlan, selecting }: Step4Props) {
 
       {/* View all plans */}
       <p className="text-center font-body text-xs text-[--text-muted]">
-        Not sure?{' '}
+        {t('ob_notSure')}{' '}
         <a
           href="/pricing"
           className="text-primary hover:text-foreground transition-colors duration-200 underline underline-offset-2"
         >
-          View all plans &amp; features
+          {t('ob_viewAllPlans')}
         </a>
       </p>
     </div>
@@ -735,6 +737,7 @@ function Step4Plan({ onSelectPlan, selecting }: Step4Props) {
 export default function OnboardingPage() {
   const router = useRouter()
   const supabase = createBrowserClient()
+  const { t } = useLanguage()
 
   // ── Global state
   const [step, setStep]           = useState<Step>(1)
@@ -895,7 +898,7 @@ export default function OnboardingPage() {
 
       {/* Progress */}
       <div className="space-y-3">
-        <ProgressBar step={step} />
+        <ProgressBar step={step} t={t} />
         <div className="flex items-center justify-between">
           <StepDots step={step} />
           <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
@@ -910,6 +913,7 @@ export default function OnboardingPage() {
           <Step1Welcome
             firstName={firstName}
             onNext={goNext}
+            t={t}
           />
         )}
 
@@ -920,6 +924,7 @@ export default function OnboardingPage() {
             onNext={handleNicheNext}
             onBack={goBack}
             saving={savingNiche}
+            t={t}
           />
         )}
 
@@ -934,6 +939,7 @@ export default function OnboardingPage() {
             onSkip={goNext}
             onBack={goBack}
             saving={savingBrand}
+            t={t}
           />
         )}
 
@@ -941,19 +947,20 @@ export default function OnboardingPage() {
           <Step4Plan
             onSelectPlan={handleSelectPlan}
             selecting={selectingPlan}
+            t={t}
           />
         )}
       </div>
 
       {/* Footer note */}
       <p className="text-center font-body text-xs text-[--text-muted] pb-4">
-        By continuing, you agree to our{' '}
+        {t('ob_legalAgree')}{' '}
         <a href="/legal/terms" className="underline underline-offset-2 hover:text-foreground transition-colors duration-200">
-          Terms of Service
+          {t('ob_terms')}
         </a>{' '}
-        and{' '}
+        {t('ob_and')}{' '}
         <a href="/legal/privacy" className="underline underline-offset-2 hover:text-foreground transition-colors duration-200">
-          Privacy Policy
+          {t('ob_privacy')}
         </a>
         .
       </p>
