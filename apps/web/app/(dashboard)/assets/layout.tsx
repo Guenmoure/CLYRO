@@ -10,9 +10,12 @@ export default function AssetsLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname()
   const { t } = useLanguage()
 
+  // Audit 16/06/26 — was building "Assets — Avatar" / "Voices" mixed.
+  // Now consistent and short: just the section name on each tab. The
+  // top-of-page h1 already says « Assets ».
   const TABS = [
-    { href: '/assets/avatars', label: t('assets') + ' — ' + t('avatarLabel'), icon: User },
-    { href: '/assets/voices',  label: t('voices'),                             icon: Mic  },
+    { href: '/assets/avatars', label: t('avatarsLabel'), icon: User },
+    { href: '/assets/voices',  label: t('voices'),      icon: Mic  },
   ]
 
   return (
@@ -25,8 +28,9 @@ export default function AssetsLayout({ children }: { children: React.ReactNode }
           </div>
           <h1 className="font-body text-2xl font-bold text-foreground">{t('assets')}</h1>
         </div>
+        {/* Audit 16/06/26 — subtitle used to repeat the title verbatim. */}
         <p className="font-body text-sm text-[--text-muted] mb-4">
-          {t('assets')}
+          {t('assets_subtitle')}
         </p>
 
         {/* Tab navigation */}

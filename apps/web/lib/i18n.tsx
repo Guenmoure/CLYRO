@@ -60,3 +60,22 @@ const DEFAULT_CONTEXT: LanguageContextType = {
 export function useLanguage(): LanguageContextType {
   return useContext(LanguageContext) ?? DEFAULT_CONTEXT
 }
+
+/**
+ * Map our internal Language codes to the BCP-47 locale tag expected by
+ * `Intl` and `toLocaleDateString`. Audit 16/06/26 — several components
+ * hardcoded `'fr-FR'` for dates, so EN users saw « 01 juin » instead of
+ * « Jun 1 ». Use this helper any time you call `.toLocaleDateString(...)`
+ * or `.toLocaleString(...)`.
+ */
+const LOCALE_BY_LANG: Record<Language, string> = {
+  en: 'en-US',
+  fr: 'fr-FR',
+  es: 'es-ES',
+  de: 'de-DE',
+  pt: 'pt-BR',
+}
+
+export function langToLocale(lang: Language): string {
+  return LOCALE_BY_LANG[lang] ?? 'en-US'
+}

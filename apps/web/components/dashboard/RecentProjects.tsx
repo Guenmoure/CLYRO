@@ -8,7 +8,7 @@ import {
   Pencil, Trash2, ExternalLink, Download, Play, FolderOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useLanguage } from '@/lib/i18n'
+import { useLanguage, langToLocale, type Language } from '@/lib/i18n'
 import { RealtimeProjects } from './RealtimeProjects'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { VideoProject } from './ProjectCard'
@@ -34,12 +34,13 @@ const MODULE_LABEL_KEYS: Record<string, string> = {
   brand:    'dash_brandKit',
 }
 
-function formatRelativeDate(dateStr: string, t: (key: string) => string): string {
+function formatRelativeDate(dateStr: string, t: (key: string) => string, lang: Language): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const days  = Math.floor(diff / 86_400_000)
   const hours = Math.floor(diff / 3_600_000)
   const mins  = Math.floor(diff / 60_000)
-  if (days > 30)  return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+  // Audit 16/06/26 — date locale follows the active UI language.
+  if (days > 30)  return new Date(dateStr).toLocaleDateString(langToLocale(lang), { day: 'numeric', month: 'short' })
   if (days > 1)   return `${days} ${t('rp_days_ago')}`
   if (days === 1) return t('rp_yesterday')
   if (hours > 0)  return `${hours}h ${t('rp_ago')}`
@@ -50,7 +51,7 @@ function formatRelativeDate(dateStr: string, t: (key: string) => string): string
 const PROCESSING_STATUSES = new Set(['pending', 'processing', 'storyboard', 'visuals', 'audio', 'assembly'])
 
 export function RecentProjects({ userId, videos: initialVideos }: RecentProjectsProps) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const [tab, setTab] = useState<'recent' | 'drafts'>('recent')
   const [projects, setProjects] = useState<VideoProject[]>(initialVideos)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
@@ -110,6 +111,7 @@ export function RecentProjects({ userId, videos: initialVideos }: RecentProjects
               onMenuToggle={(open) => setMenuOpenId(open ? project.id : null)}
               onDeleted={handleDeleted}
               t={t}
+              lang={lang}
             />
           ))}
         </div>
@@ -164,12 +166,13 @@ function TabButton({ label, count, active, onClick }: {
 
 // ── Project row ────────────────────────────────────────────────────────────────
 
-function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
+function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t, lang }: {
   project: VideoProject
   menuOpen: boolean
   onMenuToggle: (open: boolean) => void
   onDeleted: (id: string) => void
   t: (key: string) => string
+  lang: Language
 }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
@@ -235,7 +238,7 @@ function ProjectRow({ project, menuOpen, onMenuToggle, onDeleted, t }: {
           </span>
           <span className="text-xs text-[--text-muted]">·</span>
           <span className="text-xs font-body text-[--text-muted]">
-            {formatRelativeDate(project.created_at, t)}
+            {formatRelativeDate(project.created_at, t, lang)}
           </span>
           {isProcessing && (
             <>

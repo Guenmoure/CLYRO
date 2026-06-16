@@ -100,6 +100,11 @@ export default function SettingsPage() {
             <p className="font-body text-sm text-[--text-secondary] mt-0.5">
               {t('set_whiteLabelDesc')}
             </p>
+            {/* Audit 16/06/26 — explicit list of what White-label unlocks, so
+                the value prop is clear before the user clicks through. */}
+            <p className="font-body text-xs text-[--text-muted] mt-1.5 italic">
+              {t('set_whitelabel_unlocks')}
+            </p>
           </div>
           <ChevronRight
             size={18}

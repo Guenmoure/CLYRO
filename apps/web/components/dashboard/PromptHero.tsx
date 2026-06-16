@@ -189,8 +189,46 @@ export function PromptHero({ firstName }: PromptHeroProps) {
         </div>
       </div>
 
-      {/* Quick-action chips — below the card, like HeyGen */}
-      <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+      {/* Example prompt chips — audit 16/06/26: the audit asked for « 2-3
+          example prompts under the input ». Clicking one fills the textarea
+          so the user sees concretely what the agent expects. Each example
+          is a translation key so it adapts to the UI language. */}
+      <div className="mt-4 flex flex-col items-center gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
+          {t('home_example_label')}
+        </span>
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          {['home_example_1', 'home_example_2', 'home_example_3'].map((k) => {
+            const example = t(k)
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => {
+                  setValue(example)
+                  // Resize the textarea on next tick so the height grows
+                  // to fit the freshly injected text.
+                  requestAnimationFrame(() => {
+                    autoResize()
+                    taRef.current?.focus()
+                  })
+                }}
+                className={cn(
+                  'shrink-0 max-w-xs text-left flex items-start gap-1.5 px-3 py-2 rounded-2xl',
+                  'border border-dashed border-border/70 bg-card text-[11px] font-body text-[--text-secondary]',
+                  'hover:bg-muted hover:text-foreground hover:border-brand/40 transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                )}
+              >
+                <span className="line-clamp-2 leading-snug">{example}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Category chips — wizard shortcuts (kept below the examples). */}
+      <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
         {CHIPS.map((chip) => (
           <button
             key={chip.id}

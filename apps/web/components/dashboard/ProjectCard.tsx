@@ -13,7 +13,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toast'
-import { useLanguage } from '@/lib/i18n'
+import { useLanguage, langToLocale, type Language } from '@/lib/i18n'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 // Modals only open on user interaction — code-split them out of the initial
@@ -80,12 +80,14 @@ const MODULE_GRADIENTS: Record<string, string> = {
   studio:   'from-rose-900/50 via-pink-800/30 to-slate-900/40',
 }
 
-function formatRelativeDate(dateStr: string, t: (k: string) => string): string {
+function formatRelativeDate(dateStr: string, t: (k: string) => string, lang: Language): string {
   const diff  = Date.now() - new Date(dateStr).getTime()
   const days  = Math.floor(diff / 86_400_000)
   const hours = Math.floor(diff / 3_600_000)
   const mins  = Math.floor(diff / 60_000)
-  if (days > 30)  return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+  // Audit 16/06/26 — was hardcoded `en-US`; now follows the UI locale so
+  // « Jun 1 » becomes « 1 juin » in FR mode (and vice-versa).
+  if (days > 30)  return new Date(dateStr).toLocaleDateString(langToLocale(lang), { day: 'numeric', month: 'short' })
   if (days > 1)   return t('time_daysAgo').replace('{n}', String(days))
   if (days === 1) return t('time_yesterday')
   if (hours > 0)  return t('time_hAgo').replace('{n}', String(hours))
@@ -304,7 +306,7 @@ function ContextMenu({
 // ── ProjectCard ────────────────────────────────────────────────────────────────
 
 export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const router = useRouter()
   const [menuOpen,       setMenuOpen]       = useState(false)
   const [deleting,       setDeleting]       = useState(false)
@@ -521,7 +523,7 @@ export function ProjectCard({ project, onDeleted }: ProjectCardProps) {
             {localTitle ?? t('pc_untitled')}
           </p>
           <p className="font-mono text-xs text-[--text-muted] mt-0.5">
-            {formatRelativeDate(project.created_at, t)} · {moduleLabel}
+            {formatRelativeDate(project.created_at, t, lang)} · {moduleLabel}
           </p>
 
           {/* Error recovery */}

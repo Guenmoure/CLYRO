@@ -7,7 +7,7 @@ import {
   RefreshCw, RotateCcw, Download, Edit3, ArrowLeft, ArrowRight, Sparkles,
   Settings2, Film, Volume2, Play, AlertTriangle, Trash2, Merge, GripVertical,
 } from 'lucide-react'
-import { useLanguage } from '@/lib/i18n'
+import { useLanguage, langToLocale } from '@/lib/i18n'
 import { cn, checkScriptDuration } from '@/lib/utils'
 import { toast } from '@/components/ui/toast'
 import { VideoPlayer } from '@/components/ui/video-player'
@@ -3272,7 +3272,9 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
   initialDraft?: InitialHubDraft | null
   resumeVideoId?: string | null
 }) {
-  const { t } = useLanguage()
+  // Audit 16/06/26 — dates in the sidebar used to be hardcoded `fr-FR`
+  // and rendered « 01 juin » even in EN. Use the live UI locale.
+  const { t, lang } = useLanguage()
   const [sessions, setSessions] = useState<VideoSession[]>(initialVideos)
   const [viewId,   setViewId]   = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
@@ -3358,7 +3360,7 @@ export function FacelessHub({ initialVideos, initialDraft, resumeVideoId }: {
                     viewId === s.id ? 'bg-brand/15 border border-brand/30' : 'hover:bg-muted')}>
                   <p className="font-body text-xs text-foreground truncate">{s.title ?? t('fh_untitled')}</p>
                   <span className="font-mono text-[11px] text-[--text-muted]">
-                    {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                    {new Date(s.created_at).toLocaleDateString(langToLocale(lang), { day: '2-digit', month: 'short' })}
                   </span>
                 </button>
               ))}

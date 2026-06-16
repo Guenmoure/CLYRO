@@ -408,6 +408,24 @@ export const translations = {
     pageStudio: 'Studio',
     pageVoices: 'Voices',
     pageAvatars: 'Avatars',
+    // Audit 16/06/26 batch 3 — Assets page descriptive copy
+    assets_subtitle: 'Your reusable avatars and voices',
+    avatarsLabel: 'Avatars',
+    // Faceless hub "+ New video" — the key used to be referenced by the UI
+    // but never defined in the dictionary, leaking the raw key fh_newVideo.
+    fh_newVideo: 'New video',
+    // Apps hub per-module status badges
+    apps_badge_new: 'New',
+    apps_badge_beta: 'Beta',
+    apps_badge_soon: 'Soon',
+    apps_costHint: '~{n} credits / video',
+    // Dashboard hero — example prompt seeds the textarea on click
+    home_example_label: 'Try one of these:',
+    home_example_1: 'A 30-second video about morning routines that change lives',
+    home_example_2: 'Explain my SaaS in 60 seconds, B2B tone, terracotta brand',
+    home_example_3: 'TikTok-style tutorial: 3 Photoshop shortcuts for beginners',
+    // Settings — White-label section tooltip
+    set_whitelabel_unlocks: 'Removes the CLYRO watermark from your exports and replaces it with your own brand on shared pages.',
 
     // Dashboard
     dashboardHi: 'Hi',
@@ -3682,6 +3700,23 @@ export const translations = {
     pageStudio: 'Studio',
     pageVoices: 'Voix',
     pageAvatars: 'Avatars',
+    // Audit 16/06/26 batch 3 — page Assets, copy descriptive
+    assets_subtitle: 'Tes avatars et voix réutilisables',
+    avatarsLabel: 'Avatars',
+    // Faceless hub « + Nouvelle vidéo » — clé référencée mais jamais définie
+    fh_newVideo: 'Nouvelle vidéo',
+    // Hub Apps — badges d'état par module
+    apps_badge_new: 'Nouveau',
+    apps_badge_beta: 'Beta',
+    apps_badge_soon: 'Bientôt',
+    apps_costHint: '~{n} crédits / vidéo',
+    // Hero dashboard — exemples de prompts qui remplissent le textarea
+    home_example_label: 'Essaie :',
+    home_example_1: 'Une vidéo de 30s sur les routines du matin qui changent la vie',
+    home_example_2: 'Explique mon SaaS en 60s, ton B2B, brand terracotta',
+    home_example_3: 'Tuto façon TikTok : 3 raccourcis Photoshop pour débutants',
+    // Settings — tooltip White-label
+    set_whitelabel_unlocks: 'Retire le watermark CLYRO de tes exports et remplace-le par ta propre marque sur les pages partagées.',
 
     // Dashboard
     dashboardHi: 'Bonjour',
