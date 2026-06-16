@@ -1,4 +1,4 @@
-import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
@@ -7,22 +7,11 @@ const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
 /**
  * Client Supabase pour les composants React (browser-side).
- * Utilise @supabase/ssr qui gère la session dans les cookies du navigateur.
- *
- * Guard: si les env vars NEXT_PUBLIC_SUPABASE_* sont absentes (ex: Vercel sans
- * env configurées), on retourne un stub avec des URLs factices pour éviter un
- * crash SSR. Les appels auth retournent des sessions vides, ce qui est le
- * comportement attendu sans env valides.
+ * Utilise @supabase/auth-helpers-nextjs pour partager le même format de
+ * cookies que le middleware et les route handlers (auth-helpers-shared).
  */
 export function createBrowserClient() {
-  if (!SUPABASE_URL || !SUPABASE_ANON) {
-    // Stub silencieux — empêche le crash SSR quand les env vars sont absentes.
-    return createSSRBrowserClient<Database>(
-      'https://placeholder.supabase.co',
-      'placeholder-anon-key',
-    )
-  }
-  return createSSRBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON)
+  return createClientComponentClient<Database>()
 }
 
 /**
