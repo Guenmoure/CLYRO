@@ -41,6 +41,10 @@ export interface BalanceSnapshot {
   monthly_credits:         number
   plan:                    PlanId
   subscription_renewed_at: string | null
+  /** Operational override — true for test / staging / support accounts.
+   *  When true the credit service short-circuits `deductCredits()` to a
+   *  no-op. See migration 20260616000000_profile_internal_unlimited.sql. */
+  internal_unlimited:      boolean
 }
 
 /**
@@ -50,7 +54,7 @@ export interface BalanceSnapshot {
 export async function getBalance(userId: string): Promise<BalanceSnapshot | null> {
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('credits, monthly_credits, plan, subscription_renewed_at')
+    .select('credits, monthly_credits, plan, subscription_renewed_at, internal_unlimited')
     .eq('id', userId)
     .maybeSingle()
 
@@ -65,6 +69,7 @@ export async function getBalance(userId: string): Promise<BalanceSnapshot | null
     monthly_credits:         data.monthly_credits as number,
     plan:                    data.plan as PlanId,
     subscription_renewed_at: (data.subscription_renewed_at as string | null) ?? null,
+    internal_unlimited:      (data.internal_unlimited as boolean | null) ?? false,
   }
 }
 
@@ -102,7 +107,15 @@ export async function deductCredits(
   if (!balance) {
     throw new Error(`deductCredits: profile ${userId} not found`)
   }
-  if (isUnlimitedPlan(balance.plan)) {
+  // Either an explicit unlimited plan OR the operational
+  // `internal_unlimited` flag (set via SQL on test / support / enterprise
+  // accounts) short-circuits the deduction. We still log so the audit
+  // trail shows the action; we just don't touch the ledger.
+  if (isUnlimitedPlan(balance.plan) || balance.internal_unlimited) {
+    logger.info(
+      { userId, amount, source, reason: balance.internal_unlimited ? 'internal_unlimited' : 'plan' },
+      'Credit deduction skipped — unlimited account',
+    )
     return balance.credits
   }
 
