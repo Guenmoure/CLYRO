@@ -1754,6 +1754,11 @@ export const translations = {
     cp_nlCreateHint: 'Sends your text to the Studio script editor.',
     // ── Studio scenes-not-ready special case: credits exhausted (W1) ──────
     st_scenesNotReadyNoCredits: 'You\'re out of credits — none of your scenes have been generated. Top up to start production.',
+    // Audit 16/06/26 — top-bar progress labels (#2 batch). Replace the
+    // earlier vague "rendering" pill with a concrete X/Y counter.
+    st_progress_analyzing: 'Splitting script…',
+    st_progress_generating: 'Generating scenes — {done}/{total}',
+    st_progress_rendering:  'Rendering final — {done}/{total}',
 
     // ── Studio HyperFrames enrichment (sn_hf_) ────────────────────────────
     sn_hf_section_title: 'HyperFrames',
@@ -5064,6 +5069,10 @@ export const translations = {
     cp_nlCreateHint: 'Envoie ton texte directement à l\'éditeur de script du Studio.',
     // ── Studio scènes non prêtes — cas crédits épuisés (W1) ──────────────
     st_scenesNotReadyNoCredits: 'Plus de crédits — aucune scène n\'a été générée. Recharge ton solde pour lancer la production.',
+    // Audit 16/06/26 — libellés de progression top bar (#2 batch).
+    st_progress_analyzing: 'Découpage du script…',
+    st_progress_generating: 'Génération des scènes — {done}/{total}',
+    st_progress_rendering:  'Rendu final — {done}/{total}',
 
     // ── Studio TopBar (st_) ───────────────────────────────────────────────
     st_backToDashboard: 'Retour au tableau de bord',

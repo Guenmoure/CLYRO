@@ -36,7 +36,26 @@ export function StudioTopBar({
   }
 
   const meta = STATUS_META[status]
-  const showProgress = (status === 'generating' || status === 'rendering') && scenesTotal && scenesDone !== undefined
+  // Audit 16/06/26 — show the bar across the full active lifecycle, not
+  // just `generating` + `rendering`. During `analyzing` Claude is still
+  // splitting the script so there's nothing to count yet — we render the
+  // bar in indeterminate mode so the user sees motion instead of dead air.
+  const isAnalyzing  = status === 'analyzing'
+  const isGenerating = status === 'generating'
+  const isRendering  = status === 'rendering'
+  const showProgress = (isAnalyzing || isGenerating || isRendering)
+    && (isAnalyzing || (scenesTotal !== undefined && scenesDone !== undefined))
+  const pct = isAnalyzing
+    ? null
+    : Math.round((scenesDone! / Math.max(scenesTotal!, 1)) * 100)
+
+  // Concrete label so the bar is self-explanatory — fixes the audit's
+  // « plutôt qu'un toast générique » complaint.
+  const progressLabel =
+    isAnalyzing  ? t('st_progress_analyzing') :
+    isGenerating ? t('st_progress_generating').replace('{done}', String(scenesDone)).replace('{total}', String(scenesTotal)) :
+    isRendering  ? t('st_progress_rendering').replace('{done}', String(scenesDone)).replace('{total}', String(scenesTotal)) :
+    ''
   return (
     <header className="h-12 shrink-0 bg-card border-b border-border/60 px-4 flex items-center justify-between gap-4">
       {/* Left — back + title + status */}
@@ -63,18 +82,35 @@ export function StudioTopBar({
         <span className="hidden font-mono text-[9px] text-[--text-muted]">{projectId}</span>
       </div>
 
-      {/* Center — progress if generating */}
+      {/* Center — progress: label + bar (determinate during generation /
+          rendering, indeterminate during analyze). aria-live so screen
+          readers announce updates. */}
       {showProgress && (
-        <div className="hidden md:flex items-center gap-2 flex-1 max-w-xs">
-          <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-brand to-violet-500 transition-all"
-              style={{ width: `${Math.round((scenesDone! / scenesTotal!) * 100)}%` }}
-            />
-          </div>
-          <span className="font-mono text-[10px] text-[--text-secondary] shrink-0">
-            {scenesDone}/{scenesTotal}
+        <div
+          className="hidden md:flex items-center gap-3 flex-1 max-w-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="font-mono text-[10px] uppercase tracking-wider text-[--text-secondary] shrink-0">
+            {progressLabel}
           </span>
+          <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+            {isAnalyzing ? (
+              // Indeterminate state — full-width gradient with a pulse so
+              // there's motion without needing a custom keyframe.
+              <div className="h-full w-full rounded-full bg-gradient-to-r from-brand to-violet-500 animate-pulse" />
+            ) : (
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-brand to-violet-500 transition-all"
+                style={{ width: `${pct}%` }}
+              />
+            )}
+          </div>
+          {pct !== null && (
+            <span className="font-mono text-[10px] text-[--text-secondary] shrink-0 w-10 text-right">
+              {pct}%
+            </span>
+          )}
         </div>
       )}
 
