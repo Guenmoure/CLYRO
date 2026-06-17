@@ -1111,3 +1111,31 @@ export async function renderStudioFinal(projectId: string, format?: '16_9' | '9_
   })
 }
 
+// ── AI Writing helper — Wave 3 of the 16/06/26 UI/UX audit ─────────────────
+
+export type PolishGoal = 'tighten' | 'punchier' | 'simpler'
+
+export interface PolishScriptPayload {
+  script:    string
+  language?: 'en' | 'fr'
+  goal?:     PolishGoal
+}
+
+export interface PolishScriptResult {
+  polished_script: string
+  original_words:  number
+  new_words:       number
+}
+
+/**
+ * Polish a script via Claude. Costs 1 credit per call (server-side
+ * deduction, refunded on failure). Audit 16/06/26 Wave 3 — « ajouter
+ * une aide à la rédaction par IA ».
+ */
+export async function polishScript(payload: PolishScriptPayload): Promise<PolishScriptResult> {
+  return apiFetch<PolishScriptResult>('/api/v1/ai/polish-script', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+

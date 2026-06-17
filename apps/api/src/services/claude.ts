@@ -1547,6 +1547,91 @@ export interface CondenseResult {
  * Condense un script trop long via Claude pour tenir dans la durée cible.
  * Préserve les messages clés, réduit le volume de mots.
  */
+// ── Polish script — Audit 16/06/26 Wave 3 « Write with AI » ─────────────────
+
+/**
+ * Goal of the polish pass — drives the prompt's emphasis:
+ *   • tighten   — same meaning, fewer words, cleaner sentences
+ *   • punchier  — same meaning, more energetic hook + verbs
+ *   • simpler   — same meaning, lower vocabulary, shorter sentences
+ *
+ * Always preserves the user's intent, CTA, and key concrete facts. Never
+ * adds new claims — that's a strict safety constraint so the helper
+ * doesn't hallucinate metrics or names.
+ */
+export type PolishGoal = 'tighten' | 'punchier' | 'simpler'
+
+export interface PolishResult {
+  polished_script: string
+  original_words:  number
+  new_words:       number
+}
+
+export async function polishScript(
+  script: string,
+  language: 'en' | 'fr',
+  goal: PolishGoal,
+): Promise<PolishResult> {
+  const originalWords = script.trim().split(/\s+/).filter(Boolean).length
+
+  // Bilingual prompts — Claude does best when the editorial instructions
+  // are in the same language as the target output.
+  const systemEn = 'You are a senior copywriter polishing video voiceover scripts. You reply ONLY with the polished script, no quotes, no markdown, no explanation. You preserve the speaker\'s intent, CTA, and every concrete fact (names, numbers, URLs). You never add information that wasn\'t in the original.'
+  const systemFr = 'Tu es un copywriter sénior qui polit des scripts de voix off vidéo. Tu réponds UNIQUEMENT avec le script poli, sans guillemets, sans markdown, sans explication. Tu préserves l\'intention du speaker, le CTA et chaque fait concret (noms, chiffres, URLs). Tu n\'ajoutes jamais d\'information absente du texte d\'origine.'
+
+  const goalInstrEn: Record<PolishGoal, string> = {
+    tighten:  'Tighten the script: same meaning, fewer words, cleaner sentence flow. Aim for ~15–25% shorter.',
+    punchier: 'Make the script punchier: stronger hook in the first 5 seconds, more active verbs, shorter sentences. Same meaning.',
+    simpler:  'Simplify the script: shorter sentences, easier vocabulary, accessible to a non-expert reader. Same meaning.',
+  }
+  const goalInstrFr: Record<PolishGoal, string> = {
+    tighten:  'Resserre le script : même sens, moins de mots, phrases plus nettes. Vise ~15–25 % plus court.',
+    punchier: 'Rends le script plus percutant : hook plus fort dans les 5 premières secondes, verbes plus actifs, phrases plus courtes. Même sens.',
+    simpler:  'Simplifie le script : phrases plus courtes, vocabulaire plus accessible, lisible par un non-expert. Même sens.',
+  }
+
+  const system = language === 'fr' ? systemFr : systemEn
+  const instruction = (language === 'fr' ? goalInstrFr : goalInstrEn)[goal]
+
+  const userBody = language === 'fr'
+    ? `${instruction}
+
+Script original (${originalWords} mots) :
+"""
+${script}
+"""
+
+Réponds uniquement avec le script poli.`
+    : `${instruction}
+
+Original script (${originalWords} words):
+"""
+${script}
+"""
+
+Reply with the polished script only.`
+
+  const message = await client.messages.create({
+    model: MODEL,
+    max_tokens: 2048,
+    system,
+    messages: [{ role: 'user', content: userBody }],
+  })
+
+  const content = message.content[0]
+  if (content.type !== 'text') throw new Error('Unexpected response from Claude polish')
+
+  const polished = content.text.trim()
+  const newWords = polished.split(/\s+/).filter(Boolean).length
+
+  logger.info(
+    { originalWords, newWords, goal, language },
+    'Script polished by Claude',
+  )
+
+  return { polished_script: polished, original_words: originalWords, new_words: newWords }
+}
+
 export async function condenseScript(
   script: string,
   targetDuration: string,

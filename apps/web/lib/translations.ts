@@ -1773,6 +1773,17 @@ export const translations = {
     stgal_toggle_show: 'Browse templates',
     stgal_toggle_hide: 'Hide templates',
     stgal_applied:    'Template applied — edit the placeholders in [brackets].',
+    // Audit 16/06/26 Wave 3 — AI writing helper (Polish script)
+    polish_button:        'Polish with AI',
+    polish_running:       'Polishing…',
+    polish_cost_hint:     '1 credit / polish',
+    polish_goal_tighten:  'Tighter',
+    polish_goal_punchier: 'Punchier',
+    polish_goal_simpler:  'Simpler',
+    polish_success:       'Script polished — {old} → {new} words. Click Undo to revert.',
+    polish_undo:          'Undo',
+    polish_failed:        'Polish failed — try again in a moment.',
+    polish_too_short:     'Write at least 20 words before polishing.',
 
     // ── Studio HyperFrames enrichment (sn_hf_) ────────────────────────────
     sn_hf_section_title: 'HyperFrames',
@@ -5101,6 +5112,17 @@ export const translations = {
     stgal_toggle_show: 'Parcourir les templates',
     stgal_toggle_hide: 'Masquer les templates',
     stgal_applied:    'Template appliqué — édite les placeholders entre [crochets].',
+    // Audit 16/06/26 Wave 3 — assistant rédaction IA (Polish script)
+    polish_button:        'Polir avec l\'IA',
+    polish_running:       'Polissage…',
+    polish_cost_hint:     '1 crédit / polish',
+    polish_goal_tighten:  'Resserrer',
+    polish_goal_punchier: 'Punchier',
+    polish_goal_simpler:  'Simplifier',
+    polish_success:       'Script poli — {old} → {new} mots. Clique Annuler pour revenir.',
+    polish_undo:          'Annuler',
+    polish_failed:        'Polish raté — réessaie dans un instant.',
+    polish_too_short:     'Écris au moins 20 mots avant de polir.',
 
     // ── Studio TopBar (st_) ───────────────────────────────────────────────
     st_backToDashboard: 'Retour au tableau de bord',

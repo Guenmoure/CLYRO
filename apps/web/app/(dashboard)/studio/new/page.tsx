@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
-import { analyzeStudio, getStudioAvatars, getPublicVoices, type StudioAvatar, type ClyroVoice } from '@/lib/api'
+import { analyzeStudio, getStudioAvatars, getPublicVoices, polishScript, type StudioAvatar, type ClyroVoice, type PolishGoal, ApiError } from '@/lib/api'
 import { VoicePickerModal } from '@/components/creation/VoicePickerModal'
 import { HyperFramesSection } from '@/components/creation/HyperFramesSection'
 import { StudioTemplateGallery } from '@/components/studio/StudioTemplateGallery'
@@ -66,6 +66,12 @@ function StudioNewPageInner() {
   // and the « selected » ring on the matching card.
   const [templatesOpen, setTemplatesOpen] = useState(false)
   const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(null)
+  // Audit 16/06/26 Wave 3 — AI writing helper. We keep the previous text
+  // so the user can Undo if Claude's polish is worse than the original.
+  // `polishingGoal` is the active goal mid-flight so we can grey-out the
+  // right pill while the call is in progress.
+  const [polishing, setPolishing] = useState<PolishGoal | null>(null)
+  const [scriptBeforePolish, setScriptBeforePolish] = useState<string | null>(null)
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [language, setLanguage] = useState('fr')
   const [analyzing, setAnalyzing] = useState(false)
@@ -358,6 +364,10 @@ function StudioNewPageInner() {
                 // User edited — drop the « applied » marker so the card
                 // ring doesn't lie about the current state.
                 if (appliedTemplateId) setAppliedTemplateId(null)
+                // Same for the polish undo buffer — once the user edits
+                // after a polish, the « before » version is no longer the
+                // right thing to revert to.
+                if (scriptBeforePolish !== null) setScriptBeforePolish(null)
               }}
               rows={12}
               placeholder={t('scriptPlaceholder')}
@@ -368,6 +378,86 @@ function StudioNewPageInner() {
                 <Check size={11} /> {t('stgal_applied')}
               </p>
             )}
+
+            {/* Audit 16/06/26 Wave 3 — AI Polish row. Three goals (tighten,
+                punchier, simpler) + cost hint. Disabled while a call is in
+                flight or the script is too short. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
+                {t('polish_button')}
+              </span>
+              {(['tighten', 'punchier', 'simpler'] as const).map((goal) => {
+                const active   = polishing === goal
+                const otherBusy = polishing !== null && polishing !== goal
+                const disabled = !!polishing || script.trim().split(/\s+/).filter(Boolean).length < 20
+                return (
+                  <button
+                    key={goal}
+                    type="button"
+                    disabled={disabled}
+                    onClick={async () => {
+                      const wordCount = script.trim().split(/\s+/).filter(Boolean).length
+                      if (wordCount < 20) {
+                        toast.error(t('polish_too_short'))
+                        return
+                      }
+                      setPolishing(goal)
+                      try {
+                        const result = await polishScript({
+                          script,
+                          language: language === 'fr' ? 'fr' : 'en',
+                          goal,
+                        })
+                        // Stash the previous text so the user can Undo.
+                        setScriptBeforePolish(script)
+                        setScript(result.polished_script)
+                        if (appliedTemplateId) setAppliedTemplateId(null)
+                        toast.success(
+                          t('polish_success')
+                            .replace('{old}', String(result.original_words))
+                            .replace('{new}', String(result.new_words)),
+                        )
+                      } catch (err) {
+                        if (err instanceof ApiError && err.code === 'INSUFFICIENT_CREDITS') {
+                          toast.error(t('st_insufficientCredits'))
+                        } else {
+                          toast.error(t('polish_failed'))
+                        }
+                      } finally {
+                        setPolishing(null)
+                      }
+                    }}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider border transition-colors',
+                      active
+                        ? 'bg-brand/10 border-brand/50 text-primary'
+                        : 'bg-card border-border text-[--text-muted] hover:text-foreground hover:border-brand/40',
+                      (disabled || otherBusy) && 'opacity-40 cursor-not-allowed',
+                    )}
+                  >
+                    {active ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
+                    {t(`polish_goal_${goal}`)}
+                  </button>
+                )
+              })}
+              {scriptBeforePolish !== null && !polishing && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScript(scriptBeforePolish)
+                    setScriptBeforePolish(null)
+                  }}
+                  className="ml-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider border border-border bg-card text-[--text-muted] hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft size={11} />
+                  {t('polish_undo')}
+                </button>
+              )}
+              <span className="font-mono text-[10px] text-[--text-muted] ml-1">
+                {t('polish_cost_hint')}
+              </span>
+            </div>
+
             <div className="flex items-center justify-between">
               <p className="font-mono text-xs text-[--text-muted]">
                 {words} {t('wordsCount')} · ~{estimatedMin} {t('minEstimated')}
