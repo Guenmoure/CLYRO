@@ -263,11 +263,15 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
       }
     }
 
+    // Audit 16/06/26 — also set the TOP-LEVEL thumbnail_url column so the
+    // dashboard ProjectCard can render a real preview instead of the
+    // gradient fallback.
     await supabaseAdmin
       .from('videos')
       .update({
-        status:     'done',
-        output_url: outputUrl,
+        status:        'done',
+        output_url:    outputUrl,
+        thumbnail_url: thumbnailUrl ?? null,
         metadata: {
           progress:      100,
           scenes,

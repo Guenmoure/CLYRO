@@ -267,11 +267,17 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
       }
     }
 
+    // Audit 16/06/26 — `thumbnail_url` is the TOP-LEVEL column the
+    // dashboard ProjectCard reads. We were previously stashing the URL in
+    // `metadata.thumbnail_url` only, so the gallery showed a gray gradient
+    // even when the thumbnail had been generated and uploaded. Set both
+    // (top-level for the UI, metadata for the audit trail).
     await supabaseAdmin
       .from('videos')
       .update({
         status: 'done',
         output_url: outputUrl,
+        thumbnail_url: thumbnailUrl ?? null,
         metadata: {
           progress: 100,
           scenes: scenesWithImages,

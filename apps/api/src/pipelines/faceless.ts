@@ -10,7 +10,7 @@ import { detectLanguage } from '../lib/detect-language'
 import { refundCredits } from '../services/credits'
 import { generateSceneImages, generateSceneVideoAuto, uploadFalUrlToStorage } from '../services/fal'
 import { generateVoiceoverScenesWithTimestamps } from '../services/elevenlabs'
-import { assembleVideo, assembleVideoFromVideoClips, generateKaraokeFromWords, renderKenBurnsFFmpeg } from '../services/ffmpeg'
+import { assembleVideo, assembleVideoFromVideoClips, extractFirstFrameThumbnail, generateKaraokeFromWords, renderKenBurnsFFmpeg } from '../services/ffmpeg'
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
 import { applyAntiHallucination } from '@clyro/shared'
@@ -772,9 +772,36 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
       throw new Error('Failed to create signed URL after 3 attempts — storage_path saved for manual recovery')
     }
 
+    // Audit 16/06/26 — extract the first frame, upload as thumbnail, set
+    // top-level thumbnail_url so the dashboard shows a real preview instead
+    // of the gray gradient fallback. Best-effort: if any step fails we leave
+    // the column null and the UI degrades to the existing gradient.
+    let thumbnailUrl: string | null = null
+    const thumbBuffer = await extractFirstFrameThumbnail(outputUrl)
+    if (thumbBuffer) {
+      const thumbPath = `${userId}/${videoId}/thumbnail.jpg`
+      const { error: thumbErr } = await supabaseAdmin.storage
+        .from('videos')
+        .upload(thumbPath, thumbBuffer, { contentType: 'image/jpeg', upsert: true })
+      if (!thumbErr) {
+        const { data: thumbSigned } = await supabaseAdmin.storage
+          .from('videos')
+          .createSignedUrl(thumbPath, 60 * 60 * 24 * 365)
+        thumbnailUrl = thumbSigned?.signedUrl ?? null
+        logger.info({ videoId, thumbnailUrl }, 'Faceless: thumbnail extracted + uploaded')
+      } else {
+        logger.warn({ thumbErr, videoId }, 'Faceless: thumbnail upload failed')
+      }
+    }
+
     await supabaseAdmin
       .from('videos')
-      .update({ status: 'done', output_url: outputUrl, metadata: { progress: 100, scenes: scenesWithImages, storage_path: storagePath } })
+      .update({
+        status: 'done',
+        output_url: outputUrl,
+        thumbnail_url: thumbnailUrl,
+        metadata: { progress: 100, scenes: scenesWithImages, storage_path: storagePath },
+      })
       .eq('id', videoId)
 
     logger.info({ videoId, outputUrl }, 'Faceless pipeline completed')
