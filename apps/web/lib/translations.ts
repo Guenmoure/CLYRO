@@ -1759,6 +1759,20 @@ export const translations = {
     st_progress_analyzing: 'Splitting script…',
     st_progress_generating: 'Generating scenes — {done}/{total}',
     st_progress_rendering:  'Rendering final — {done}/{total}',
+    // Audit 16/06/26 Wave 3 — Studio template gallery
+    stgal_eyebrow:   'Quick start',
+    stgal_title:     'Start from a template',
+    stgal_subtitle:  'Pick a proven script structure — we\'ll fill in the textarea so you only need to tweak the placeholders.',
+    stgal_cat_all:           'All',
+    stgal_cat_pitch:         'Pitch',
+    stgal_cat_demo:          'Demo',
+    stgal_cat_tutorial:      'Tutorial',
+    stgal_cat_testimonial:   'Testimonial',
+    stgal_cat_social:        'Social',
+    stgal_cat_professional:  'Professional',
+    stgal_toggle_show: 'Browse templates',
+    stgal_toggle_hide: 'Hide templates',
+    stgal_applied:    'Template applied — edit the placeholders in [brackets].',
 
     // ── Studio HyperFrames enrichment (sn_hf_) ────────────────────────────
     sn_hf_section_title: 'HyperFrames',
@@ -5073,6 +5087,20 @@ export const translations = {
     st_progress_analyzing: 'Découpage du script…',
     st_progress_generating: 'Génération des scènes — {done}/{total}',
     st_progress_rendering:  'Rendu final — {done}/{total}',
+    // Audit 16/06/26 Wave 3 — galerie de templates Studio
+    stgal_eyebrow:   'Démarrage rapide',
+    stgal_title:     'Pars d\'un template',
+    stgal_subtitle:  'Choisis une structure de script éprouvée — on remplit le textarea, tu n\'as plus qu\'à customiser les placeholders.',
+    stgal_cat_all:           'Tous',
+    stgal_cat_pitch:         'Pitch',
+    stgal_cat_demo:          'Démo',
+    stgal_cat_tutorial:      'Tuto',
+    stgal_cat_testimonial:   'Témoignage',
+    stgal_cat_social:        'Social',
+    stgal_cat_professional:  'Pro',
+    stgal_toggle_show: 'Parcourir les templates',
+    stgal_toggle_hide: 'Masquer les templates',
+    stgal_applied:    'Template appliqué — édite les placeholders entre [crochets].',
 
     // ── Studio TopBar (st_) ───────────────────────────────────────────────
     st_backToDashboard: 'Retour au tableau de bord',

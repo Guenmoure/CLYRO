@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils'
 import { analyzeStudio, getStudioAvatars, getPublicVoices, type StudioAvatar, type ClyroVoice } from '@/lib/api'
 import { VoicePickerModal } from '@/components/creation/VoicePickerModal'
 import { HyperFramesSection } from '@/components/creation/HyperFramesSection'
+import { StudioTemplateGallery } from '@/components/studio/StudioTemplateGallery'
+import { getStudioTemplateText, type StudioTemplate } from '@/lib/studio-templates'
 import { groupAvatarsByName, type AvatarGroup } from '@/lib/avatar-grouping'
 import { useDraftSave } from '@/hooks/use-draft-save'
 import { useLanguage } from '@/lib/i18n'
@@ -58,6 +60,12 @@ function StudioNewPageInner() {
   const [mode, setMode] = useState<Mode>('script')
   const [title, setTitle] = useState('')
   const [script, setScript] = useState(initialScript)
+  // Audit 16/06/26 Wave 3 — Studio template gallery state. Closed by
+  // default; the user opens the section explicitly so it doesn't crowd
+  // the form. `appliedTemplateId` drives the « Template applied » hint
+  // and the « selected » ring on the matching card.
+  const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(null)
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [language, setLanguage] = useState('fr')
   const [analyzing, setAnalyzing] = useState(false)
@@ -303,18 +311,63 @@ function StudioNewPageInner() {
 
         {/* Content area */}
         {mode === 'script' ? (
-          <div className="space-y-2">
-            <label htmlFor="script" className="font-body text-sm font-semibold text-foreground">
-              {t('yourScript')}
-            </label>
+          <div className="space-y-3">
+            {/* Audit 16/06/26 Wave 3 — Template gallery toggle. Closed by
+                default; opening reveals the curated 8-card gallery so the
+                user can pick a script structure as a starting point.
+                Clicking a card prefills the textarea + language. */}
+            <div className="flex items-center justify-between">
+              <label htmlFor="script" className="font-body text-sm font-semibold text-foreground">
+                {t('yourScript')}
+              </label>
+              <button
+                type="button"
+                onClick={() => setTemplatesOpen((v) => !v)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider border transition-colors',
+                  templatesOpen
+                    ? 'bg-brand/10 border-brand/40 text-primary'
+                    : 'bg-card border-border text-[--text-muted] hover:text-foreground hover:border-brand/40',
+                )}
+                aria-expanded={templatesOpen}
+              >
+                <Sparkles size={11} />
+                {templatesOpen ? t('stgal_toggle_hide') : t('stgal_toggle_show')}
+              </button>
+            </div>
+            {templatesOpen && (
+              <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-4">
+                <StudioTemplateGallery
+                  selectedId={appliedTemplateId}
+                  onSelect={(tpl: StudioTemplate) => {
+                    setScript(getStudioTemplateText(tpl, 'script', language === 'fr' ? 'fr' : 'en'))
+                    // Sync the narration language to the template's hint so
+                    // the user doesn't end up reading a FR script in EN voice.
+                    setLanguage(tpl.language_hint)
+                    setAppliedTemplateId(tpl.id)
+                    setTemplatesOpen(false)
+                  }}
+                />
+              </div>
+            )}
             <textarea
               id="script"
               value={script}
-              onChange={(e) => setScript(e.target.value)}
+              onChange={(e) => {
+                setScript(e.target.value)
+                // User edited — drop the « applied » marker so the card
+                // ring doesn't lie about the current state.
+                if (appliedTemplateId) setAppliedTemplateId(null)
+              }}
               rows={12}
               placeholder={t('scriptPlaceholder')}
               className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-body text-foreground placeholder:text-[--text-secondary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-primary transition-colors resize-y"
             />
+            {appliedTemplateId && (
+              <p className="font-mono text-[11px] text-primary flex items-center gap-1">
+                <Check size={11} /> {t('stgal_applied')}
+              </p>
+            )}
             <div className="flex items-center justify-between">
               <p className="font-mono text-xs text-[--text-muted]">
                 {words} {t('wordsCount')} · ~{estimatedMin} {t('minEstimated')}
