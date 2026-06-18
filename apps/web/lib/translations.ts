@@ -1784,6 +1784,16 @@ export const translations = {
     polish_undo:          'Undo',
     polish_failed:        'Polish failed — try again in a moment.',
     polish_too_short:     'Write at least 20 words before polishing.',
+    // Audit 18/06/26 — Faceless leftover localisation + Unlimited badge
+    fh_imagesRemaining:        '{n} image(s) remaining',
+    fh_preview_cinematic_title:'CINEMATIC',
+    fh_preview_cinematic_sub:  'Lighting — 8K',
+    fh_preview_stockvo_title:  'DOCUMENTARY',
+    fh_preview_stockvo_sub:    'Stock + VO',
+    fh_styles_available:       'Available styles',
+    fh_badge_new:              'NEW',
+    cb_unlimited:              'Unlimited',
+    cb_unlimited_hint:         'No credit limit on this account.',
 
     // ── Studio HyperFrames enrichment (sn_hf_) ────────────────────────────
     sn_hf_section_title: 'HyperFrames',
@@ -5123,6 +5133,16 @@ export const translations = {
     polish_undo:          'Annuler',
     polish_failed:        'Polish raté — réessaie dans un instant.',
     polish_too_short:     'Écris au moins 20 mots avant de polir.',
+    // Audit 18/06/26 — fuites de localisation Faceless + badge Unlimited
+    fh_imagesRemaining:        '{n} image(s) restante(s)',
+    fh_preview_cinematic_title:'CINÉMATIQUE',
+    fh_preview_cinematic_sub:  'Lumière — 8K',
+    fh_preview_stockvo_title:  'DOCUMENTAIRE',
+    fh_preview_stockvo_sub:    'Stock + Voix',
+    fh_styles_available:       'Styles disponibles',
+    fh_badge_new:              'NOUVEAU',
+    cb_unlimited:              'Illimité',
+    cb_unlimited_hint:         'Aucune limite de crédits sur ce compte.',
 
     // ── Studio TopBar (st_) ───────────────────────────────────────────────
     st_backToDashboard: 'Retour au tableau de bord',

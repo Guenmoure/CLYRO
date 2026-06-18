@@ -87,13 +87,35 @@ async function runWithConcurrency<T>(
 
 // ── Template catalogue ─────────────────────────────────────────────────────────
 
+// Audit 18/06/26 — was carrying hardcoded FR `label` + `desc` strings at
+// module load time, so the picker leaked French in EN mode. We now keep a
+// neutral shape and resolve `label`/`desc` per render via the bilingual
+// FACELESS_STYLES_META. `badge` is normalised to a kind so we can
+// translate « Nouveau » → « New » and keep year tags untouched.
 interface StyleTemplate {
   id: FacelessStyle
-  label: string
-  desc: string
   category: TemplateCategory
-  badge?: string
+  badge?: 'new' | '2026'
   preview: React.FC<{ selected: boolean }>
+}
+
+/** Resolve a localised label for a style id. Uses FACELESS_STYLES_META as
+ *  source of truth; falls back to the pipeline id if the meta entry is
+ *  missing (shouldn't happen — typed by ContentTemplateStyle). */
+function getStyleLabel(id: FacelessStyle, lang: 'en' | 'fr'): string {
+  // FacelessStyle is a superset of ContentTemplateStyle (the META key
+  // type); the indexing cast is safe because we runtime-check meta below.
+  const meta = (FACELESS_STYLES_META as Record<string, { label_en: string; label_fr: string; description_en: string; description_fr: string }>)[id]
+  if (!meta) return id
+  return lang === 'fr' ? meta.label_fr : meta.label_en
+}
+
+/** Short bilingual description per style. Falls back to FACELESS_STYLES_META's
+ *  long description (truncated) if no curated short copy exists. */
+function getStyleShortDesc(id: FacelessStyle, lang: 'en' | 'fr'): string {
+  const meta = (FACELESS_STYLES_META as Record<string, { label_en: string; label_fr: string; description_en: string; description_fr: string }>)[id]
+  if (!meta) return ''
+  return lang === 'fr' ? meta.description_fr : meta.description_en
 }
 
 function getTemplateCategories(t: (k: string) => string): Array<{ id: TemplateCategory; label: string }> {
@@ -107,6 +129,9 @@ function getTemplateCategories(t: (k: string) => string): Array<{ id: TemplateCa
 }
 
 function PreviewCinematic({ selected: _s }: { selected: boolean }) {
+  // Audit 18/06/26 — preview labels used to be hardcoded FR (« MISE EN
+  // SCÈNE », « DOCUMENTAIRE »). Now follow the active UI language.
+  const { t: previewT } = useLanguage()
   return (
     <div className="relative w-full h-full bg-zinc-900 dark:bg-zinc-900 border border-zinc-700/30 overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-[14%] bg-black z-10" />
@@ -115,14 +140,15 @@ function PreviewCinematic({ selected: _s }: { selected: boolean }) {
         <div className="w-10 h-10 rounded-full bg-amber-400/20 border border-amber-400/40 flex items-center justify-center mb-1">
           <div className="w-4 h-4 rounded-full bg-amber-400/60" />
         </div>
-        <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-amber-300/90 text-center px-2">MISE EN SCÈNE</p>
-        <p className="font-mono text-[7px] text-zinc-500 tracking-wider">Lumière — 8K</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-amber-300/90 text-center px-2">{previewT('fh_preview_cinematic_title')}</p>
+        <p className="font-mono text-[7px] text-zinc-500 tracking-wider">{previewT('fh_preview_cinematic_sub')}</p>
       </div>
     </div>
   )
 }
 
 function PreviewStockVo({ selected: _s }: { selected: boolean }) {
+  const { t: previewT } = useLanguage()
   return (
     <div className="relative w-full h-full overflow-hidden" style={{ background: 'linear-gradient(160deg,#0c2340,#1a4a7a,#0f3060)' }}>
       <div className="absolute bottom-0 left-0 right-0 h-1/2 opacity-30" style={{ background: 'linear-gradient(to top,#3b82f6,transparent)' }} />
@@ -130,9 +156,9 @@ function PreviewStockVo({ selected: _s }: { selected: boolean }) {
         <div key={cls} className={`absolute w-3 h-3 border-sky-400/60 ${cls}`} />
       ))}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-        <p className="font-mono text-[8px] uppercase tracking-[0.2em] text-sky-300/80">DOCUMENTAIRE</p>
+        <p className="font-mono text-[8px] uppercase tracking-[0.2em] text-sky-300/80">{previewT('fh_preview_stockvo_title')}</p>
         <div className="w-8 h-px bg-sky-400/40 my-0.5" />
-        <p className="font-mono text-[7px] text-sky-500/60 tracking-wider">Stock + Voix</p>
+        <p className="font-mono text-[7px] text-sky-500/60 tracking-wider">{previewT('fh_preview_stockvo_sub')}</p>
       </div>
     </div>
   )
@@ -263,20 +289,29 @@ function PreviewDoodle({ selected: _s }: { selected: boolean }) {
   )
 }
 
-// 2026 trend labels from FACELESS_STYLES_META, preserving pipeline IDs.
-// Short French descriptions focused on the 2026 repositioning; full bilingual
-// copy + best-for lists live in FACELESS_STYLES_META.
+// Style catalog — label + description resolved per render via getStyleLabel
+// / getStyleShortDesc so the UI follows the active language. Badge is a kind
+// (« new » / « 2026 ») rendered via a localised label at render time.
 const STYLE_TEMPLATES: StyleTemplate[] = [
-  { id: 'cinematique',     label: FACELESS_STYLES_META['cinematique'].label_fr,     desc: 'Scènes photoréalistes IA, éclairage dramatique, grain filmique',  category: 'cinematic', badge: '2026', preview: PreviewCinematic    },
-  { id: 'stock-vo',        label: FACELESS_STYLES_META['stock-vo'].label_fr,        desc: 'Archives documentaires + voix off broadcast',                     category: 'cinematic', preview: PreviewStockVo      },
-  { id: 'whiteboard',      label: FACELESS_STYLES_META['whiteboard'].label_fr,      desc: 'Récit sombre : atmosphère noir, ombres, tension horror',          category: 'cinematic', badge: 'Nouveau', preview: PreviewWhiteboard   },
-  { id: 'stickman',        label: FACELESS_STYLES_META['stickman'].label_fr,        desc: 'Planches BD manga, bulles de texte, personnages expressifs',      category: 'handmade',  badge: 'Nouveau', preview: PreviewStickman    },
-  { id: 'flat-design',     label: FACELESS_STYLES_META['flat-design'].label_fr,     desc: 'Fonds épurés, typo bold, espace négatif — l’esthétique « less »', category: 'animation', badge: '2026', preview: PreviewFlatDesign  },
-  { id: '3d-pixar',        label: FACELESS_STYLES_META['3d-pixar'].label_fr,        desc: 'Rendu 3D ludique, ambient occlusion doux, perspective isométrique', category: '3d',      preview: Preview3dPixar     },
-  { id: 'motion-graphics', label: FACELESS_STYLES_META['motion-graphics'].label_fr, desc: 'Formes animées, typographie cinétique, data-viz corporate',      category: '3d',        preview: PreviewMotionGraphics },
-  { id: 'animation-2d',    label: FACELESS_STYLES_META['animation-2d'].label_fr,    desc: 'Illustrations chaleureuses aquarelle, personnages amicaux, cosy', category: 'animation', badge: 'Nouveau', preview: PreviewAnimation2d  },
-  { id: 'doodle',          label: FACELESS_STYLES_META['doodle'].label_fr,          desc: "Doodle dessiné main, marker noir + couleurs spot, parfait pour les explainers", category: 'handmade',  badge: 'Nouveau', preview: PreviewDoodle       },
+  { id: 'cinematique',     category: 'cinematic', badge: '2026', preview: PreviewCinematic     },
+  { id: 'stock-vo',        category: 'cinematic',                preview: PreviewStockVo       },
+  { id: 'whiteboard',      category: 'cinematic', badge: 'new',  preview: PreviewWhiteboard    },
+  { id: 'stickman',        category: 'handmade',  badge: 'new',  preview: PreviewStickman      },
+  { id: 'flat-design',     category: 'animation', badge: '2026', preview: PreviewFlatDesign    },
+  { id: '3d-pixar',        category: '3d',                       preview: Preview3dPixar       },
+  { id: 'motion-graphics', category: '3d',                       preview: PreviewMotionGraphics },
+  { id: 'animation-2d',    category: 'animation', badge: 'new',  preview: PreviewAnimation2d   },
+  { id: 'doodle',          category: 'handmade',  badge: 'new',  preview: PreviewDoodle        },
 ]
+
+/** Short helper to resolve the visible badge label at render time. */
+function resolveStyleBadge(
+  kind: StyleTemplate['badge'] | undefined,
+  t: (k: string) => string,
+): string | null {
+  if (!kind) return null
+  return kind === 'new' ? t('fh_badge_new') : '2026'
+}
 
 // ── Pipeline types ─────────────────────────────────────────────────────────────
 
@@ -501,7 +536,8 @@ function StylePickerDropdown({ value, onChange, onClose }: {
   onChange: (s: FacelessStyle) => void
   onClose: () => void
 }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const renderLang: 'en' | 'fr' = lang === 'fr' ? 'fr' : 'en'
   return (
     <div className="absolute left-0 top-full mt-2 z-50 w-[min(480px,calc(100vw-2.5rem))] bg-card border border-border rounded-2xl shadow-xl p-4 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
@@ -517,9 +553,9 @@ function StylePickerDropdown({ value, onChange, onClose }: {
                 value === s.id ? 'ring-2 ring-brand ring-offset-1' : 'hover:ring-1 hover:ring-border')}>
               <div className="h-16 w-full relative"><Preview selected={value === s.id} /></div>
               <div className="p-2 bg-muted">
-                <p className="font-display font-semibold text-[11px] text-foreground truncate">{s.label}</p>
+                <p className="font-display font-semibold text-[11px] text-foreground truncate">{getStyleLabel(s.id, renderLang)}</p>
               </div>
-              {s.badge && <span className="absolute top-1 right-1 font-mono text-[8px] uppercase tracking-wider bg-primary text-white px-1 py-0.5 rounded-full">{s.badge}</span>}
+              {resolveStyleBadge(s.badge, t) && <span className="absolute top-1 right-1 font-mono text-[8px] uppercase tracking-wider bg-primary text-white px-1 py-0.5 rounded-full">{resolveStyleBadge(s.badge, t)}</span>}
               {value === s.id && <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center"><Check size={8} className="text-white" /></div>}
             </button>
           )
@@ -594,14 +630,15 @@ function VoicePickerDropdown({ value, voices, onChange, onClose }: {
 // ── Template gallery ───────────────────────────────────────────────────────────
 
 function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | null; onSelect: (id: FacelessStyle) => void }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const renderLang: 'en' | 'fr' = lang === 'fr' ? 'fr' : 'en'
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>('all')
   const filtered = activeCategory === 'all' ? STYLE_TEMPLATES : STYLE_TEMPLATES.filter((t) => t.category === activeCategory)
 
   return (
     <div className="border-t border-border px-4 sm:px-6 py-8 bg-muted/50">
       <div className="max-w-2xl mx-auto">
-        <p className="font-display text-base font-semibold text-foreground mb-4">Styles disponibles</p>
+        <p className="font-display text-base font-semibold text-foreground mb-4">{t('fh_styles_available')}</p>
         <div className="flex flex-wrap gap-2 mb-5">
           {getTemplateCategories(t).map((cat) => (
             <button key={cat.id} type="button" onClick={() => setActiveCategory(cat.id)}
@@ -614,19 +651,20 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
           ))}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {filtered.map((t) => {
-            const Preview = t.preview
-            const isSelected = selected === t.id
+          {filtered.map((tpl) => {
+            const Preview = tpl.preview
+            const isSelected = selected === tpl.id
+            const badgeLabel = resolveStyleBadge(tpl.badge, t)
             return (
-              <button key={t.id} type="button" onClick={() => onSelect(t.id)}
+              <button key={tpl.id} type="button" onClick={() => onSelect(tpl.id)}
                 className={cn('relative rounded-2xl overflow-hidden text-left transition-all',
                   isSelected ? 'ring-2 ring-brand ring-offset-2' : 'hover:scale-[1.02] hover:shadow-card')}>
                 <div className="h-24 w-full relative"><Preview selected={isSelected} /></div>
                 <div className="p-2.5 bg-muted border-t border-border/50">
-                  <p className="font-display font-bold text-[11px] text-foreground">{t.label}</p>
-                  <p className="font-body text-[11px] text-[--text-muted] mt-0.5 leading-tight">{t.desc}</p>
+                  <p className="font-display font-bold text-[11px] text-foreground">{getStyleLabel(tpl.id, renderLang)}</p>
+                  <p className="font-body text-[11px] text-[--text-muted] mt-0.5 leading-tight line-clamp-2">{getStyleShortDesc(tpl.id, renderLang)}</p>
                 </div>
-                {t.badge && <span className="absolute top-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-primary text-white px-1.5 py-0.5 rounded-full">{t.badge}</span>}
+                {badgeLabel && <span className="absolute top-2 right-2 font-mono text-[8px] uppercase tracking-wider bg-primary text-white px-1.5 py-0.5 rounded-full">{badgeLabel}</span>}
                 {isSelected && <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow"><Check size={9} className="text-white" /></div>}
               </button>
             )
@@ -639,13 +677,15 @@ function TemplateGallery({ selected, onSelect }: { selected: FacelessStyle | nul
 
 // ── Step 1 — Setup ─────────────────────────────────────────────────────────────
 
+// Audit 18/06/26 — need access to `lang` to localise the selected style
+// label that's surfaced in the picker preview button.
 function SetupStep({ project, onChange, onNext, loading = false }: {
   project: ProjectState
   onChange: (patch: Partial<ProjectState>) => void
   onNext: () => void
   loading?: boolean
 }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const [voices, setVoices] = useState<VoiceItem[]>([])
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [showVoicePicker, setShowVoicePicker] = useState(false)
@@ -831,7 +871,7 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
               <button type="button" onClick={() => { setShowStylePicker((v) => !v); setShowVoicePicker(false) }}
                 className={cn('flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-body transition-all',
                   project.style ? 'bg-brand/10 border-primary text-primary' : 'bg-card border-border text-[--text-muted] hover:border-brand/40')}>
-                <span className="font-medium">{selectedStyle?.label ?? t('fh_visualStyle')}</span>
+                <span className="font-medium">{selectedStyle ? getStyleLabel(selectedStyle.id, lang === 'fr' ? 'fr' : 'en') : t('fh_visualStyle')}</span>
                 <ChevronDown size={13} className={cn('transition-transform', showStylePicker && 'rotate-180')} />
               </button>
               {showStylePicker && <StylePickerDropdown value={project.style} onChange={(s) => onChange({ style: s })} onClose={() => setShowStylePicker(false)} />}
@@ -1798,7 +1838,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
         </button>
         <div className="flex flex-wrap items-center gap-3">
           {!allDone && (
-            <p className="text-xs font-body text-[--text-muted]">{scenes.length - doneCnt} image(s) restante(s)</p>
+            <p className="text-xs font-body text-[--text-muted]">{t('fh_imagesRemaining').replace('{n}', String(scenes.length - doneCnt))}</p>
           )}
           <button type="button" onClick={onNext} disabled={!allDone}
             className={cn('flex items-center gap-2 px-5 py-2 rounded-xl font-display font-semibold text-sm transition-all',

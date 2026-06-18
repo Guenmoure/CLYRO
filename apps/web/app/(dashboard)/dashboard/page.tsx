@@ -17,9 +17,11 @@ export const metadata = { title: 'Dashboard — CLYRO' }
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface Profile {
-  full_name: string | null
-  plan:      string
-  credits:   number
+  full_name:           string | null
+  plan:                string
+  credits:             number
+  // Audit 18/06/26 — drives the « Unlimited » badge on CreditsBanner.
+  internal_unlimited?: boolean | null
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
@@ -60,7 +62,7 @@ export default async function DashboardPage() {
       const [profileResult, videosResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('full_name, plan, credits')
+          .select('full_name, plan, credits, internal_unlimited')
           .eq('id', userId)
           .maybeSingle(),
         supabase
@@ -87,6 +89,7 @@ export default async function DashboardPage() {
   const firstName  = (profile?.full_name ?? userEmail ?? 'User').split(/[\s@]/)[0] ?? 'User'
   const plan       = profile?.plan ?? 'free'
   const credits    = profile?.credits ?? 0
+  const isUnlimited = profile?.internal_unlimited === true
   const draftCount = videos.filter(v => v.status === 'draft').length
   const hasProjects = videos.length > 0
 
@@ -100,7 +103,7 @@ export default async function DashboardPage() {
       <CreateTiles />
 
       {/* ── 3. Credits banner — low/empty credit warnings ──────── */}
-      <CreditsBanner plan={plan} creditsLeft={credits} />
+      <CreditsBanner plan={plan} creditsLeft={credits} isUnlimited={isUnlimited} />
 
       {/* ── Fetch error ──────────────────────────────────────── */}
       {errorMsg && <DashboardErrorCard />}

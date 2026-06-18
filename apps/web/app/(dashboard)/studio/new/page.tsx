@@ -73,7 +73,17 @@ function StudioNewPageInner() {
   const [polishing, setPolishing] = useState<PolishGoal | null>(null)
   const [scriptBeforePolish, setScriptBeforePolish] = useState<string | null>(null)
   const [youtubeUrl, setYoutubeUrl] = useState('')
-  const [language, setLanguage] = useState('fr')
+  // Audit 18/06/26 — video narration language used to default to FR
+  // regardless of UI language. Now follows the active interface locale so
+  // an EN user lands on a 🇬🇧 narration by default; FR users stay on 🇫🇷.
+  // Falls back to EN for any non-supported UI language (es/de/pt) since
+  // ElevenLabs has the most stable EN coverage at default.
+  const uiLangFallback = ((): string => {
+    if (typeof window === 'undefined') return 'en'
+    const l = localStorage.getItem('clyro_language') ?? 'en'
+    return ['en', 'fr', 'es', 'de', 'pt', 'it', 'nl'].includes(l) ? l : 'en'
+  })()
+  const [language, setLanguage] = useState(uiLangFallback)
   const [analyzing, setAnalyzing] = useState(false)
   const [step, setStep] = useState<string>('')
   const [restored, setRestored] = useState(false)

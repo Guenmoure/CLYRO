@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Zap, ArrowRight, ShoppingCart } from 'lucide-react'
+import { Zap, ArrowRight, ShoppingCart, Infinity as InfinityIcon } from 'lucide-react'
 import { PLAN_MONTHLY_CREDITS, type PlanId, CREDIT_COST_PER_MIN } from '@clyro/shared'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
@@ -27,10 +27,42 @@ interface CreditsBannerProps {
   plan:         string
   creditsLeft:  number
   creditsTotal?: number  // optional — inferred from plan if omitted
+  /** Audit 18/06/26 — when the user has the `internal_unlimited` flag
+   *  flipped on profiles, the banner shows an « Unlimited » badge instead
+   *  of the misleading « 0/250 » counter. The flag is set server-side
+   *  only (SQL), so the prop is the single source of truth on the page. */
+  isUnlimited?: boolean
 }
 
-export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal }: CreditsBannerProps) {
+export function CreditsBanner({ plan, creditsLeft, creditsTotal: propTotal, isUnlimited = false }: CreditsBannerProps) {
   const { t } = useLanguage()
+
+  // Audit 18/06/26 — short-circuit to a dedicated « Unlimited » layout when
+  // the account has the operational override on, so the dashboard doesn't
+  // keep nagging the user about a balance that no longer applies.
+  if (isUnlimited) {
+    return (
+      <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl border bg-card border-border/60">
+        <div className="flex items-center gap-3 min-w-0">
+          <InfinityIcon size={16} className="shrink-0 text-primary" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-display text-sm font-semibold text-foreground">
+                {t('cb_unlimited')}
+              </span>
+              <span className="font-mono text-[10px] font-medium uppercase px-1.5 py-0.5 rounded bg-muted text-[--text-muted]">
+                {plan}
+              </span>
+            </div>
+            <p className="font-mono text-xs mt-0.5 text-[--text-muted] truncate">
+              {t('cb_unlimited_hint')}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const creditsTotal = propTotal ?? getPlanTotal(plan)
   const creditsUsed  = Math.max(0, creditsTotal - creditsLeft)
 

@@ -46,14 +46,17 @@ const LANGUAGE_TABS: Array<{ id: ContentLang; label: string }> = [
 export function ContentTemplateGallery({
   selectedTemplateId,
   onSelect,
-  defaultLanguage = 'fr',
+  defaultLanguage,
 }: ContentTemplateGalleryProps) {
   // `lang` (FR/EN) controls the LANGUAGE of the templates shown (their copy
   // bodies). Interface chrome (headers, CTAs) follows the UI language via t().
-  // Audit 16/06/26: previously the entire chrome was a French/English fork
-  // gated on the template language picker, which leaked French into EN UI.
-  const { t } = useLanguage()
-  const [lang, setLang] = useState<ContentLang>(defaultLanguage)
+  // Audit 18/06/26: the gallery used to default to 'fr' regardless of the
+  // active UI language, so EN users opened it and saw French scripts.
+  // Now the default mirrors the UI language; explicit `defaultLanguage`
+  // prop still wins if the caller passes one.
+  const { t, lang: uiLang } = useLanguage()
+  const initialLang: ContentLang = defaultLanguage ?? (uiLang === 'fr' ? 'fr' : 'en')
+  const [lang, setLang] = useState<ContentLang>(initialLang)
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>('all')
   const [activeNiche, setActiveNiche] = useState<string>('all')
   const [search, setSearch] = useState('')
