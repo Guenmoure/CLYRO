@@ -17,7 +17,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { authMiddleware } from '../middleware/auth'
-import { polishScript, type PolishGoal } from '../services/claude'
+import { polishScript, checkScript, type PolishGoal } from '../services/claude'
 import { deductCredits, refundCredits, InsufficientCreditsError } from '../services/credits'
 import { logger } from '../lib/logger'
 
@@ -40,6 +40,37 @@ const polishSchema = z.object({
  *   402 INSUFFICIENT_CREDITS — not enough balance
  *   500 POLISH_FAILED — Claude unreachable / unexpected response
  */
+// ── Pre-flight script quality check — Audit 16/06/26 P3.3 ─────────────────
+//
+// POST /api/v1/ai/script-check
+// Body: { script: string, language?: 'en'|'fr' }
+// Success: 200 { issues: [...], language, word_count }
+//
+// FREE for now — the cost (one Haiku 4.5 call, ~250 tokens) is too small
+// to justify a deduction, and we want to encourage users to lean on it
+// before paying for the expensive storyboard generation.
+
+const scriptCheckSchema = z.object({
+  script:   z.string().min(1).max(5000),
+  language: z.enum(['en', 'fr']).optional().default('en'),
+})
+
+aiWritingRouter.post('/ai/script-check', authMiddleware, async (req, res) => {
+  const parsed = scriptCheckSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Validation failed', code: 'VALIDATION_ERROR', issues: parsed.error.issues })
+    return
+  }
+  const { script, language } = parsed.data
+  try {
+    const result = await checkScript(script, language)
+    res.json(result)
+  } catch (err) {
+    logger.error({ err }, 'ai/script-check failed')
+    res.status(500).json({ error: 'Script check failed', code: 'SCRIPT_CHECK_FAILED' })
+  }
+})
+
 aiWritingRouter.post('/ai/polish-script', authMiddleware, async (req, res) => {
   const parsed = polishSchema.safeParse(req.body)
   if (!parsed.success) {

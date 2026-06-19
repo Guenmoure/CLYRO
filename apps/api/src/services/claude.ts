@@ -1699,6 +1699,149 @@ Reply with the polished script only.`
  * Always preserves the user's main message, CTA, and tone. Removes only
  * repetitions, fillers, and secondary details.
  */
+// ── Pre-flight script quality check — Audit 16/06/26 P3.3 ──────────────────
+
+/**
+ * Categories of issues we flag. Stable enum so the frontend can map each
+ * issue type to a translated label / icon. Severities are advisory:
+ *   • warning — likely to hurt the final video; user should consider fixing
+ *   • info    — stylistic nudge; user can ignore
+ */
+export type ScriptIssueType =
+  | 'weak_cta'        // no clear ask at the end
+  | 'slow_hook'       // first 5 seconds don't grab attention
+  | 'repetition'      // same idea repeated / filler words
+  | 'vague_language'  // « very », « a lot », « really » overload
+  | 'too_short'       // < 30 words — probably not a real script
+  | 'too_long'        // > 500 words — too long for short-form
+
+export interface ScriptIssue {
+  type:        ScriptIssueType
+  severity:    'warning' | 'info'
+  message:     string
+  /** Optional concrete rewrite suggestion. */
+  suggestion?: string
+}
+
+export interface ScriptCheckResult {
+  issues:        ScriptIssue[]
+  /** Detected language code from the script body. */
+  language:      'en' | 'fr'
+  /** Word count of the input, surfaced for the UI cost estimate. */
+  word_count:    number
+}
+
+/**
+ * Run a cheap pre-flight pass over a script and return concrete issues the
+ * user might want to fix before paying for a full Claude storyboard
+ * generation. Cost ~250 tokens × Haiku 4.5 → effectively free per call,
+ * gives the user a real reason to trust the helper.
+ *
+ * Safety constraint: the helper NEVER rewrites the script — it only flags
+ * and (optionally) suggests. The user keeps full editorial control.
+ */
+export async function checkScript(
+  script: string,
+  language: 'en' | 'fr' = 'en',
+): Promise<ScriptCheckResult> {
+  const wordCount = script.trim().split(/\s+/).filter(Boolean).length
+
+  // Deterministic guards — no Claude call needed for the length checks.
+  const guardIssues: ScriptIssue[] = []
+  if (wordCount < 30) {
+    guardIssues.push({
+      type:     'too_short',
+      severity: 'warning',
+      message:  language === 'fr'
+        ? 'Trop court — le storyboard ne pourra pas couvrir tout le sens.'
+        : 'Too short — the storyboard can\'t carry meaning at this length.',
+    })
+    return { issues: guardIssues, language, word_count: wordCount }
+  }
+  if (wordCount > 500) {
+    guardIssues.push({
+      type:     'too_long',
+      severity: 'info',
+      message:  language === 'fr'
+        ? 'Très long — vise plutôt 200–400 mots pour le format court.'
+        : 'Quite long — aim for 200–400 words for short-form video.',
+    })
+    // Don't return — Claude can still flag other issues.
+  }
+
+  const systemEn = 'You are a script editor reviewing voiceover scripts. Reply ONLY with valid JSON, no markdown, no explanation.'
+  const systemFr = 'Tu es un éditeur de script qui audite des scripts de voix off. Tu réponds UNIQUEMENT avec du JSON valide, sans markdown, sans explication.'
+
+  const userEn = `Inspect this voiceover script and flag at most 4 concrete issues. Allowed issue types: "weak_cta", "slow_hook", "repetition", "vague_language". For each, set severity to "warning" (will hurt the video) or "info" (stylistic). Include a short message (≤ 100 chars) and, when actionable, a concrete suggestion (≤ 120 chars). NEVER rewrite the script. NEVER add issue types not in the allowed list.
+
+Script:
+"""
+${script}
+"""
+
+Reply ONLY with this JSON:
+{ "issues": [ { "type": "...", "severity": "warning"|"info", "message": "...", "suggestion": "..." } ] }`
+
+  const userFr = `Examine ce script de voix off et signale AU MAX 4 problèmes concrets. Types autorisés : « weak_cta », « slow_hook », « repetition », « vague_language ». Pour chacun, severity à « warning » (gênant) ou « info » (stylistique). Inclus un message court (≤ 100 chars) et, si possible, une suggestion concrète (≤ 120 chars). N'écris JAMAIS un nouveau script. N'ajoute JAMAIS de type hors de la liste autorisée.
+
+Script :
+"""
+${script}
+"""
+
+Réponds UNIQUEMENT avec ce JSON :
+{ "issues": [ { "type": "...", "severity": "warning"|"info", "message": "...", "suggestion": "..." } ] }`
+
+  try {
+    const message = await withClaudeRetry(
+      () => client.messages.create({
+        model: MODEL_HAIKU,
+        max_tokens: 600,
+        system: language === 'en' ? systemEn : systemFr,
+        messages: [{ role: 'user', content: language === 'en' ? userEn : userFr }],
+      }),
+      'checkScript',
+    )
+
+    const content = message.content[0]
+    if (content.type !== 'text') return { issues: guardIssues, language, word_count: wordCount }
+
+    const jsonText = content.text
+      .replace(/^```json\s*/m, '')
+      .replace(/^```\s*/m, '')
+      .replace(/\s*```$/m, '')
+      .trim()
+
+    const allowedTypes: ReadonlyArray<ScriptIssueType> = [
+      'weak_cta', 'slow_hook', 'repetition', 'vague_language',
+    ]
+    const parsed = JSON.parse(jsonText) as { issues?: unknown }
+    const claudeIssues: ScriptIssue[] = []
+    if (Array.isArray(parsed.issues)) {
+      for (const raw of parsed.issues.slice(0, 4)) {
+        if (!raw || typeof raw !== 'object') continue
+        const r = raw as Record<string, unknown>
+        const type = r.type as ScriptIssueType
+        if (!allowedTypes.includes(type)) continue
+        const severity = r.severity === 'warning' || r.severity === 'info' ? r.severity : 'info'
+        const messageText = typeof r.message === 'string' ? r.message.slice(0, 200) : ''
+        if (!messageText) continue
+        const suggestion = typeof r.suggestion === 'string' ? r.suggestion.slice(0, 200) : undefined
+        claudeIssues.push({ type, severity, message: messageText, suggestion })
+      }
+    }
+
+    logger.info({ wordCount, issuesCount: claudeIssues.length, language }, 'Script checked by Claude')
+    return { issues: [...guardIssues, ...claudeIssues], language, word_count: wordCount }
+  } catch (err) {
+    logger.warn(
+      { err: err instanceof Error ? err.message : String(err) },
+      'checkScript failed — returning guard issues only',
+    )
+    return { issues: guardIssues, language, word_count: wordCount }
+  }
+}
+
 export async function condenseScript(
   script: string,
   targetDuration: string,

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
-import { analyzeStudio, getStudioAvatars, getPublicVoices, polishScript, type StudioAvatar, type ClyroVoice, type PolishGoal, ApiError } from '@/lib/api'
+import { analyzeStudio, getStudioAvatars, getPublicVoices, polishScript, checkScript, type StudioAvatar, type ClyroVoice, type PolishGoal, type ScriptIssue, ApiError } from '@/lib/api'
 import { VoicePickerModal } from '@/components/creation/VoicePickerModal'
 import { HyperFramesSection } from '@/components/creation/HyperFramesSection'
 import { StudioTemplateGallery } from '@/components/studio/StudioTemplateGallery'
@@ -72,6 +72,12 @@ function StudioNewPageInner() {
   // right pill while the call is in progress.
   const [polishing, setPolishing] = useState<PolishGoal | null>(null)
   const [scriptBeforePolish, setScriptBeforePolish] = useState<string | null>(null)
+  // Audit 16/06/26 P3.3 — pre-flight script quality check. Free call so we
+  // let the user re-run it cheaply. `issues` keeps the last result so the
+  // panel stays visible until the user runs another check or edits the
+  // script.
+  const [checkingScript, setCheckingScript] = useState(false)
+  const [scriptIssues, setScriptIssues] = useState<ScriptIssue[] | null>(null)
   const [youtubeUrl, setYoutubeUrl] = useState('')
   // Audit 18/06/26 — video narration language used to default to FR
   // regardless of UI language. Now follows the active interface locale so
@@ -378,6 +384,9 @@ function StudioNewPageInner() {
                 // after a polish, the « before » version is no longer the
                 // right thing to revert to.
                 if (scriptBeforePolish !== null) setScriptBeforePolish(null)
+                // Audit 16/06/26 P3.3 — clear stale issues panel: the
+                // text changed, the old feedback may no longer apply.
+                if (scriptIssues !== null) setScriptIssues(null)
               }}
               rows={12}
               placeholder={t('scriptPlaceholder')}
@@ -467,6 +476,91 @@ function StudioNewPageInner() {
                 {t('polish_cost_hint')}
               </span>
             </div>
+
+            {/* Audit 16/06/26 P3.3 — Pre-flight script quality check. Free
+                Haiku call that flags weak CTAs, slow hooks, repetition,
+                and vague language. Result is advisory — never rewrites
+                the script. Disabled when too short for a meaningful
+                review (Zod min: 1 word, but UX min: 20). */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted]">
+                {t('scriptcheck_label')}
+              </span>
+              <button
+                type="button"
+                disabled={checkingScript || script.trim().split(/\s+/).filter(Boolean).length < 20}
+                onClick={async () => {
+                  setCheckingScript(true)
+                  try {
+                    const result = await checkScript({
+                      script,
+                      language: language === 'fr' ? 'fr' : 'en',
+                    })
+                    setScriptIssues(result.issues)
+                    if (result.issues.length === 0) {
+                      toast.success(t('scriptcheck_clean'))
+                    }
+                  } catch {
+                    toast.error(t('scriptcheck_failed'))
+                  } finally {
+                    setCheckingScript(false)
+                  }
+                }}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider border transition-colors',
+                  'bg-card border-border text-[--text-muted] hover:text-foreground hover:border-brand/40',
+                  (checkingScript || script.trim().split(/\s+/).filter(Boolean).length < 20) && 'opacity-40 cursor-not-allowed',
+                )}
+              >
+                {checkingScript
+                  ? <Loader2 size={11} className="animate-spin" />
+                  : <Wand2 size={11} />}
+                {t('scriptcheck_button')}
+              </button>
+              <span className="font-mono text-[10px] text-[--text-muted] ml-1">
+                {t('scriptcheck_free_hint')}
+              </span>
+            </div>
+
+            {scriptIssues && scriptIssues.length > 0 && (
+              <ul className="space-y-1.5 rounded-xl border border-dashed border-border bg-muted/30 p-3">
+                {scriptIssues.map((iss, idx) => (
+                  <li
+                    key={`${iss.type}-${idx}`}
+                    className={cn(
+                      'flex items-start gap-2 rounded-lg px-2.5 py-1.5',
+                      iss.severity === 'warning'
+                        ? 'bg-amber-500/5 border border-amber-500/20'
+                        : 'bg-card border border-border/60',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-mono uppercase shrink-0',
+                        iss.severity === 'warning'
+                          ? 'bg-amber-500/20 text-amber-700'
+                          : 'bg-muted text-[--text-muted]',
+                      )}
+                    >
+                      {iss.severity === 'warning' ? '!' : 'i'}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-xs text-foreground leading-snug">
+                        <span className="font-mono uppercase text-[10px] text-[--text-muted] mr-1">
+                          {t(`scriptcheck_type_${iss.type}`)}
+                        </span>
+                        {iss.message}
+                      </p>
+                      {iss.suggestion && (
+                        <p className="font-body text-[11px] text-[--text-secondary] mt-0.5 italic">
+                          → {iss.suggestion}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             <div className="flex items-center justify-between">
               <p className="font-mono text-xs text-[--text-muted]">

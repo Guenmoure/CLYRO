@@ -1139,3 +1139,39 @@ export async function polishScript(payload: PolishScriptPayload): Promise<Polish
   })
 }
 
+// ── Pre-flight script quality check — Audit P3.3 ────────────────────────────
+
+export type ScriptIssueType =
+  | 'weak_cta' | 'slow_hook' | 'repetition' | 'vague_language'
+  | 'too_short' | 'too_long'
+
+export interface ScriptIssue {
+  type:        ScriptIssueType
+  severity:    'warning' | 'info'
+  message:     string
+  suggestion?: string
+}
+
+export interface ScriptCheckResult {
+  issues:        ScriptIssue[]
+  language:      'en' | 'fr'
+  word_count:    number
+}
+
+export interface ScriptCheckPayload {
+  script:    string
+  language?: 'en' | 'fr'
+}
+
+/**
+ * Pre-flight script quality check. FREE call — Haiku 4.5 backend.
+ * Returns concrete issues (weak CTA, slow hook, repetition, vague language,
+ * length guards). Never rewrites the script — the user keeps full control.
+ */
+export async function checkScript(payload: ScriptCheckPayload): Promise<ScriptCheckResult> {
+  return apiFetch<ScriptCheckResult>('/api/v1/ai/script-check', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
