@@ -37,6 +37,38 @@ export const anthropic = new Anthropic({
 })
 const client = anthropic
 
+/**
+ * Tiny retry helper for « short » Claude calls. Audit 16/06/26 P2.5 — the
+ * heavy storyboard/motion/campaign calls already retry 3× with backoff,
+ * but fixCreativeLayout / generateCtaVariants / generateCampaignSuggestions
+ * were single-attempt and silently swallowed transient 5xx from Anthropic.
+ * This helper wraps the messages.create() call with N retries + linear
+ * backoff so a flaky network doesn't translate into an empty UI list.
+ */
+async function withClaudeRetry<T>(
+  fn:    () => Promise<T>,
+  label: string,
+  retries: number = 2,
+): Promise<T> {
+  let lastErr: unknown
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastErr = err
+      if (attempt === retries) break
+      const delay = 500 * (attempt + 1)
+      logger.info({ attempt: attempt + 1, delay, label }, 'Claude retry')
+      await new Promise((r) => setTimeout(r, delay))
+    }
+  }
+  logger.warn(
+    { err: lastErr instanceof Error ? lastErr.message : String(lastErr), label },
+    'Claude retry exhausted',
+  )
+  throw lastErr
+}
+
 // Single MODEL constant for every Claude call. Audit 16/06/26 surfaced
 // version drift (claude-sonnet-4-6 in this file, claude-sonnet-4-20250514
 // in two routes). All callers must import MODEL from here so we have one
@@ -1170,18 +1202,21 @@ ${askBlocks.map((k) => `  "${k}": { "x": <num>, "y": <num>, "color": "white" | "
       ctype === 'image/webp' ? 'image/webp' :
       ctype === 'image/gif'  ? 'image/gif'  : 'image/jpeg'
 
-    const message = await client.messages.create({
-      model: MODEL,
-      max_tokens: 200,
-      system: systemPrompt,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: mediaType, data: buf.toString('base64') } },
-          { type: 'text',  text:   userPrompt },
-        ],
-      }],
-    })
+    const message = await withClaudeRetry(
+      () => client.messages.create({
+        model: MODEL,
+        max_tokens: 200,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: buf.toString('base64') } },
+            { type: 'text',  text:   userPrompt },
+          ],
+        }],
+      }),
+      'fixCreativeLayout',
+    )
     const content = message.content[0]
     if (content.type !== 'text') return { positions: {}, colors: {} }
     const jsonText = content.text
@@ -1247,12 +1282,15 @@ Rules:
 Reply ONLY with this JSON: { "variants": ["...", "...", "..."] }`
 
   try {
-    const message = await client.messages.create({
-      model: MODEL,
-      max_tokens: 300,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    })
+    const message = await withClaudeRetry(
+      () => client.messages.create({
+        model: MODEL,
+        max_tokens: 300,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+      'generateCtaVariants',
+    )
     const content = message.content[0]
     if (content.type !== 'text') return []
     const jsonText = content.text
@@ -1316,12 +1354,15 @@ Reply ONLY with this JSON:
 { "suggestions": [ { "title": "...", "description": "...", "prompt": "..." } ] }`
 
   try {
-    const message = await client.messages.create({
-      model: MODEL,
-      max_tokens: 800,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    })
+    const message = await withClaudeRetry(
+      () => client.messages.create({
+        model: MODEL,
+        max_tokens: 800,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+      'generateCampaignSuggestions',
+    )
     const content = message.content[0]
     if (content.type !== 'text') throw new Error('Unexpected response type from Claude')
     const jsonText = content.text

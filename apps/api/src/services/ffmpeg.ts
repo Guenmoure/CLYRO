@@ -1576,6 +1576,51 @@ export async function assembleStudioVideo(
   }
 }
 
+// ── Loudness normalization on a Buffer ──────────────────────────────────────
+
+/**
+ * Normalise the audio loudness of an MP4 buffer in-place (single-pass EBU
+ * R128 loudnorm). Audit 16/06/26 surfaced that the Motion Design pipeline
+ * uploads Remotion's raw MP4 straight to Supabase, with no peak-limiting —
+ * so a loud music track can clip against the voiceover. Faceless already
+ * runs full mixAudio() with two-pass loudnorm; Motion Design needs at
+ * least the single-pass equivalent. Returns the normalised buffer; the
+ * input buffer can be discarded by the caller.
+ *
+ * Single-pass loudnorm is ~3× faster than the two-pass measure→apply
+ * dance and good enough for already-mixed content (the music + voiceover
+ * are mixed at render time inside Remotion). Re-encodes audio to AAC
+ * 192 kbps; video stream is copied (no re-encode → fast).
+ */
+export async function normalizeBufferLoudness(
+  mp4Buffer: Buffer,
+  targetLufs: number = -16,
+): Promise<Buffer> {
+  const workDir = join(tmpdir(), `clyro-loudnorm-${randomUUID()}`)
+  await mkdir(workDir, { recursive: true })
+  const inputPath  = join(workDir, 'in.mp4')
+  const outputPath = join(workDir, 'out.mp4')
+  try {
+    await writeFile(inputPath, mp4Buffer)
+    await runFFmpeg([
+      '-i', inputPath,
+      '-af', `loudnorm=I=${targetLufs}:TP=-1.5:LRA=11`,
+      '-c:v', 'copy',
+      '-c:a', 'aac', '-b:a', '192k',
+      outputPath,
+    ])
+    return await readFile(outputPath)
+  } catch (err) {
+    logger.warn(
+      { err: err instanceof Error ? err.message : String(err) },
+      'normalizeBufferLoudness: FFmpeg failed, returning original buffer',
+    )
+    return mp4Buffer
+  } finally {
+    await rm(workDir, { recursive: true, force: true }).catch(() => null)
+  }
+}
+
 // ── First-frame thumbnail ───────────────────────────────────────────────────
 
 /**

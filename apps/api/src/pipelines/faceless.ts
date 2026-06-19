@@ -10,7 +10,7 @@ import { detectLanguage } from '../lib/detect-language'
 import { refundCredits } from '../services/credits'
 import { generateSceneImages, generateSceneVideoAuto, uploadFalUrlToStorage } from '../services/fal'
 import { generateVoiceoverScenesWithTimestamps } from '../services/elevenlabs'
-import { assembleVideo, assembleVideoFromVideoClips, extractFirstFrameThumbnail, generateKaraokeFromWords, renderKenBurnsFFmpeg } from '../services/ffmpeg'
+import { assembleVideo, assembleVideoFromVideoClips, extractFirstFrameThumbnail, generateKaraokeFromWords, loopImageToClip, renderKenBurnsFFmpeg } from '../services/ffmpeg'
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
 import { applyAntiHallucination } from '@clyro/shared'
@@ -559,7 +559,35 @@ export async function runFacelessPipeline(params: FacelessPipelineParams): Promi
 
       const kbFailCount = kbResults.filter((r) => r.status === 'rejected').length
       if (kbFailCount > 0) {
-        logger.warn({ videoId, kbFailCount, total: sceneImages.length }, 'Some Ken Burns clips failed — falling back to static for failed scenes')
+        // Audit 16/06/26 P2.2 — was just logging the failures and silently
+        // dropping the scenes, so a 6-scene script could ship as 4 with no
+        // user-facing signal. Now we render a static loop clip from the
+        // source image for each failed scene so the narration keeps its
+        // visual anchor (better degraded than missing). If even the static
+        // render fails, THEN we drop and log loudly.
+        logger.warn({ videoId, kbFailCount, total: sceneImages.length }, 'Ken Burns failures — generating static fallback clips')
+        for (let i = 0; i < kbResults.length; i++) {
+          if (kbResults[i].status !== 'rejected') continue
+          const { sceneId, imageUrl } = sceneImages[i]
+          try {
+            const imgRes = await fetch(imageUrl)
+            if (!imgRes.ok) throw new Error(`image fetch failed ${imgRes.status}`)
+            const imageBuffer = Buffer.from(await imgRes.arrayBuffer())
+            const exactAudioDur = exactSceneAudioDurations.get(sceneId)
+            const durationSec = exactAudioDur && exactAudioDur > 0.5
+              ? Math.round(exactAudioDur * 100) / 100
+              : 5
+            const tmpPath = pathJoin(workDir, `static_${sceneId}.mp4`)
+            await loopImageToClip(imageBuffer, durationSec, tmpPath, videoFormat as '16:9' | '9:16' | '1:1')
+            sceneVideoUrls.push({ sceneId, videoUrl: `file://${tmpPath}` })
+            logger.info({ sceneId, idx: i }, 'Ken Burns: static fallback rendered')
+          } catch (fbErr) {
+            logger.error(
+              { err: fbErr instanceof Error ? fbErr.message : String(fbErr), sceneId, idx: i },
+              'Ken Burns: static fallback FAILED — scene dropped',
+            )
+          }
+        }
       }
       logger.info({ videoId, kbClips: sceneVideoUrls.length }, 'KenBurns clips complete')
     } else {

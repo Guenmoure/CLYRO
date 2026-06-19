@@ -217,9 +217,29 @@ export async function runMotionPipeline(params: MotionPipelineParams): Promise<v
     const useLambda = isLambdaEnabled()
     logger.info({ videoId, renderer: useLambda ? 'lambda' : 'local' }, 'Motion: starting render')
 
-    const { mp4: mp4Buffer, thumbnail: thumbnailBuffer } = useLambda
-      ? await renderMotionVideoLambda(renderOptions)
-      : await renderMotionVideo(renderOptions)
+    // Audit 16/06/26 P2.3 — Lambda → local fallback. Same defence as
+    // motion-design.ts: if Lambda dies we retry once locally.
+    let mp4Buffer: Buffer
+    let thumbnailBuffer: Buffer | null = null
+    try {
+      const result = useLambda
+        ? await renderMotionVideoLambda(renderOptions)
+        : await renderMotionVideo(renderOptions)
+      mp4Buffer = result.mp4
+      thumbnailBuffer = result.thumbnail
+    } catch (renderErr) {
+      if (useLambda) {
+        logger.warn(
+          { err: renderErr instanceof Error ? renderErr.message : String(renderErr), videoId },
+          'Motion: Lambda render failed — falling back to local Remotion',
+        )
+        const result = await renderMotionVideo(renderOptions)
+        mp4Buffer = result.mp4
+        thumbnailBuffer = result.thumbnail
+      } else {
+        throw renderErr
+      }
+    }
 
     await updateStatus('assembly', 88)
     const storagePath = `${userId}/${videoId}/output.mp4`

@@ -10,6 +10,7 @@ import { refundCredits } from '../services/credits'
 import { generateVoiceoverWithTimestamps } from '../services/elevenlabs'
 import { renderMotionDesignVideo } from '../services/remotion'
 import { renderMotionDesignVideoLambda, isLambdaEnabled } from '../services/remotionLambda'
+import { normalizeBufferLoudness } from '../services/ffmpeg'
 import { sendVideoReadyEmail } from '../services/resend'
 import { logger } from '../lib/logger'
 import { assertNotCancelled, CancelledError } from './cancellation'
@@ -218,9 +219,38 @@ export async function runMotionDesignPipeline(params: MotionDesignPipelineParams
           : undefined,
       },
     }
-    const { mp4: mp4Buffer, thumbnail: thumbnailBuffer } = useLambda
-      ? await renderMotionDesignVideoLambda(renderArgs)
-      : await renderMotionDesignVideo(renderArgs)
+    // Audit 16/06/26 P2.3 — Lambda → local fallback. If the Lambda render
+    // throws (timeout, AWS 5xx, S3 download stall…) we retry once locally
+    // instead of bubbling a generic « pipeline error » to the user. The
+    // local renderer is the same Remotion bundle, just on Render's box.
+    let mp4Raw: Buffer
+    let thumbnailBuffer: Buffer | null = null
+    try {
+      const result = useLambda
+        ? await renderMotionDesignVideoLambda(renderArgs)
+        : await renderMotionDesignVideo(renderArgs)
+      mp4Raw = result.mp4
+      thumbnailBuffer = result.thumbnail
+    } catch (renderErr) {
+      if (useLambda) {
+        logger.warn(
+          { err: renderErr instanceof Error ? renderErr.message : String(renderErr), videoId },
+          'MotionDesign: Lambda render failed — falling back to local Remotion',
+        )
+        const result = await renderMotionDesignVideo(renderArgs)
+        mp4Raw = result.mp4
+        thumbnailBuffer = result.thumbnail
+      } else {
+        throw renderErr
+      }
+    }
+
+    // Audit 16/06/26 P2.1 — pass the MP4 through FFmpeg loudnorm before
+    // upload so a loud music track or hot voiceover doesn't clip on
+    // export. Faceless already does this via mixAudio(); Motion Design
+    // was uploading raw Remotion output. Best-effort: if FFmpeg fails,
+    // normalizeBufferLoudness() returns the original buffer.
+    const mp4Buffer = await normalizeBufferLoudness(mp4Raw)
 
     await updateStatus('assembly', 88)
 
