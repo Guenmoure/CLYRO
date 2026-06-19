@@ -75,6 +75,13 @@ async function withClaudeRetry<T>(
 // place to bump versions and a guarantee that every Claude call uses the
 // same generation.
 export const MODEL = 'claude-sonnet-4-6'
+
+// Audit 16/06/26 P3.1 — Haiku 4.5 for the four « short » calls that don't
+// need Sonnet's reasoning depth (binary classification, short copywriting,
+// vision layout fix, brand ideation seeds). ~65 % cheaper per call with no
+// noticeable quality drop on these tasks. Kept as a separate constant so
+// the heavy creative work stays on Sonnet.
+export const MODEL_HAIKU = 'claude-haiku-4-5-20251001'
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
 
@@ -1099,8 +1106,9 @@ Reply ONLY with this valid JSON:
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
+      // Audit 16/06/26 P3.1 — Haiku for the binary classifier.
       const message = await client.messages.create({
-        model: MODEL,
+        model: MODEL_HAIKU,
         max_tokens: 200,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
@@ -1202,9 +1210,10 @@ ${askBlocks.map((k) => `  "${k}": { "x": <num>, "y": <num>, "color": "white" | "
       ctype === 'image/webp' ? 'image/webp' :
       ctype === 'image/gif'  ? 'image/gif'  : 'image/jpeg'
 
+    // Audit 16/06/26 P3.1 — Haiku 4.5 vision for the layout fix.
     const message = await withClaudeRetry(
       () => client.messages.create({
-        model: MODEL,
+        model: MODEL_HAIKU,
         max_tokens: 200,
         system: systemPrompt,
         messages: [{
@@ -1282,9 +1291,10 @@ Rules:
 Reply ONLY with this JSON: { "variants": ["...", "...", "..."] }`
 
   try {
+    // Audit 16/06/26 P3.1 — Haiku for short copywriting variants.
     const message = await withClaudeRetry(
       () => client.messages.create({
-        model: MODEL,
+        model: MODEL_HAIKU,
         max_tokens: 300,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
@@ -1354,9 +1364,10 @@ Reply ONLY with this JSON:
 { "suggestions": [ { "title": "...", "description": "...", "prompt": "..." } ] }`
 
   try {
+    // Audit 16/06/26 P3.1 — Haiku for brand ideation seeds.
     const message = await withClaudeRetry(
       () => client.messages.create({
-        model: MODEL,
+        model: MODEL_HAIKU,
         max_tokens: 800,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
