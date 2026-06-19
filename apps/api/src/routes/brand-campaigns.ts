@@ -10,7 +10,9 @@ import { generateSocialAsset } from '../services/fal'
 import { creditCostForVideo } from '../services/credits'
 import { renderQueue, isRedisReady } from '../queues/renderQueue'
 import { runMotionAuto } from '../pipelines/motion-router'
-import Anthropic from '@anthropic-ai/sdk'
+// Audit 16/06/26 — was instantiating its own Anthropic client + using a
+// stale model version. Imports the shared singleton + MODEL constant.
+import { anthropic, MODEL } from '../services/claude'
 
 export const brandCampaignsRouter = Router()
 
@@ -1096,7 +1098,8 @@ brandCampaignsRouter.delete('/brand/creatives/:id', authMiddleware, async (req, 
 // Workflow « ideate → generate » sans persistence. Conservé pour rétro-compat
 // avec d'éventuels callers existants. Le front Phase 3.2 ne les utilise pas.
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+// Audit 16/06/26 — no more local client. Uses the shared `anthropic`
+// imported from services/claude.ts.
 
 const PLATFORM_MAP: Record<string, string> = {
   instagram: 'instagram_post',
@@ -1211,7 +1214,7 @@ Each campaign should have 2-4 suggested posts across the specified platforms.
 Visual directions should be detailed, specific prompts suitable for AI image generation (describe composition, colors, objects, mood).`
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: MODEL,
       max_tokens: 3000,
       messages: [{ role: 'user', content: prompt }],
     })

@@ -3,11 +3,12 @@ import { z } from 'zod'
 import { authMiddleware } from '../middleware/auth'
 import { supabaseAdmin } from '../lib/supabase'
 import { logger } from '../lib/logger'
-import Anthropic from '@anthropic-ai/sdk'
+// Audit 16/06/26 — was instantiating its own Anthropic client + using a
+// stale model version. Now imports the shared singleton + MODEL constant
+// from services/claude.ts.
+import { anthropic, MODEL } from '../services/claude'
 
 export const brandAgentRouter = Router()
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 const chatSchema = z.object({
   brand_kit_id: z.string().uuid().optional(),
@@ -96,7 +97,7 @@ ${context ? `CURRENT BRAND CONTEXT:\n- Name: ${context.name || 'Not set'}\n- Ind
 ${existingKit ? `\nEXISTING BRAND KIT:\n- Name: ${existingKit.name}\n- Primary: ${existingKit.primary_color}\n- Secondary: ${existingKit.secondary_color || 'None'}\n- Font: ${existingKit.font_family || 'Not set'}` : ''}`
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: MODEL,
       max_tokens: 1500,
       system: systemPrompt,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),

@@ -28,11 +28,21 @@ This is non-negotiable. Do NOT translate to French, English, or any other langua
 `
 }
 
-const client = new Anthropic({
+// Single shared client. Audit 16/06/26 surfaced two duplicate clients in
+// routes/brand-agent.ts + routes/brand-campaigns.ts; they now both import
+// `anthropic` from here. Centralising avoids three connection pools and
+// three configs drifting apart.
+export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
+const client = anthropic
 
-const MODEL = 'claude-sonnet-4-6'
+// Single MODEL constant for every Claude call. Audit 16/06/26 surfaced
+// version drift (claude-sonnet-4-6 in this file, claude-sonnet-4-20250514
+// in two routes). All callers must import MODEL from here so we have one
+// place to bump versions and a guarantee that every Claude call uses the
+// same generation.
+export const MODEL = 'claude-sonnet-4-6'
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
 
@@ -731,29 +741,23 @@ const logoRevealPropsZ = z.object({
   style:      z.enum(['assemble', 'scale_bounce', 'particles_in']).optional(),
   mode:       z.enum(['dark', 'light']),
 })
-const mockupPropsZ = z.object({
-  type:          z.literal('mockup_zoom'),
-  screenshotUrl: z.string(),
-  focusArea:     z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() }),
-  annotation:    z.string(),
-  cursorPath:    z.array(z.object({ x: z.number(), y: z.number(), frame: z.number(), click: z.boolean().optional() })),
-  mode:          z.enum(['dark', 'light']),
-})
-const avatarGridPropsZ = z.object({
-  type:      z.literal('avatar_grid'),
-  avatars:   z.array(z.object({ url: z.string(), name: z.string() })).min(1),
-  headline:  z.string(),
-  mode:      z.enum(['dark', 'light']),
-  zoomIndex: z.number().int().nonnegative().optional(),
-})
+// Audit 16/06/26 — `avatar_grid` and `mockup_zoom` used to live here and
+// in the type enum, but the main Claude prompt (lines 902+) never lists
+// them as available scene types and their props require inputs Claude
+// cannot synthesise (avatar URLs, screenshotUrl, focusArea, cursorPath).
+// They were dead code Claude-side and caused silent black-frame renders
+// if the model ever wandered into them. Removed from the Zod schema.
+// The Remotion composition still ships SceneAvatarGrid / SceneMockupZoom
+// renderers for potential future use (e.g. a deterministic non-Claude
+// caller), so no composition file is deleted.
 const sceneZ = z.object({
   id:        z.string().min(1),
-  type:      z.enum(['3d_cards','hero_typo','avatar_grid','dark_light_switch','floating_icons','mockup_zoom','stats_counter','logo_reveal']),
+  type:      z.enum(['3d_cards','hero_typo','dark_light_switch','floating_icons','stats_counter','logo_reveal']),
   duration:  z.number().int().min(30).max(300),
   voiceover: z.string().optional(),
   props:     z.discriminatedUnion('type', [
     heroTypoPropsZ, cardsPropsZ, statsPropsZ, floatingPropsZ,
-    darkLightPropsZ, logoRevealPropsZ, mockupPropsZ, avatarGridPropsZ,
+    darkLightPropsZ, logoRevealPropsZ,
   ]),
 })
 const motionStoryboardZ = z.object({
@@ -842,10 +846,13 @@ You reply ONLY with valid JSON, no markdown, no comments.`
   // produced near-identical mixes. Each register now lists the EXACT scene
   // types allowed, mode bias, and what to NEVER use.
   const styleRegister: Record<string, string> = {
-    corporate: 'STYLE = CORPORATE: confident, structured, high-trust. ALLOWED scene types: hero_typo (animations: line_by_line OR 3d_rotate only), stats_counter, mockup_zoom, logo_reveal (style: assemble). Mode bias: "light" on ≥ 60 % of scenes. FORBIDDEN: floating_icons with emojis, 3d_cards scatter, hero_typo split_reveal, dark_light_switch flash.',
-    dynamique: 'STYLE = DYNAMIQUE: high-energy, fast-paced, social. ALLOWED scene types: 3d_cards (layout: scatter OR orbit), floating_icons, dark_light_switch (style: flash OR wipe), hero_typo (animations: word_by_word OR scale_bounce only). Mode bias: alternate dark/light every scene. FORBIDDEN: long hero_typo 3d_rotate, mockup_zoom.',
-    luxe:      'STYLE = LUXE: slow, refined, cinematic. ALLOWED scene types: hero_typo (animations: 3d_rotate OR scale_bounce only, fontSize ≥ 140), dark_light_switch (style: circle_reveal only), logo_reveal (style: particles_in), mockup_zoom. Mode bias: "dark" on ≥ 70 % of scenes. FORBIDDEN: floating_icons, 3d_cards scatter, hero_typo split_reveal.',
-    fun:       'STYLE = FUN: playful, colorful, expressive. ALLOWED scene types: 3d_cards (layout: scatter), floating_icons (5-8 emoji icons), hero_typo (animations: split_reveal OR scale_bounce only), dark_light_switch (style: flash). Mode bias: "light" with vibrant accents. FORBIDDEN: hero_typo 3d_rotate, logo_reveal assemble, mockup_zoom.',
+    // Audit 16/06/26 — removed `mockup_zoom` mentions: scene type was dropped
+    // from the Zod schema (Claude can't synthesise the required screenshot /
+    // cursor data). Style guidance now only references reachable types.
+    corporate: 'STYLE = CORPORATE: confident, structured, high-trust. ALLOWED scene types: hero_typo (animations: line_by_line OR 3d_rotate only), stats_counter, logo_reveal (style: assemble). Mode bias: "light" on ≥ 60 % of scenes. FORBIDDEN: floating_icons with emojis, 3d_cards scatter, hero_typo split_reveal, dark_light_switch flash.',
+    dynamique: 'STYLE = DYNAMIQUE: high-energy, fast-paced, social. ALLOWED scene types: 3d_cards (layout: scatter OR orbit), floating_icons, dark_light_switch (style: flash OR wipe), hero_typo (animations: word_by_word OR scale_bounce only). Mode bias: alternate dark/light every scene. FORBIDDEN: long hero_typo 3d_rotate.',
+    luxe:      'STYLE = LUXE: slow, refined, cinematic. ALLOWED scene types: hero_typo (animations: 3d_rotate OR scale_bounce only, fontSize ≥ 140), dark_light_switch (style: circle_reveal only), logo_reveal (style: particles_in). Mode bias: "dark" on ≥ 70 % of scenes. FORBIDDEN: floating_icons, 3d_cards scatter, hero_typo split_reveal.',
+    fun:       'STYLE = FUN: playful, colorful, expressive. ALLOWED scene types: 3d_cards (layout: scatter), floating_icons (5-8 emoji icons), hero_typo (animations: split_reveal OR scale_bounce only), dark_light_switch (style: flash). Mode bias: "light" with vibrant accents. FORBIDDEN: hero_typo 3d_rotate, logo_reveal assemble.',
   }
   const styleLine = styleHint ? `\n${styleRegister[styleHint]}\n` : ''
   // brandLine : couleurs / fonte / logo (visuel) + DNA enrichi (sémantique).
@@ -1632,21 +1639,27 @@ Reply with the polished script only.`
   return { polished_script: polished, original_words: originalWords, new_words: newWords }
 }
 
+/**
+ * Condense a voiceover script to fit a target duration. Audit 16/06/26 —
+ * was FR-only and would garble EN inputs (system prompt + user content all
+ * in French). Now bilingual; caller passes the detected language.
+ *
+ * Always preserves the user's main message, CTA, and tone. Removes only
+ * repetitions, fillers, and secondary details.
+ */
 export async function condenseScript(
   script: string,
   targetDuration: string,
+  language: 'en' | 'fr' = 'fr',
 ): Promise<CondenseResult> {
   const targetSeconds = DURATION_SECONDS[targetDuration] ?? 30
   const maxWords = Math.floor((targetSeconds / 60) * WPM_FR)
   const originalWordCount = script.trim().split(/\s+/).filter(Boolean).length
 
-  const message = await client.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
-    system: 'Tu es un copywriter expert. Tu condenses des scripts vidéo en préservant les messages clés. Tu réponds UNIQUEMENT avec le script condensé, sans explication, sans guillemets, sans markdown.',
-    messages: [{
-      role: 'user',
-      content: `Condense ce script de voix off en MAXIMUM ${maxWords} mots (durée cible : ${targetSeconds}s à 150 mots/min).
+  const systemFr = 'Tu es un copywriter expert. Tu condenses des scripts vidéo en préservant les messages clés. Tu réponds UNIQUEMENT avec le script condensé, sans explication, sans guillemets, sans markdown.'
+  const systemEn = 'You are a senior copywriter. You condense voiceover scripts while preserving the key messages. You reply ONLY with the condensed script — no explanation, no quotes, no markdown.'
+
+  const userFr = `Condense ce script de voix off en MAXIMUM ${maxWords} mots (durée cible : ${targetSeconds}s à 150 mots/min).
 Préserve : le message principal, le CTA, le ton. Supprime : répétitions, formulations longues, détails secondaires.
 
 Script original (${originalWordCount} mots) :
@@ -1654,7 +1667,25 @@ Script original (${originalWordCount} mots) :
 ${script}
 """
 
-Réponds uniquement avec le script condensé.`,
+Réponds uniquement avec le script condensé.`
+
+  const userEn = `Condense this voiceover script to AT MOST ${maxWords} words (target duration: ${targetSeconds}s at 150 words/min).
+Preserve: the main message, the CTA, the tone. Drop: repetitions, long-winded phrasing, secondary details.
+
+Original script (${originalWordCount} words):
+"""
+${script}
+"""
+
+Reply with the condensed script only.`
+
+  const message = await client.messages.create({
+    model: MODEL,
+    max_tokens: 1024,
+    system: language === 'en' ? systemEn : systemFr,
+    messages: [{
+      role: 'user',
+      content: language === 'en' ? userEn : userFr,
     }],
   })
 
@@ -1665,7 +1696,7 @@ Réponds uniquement avec le script condensé.`,
   const condensedWordCount = condensedScript.split(/\s+/).filter(Boolean).length
 
   logger.info(
-    { originalWordCount, condensedWordCount, targetSeconds, maxWords },
+    { originalWordCount, condensedWordCount, targetSeconds, maxWords, language },
     'Script condensed by Claude'
   )
 

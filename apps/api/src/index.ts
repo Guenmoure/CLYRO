@@ -24,6 +24,7 @@ import { brandCampaignsRouter } from './routes/brand-campaigns'
 import { brandPhotoshootRouter } from './routes/brand-photoshoot'
 import { brandAgentRouter } from './routes/brand-agent'
 import { aiWritingRouter } from './routes/ai-writing'
+import { aiStoryboardRouter } from './routes/ai-storyboard'
 import { autopilotRouter } from './routes/autopilot'
 import { mixAudioRouter } from './routes/mix-audio'
 import { generatePdfRouter } from './routes/generate-pdf'
@@ -212,6 +213,7 @@ app.use('/api/v1', brandCampaignsRouter)
 app.use('/api/v1', brandPhotoshootRouter)
 app.use('/api/v1', brandAgentRouter)
 app.use('/api/v1', aiWritingRouter)
+app.use('/api/v1', aiStoryboardRouter)
 app.use('/api/v1', autopilotRouter)
 app.use('/api/v1', mixAudioRouter)
 app.use('/api/v1', generatePdfRouter)
