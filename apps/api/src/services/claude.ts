@@ -1699,6 +1699,169 @@ Reply with the polished script only.`
  * Always preserves the user's main message, CTA, and tone. Removes only
  * repetitions, fillers, and secondary details.
  */
+// ── Brand DNA inference from URL — Audit 16/06/26 P3.2 ─────────────────────
+
+/**
+ * Shape returned to the brand kit pre-fill UI. Every field is nullable
+ * so the user can accept partial inferences without the wizard
+ * complaining about missing data. The user always reviews + confirms
+ * before persistence — this is a SUGGESTION layer, not an autofill.
+ */
+export interface BrandDNAInference {
+  tagline:             string | null
+  primary_color:       string | null
+  secondary_color:     string | null
+  brand_values:        string[]
+  brand_aesthetic:     string[]
+  brand_tone_of_voice: string[]
+  business_overview:   string | null
+  /** Detected language code from the page body. */
+  language:            'en' | 'fr' | 'es' | 'de' | 'pt'
+  /** Source URL after redirect resolution, surfaced to the UI for trust. */
+  source_url:          string
+  /** Page title extracted from <title>, for context. */
+  source_title:        string
+}
+
+/**
+ * Infer a brand DNA from a public URL. Audit 16/06/26 P3.2 — the audit's
+ * « brand DNA inference from URL » opportunity. Combines our SSRF-safe
+ * urlExtract scraper with a Sonnet call that maps the visible content
+ * to the brand kit schema (tagline, values, aesthetic, tone of voice,
+ * business overview, palette suggestion).
+ *
+ * Safety
+ *   • Uses extractArticleFromUrl which has SSRF guards (rejects
+ *     localhost / private IPs / metadata services).
+ *   • Hard timeout on the scrape via fetchWithLimits.
+ *   • Claude is told to NEVER invent business facts not present in the
+ *     extracted text — if the page is thin, fields come back null.
+ *
+ * Returns null fields rather than throwing on partial extractions so
+ * the UI can show « we found X, please review and complete the rest ».
+ */
+export async function inferBrandDNAFromUrl(url: string): Promise<BrandDNAInference> {
+  // Lazy import to avoid pulling urlExtract into the bundle of every
+  // route that just imports `services/claude` for the MODEL constant.
+  const { extractArticleFromUrl } = await import('./urlExtract')
+  const article = await extractArticleFromUrl(url)
+
+  // Cap content to ~6 KB to stay well under Claude's context budget and
+  // keep latency under 5 s. Most landing pages have their essence in
+  // the first kilobyte anyway (hero + tagline + values list).
+  const trimmedContent = article.content.length > 6_000
+    ? article.content.slice(0, 6_000)
+    : article.content
+
+  const langCode = (article.language ?? 'en').slice(0, 2).toLowerCase()
+  const lang: BrandDNAInference['language'] = ['en', 'fr', 'es', 'de', 'pt'].includes(langCode)
+    ? (langCode as BrandDNAInference['language'])
+    : 'en'
+
+  const systemPrompt = `You are a brand strategist analysing a website to extract its brand DNA. You reply ONLY with valid JSON, no markdown, no explanation. You NEVER invent facts that aren't visible in the source text — if a field can't be reliably inferred, set it to null (or an empty array for lists). You preserve the source language for the textual fields (tagline, business_overview).`
+
+  const userPrompt = `Analyse this website and infer the brand DNA. Return the JSON below.
+
+Source URL: ${article.finalUrl}
+Page title: ${article.title || '(no title)'}
+Page description: ${article.description || '(no description)'}
+Detected language: ${lang}
+
+Visible content (trimmed):
+"""
+${trimmedContent}
+"""
+
+Field guidance
+- tagline (string | null): a one-line value proposition, ideally ≤ 80 chars, in the source language. Pull from the hero copy if obvious.
+- primary_color (#RRGGBB | null): the most prominent brand color you can infer from the copy (e.g. « emerald-green sustainability », « midnight-blue trust »). Output uppercase 6-digit hex. Null if no strong signal.
+- secondary_color (#RRGGBB | null): a complementary accent, same rule.
+- brand_values (string[] ≤ 5): short noun phrases (1–2 words each) extracted from the page's stated values, mission, or repeated themes. Empty array if nothing clear.
+- brand_aesthetic (string[] ≤ 4): visual / stylistic descriptors (« minimal », « editorial », « playful », « industrial »). Inferred from the writing tone since you can't see the design.
+- brand_tone_of_voice (string[] ≤ 4): tone adjectives (« authoritative », « warm », « technical », « provocative »).
+- business_overview (string ≤ 200 chars | null): a single concise sentence describing what the business does. Source-language.
+
+Reply ONLY with this JSON:
+{
+  "tagline": "...",
+  "primary_color": "#RRGGBB",
+  "secondary_color": "#RRGGBB",
+  "brand_values": ["...", "..."],
+  "brand_aesthetic": ["...", "..."],
+  "brand_tone_of_voice": ["...", "..."],
+  "business_overview": "..."
+}`
+
+  const message = await withClaudeRetry(
+    () => client.messages.create({
+      model: MODEL, // Sonnet — the user pays 5 credits for this, quality matters
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    }),
+    'inferBrandDNAFromUrl',
+  )
+
+  const content = message.content[0]
+  if (content.type !== 'text') {
+    throw new Error('Unexpected response type from Claude (brand DNA)')
+  }
+
+  const jsonText = content.text
+    .replace(/^```json\s*/m, '')
+    .replace(/^```\s*/m, '')
+    .replace(/\s*```$/m, '')
+    .trim()
+
+  const parsed = JSON.parse(jsonText) as Record<string, unknown>
+
+  // Defensive normalisation — Claude is told to follow the shape but
+  // anything that escapes our prompt should be clamped here.
+  function asString(v: unknown, maxLen: number): string | null {
+    if (typeof v !== 'string' || !v.trim()) return null
+    return v.trim().slice(0, maxLen)
+  }
+  function asHex(v: unknown): string | null {
+    if (typeof v !== 'string') return null
+    const trimmed = v.trim()
+    return /^#[0-9A-Fa-f]{6}$/.test(trimmed) ? trimmed.toUpperCase() : null
+  }
+  function asArrayOfStr(v: unknown, maxItems: number, maxLen: number): string[] {
+    if (!Array.isArray(v)) return []
+    return v
+      .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+      .map((x) => x.trim().slice(0, maxLen))
+      .slice(0, maxItems)
+  }
+
+  const result: BrandDNAInference = {
+    tagline:             asString(parsed.tagline, 200),
+    primary_color:       asHex(parsed.primary_color),
+    secondary_color:     asHex(parsed.secondary_color),
+    brand_values:        asArrayOfStr(parsed.brand_values, 5, 40),
+    brand_aesthetic:     asArrayOfStr(parsed.brand_aesthetic, 4, 30),
+    brand_tone_of_voice: asArrayOfStr(parsed.brand_tone_of_voice, 4, 30),
+    business_overview:   asString(parsed.business_overview, 400),
+    language:            lang,
+    source_url:          article.finalUrl,
+    source_title:        article.title,
+  }
+
+  logger.info(
+    {
+      url: article.finalUrl,
+      gotTagline: !!result.tagline,
+      gotPrimary: !!result.primary_color,
+      values:     result.brand_values.length,
+      aesthetic:  result.brand_aesthetic.length,
+      tone:       result.brand_tone_of_voice.length,
+    },
+    'Brand DNA inferred from URL',
+  )
+
+  return result
+}
+
 // ── Pre-flight script quality check — Audit 16/06/26 P3.3 ──────────────────
 
 /**

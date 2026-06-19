@@ -1175,3 +1175,30 @@ export async function checkScript(payload: ScriptCheckPayload): Promise<ScriptCh
   })
 }
 
+// ── Brand DNA inference from URL — Audit P3.2 ───────────────────────────────
+
+export interface BrandDNAInference {
+  tagline:             string | null
+  primary_color:       string | null
+  secondary_color:     string | null
+  brand_values:        string[]
+  brand_aesthetic:     string[]
+  brand_tone_of_voice: string[]
+  business_overview:   string | null
+  language:            'en' | 'fr' | 'es' | 'de' | 'pt'
+  source_url:          string
+  source_title:        string
+}
+
+/**
+ * Infer a brand DNA from a public URL. Costs 5 credits (server-side
+ * deduction, refunded on failure). Sonnet-powered. Surface in the brand
+ * kit wizard as an « Infer from URL » shortcut.
+ */
+export async function inferBrandFromUrl(url: string): Promise<BrandDNAInference> {
+  return apiFetch<BrandDNAInference>('/api/v1/brand/infer-from-url', {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  })
+}
+

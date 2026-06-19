@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
+import { InferFromUrlPanel } from '@/components/brand/InferFromUrlPanel'
 
 type BrandKit = {
   id: string
@@ -100,6 +101,12 @@ export default function BrandIndexPage() {
             </div>
           </Link>
         </div>
+
+        {/* Audit 16/06/26 P3.2 — « Infer brand DNA from URL » shortcut.
+            Collapsed by default; opens to surface the URL input + Claude
+            inference. Successful inferences POST a new brand_kit and
+            navigate to /brand/:id/dna for review. */}
+        <InferFromUrlPanel onKitCreated={() => { void window.location.reload() }} />
 
         {/* Kits grid */}
         {kits.length === 0 ? (
