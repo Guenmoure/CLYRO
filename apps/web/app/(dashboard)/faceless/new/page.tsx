@@ -783,12 +783,27 @@ function FacelessNewPageInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftParam])
 
-  // Pre-fill the script when arriving from the home prompt hero (?prompt=...).
+  // Pre-fill the script when arriving from the home prompt hero. Two
+  // sources, in priority order:
+  //  1) sessionStorage('clyro_pending_prompt') — the new privacy-safe path
+  //     (audit 19/06/26 B6). The key is consumed once and removed.
+  //  2) ?prompt=… legacy URL param (kept as fallback if sessionStorage is
+  //     disabled or the user bookmarked the link).
   // Visual flow only — no AI call; the user keeps editing from here.
   useEffect(() => {
     if (draftParam) return            // a draft takes precedence
-    if (!promptParam) return
-    setScript((prev) => (prev ? prev : promptParam))
+    let seed = promptParam
+    if (typeof window !== 'undefined') {
+      try {
+        const stashed = sessionStorage.getItem('clyro_pending_prompt')
+        if (stashed) {
+          seed = stashed
+          sessionStorage.removeItem('clyro_pending_prompt')
+        }
+      } catch { /* sessionStorage disabled — fall through to URL */ }
+    }
+    if (!seed) return
+    setScript((prev) => (prev ? prev : seed))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promptParam])
 

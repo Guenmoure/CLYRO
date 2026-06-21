@@ -612,8 +612,20 @@ export default function ProjectsPage() {
               <div className="flex items-center justify-between mb-4">
                 <h2 id="videos-heading" className="font-display text-base font-semibold text-foreground">{t('proj_videos')}</h2>
                 {!loading && total > 0 && (
+                  // Audit 19/06/26 B3 — when an in-memory search filter is
+                  // active, show the result count, not the unfiltered total.
+                  // Previously the counter always read « 35 videos » even
+                  // when the visible grid had 3.
                   <span className="text-xs text-[--text-muted] font-mono bg-muted border border-border rounded-full px-3 py-1">
-                    {total} video{total > 1 ? 's' : ''}
+                    {search.trim() ? (
+                      <>
+                        {filtered.length} / {total} video{total > 1 ? 's' : ''}
+                      </>
+                    ) : (
+                      <>
+                        {total} video{total > 1 ? 's' : ''}
+                      </>
+                    )}
                   </span>
                 )}
               </div>

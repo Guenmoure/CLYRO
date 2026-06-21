@@ -60,7 +60,12 @@ export const RAIL_ITEMS: NavEntry[] = [
     children: [
       { labelKey: 'nav_quickCreate',  href: '/studio/new' },
       { labelKey: 'nav_avatars',      href: '/assets/avatars', groupKey: 'nav_grp_manage' },
-      { labelKey: 'nav_voices',       href: '/voices',         groupKey: 'nav_grp_manage' },
+      // Audit 19/06/26 B7 — was '/voices' (alternate page) which left the
+      // sidebar context jumping to « Projects » when the user landed on
+      // /assets/voices (the Assets layout's Voices tab matches Projects'
+      // /assets child by prefix). Aligning both Voices and Avatars under
+      // /assets/* keeps Studio active throughout the Assets browsing flow.
+      { labelKey: 'nav_voices',       href: '/assets/voices',  groupKey: 'nav_grp_manage' },
       { labelKey: 'nav_myProjects',   href: '/studio',         groupKey: 'nav_grp_myVideos' },
     ],
   },

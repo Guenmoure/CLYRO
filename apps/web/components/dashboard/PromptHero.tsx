@@ -81,10 +81,20 @@ export function PromptHero({ firstName }: PromptHeroProps) {
 
   function submit() {
     const trimmed = value.trim()
-    const href = trimmed
-      ? `/faceless/new?prompt=${encodeURIComponent(trimmed)}`
-      : '/faceless/new'
-    router.push(href)
+    // Audit 19/06/26 B6 — prompt no longer travels through the URL.
+    // Putting user-typed content in a query string leaks it to Vercel /
+    // Render access logs and the Referer header. We stash it in
+    // sessionStorage and Faceless / Studio /new read it on mount, then
+    // delete the key. URL stays clean (/faceless/new).
+    if (trimmed) {
+      try {
+        sessionStorage.setItem('clyro_pending_prompt', trimmed)
+      } catch { /* sessionStorage disabled — fall back to URL */
+        router.push(`/faceless/new?prompt=${encodeURIComponent(trimmed)}`)
+        return
+      }
+    }
+    router.push('/faceless/new')
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {

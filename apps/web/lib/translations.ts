@@ -1811,6 +1811,15 @@ export const translations = {
     infer_err_scrape:      'We couldn\'t reach that URL. Try a different page.',
     infer_err_no_credits:  'Out of credits — top up to use brand inference (5 credits).',
     infer_err_generic:     'Inference failed — try again in a moment.',
+    // Audit 19/06/26 — error states for avatars gallery + brand agent
+    av_loadError:           'We couldn\'t load the avatar gallery.',
+    av_loadErrorDesc:       'HeyGen may be slow or unreachable. Retry below or come back in a moment.',
+    av_retry:               'Retry',
+    bh_agentErr_credits:    'Out of credits — top up to keep chatting with the Brand Agent.',
+    bh_agentErr_timeout:    'The agent took too long to reply. Try again — usually a transient slowdown.',
+    bh_agentErr_network:    'Can\'t reach the agent right now. Check your connection.',
+    bh_agentErr_auth:       'Session expired — sign in again to keep using the Brand Agent.',
+    bh_agentErr_rateLimit:  'Too many requests — give the agent a moment, then retry.',
     // Audit 18/06/26 — Faceless leftover localisation + Unlimited badge
     fh_imagesRemaining:        '{n} image(s) remaining',
     fh_preview_cinematic_title:'CINEMATIC',
@@ -5187,6 +5196,15 @@ export const translations = {
     infer_err_scrape:      'Impossible d\'accéder à cette URL. Essaie une autre page.',
     infer_err_no_credits:  'Plus de crédits — recharge pour utiliser l\'inférence (5 crédits).',
     infer_err_generic:     'Inférence ratée — réessaie dans un instant.',
+    // Audit 19/06/26 — états d'erreur galerie avatars + brand agent
+    av_loadError:           'Impossible de charger la galerie d\'avatars.',
+    av_loadErrorDesc:       'HeyGen est peut-être lent ou inaccessible. Réessaie ci-dessous ou reviens dans un instant.',
+    av_retry:               'Réessayer',
+    bh_agentErr_credits:    'Plus de crédits — recharge ton solde pour continuer avec le Brand Agent.',
+    bh_agentErr_timeout:    'L\'agent a mis trop de temps à répondre. Réessaie — souvent transitoire.',
+    bh_agentErr_network:    'Impossible de joindre l\'agent pour l\'instant. Vérifie ta connexion.',
+    bh_agentErr_auth:       'Session expirée — reconnecte-toi pour continuer avec le Brand Agent.',
+    bh_agentErr_rateLimit:  'Trop de requêtes — laisse l\'agent souffler un instant puis réessaie.',
     // Audit 18/06/26 — fuites de localisation Faceless + badge Unlimited
     fh_imagesRemaining:        '{n} image(s) restante(s)',
     fh_preview_cinematic_title:'CINÉMATIQUE',

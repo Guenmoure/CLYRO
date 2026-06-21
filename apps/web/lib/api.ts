@@ -59,31 +59,67 @@ async function getAuthToken(): Promise<string> {
 }
 
 /**
- * Wrapper fetch avec authentification automatique
+ * Wrapper fetch avec authentification automatique.
+ *
+ * Audit 19/06/26 B1+B5 — added a hard timeout (30 s default) via
+ * AbortController so a hung upstream (HeyGen /v2/avatars latency, Render
+ * cold start, Anthropic 5xx pending forever) doesn't strand the UI in a
+ * permanent skeleton state. The previous version had no timeout at all,
+ * which is exactly what caused the Avatars gallery to stay loading
+ * forever on slow HeyGen calls. The Promise NEVER resolved → the caller's
+ * `.finally(setLoading(false))` never fired → the page locked.
+ *
+ * Long-running flows (e.g. storyboard chunked generation, photoshoot
+ * batch render) pass a larger `timeoutMs` via `options`.
  */
+interface ApiFetchOptions extends RequestInit {
+  /** Override the default 30 s timeout for long-running calls. */
+  timeoutMs?: number
+}
+
 async function apiFetch<T>(
   path: string,
-  options: RequestInit = {}
+  options: ApiFetchOptions = {},
 ): Promise<T> {
+  const { timeoutMs = 30_000, ...fetchOptions } = options
   const token = await getAuthToken()
+
+  // Wire an AbortController so the fetch gives up after `timeoutMs`.
+  // The signal is composed with any caller-supplied signal so cancelation
+  // still works (e.g. React unmount calling controller.abort()).
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  const callerSignal = fetchOptions.signal
+  if (callerSignal) {
+    if (callerSignal.aborted) controller.abort()
+    else callerSignal.addEventListener('abort', () => controller.abort(), { once: true })
+  }
 
   let response: Response
   try {
     response = await fetch(`${API_URL}${path}`, {
-      ...options,
+      ...fetchOptions,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
-        ...options.headers,
+        ...fetchOptions.headers,
       },
+      signal: controller.signal,
     })
   } catch (networkErr) {
-    // fetch() throws a TypeError when the server is unreachable (down, CORS
-    // preflight blocked, no network). Re-throw with a clearer French message.
+    // Disambiguate timeout from network failure for the caller.
+    if (networkErr instanceof DOMException && networkErr.name === 'AbortError') {
+      console.error('[apiFetch] Timeout after', timeoutMs, 'ms on', API_URL + path)
+      throw new ApiError('Request timed out', 'TIMEOUT', 0)
+    }
     console.error('[apiFetch] Network error reaching', API_URL + path, networkErr)
-    throw new Error(
-      `Impossible de joindre le serveur API. Vérifie ta connexion ou réessaie dans quelques instants.`
+    throw new ApiError(
+      'Impossible de joindre le serveur API. Vérifie ta connexion ou réessaie dans quelques instants.',
+      'NETWORK_ERROR',
+      0,
     )
+  } finally {
+    clearTimeout(timeoutId)
   }
 
   if (!response.ok) {

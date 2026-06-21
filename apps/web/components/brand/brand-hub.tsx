@@ -14,6 +14,7 @@ import {
   getCatalogItems, addCatalogItem, updateCatalogItem, deleteCatalogItem,
   generateCampaignIdeas, generateCampaignAssets,
   generatePhotoshoot, animateAsset, chatWithBrandAgent, editBackground,
+  ApiError,
 } from '@/lib/api'
 import type {
   BrandAsset, SocialPlatform, CatalogItem, CampaignConcept, CampaignAsset,
@@ -1004,7 +1005,22 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
       setMessages([...updatedMessages, { role: 'assistant', content: reply }])
       if (sug) setSuggestions(sug)
     } catch (err) {
-      toast.error(t('bh_agentError'))
+      // Audit 19/06/26 B2 — was always toasting « Agent error » regardless of
+      // root cause. The brand-agent route is FREE so it's never an
+      // INSUFFICIENT_CREDITS today, but we keep the discrimination wired so
+      // the day we add a credit cost it Just Works. Today we mostly see
+      // TIMEOUT (Anthropic latency, Render cold start), 401 (expired JWT),
+      // and 500 (HEYGEN/Anthropic 5xx).
+      if (err instanceof ApiError) {
+        if (err.code === 'INSUFFICIENT_CREDITS')      toast.error(t('bh_agentErr_credits'))
+        else if (err.code === 'TIMEOUT')              toast.error(t('bh_agentErr_timeout'))
+        else if (err.code === 'NETWORK_ERROR')        toast.error(t('bh_agentErr_network'))
+        else if (err.status === 401)                  toast.error(t('bh_agentErr_auth'))
+        else if (err.status === 429)                  toast.error(t('bh_agentErr_rateLimit'))
+        else                                          toast.error(t('bh_agentError'))
+      } else {
+        toast.error(t('bh_agentError'))
+      }
     } finally { setLoading(false) }
   }
 

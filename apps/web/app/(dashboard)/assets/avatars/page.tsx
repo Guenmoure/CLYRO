@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
-import { UserPlus, Video, Heart } from 'lucide-react'
+import { UserPlus, Video, Heart, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AvatarFilters, type AvatarFilter } from '@/components/assets/AvatarFilters'
@@ -132,6 +132,11 @@ export default function AvatarsPage() {
   const { t } = useLanguage()
   const [avatars, setAvatars]           = useState<StudioAvatar[]>([])
   const [loading, setLoading]           = useState(true)
+  // Audit 19/06/26 B1 — distinguish « empty list » from « load failed »
+  // so the skeleton doesn't stay forever on a HeyGen 5xx or timeout.
+  // The previous code swallowed every error into an empty array, which
+  // looked like « 0 avatars » even when the API never even responded.
+  const [loadError, setLoadError]       = useState<string | null>(null)
   const [activeTab, setActiveTab]       = useState<AvatarTab>('public')
   const [search, setSearch]             = useState('')
   const [activeFilter, setActiveFilter] = useState<AvatarFilter>('all')
@@ -139,11 +144,25 @@ export default function AvatarsPage() {
   const [createOpen, setCreateOpen]     = useState(false)
   const fav = useFavoriteAvatars()
 
-  useEffect(() => {
+  function load() {
+    setLoading(true)
+    setLoadError(null)
     getStudioAvatars()
       .then(({ avatars: av }) => setAvatars(av))
-      .catch(() => setAvatars([]))
+      .catch((err: unknown) => {
+        // Surface a readable cause so the user can decide to retry vs
+        // bail. apiFetch now throws ApiError with codes TIMEOUT /
+        // NETWORK_ERROR / HEYGEN_ERROR / 500 / etc.
+        const msg = err instanceof Error ? err.message : 'load_failed'
+        setLoadError(msg)
+        setAvatars([])
+      })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // "My avatars" = avatars uploaded by the user via the Instant Avatar
@@ -237,6 +256,21 @@ export default function AvatarsPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array.from({ length: 12 }).map((_, i) => <AvatarSkeleton key={i} />)}
           </div>
+        ) : loadError ? (
+          // Audit 19/06/26 B1 — explicit error state with retry button
+          // instead of falling through to an empty list (« 0 avatars »).
+          <EmptyState
+            icon={AlertCircle}
+            title={t('av_loadError')}
+            description={t('av_loadErrorDesc')}
+            accent="amber"
+            size="md"
+            action={
+              <Button variant="primary" onClick={load}>
+                {t('av_retry')}
+              </Button>
+            }
+          />
         ) : activeTab === 'my' && personalAvatars.length === 0 ? (
           <EmptyState
             icon={UserPlus}

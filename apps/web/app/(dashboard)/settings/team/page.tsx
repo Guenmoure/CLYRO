@@ -60,8 +60,25 @@ export default function TeamPage() {
         } = await supabase.auth.getSession()
         if (session?.user) {
           setOwnerEmail(session.user.email ?? null)
+          // Audit 19/06/26 B4 — the previous code read the name from the
+          // auth.users.user_metadata blob (set at signup by Google OAuth /
+          // GitHub OAuth / etc.). But the user can edit their display
+          // name in Settings → Profile, which writes to profiles.full_name.
+          // Result: Settings showed « Test E2E », Team showed the OAuth
+          // « Guenmoure Abba ». Now we read profiles.full_name FIRST (the
+          // canonical source) and only fall back to user_metadata.
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', session.user.id)
+            .maybeSingle()
           const meta = session.user.user_metadata as Record<string, string> | undefined
-          setOwnerName(meta?.full_name ?? meta?.name ?? null)
+          setOwnerName(
+            (profile?.full_name as string | null | undefined)
+              ?? meta?.full_name
+              ?? meta?.name
+              ?? null,
+          )
         }
       } finally {
         setLoading(false)
