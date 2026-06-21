@@ -49,7 +49,14 @@ export async function quotaMiddleware(
       return
     }
 
-    if (!isUnlimitedPlan(balance.plan) && balance.credits <= 0) {
+    // Audit 19/06/26 — was only checking `isUnlimitedPlan(plan)`. Test /
+    // staging / support accounts that carry the operational
+    // `internal_unlimited` flag would still be 403'd here when their
+    // visible balance hit 0, even though deductCredits() correctly
+    // short-circuits the actual deduction. Now both gates respect the
+    // same source of truth.
+    const unlimited = isUnlimitedPlan(balance.plan) || balance.internal_unlimited
+    if (!unlimited && balance.credits <= 0) {
       logger.warn({ userId: req.userId, credits: balance.credits }, 'Quota exceeded')
       res.status(403).json({
         error:   'Insufficient credits',

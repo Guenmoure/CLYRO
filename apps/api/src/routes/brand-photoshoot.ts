@@ -531,7 +531,9 @@ brandPhotoshootRouter.post('/brand/photoshoot', authMiddleware, async (req, res)
     // Credit check
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('credits, plan')
+      // Audit 19/06/26 — pull internal_unlimited to bypass the local gate
+      // when the support flag is on (test / staging / support accounts).
+      .select('credits, plan, internal_unlimited')
       .eq('id', req.userId)
       .single()
 
@@ -539,7 +541,7 @@ brandPhotoshootRouter.post('/brand/photoshoot', authMiddleware, async (req, res)
       res.status(404).json({ error: 'Profile not found', code: 'NOT_FOUND' })
       return
     }
-    if (profile.plan !== 'studio' && profile.credits <= 0) {
+    if (!profile.internal_unlimited && profile.plan !== 'studio' && profile.credits <= 0) {
       res.status(403).json({ error: 'Insufficient credits', code: 'INSUFFICIENT_CREDITS' })
       return
     }
@@ -633,7 +635,9 @@ brandPhotoshootRouter.post('/brand/animate', authMiddleware, async (req, res) =>
     // Credit check (2 credits for video)
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('credits, plan')
+      // Audit 19/06/26 — pull internal_unlimited to bypass the local gate
+      // when the support flag is on (test / staging / support accounts).
+      .select('credits, plan, internal_unlimited')
       .eq('id', req.userId)
       .single()
 
@@ -641,7 +645,7 @@ brandPhotoshootRouter.post('/brand/animate', authMiddleware, async (req, res) =>
       res.status(404).json({ error: 'Profile not found', code: 'NOT_FOUND' })
       return
     }
-    if (profile.plan !== 'studio' && profile.credits < 2) {
+    if (!profile.internal_unlimited && profile.plan !== 'studio' && profile.credits < 2) {
       res.status(403).json({ error: 'Insufficient credits (need 2)', code: 'INSUFFICIENT_CREDITS' })
       return
     }

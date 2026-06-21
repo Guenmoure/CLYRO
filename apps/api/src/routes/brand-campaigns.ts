@@ -1147,7 +1147,9 @@ brandCampaignsRouter.post('/brand/campaigns/ideate', authMiddleware, async (req,
     // Credit check
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('credits, plan')
+      // Audit 19/06/26 — pull internal_unlimited so operational override
+      // accounts aren't blocked by the local 0-credit gate.
+      .select('credits, plan, internal_unlimited')
       .eq('id', req.userId)
       .single()
 
@@ -1155,7 +1157,7 @@ brandCampaignsRouter.post('/brand/campaigns/ideate', authMiddleware, async (req,
       res.status(404).json({ error: 'Profile not found', code: 'NOT_FOUND' })
       return
     }
-    if (profile.plan !== 'studio' && profile.credits <= 0) {
+    if (!profile.internal_unlimited && profile.plan !== 'studio' && profile.credits <= 0) {
       res.status(403).json({ error: 'Insufficient credits', code: 'INSUFFICIENT_CREDITS' })
       return
     }
@@ -1258,7 +1260,9 @@ brandCampaignsRouter.post('/brand/campaigns/generate', authMiddleware, async (re
     // Credit check
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('credits, plan')
+      // Audit 19/06/26 — pull internal_unlimited so operational override
+      // accounts aren't blocked by the local 0-credit gate.
+      .select('credits, plan, internal_unlimited')
       .eq('id', req.userId)
       .single()
 
@@ -1268,7 +1272,7 @@ brandCampaignsRouter.post('/brand/campaigns/generate', authMiddleware, async (re
     }
 
     const cost = campaign.posts.length
-    if (profile.plan !== 'studio' && profile.credits < cost) {
+    if (!profile.internal_unlimited && profile.plan !== 'studio' && profile.credits < cost) {
       res.status(403).json({ error: `Need ${cost} credits, have ${profile.credits}`, code: 'INSUFFICIENT_CREDITS' })
       return
     }

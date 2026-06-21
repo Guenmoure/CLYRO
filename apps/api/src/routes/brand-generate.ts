@@ -37,10 +37,10 @@ brandGenerateRouter.post('/brand/generate', authMiddleware, async (req, res) => 
   }
 
   try {
-    // Vérifier crédits
+    // Vérifier crédits — audit 19/06/26 pull internal_unlimited.
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('credits, plan')
+      .select('credits, plan, internal_unlimited')
       .eq('id', req.userId)
       .single()
 
@@ -49,7 +49,7 @@ brandGenerateRouter.post('/brand/generate', authMiddleware, async (req, res) => 
       return
     }
 
-    if (profile.plan !== 'studio' && profile.credits <= 0) {
+    if (!profile.internal_unlimited && profile.plan !== 'studio' && profile.credits <= 0) {
       res.status(403).json({ error: 'Insufficient credits', code: 'INSUFFICIENT_CREDITS' })
       return
     }
