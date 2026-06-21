@@ -10,7 +10,7 @@ import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
 export default function BillingPage() {
-  const { credits, plan, loading } = useCredits()
+  const { credits, plan, loading, isUnlimited } = useCredits()
   const { t } = useLanguage()
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [phone, setPhone] = useState('')
@@ -91,7 +91,11 @@ export default function BillingPage() {
                 {plan}
               </span>
               <span className="font-body text-[--text-secondary] text-sm">
-                {plan === 'studio' ? t('bill_unlimitedVideos') : `${credits} ${t('bill_creditsRemaining')}`}
+                {/* Audit 19/06/26 — also honour internal_unlimited via the
+                    hook's `isUnlimited`, not just the studio plan. */}
+                {isUnlimited || plan === 'studio'
+                  ? t('bill_unlimitedVideos')
+                  : `${credits} ${t('bill_creditsRemaining')}`}
               </span>
             </div>
           )}

@@ -1820,6 +1820,8 @@ export const translations = {
     bh_agentErr_network:    'Can\'t reach the agent right now. Check your connection.',
     bh_agentErr_auth:       'Session expired — sign in again to keep using the Brand Agent.',
     bh_agentErr_rateLimit:  'Too many requests — give the agent a moment, then retry.',
+    bh_agentErr_overloaded: 'The AI service is overloaded right now. Try again in a minute.',
+    bh_agentErr_upstream:   'The AI service is down on our end. We\'re on it.',
     // Audit 18/06/26 — Faceless leftover localisation + Unlimited badge
     fh_imagesRemaining:        '{n} image(s) remaining',
     fh_preview_cinematic_title:'CINEMATIC',
@@ -5205,6 +5207,8 @@ export const translations = {
     bh_agentErr_network:    'Impossible de joindre l\'agent pour l\'instant. Vérifie ta connexion.',
     bh_agentErr_auth:       'Session expirée — reconnecte-toi pour continuer avec le Brand Agent.',
     bh_agentErr_rateLimit:  'Trop de requêtes — laisse l\'agent souffler un instant puis réessaie.',
+    bh_agentErr_overloaded: 'Le service IA est surchargé. Réessaie dans une minute.',
+    bh_agentErr_upstream:   'Le service IA est down côté serveur. On gère.',
     // Audit 18/06/26 — fuites de localisation Faceless + badge Unlimited
     fh_imagesRemaining:        '{n} image(s) restante(s)',
     fh_preview_cinematic_title:'CINÉMATIQUE',

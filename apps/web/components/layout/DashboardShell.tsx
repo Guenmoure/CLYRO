@@ -30,6 +30,10 @@ export interface SidebarUser {
   initials:    string
   plan:        string
   creditsLeft: number
+  /** Audit 19/06/26 — operational override flag. When true, the sidebar
+   *  + FloatingUserCard render an « Unlimited » badge instead of « 0/250 ».
+   *  Plumbed from profiles.internal_unlimited via the dashboard layout SSR. */
+  isUnlimited?: boolean
 }
 
 interface DashboardShellProps {

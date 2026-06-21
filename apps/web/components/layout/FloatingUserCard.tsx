@@ -29,6 +29,9 @@ export function FloatingUserCard() {
   const [email, setEmail] = useState('')
   const [plan, setPlan]   = useState<string>('free')
   const [credits, setCredits] = useState(0)
+  // Audit 19/06/26 — propagate the operational override to the floating
+  // card so it shows « Unlimited » instead of « 0 credit ».
+  const [isUnlimited, setIsUnlimited] = useState(false)
   const [initials, setInitials] = useState('?')
 
   const ref = useRef<HTMLDivElement>(null)
@@ -38,15 +41,25 @@ export function FloatingUserCard() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) return
       setEmail(session.user.email ?? '')
-      const { data } = await supabase
+      const { data: rawData } = await supabase
         .from('profiles')
-        .select('full_name, plan, credits')
+        .select('full_name, plan, credits, internal_unlimited')
         .eq('id', session.user.id)
         .maybeSingle()
+      // Audit 19/06/26 — Supabase types are generated and don't yet know
+      // about `internal_unlimited` (migrated in 20260616000000…). Cast to
+      // the runtime shape so we can read the flag without `any`.
+      const data = rawData as {
+        full_name:           string | null
+        plan:                string
+        credits:             number
+        internal_unlimited?: boolean | null
+      } | null
       const n = data?.full_name ?? session.user.email?.split('@')[0] ?? 'User'
       setName(n)
       setPlan(data?.plan ?? 'free')
       setCredits(data?.credits ?? 0)
+      setIsUnlimited(data?.internal_unlimited === true)
       setInitials(n.charAt(0).toUpperCase())
     }
     load()
@@ -96,7 +109,11 @@ export function FloatingUserCard() {
               </div>
             </div>
             <div className="flex items-center gap-2 mt-3">
-              {isPaid ? (
+              {/* Audit 19/06/26 — when internal_unlimited is on, show a
+                  dedicated « Unlimited » badge instead of the credit count. */}
+              {isUnlimited ? (
+                <Badge variant="purple">{planLabel} · {t('cb_unlimited')}</Badge>
+              ) : isPaid ? (
                 <Badge variant="purple">{planLabel}</Badge>
               ) : (
                 <>

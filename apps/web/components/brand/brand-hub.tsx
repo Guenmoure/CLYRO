@@ -1012,12 +1012,20 @@ function BrandAgentPanel({ kit }: { kit: BrandKit | null }) {
       // TIMEOUT (Anthropic latency, Render cold start), 401 (expired JWT),
       // and 500 (HEYGEN/Anthropic 5xx).
       if (err instanceof ApiError) {
-        if (err.code === 'INSUFFICIENT_CREDITS')      toast.error(t('bh_agentErr_credits'))
-        else if (err.code === 'TIMEOUT')              toast.error(t('bh_agentErr_timeout'))
-        else if (err.code === 'NETWORK_ERROR')        toast.error(t('bh_agentErr_network'))
-        else if (err.status === 401)                  toast.error(t('bh_agentErr_auth'))
-        else if (err.status === 429)                  toast.error(t('bh_agentErr_rateLimit'))
-        else                                          toast.error(t('bh_agentError'))
+        // Audit 19/06/26 — new upstream codes from the brand-agent route
+        // (UPSTREAM_RATE_LIMIT, UPSTREAM_OVERLOADED, UPSTREAM_AUTH,
+        // UPSTREAM_TIMEOUT) are mapped to specific toasts so the user
+        // knows it's the AI service hiccuping, not their account.
+        if (err.code === 'INSUFFICIENT_CREDITS')          toast.error(t('bh_agentErr_credits'))
+        else if (err.code === 'TIMEOUT')                  toast.error(t('bh_agentErr_timeout'))
+        else if (err.code === 'UPSTREAM_TIMEOUT')         toast.error(t('bh_agentErr_timeout'))
+        else if (err.code === 'NETWORK_ERROR')            toast.error(t('bh_agentErr_network'))
+        else if (err.code === 'UPSTREAM_RATE_LIMIT')      toast.error(t('bh_agentErr_rateLimit'))
+        else if (err.code === 'UPSTREAM_OVERLOADED')      toast.error(t('bh_agentErr_overloaded'))
+        else if (err.code === 'UPSTREAM_AUTH')            toast.error(t('bh_agentErr_upstream'))
+        else if (err.status === 401)                      toast.error(t('bh_agentErr_auth'))
+        else if (err.status === 429)                      toast.error(t('bh_agentErr_rateLimit'))
+        else                                              toast.error(t('bh_agentError'))
       } else {
         toast.error(t('bh_agentError'))
       }

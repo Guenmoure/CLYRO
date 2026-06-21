@@ -48,6 +48,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     initials:    'U',
     plan:        'Free',
     creditsLeft: 0,
+    isUnlimited: false,
   }
   let projectsCount = 0
   let draftsCount   = 0
@@ -62,7 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       const [profileResult, allVideosResult, draftsResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('full_name, plan, credits')
+          .select('full_name, plan, credits, internal_unlimited')
           .eq('id', user.id)
           .maybeSingle(),
         supabase
@@ -77,9 +78,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
       ])
 
       const profile = profileResult.data as {
-        full_name: string | null
-        plan: string
-        credits: number
+        full_name:           string | null
+        plan:                string
+        credits:             number
+        internal_unlimited?: boolean | null
       } | null
       const fullName = profile?.full_name
         ?? user.email?.split('@')[0]
@@ -90,6 +92,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         initials:    getInitials(fullName),
         plan:        capitalize(profile?.plan ?? 'free'),
         creditsLeft: profile?.credits ?? 0,
+        // Audit 19/06/26 — propagate the operational override flag so the
+        // sidebar + FloatingUserCard can show « Unlimited » instead of « 0/250 ».
+        isUnlimited: profile?.internal_unlimited === true,
       }
 
       projectsCount = allVideosResult.count ?? 0

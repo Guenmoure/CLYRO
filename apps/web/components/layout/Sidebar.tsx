@@ -153,8 +153,23 @@ export function Sidebar({
   // Whether the panel column is rendered on desktop.
   const panelOpen = hasPanel && !collapsed
 
-  // ── Credits block (full) — shown in panel & mobile ──────────────────────────
-  const creditsBlock = (
+  // Audit 19/06/26 — when the account has the operational override flag on,
+  // render a dedicated « Unlimited » block instead of the « N / 250 » meter.
+  // The Top-up CTA also disappears (nothing to top up). Same source of truth
+  // as the CreditsBanner on the Dashboard.
+  const creditsBlock = user.isUnlimited ? (
+    <div className="rounded-xl border border-border/60 bg-muted/40 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 min-w-0">
+          <Zap size={13} className="shrink-0 text-primary" aria-hidden="true" />
+          <span className="font-mono text-[11px] text-foreground truncate">
+            {t('cb_unlimited')}
+          </span>
+        </span>
+      </div>
+      <div className="mt-2 h-1.5 rounded-full bg-gradient-to-r from-brand to-violet-500 opacity-70" />
+    </div>
+  ) : (
     <div className="rounded-xl border border-border/60 bg-muted/40 p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 min-w-0">
@@ -255,7 +270,9 @@ export function Sidebar({
                 </p>
                 <p className="font-mono text-[11px] text-[--text-muted] leading-tight">
                   {user.plan}
-                  <span className="text-primary ml-1">· {user.creditsLeft} cr</span>
+                  <span className="text-primary ml-1">
+                    · {user.isUnlimited ? t('cb_unlimited') : `${user.creditsLeft} cr`}
+                  </span>
                 </p>
               </div>
               <ChevronUp size={13} className={cn(

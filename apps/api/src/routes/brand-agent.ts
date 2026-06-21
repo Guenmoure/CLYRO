@@ -121,7 +121,39 @@ ${existingKit ? `\nEXISTING BRAND KIT:\n- Name: ${existingKit.name}\n- Primary: 
     logger.info({ userId: req.userId, brand_kit_id, msgCount: messages.length }, 'Brand agent chat')
     res.json({ reply, suggestions })
   } catch (err) {
-    logger.error({ err, userId: req.userId }, 'brand/agent/chat error')
+    // Audit 19/06/26 — was always 500 + generic « GENERATION_ERROR ». The
+    // frontend mapped that to « Agent error » with no clue about the cause.
+    // Now we propagate enough detail for the toast to be useful, without
+    // leaking provider internals or stack traces (security.md).
+    const e = err as { status?: number; error?: { type?: string; message?: string }; message?: string }
+    const upstreamStatus  = typeof e?.status === 'number' ? e.status : undefined
+    const upstreamType    = e?.error?.type
+    const upstreamMessage = e?.error?.message ?? e?.message
+    logger.error(
+      { err, userId: req.userId, upstreamStatus, upstreamType, upstreamMessage },
+      'brand/agent/chat error',
+    )
+    // Map Anthropic / network errors to stable codes the frontend already
+    // discriminates (TIMEOUT, NETWORK_ERROR, rate-limit, auth, generic).
+    if (upstreamType === 'rate_limit_error' || upstreamStatus === 429) {
+      res.status(429).json({ error: 'Rate limited by the upstream model', code: 'UPSTREAM_RATE_LIMIT' })
+      return
+    }
+    if (upstreamType === 'overloaded_error' || upstreamStatus === 503) {
+      res.status(503).json({ error: 'Model temporarily overloaded', code: 'UPSTREAM_OVERLOADED' })
+      return
+    }
+    if (upstreamType === 'authentication_error' || upstreamStatus === 401) {
+      // Server-side Anthropic key is misconfigured — log loud and tell the
+      // client it's a backend issue, not their session.
+      logger.error({ userId: req.userId }, 'brand/agent/chat: Anthropic auth failed — check ANTHROPIC_API_KEY')
+      res.status(502).json({ error: 'Upstream auth failed', code: 'UPSTREAM_AUTH' })
+      return
+    }
+    if (e?.message && /timeout|fetch/i.test(e.message)) {
+      res.status(504).json({ error: 'Upstream timeout', code: 'UPSTREAM_TIMEOUT' })
+      return
+    }
     res.status(500).json({ error: 'Brand agent failed', code: 'GENERATION_ERROR' })
   }
 })

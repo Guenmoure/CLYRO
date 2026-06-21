@@ -1121,10 +1121,14 @@ export interface StudioAvatar {
 }
 
 export async function getStudioAvatars() {
+  // Audit 19/06/26 — HeyGen /v2/avatars takes up to ~60 s on a cold cache
+  // (large payload, 300-600 avatars). The default 30 s `apiFetch` timeout
+  // aborted before the backend could respond, locking the gallery in a
+  // permanent skeleton. Override to 90 s so the client outlasts the server.
   return apiFetch<{
     avatars: StudioAvatar[]
     categories: string[]
-  }>('/api/v1/pipeline/studio/avatars')
+  }>('/api/v1/pipeline/studio/avatars', { timeoutMs: 90_000 })
 }
 
 export async function getStudioProject(projectId: string) {
