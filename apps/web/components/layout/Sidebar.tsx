@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Sidebar — two-level navigation (HeyGen pattern).
+ * Sidebar — two-level navigation.
  *
  *   RAIL (≈72px)  : icon + micro-label per top-level section, violet-active.
  *                   User avatar + credits sit at the bottom of the rail.
@@ -9,11 +9,19 @@
  *                   optional "+ Create new" button, grouped sub-links, plus
  *                   the credits block at the bottom.
  *
- * The panel only appears for sections that have children AND when the user
- * hasn't collapsed it. Home / Autopilot have no children → rail only.
+ * Audit 19/06/26 — nav overhaul :
+ *   • Logo (top of rail) now IS the Home affordance — there is no Home entry.
+ *     We highlight the logo (ring) when pathname === '/dashboard'.
+ *   • Five rail entries : Anim Video, Studio, Apps, Assets, Projects.
+ *   • Bottom rail is empty — Settings / Billing / Help live in the user-menu
+ *     dropdown only.
+ *   • User menu trimmed to 4 items : Upgrade Plan, Settings, Help, Log out.
  *
- * `collapsed` (persisted by DashboardShell) now means "panel hidden". The
- * rail stays visible at all times on desktop.
+ * The panel only appears for sections that have children AND when the user
+ * hasn't collapsed it. Anim Video has no children → rail only.
+ *
+ * `collapsed` (persisted by DashboardShell) means "panel hidden". The rail
+ * stays visible at all times on desktop.
  *
  * Mobile: a single drawer renders the rail entries flattened into a
  * hierarchical list (section header → its child links).
@@ -40,8 +48,8 @@ import {
 } from './nav-model'
 import {
   ChevronUp, PanelLeftClose, PanelLeftOpen,
-  HelpCircle, Bell, LogOut, Settings,
-  CreditCard, ExternalLink, X, Zap, Plus,
+  HelpCircle, LogOut, Settings, Sparkles,
+  ExternalLink, X, Zap, Plus,
 } from 'lucide-react'
 import type { SidebarUser } from './DashboardShell'
 
@@ -74,9 +82,12 @@ export function Sidebar({
   const { t }    = useLanguage()
 
   // ── Active section (driven by pathname) ──────────────────────────────────────
-  const activeEntry = resolveActiveEntry(pathname) ?? RAIL_ITEMS[0]
-  const activeId    = activeEntry.id
-  const hasPanel    = (activeEntry.children?.length ?? 0) > 0
+  // Audit 19/06/26 — no auto-fallback to RAIL_ITEMS[0]. On /dashboard the
+  // logo carries the « active » state and no rail entry is highlighted.
+  const activeEntry: NavEntry | undefined = resolveActiveEntry(pathname)
+  const activeId    = activeEntry?.id
+  const hasPanel    = (activeEntry?.children?.length ?? 0) > 0
+  const isHome      = pathname === '/dashboard'
 
   // User menu state
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -300,12 +311,30 @@ export function Sidebar({
                 {user.plan} · {creditsLabel}
               </p>
             </div>
+            {/* Audit 19/06/26 — user menu trimmed to 4 items per stakeholder
+                direction: Upgrade Plan, Settings, Help, Log out.
+                Upgrade Plan routes to /pricing for free/starter accounts and
+                to /settings/billing for paid plans (so they can manage). */}
             <div className="py-1.5">
-              <UserMenuItem icon={Settings}     label={t('settings')}       href="/settings" onClose={() => setUserMenuOpen(false)} />
-              <UserMenuItem icon={CreditCard}   label={t('billing')}        href="/settings/billing" onClose={() => setUserMenuOpen(false)} />
-              <UserMenuItem icon={Bell}         label={t('sb_updates')}     href="/dashboard" onClose={() => setUserMenuOpen(false)} badge="2" />
-              <UserMenuItem icon={HelpCircle}   label={t('sb_helpSupport')} href="/dashboard" onClose={() => setUserMenuOpen(false)} />
-              <UserMenuItem icon={ExternalLink} label={t('sb_docs')}        href="https://docs.clyro.ai" onClose={() => setUserMenuOpen(false)} external />
+              <UserMenuItem
+                icon={Sparkles}
+                label={t('userMenu_upgradePlan')}
+                href={isStarter ? '/pricing' : '/settings/billing'}
+                onClose={() => setUserMenuOpen(false)}
+              />
+              <UserMenuItem
+                icon={Settings}
+                label={t('settings')}
+                href="/settings"
+                onClose={() => setUserMenuOpen(false)}
+              />
+              <UserMenuItem
+                icon={HelpCircle}
+                label={t('userMenu_help')}
+                href="https://docs.clyro.ai"
+                onClose={() => setUserMenuOpen(false)}
+                external
+              />
             </div>
             <div className="border-t border-border/60 py-1.5">
               <button
@@ -333,12 +362,23 @@ export function Sidebar({
         className="flex flex-col h-full shrink-0 py-3"
         style={{ width: RAIL_W }}
       >
-        {/* Logo → /dashboard */}
+        {/* Logo IS the Home affordance (audit 19/06/26 — replaces the rail
+            « Home » entry that used to live above the rest). When the user
+            is on /dashboard we ring it with the accent color so the state
+            stays visible. */}
         <button
           type="button"
           onClick={() => router.push('/dashboard')}
-          className="mb-3 flex justify-center hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded"
+          aria-current={isHome ? 'page' : undefined}
           aria-label={t('dashboard')}
+          className={cn(
+            'mb-3 mx-auto flex items-center justify-center rounded-xl p-1.5',
+            'transition-all duration-150',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+            isHome
+              ? 'bg-accent ring-2 ring-primary/40'
+              : 'hover:bg-muted hover:opacity-90',
+          )}
         >
           <Logo variant="icon" size="md" />
         </button>
@@ -348,16 +388,19 @@ export function Sidebar({
           <NavRail items={RAIL_ITEMS} activeId={activeId} onSelect={handleRailSelect} />
         </div>
 
-        {/* Bottom: settings, credits icon (when panel hidden), avatar */}
+        {/* Bottom: credits icon (when panel hidden), avatar.
+            Audit 19/06/26 — no more Settings rail icon. Settings lives in
+            the user-menu dropdown only. We still keep RAIL_BOTTOM_ITEMS as
+            an iterable so the mobile drawer code below keeps compiling, but
+            we don't render it on desktop. */}
         <div className="shrink-0 pt-2 space-y-1.5">
-          <NavRail items={RAIL_BOTTOM_ITEMS} activeId={activeId} onSelect={handleRailSelect} />
           {!panelOpen && creditsRailIcon}
           <div className="px-1.5">{userMenu(true)}</div>
         </div>
       </div>
 
       {/* ── PANEL — contextual sub-menu ──────────────────────────── */}
-      {panelOpen && (
+      {panelOpen && activeEntry && (
         <div
           className="flex flex-col h-full shrink-0 border-l border-border/50 bg-background/60"
           style={{ width: PANEL_W }}

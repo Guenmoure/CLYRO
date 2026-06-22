@@ -1,15 +1,24 @@
 /**
- * nav-model — two-level navigation model (HeyGen pattern).
+ * nav-model — two-level navigation model.
  *
- * Six primary rail items matching HeyGen's layout:
- *   Home · Studio (Avatar) · Brand · Apps (Create) · Projects · Settings
+ * Audit 19/06/26 — reorganised per stakeholder direction :
+ *
+ *   Logo (CLYRO) → /dashboard      (acts as Home; no separate Home entry)
+ *   1. Anim Video                  (ex-Faceless, standalone, no panel)
+ *   2. Studio                      → Motion Design · AI Avatar Studio · Brand
+ *   3. Apps                        → catalogue of ALL apps (Anim + Studio's 3 + Autopilot)
+ *   4. Assets                      → Avatars · Voices · Templates
+ *   5. Projects                    → All projects · Drafts
+ *
+ * Settings is NO LONGER on the rail — it lives in the user-profile dropdown
+ * only (Sidebar.userMenu). Same goes for Billing / Help.
  *
  * Each RAIL entry maps to a real route. Entries with `children` render a
  * contextual PANEL to the right of the icon rail; the panel lists sub-links,
  * optionally grouped by an uppercase `groupKey` heading.
  *
- * All labels are translation keys (resolved via t() in the consumer).
- * Routes are verified against the real app/(dashboard) folder tree.
+ * All labels are translation keys (resolved via t() in the consumer). Routes
+ * are verified against the real app/(dashboard) folder tree.
  *
  * `isModule: true` marks a creation module: its panel shows a full-width
  * "+ Create new" button that routes to `<href>/new`.
@@ -17,8 +26,8 @@
 
 import type { LucideIcon } from 'lucide-react'
 import {
-  Home, Clapperboard, Palette, LayoutGrid,
-  FolderOpen, Settings,
+  Wand2, Clapperboard, LayoutGrid,
+  Boxes, FolderOpen,
 } from 'lucide-react'
 
 export interface NavChild {
@@ -38,67 +47,63 @@ export interface NavEntry {
   children?: NavChild[]
 }
 
-// ── Primary rail — top group (5 items + Settings at bottom) ─────────────────
+// ── Primary rail — 5 entries (no Home, no Settings) ─────────────────────────
 
 /** Primary rail — top group. */
 export const RAIL_ITEMS: NavEntry[] = [
-  // ── 1. Home — no sub-nav, full-width content ──────────────────────────────
+  // ── 1. Anim Video — standalone Faceless module ────────────────────────────
+  // No children: clicking goes straight to /faceless. The dedicated « New »
+  // route is reached via the page-level CTA (no panel needed).
   {
-    id: 'home',
-    icon: Home,
-    labelKey: 'nav_home',
-    href: '/dashboard',
+    id: 'anim',
+    icon: Wand2,
+    labelKey: 'nav_animVideo',
+    href: '/faceless',
+    isModule: true,
   },
 
-  // ── 2. Studio (≈ HeyGen "Avatar") — avatar video creation ─────────────────
+  // ── 2. Studio — three creation tools grouped under one rail entry ─────────
   {
     id: 'studio',
     icon: Clapperboard,
     labelKey: 'nav_studio',
     href: '/studio',
-    isModule: true,
     children: [
-      { labelKey: 'nav_quickCreate',  href: '/studio/new' },
-      { labelKey: 'nav_avatars',      href: '/assets/avatars', groupKey: 'nav_grp_manage' },
-      // Audit 19/06/26 B7 — was '/voices' (alternate page) which left the
-      // sidebar context jumping to « Projects » when the user landed on
-      // /assets/voices (the Assets layout's Voices tab matches Projects'
-      // /assets child by prefix). Aligning both Voices and Avatars under
-      // /assets/* keeps Studio active throughout the Assets browsing flow.
-      { labelKey: 'nav_voices',       href: '/assets/voices',  groupKey: 'nav_grp_manage' },
-      { labelKey: 'nav_myProjects',   href: '/studio',         groupKey: 'nav_grp_myVideos' },
+      { labelKey: 'nav_motionDesign',  href: '/motion',  groupKey: 'nav_grp_tools' },
+      { labelKey: 'nav_avatarStudio',  href: '/studio',  groupKey: 'nav_grp_tools' },
+      { labelKey: 'nav_brand',         href: '/brand',   groupKey: 'nav_grp_tools' },
     ],
   },
 
-  // ── 3. Brand (≈ HeyGen "Brand") — brand system & templates ────────────────
-  {
-    id: 'brand',
-    icon: Palette,
-    labelKey: 'nav_brand',
-    href: '/brand',
-    isModule: true,
-    children: [
-      { labelKey: 'nav_brandSystem', href: '/brand' },
-      { labelKey: 'nav_templates',   href: '/templates',  groupKey: 'nav_grp_manage' },
-    ],
-  },
-
-  // ── 4. Apps (≈ HeyGen "Apps") — creation tools library ────────────────────
+  // ── 3. Apps — catalogue of every creative app (discovery hub) ─────────────
   {
     id: 'apps',
     icon: LayoutGrid,
     labelKey: 'nav_apps',
     href: '/apps',
     children: [
-      { labelKey: 'npd_faceless_title',  href: '/faceless',     groupKey: 'nav_grp_create' },
-      { labelKey: 'npd_motion_title',    href: '/motion',       groupKey: 'nav_grp_create' },
-      { labelKey: 'npd_autopilot_title', href: '/autopilot',    groupKey: 'nav_grp_create' },
-      { labelKey: 'nav_facelessNew',     href: '/faceless/new', groupKey: 'nav_grp_quickStart' },
-      { labelKey: 'nav_motionNew',       href: '/motion/new',   groupKey: 'nav_grp_quickStart' },
+      { labelKey: 'nav_animVideo',       href: '/faceless',  groupKey: 'nav_grp_create' },
+      { labelKey: 'nav_motionDesign',    href: '/motion',    groupKey: 'nav_grp_create' },
+      { labelKey: 'nav_avatarStudio',    href: '/studio',    groupKey: 'nav_grp_create' },
+      { labelKey: 'nav_brand',           href: '/brand',     groupKey: 'nav_grp_create' },
+      { labelKey: 'npd_autopilot_title', href: '/autopilot', groupKey: 'nav_grp_create' },
     ],
   },
 
-  // ── 5. Projects (≈ HeyGen "Projects") — all content ──────────────────────
+  // ── 4. Assets — Avatars / Voices / Templates ──────────────────────────────
+  {
+    id: 'assets',
+    icon: Boxes,
+    labelKey: 'nav_assets',
+    href: '/assets',
+    children: [
+      { labelKey: 'nav_avatars',   href: '/assets/avatars', groupKey: 'nav_grp_library' },
+      { labelKey: 'nav_voices',    href: '/assets/voices',  groupKey: 'nav_grp_library' },
+      { labelKey: 'nav_templates', href: '/templates',      groupKey: 'nav_grp_library' },
+    ],
+  },
+
+  // ── 5. Projects — all generated content ───────────────────────────────────
   {
     id: 'projects',
     icon: FolderOpen,
@@ -106,28 +111,19 @@ export const RAIL_ITEMS: NavEntry[] = [
     href: '/projects',
     children: [
       { labelKey: 'nav_allProjects', href: '/projects' },
-      { labelKey: 'nav_drafts',      href: '/drafts',    groupKey: 'nav_grp_library' },
-      { labelKey: 'nav_templates',   href: '/templates', groupKey: 'nav_grp_library' },
-      { labelKey: 'nav_assets',      href: '/assets',    groupKey: 'nav_grp_library' },
+      { labelKey: 'nav_drafts',      href: '/drafts', groupKey: 'nav_grp_library' },
     ],
   },
 ]
 
-/** Bottom rail — settings. */
-export const RAIL_BOTTOM_ITEMS: NavEntry[] = [
-  {
-    id: 'settings',
-    icon: Settings,
-    labelKey: 'settings',
-    href: '/settings',
-    children: [
-      { labelKey: 'nav_general',       href: '/settings' },
-      { labelKey: 'billing',          href: '/settings/billing',      groupKey: 'nav_grp_workspace' },
-      { labelKey: 'nav_team',         href: '/settings/team',         groupKey: 'nav_grp_workspace' },
-      { labelKey: 'nav_integrations', href: '/settings/integrations', groupKey: 'nav_grp_workspace' },
-    ],
-  },
-]
+/**
+ * Bottom rail — intentionally empty.
+ * Settings + Billing + Help are reachable via the user-profile dropdown
+ * (Sidebar.userMenu) per the 19/06/26 navigation overhaul. Kept exported as
+ * an empty array so the existing Sidebar / mobile-drawer iteration code keeps
+ * compiling without conditionals.
+ */
+export const RAIL_BOTTOM_ITEMS: NavEntry[] = []
 
 export const ALL_RAIL_ITEMS: NavEntry[] = [...RAIL_ITEMS, ...RAIL_BOTTOM_ITEMS]
 
@@ -137,18 +133,22 @@ export const PANEL_W = 210
 
 /**
  * Resolve which rail entry owns the current pathname.
- * Matches the most specific entry (longest href prefix) so /settings/billing
- * resolves to settings, /faceless/new resolves to apps, etc.
+ * Matches the most specific entry (longest href prefix) so /faceless/new
+ * resolves to Anim, /studio/new resolves to Studio, etc.
+ *
+ * Returns undefined for /dashboard (the logo handles its active state) and
+ * for any path that isn't covered — the caller decides what to do.
  */
 export function resolveActiveEntry(pathname: string): NavEntry | undefined {
+  // Dashboard belongs to the logo, not the rail.
+  if (pathname === '/dashboard') return undefined
+
   let best: NavEntry | undefined
   let bestLen = -1
   for (const entry of ALL_RAIL_ITEMS) {
     const hrefs = [entry.href, ...(entry.children?.map(c => c.href) ?? [])]
     for (const href of hrefs) {
-      const match = href === '/dashboard'
-        ? pathname === '/dashboard'
-        : pathname === href || pathname.startsWith(href + '/')
+      const match = pathname === href || pathname.startsWith(href + '/')
       if (match && href.length > bestLen) {
         best = entry
         bestLen = href.length
@@ -160,8 +160,8 @@ export function resolveActiveEntry(pathname: string): NavEntry | undefined {
 
 /**
  * Resolve which child of an entry is active for the current pathname.
- * Longest-matching href wins, so /faceless/new activates "New Faceless" while
- * /faceless activates "Faceless Videos" — without both lighting up.
+ * Longest-matching href wins, so /faceless/new activates the Anim entry
+ * but no child (Anim has none), while /assets/voices activates Voices.
  */
 export function resolveActiveChildHref(entry: NavEntry, pathname: string): string | undefined {
   let best: string | undefined
