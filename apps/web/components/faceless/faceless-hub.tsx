@@ -1628,7 +1628,7 @@ function ImagesStep({ scenes, style, masterSeed, styleReference, onScenesChange,
                 {scene.imageStatus === 'generating' ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
                     <Loader2 size={24} className="text-white/60 animate-spin" />
-                    <p className="font-mono text-[11px] text-white/50 uppercase tracking-widest">Génération…</p>
+                    <p className="font-mono text-[11px] text-white/50 uppercase tracking-widest">{t('fh_generating')}</p>
                     {scene.streamLog && (
                       <p className="font-mono text-[8px] text-white/30 text-center truncate w-full px-2 mt-0.5">
                         {scene.streamLog.slice(0, 48)}
@@ -2312,11 +2312,15 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b border-border shrink-0">
         <div>
-          <h2 className="font-display text-base font-bold text-foreground">Génération des clips</h2>
+          {/* Audit 22/06/26 — was hardcoded FR in EN mode (locale leak). Now
+              fully i18n-ised via fh_clipsGen* keys (5 langues). */}
+          <h2 className="font-display text-base font-bold text-foreground">{t('fh_clipsGenTitle')}</h2>
           <p className="font-body text-xs text-[--text-muted]">
             {animationMode === 'storyboard'
-              ? `Mode images fixes · ${scenes.length} scènes prêtes`
-              : `${doneCnt}/${scenes.length} clips`} · voix off {voiceStatus === 'done' ? '✓ ready' : 'en attente'}
+              ? t('fh_clipsGenSubtitleStoryboard').replace('{n}', String(scenes.length))
+              : t('fh_clipsGenSubtitleClips')
+                  .replace('{done}', String(doneCnt))
+                  .replace('{total}', String(scenes.length))} · {t('fh_voiceoverLabel')} {voiceStatus === 'done' ? t('fh_voiceReady') : t('fh_voicePending')}
           </p>
         </div>
         {animationMode !== 'storyboard' && (
@@ -2384,7 +2388,7 @@ function ClipsStep({ scenes, onScenesChange, voiceId, onBack, onNext, videoId, o
                 {scene.clipStatus === 'generating' ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
                     <Loader2 size={24} className="text-white/60 animate-spin" />
-                    <p className="font-mono text-[11px] text-white/50 uppercase tracking-widest">Génération…</p>
+                    <p className="font-mono text-[11px] text-white/50 uppercase tracking-widest">{t('fh_generating')}</p>
                   </div>
                 ) : scene.clipStatus === 'done' && scene.clipUrl ? (
                   <button

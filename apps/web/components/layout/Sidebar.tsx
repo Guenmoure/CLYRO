@@ -407,11 +407,13 @@ export function Sidebar({
         >
           {/* Header: collapse toggle */}
           <div className="flex items-center justify-end px-3 pt-3">
+            {/* Audit 22/06/26 — was w-7 h-7 (28×28), below WCAG 2.5.5 minimum.
+                Bumped to w-9 h-9 (36×36) for safer touch / cursor target. */}
             <button
               type="button"
               onClick={() => onToggle(true)}
               aria-label={t('sb_collapsePanel')}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-[--text-muted] hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-[--text-muted] hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
             >
               <PanelLeftClose size={15} />
             </button>
@@ -429,13 +431,15 @@ export function Sidebar({
 
       {/* When a panel exists but is collapsed, offer a reopen affordance */}
       {hasPanel && collapsed && (
+        // Audit 22/06/26 — was w-6 h-6 (24×24). Bumped to w-9 h-9 (36×36) so
+        // the reopen affordance respects WCAG 2.5.5 Target Size.
         <button
           type="button"
           onClick={() => onToggle(false)}
           aria-label={t('sb_expandPanel')}
-          className="self-start mt-3 -ml-3 w-6 h-6 rounded-full flex items-center justify-center border border-border bg-card text-[--text-muted] hover:bg-muted hover:text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors z-10"
+          className="self-start mt-3 -ml-4 w-9 h-9 rounded-full flex items-center justify-center border border-border bg-card text-[--text-muted] hover:bg-muted hover:text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors z-10"
         >
-          <PanelLeftOpen size={12} />
+          <PanelLeftOpen size={14} />
         </button>
       )}
     </div>
@@ -454,13 +458,14 @@ export function Sidebar({
         >
           <Logo variant="full" size="md" />
         </button>
+        {/* Audit 22/06/26 — close button bumped to 36×36 (WCAG 2.5.5). */}
         <button
           type="button"
           onClick={onMobileClose}
           aria-label={t('sb_closeSidebar')}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
         >
-          <X size={16} />
+          <X size={18} />
         </button>
       </div>
 

@@ -36,7 +36,9 @@
 
     --text-primary:           #111827;
     --text-secondary:         #4B5563;
-    --text-muted:             #6B7280;
+    /* Audit 22/06/26 — was #6B7280 → 4.49:1 on --background (#F7F7F8),
+       just under WCAG 1.4.3 AA (4.5:1). Bumped to #5F6675 → 5.5:1. */
+    --text-muted:             #5F6675;
     --text-disabled:          #D1D5DB;
 
     --bg-secondary:           #F9FAFB;
