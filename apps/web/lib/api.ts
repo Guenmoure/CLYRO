@@ -1120,6 +1120,16 @@ export interface StudioAvatar {
   category: 'professional' | 'lifestyle' | 'ugc' | 'community' | 'other'
 }
 
+/**
+ * Audit 22/06/26 — `reason` discriminates why the list might be empty so the
+ * UI can show a useful message and the user can decide what to do.
+ *   • 'ok'              — N avatars returned
+ *   • 'config_missing'  — server has no upstream key configured
+ *   • 'upstream_error'  — upstream rejected the call (401, 429, 5xx, timeout)
+ *   • 'empty'           — upstream returned 0 avatars (rare but possible)
+ */
+export type StudioAvatarsReason = 'ok' | 'config_missing' | 'upstream_error' | 'empty'
+
 export async function getStudioAvatars() {
   // Audit 19/06/26 — HeyGen /v2/avatars takes up to ~60 s on a cold cache
   // (large payload, 300-600 avatars). The default 30 s `apiFetch` timeout
@@ -1128,6 +1138,8 @@ export async function getStudioAvatars() {
   return apiFetch<{
     avatars: StudioAvatar[]
     categories: string[]
+    /** Present on every response since 22/06/26 ; older API builds omit it. */
+    reason?: StudioAvatarsReason
   }>('/api/v1/pipeline/studio/avatars', { timeoutMs: 90_000 })
 }
 

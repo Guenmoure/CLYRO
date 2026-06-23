@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   FileText, Youtube, ArrowRight, ArrowLeft, Loader2, Sparkles,
-  Globe, Wand2, Info, Check, Search, ChevronDown, ChevronUp, Mic,
+  Globe, Wand2, Info, Check, Search, ChevronDown, ChevronUp, Mic, RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
-import { analyzeStudio, getStudioAvatars, getPublicVoices, polishScript, checkScript, type StudioAvatar, type ClyroVoice, type PolishGoal, type ScriptIssue, ApiError } from '@/lib/api'
+import { analyzeStudio, getStudioAvatars, getPublicVoices, polishScript, checkScript, type StudioAvatar, type StudioAvatarsReason, type ClyroVoice, type PolishGoal, type ScriptIssue, ApiError } from '@/lib/api'
 import { VoicePickerModal } from '@/components/creation/VoicePickerModal'
 import { HyperFramesSection } from '@/components/creation/HyperFramesSection'
 import { StudioTemplateGallery } from '@/components/studio/StudioTemplateGallery'
@@ -117,6 +117,9 @@ function StudioNewPageInner() {
   const [avatarId, setAvatarId] = useState<string>('')
   const [selectedLookId, setSelectedLookId] = useState<string>('')
   const [loadingAvatars, setLoadingAvatars] = useState(true)
+  // Audit 22/06/26 — discriminator so the empty-state copy can tell the user
+  // what actually happened (config issue, upstream error, or genuinely empty).
+  const [avatarsReason, setAvatarsReason] = useState<StudioAvatarsReason>('ok')
   const [avatarSearch, setAvatarSearch] = useState('')
   const [avatarTab, setAvatarTab] = useState<string>('all')
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
@@ -168,15 +171,26 @@ function StudioNewPageInner() {
     ) ?? null
   }, [avatarGroups, selectedAvatar])
 
-  useEffect(() => {
+  // Avatar fetch — extracted so the « Retry » button can re-run it after the
+  // upstream issue is resolved without forcing the user to reload the page.
+  const fetchAvatars = useCallback(() => {
+    setLoadingAvatars(true)
     getStudioAvatars()
       .then((data) => {
         setAvatars(data.avatars)
+        setAvatarsReason(data.reason ?? (data.avatars.length === 0 ? 'empty' : 'ok'))
         if (data.avatars.length > 0) setAvatarId(data.avatars[0]!.avatar_id)
       })
-      .catch(() => setAvatars([]))
+      .catch(() => {
+        // Network / 5xx surfaces as a thrown ApiError. Treat like upstream_error
+        // so the user gets a meaningful message + retry.
+        setAvatars([])
+        setAvatarsReason('upstream_error')
+      })
       .finally(() => setLoadingAvatars(false))
   }, [])
+
+  useEffect(() => { fetchAvatars() }, [fetchAvatars])
 
   // ── Restore draft from DB ───────────────────────────────────────────────────
   useEffect(() => {
@@ -651,14 +665,33 @@ function StudioNewPageInner() {
               ))}
             </div>
           ) : avatars.length === 0 ? (
+            // Audit 22/06/26 — pick the description based on the actual reason
+            // returned by the API. « config_missing » means support needs to
+            // fix it ; « upstream_error » means HeyGen is having a moment ;
+            // « empty » means the account is fine but truly returns 0. Old API
+            // builds without `reason` fall back to the upstream-error copy
+            // because that's the most common case in practice.
             <Card variant="elevated" padding="md" className="flex items-center gap-3">
               <Info size={16} className="text-amber-500 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-body text-sm text-foreground">{t('avatarsUnavailable')}</p>
                 <p className="font-body text-xs text-[--text-secondary] mt-0.5">
-                  {t('avatarsUnavailableDesc')}
+                  {avatarsReason === 'config_missing'
+                    ? t('avatarsUnavailable_config')
+                    : avatarsReason === 'empty'
+                      ? t('avatarsUnavailable_empty')
+                      : t('avatarsUnavailableDesc')}
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={fetchAvatars}
+                disabled={loadingAvatars}
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-card border border-border text-xs font-body text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={13} className={loadingAvatars ? 'animate-spin' : ''} />
+                {t('av_retry')}
+              </button>
             </Card>
           ) : (
             <>

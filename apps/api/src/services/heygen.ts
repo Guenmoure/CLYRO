@@ -229,29 +229,82 @@ function normalizeAvatar(raw: HeyGenAvatarRaw): HeyGenAvatar {
 
 // ── List avatars ────────────────────────────────────────────────────────
 
-export async function listAvatars(): Promise<HeyGenAvatar[]> {
-  if (!HEYGEN_API_KEY) return []  // graceful fallback if not configured
+/**
+ * Reason an empty avatar list is returned. Lets the caller (route handler /
+ * frontend) tell « config missing » apart from « upstream error » apart from
+ * « HeyGen genuinely returned 0 avatars ».
+ *
+ * Audit 22/06/26 — was opaque (every empty list looked the same). The user
+ * reported the « avatars unavailable » message persisting even after the key
+ * was configured, so we needed visibility into the actual cause.
+ */
+export type AvatarsLoadReason = 'ok' | 'config_missing' | 'upstream_error' | 'empty'
 
-  const res = await fetch(`${HEYGEN_BASE}/v2/avatars`, {
-    headers: { 'X-Api-Key': HEYGEN_API_KEY },
-    signal: AbortSignal.timeout(HEYGEN_LIST_TIMEOUT_MS),
-  })
-  const data = await res.json() as { data: { avatars: HeyGenAvatarRaw[] }; message?: string }
-  if (!res.ok) {
-    logger.warn({ status: res.status, body: data }, 'HeyGen listAvatars failed')
-    return []
+export interface ListAvatarsResult {
+  avatars: HeyGenAvatar[]
+  reason:  AvatarsLoadReason
+  /** HTTP status code from HeyGen when reason is 'upstream_error'. */
+  upstreamStatus?: number
+}
+
+export async function listAvatars(): Promise<ListAvatarsResult> {
+  if (!HEYGEN_API_KEY) {
+    logger.warn(
+      {},
+      'HeyGen listAvatars: HEYGEN_API_KEY env var is missing — returning [] (config_missing)',
+    )
+    return { avatars: [], reason: 'config_missing' }
   }
-  const raw = data.data.avatars ?? []
 
-  // Log a sample avatar to see full API shape (debug, remove later)
-  if (raw.length > 0) {
-    logger.info({ sampleKeys: Object.keys(raw[0]), sample: JSON.stringify(raw[0]).slice(0, 500) }, 'HeyGen avatar sample')
+  let res: Response
+  try {
+    res = await fetch(`${HEYGEN_BASE}/v2/avatars`, {
+      headers: { 'X-Api-Key': HEYGEN_API_KEY },
+      signal: AbortSignal.timeout(HEYGEN_LIST_TIMEOUT_MS),
+    })
+  } catch (err) {
+    // Network / timeout — log loud so on-call can correlate with Render network
+    // incidents or HeyGen status page.
+    logger.error({ err }, 'HeyGen listAvatars: fetch failed (network or timeout)')
+    return { avatars: [], reason: 'upstream_error' }
+  }
+
+  let data: { data?: { avatars?: HeyGenAvatarRaw[] }; message?: string; code?: number } = {}
+  try {
+    data = await res.json() as typeof data
+  } catch {
+    // Non-JSON body (HTML error page from a proxy, etc.)
+    logger.warn({ status: res.status }, 'HeyGen listAvatars: non-JSON response body')
+  }
+
+  if (!res.ok) {
+    // Make the auth case unmistakable in the logs — that's the #1 reason for
+    // the « avatars unavailable » message in prod.
+    if (res.status === 401 || res.status === 403) {
+      logger.error(
+        { status: res.status, body: data },
+        'HeyGen listAvatars: AUTH FAILED — HEYGEN_API_KEY is set but rejected by HeyGen. Verify the key value on the Render env tab.',
+      )
+    } else if (res.status === 429) {
+      logger.warn({ body: data }, 'HeyGen listAvatars: rate-limited by HeyGen (429)')
+    } else {
+      logger.warn({ status: res.status, body: data }, 'HeyGen listAvatars failed')
+    }
+    return { avatars: [], reason: 'upstream_error', upstreamStatus: res.status }
+  }
+
+  const raw = data.data?.avatars ?? []
+
+  // Empty success — extremely rare for a configured account; surface in logs.
+  if (raw.length === 0) {
+    logger.warn({ body: data }, 'HeyGen listAvatars: 200 OK but 0 avatars in response')
+    return { avatars: [], reason: 'empty' }
   }
 
   const avatars = raw.map(normalizeAvatar)
   const cats = avatars.reduce((acc, a) => { acc[a.category] = (acc[a.category] || 0) + 1; return acc }, {} as Record<string, number>)
   logger.info({ count: avatars.length, categories: cats }, 'HeyGen avatars loaded')
-  return avatars
+  return { avatars, reason: 'ok' }
 }
 
 // ── Instant Avatar (Digital Twin) ───────────────────────────────────────

@@ -1316,15 +1316,45 @@ async function runStudioFinalRender(
 // 15-minute cache slashes p50 latency to near-zero for repeat visitors.
 // Cache is process-local — resets on redeploy, which is the desired "cache bust".
 const CACHE_TTL_AVATARS_MS = 15 * 60 * 1000
-const getCachedAvatars = memoizeTTL('heygen.avatars', CACHE_TTL_AVATARS_MS, listAvatars)
+
+// Audit 22/06/26 — we only cache the SUCCESS path. If listAvatars returns a
+// non-ok reason (config_missing / upstream_error / empty), we don't want that
+// poisoned state to stick around for 15 minutes after the issue gets fixed.
+// memoizeTTL already drops the entry on throw, so we throw a sentinel and
+// catch it in the route handler.
+class AvatarsUnavailableError extends Error {
+  constructor(public payload: Awaited<ReturnType<typeof listAvatars>>) {
+    super('avatars-unavailable')
+    this.name = 'AvatarsUnavailableError'
+  }
+}
+
+const getCachedAvatars = memoizeTTL('heygen.avatars', CACHE_TTL_AVATARS_MS, async () => {
+  const result = await listAvatars()
+  if (result.reason !== 'ok') {
+    // Surface to memoizeTTL as a throw → cache is NOT populated, the next
+    // request retries immediately. This is how we recover the moment the
+    // HEYGEN_API_KEY is fixed on Render without forcing a redeploy.
+    throw new AvatarsUnavailableError(result)
+  }
+  return result
+})
 
 studioRouter.get('/avatars', authMiddleware, async (_req, res) => {
   try {
-    const avatars = await getCachedAvatars()
-    // Group by category for the frontend tabs
-    const categories = [...new Set(avatars.map((a) => a.category))]
-    res.json({ avatars, categories })
+    const result = await getCachedAvatars()
+    const categories = [...new Set(result.avatars.map((a) => a.category))]
+    res.json({ avatars: result.avatars, categories, reason: result.reason })
   } catch (err) {
+    if (err instanceof AvatarsUnavailableError) {
+      // Don't 500 — the API works, the upstream just isn't usable. The frontend
+      // distinguishes config_missing / upstream_error / empty via `reason` to
+      // show the right neutral message (no leak of HEYGEN / API key names).
+      const { avatars, reason, upstreamStatus } = err.payload
+      logger.warn({ reason, upstreamStatus }, 'studio.avatars: returning empty list with reason')
+      res.json({ avatars, categories: [], reason })
+      return
+    }
     logger.error({ err }, 'studio.avatars failed')
     res.status(500).json({ error: 'Failed to list avatars', code: 'HEYGEN_ERROR' })
   }
