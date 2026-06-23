@@ -16,6 +16,8 @@ import { IconButton } from '@/components/ui/icon-button'
 import { startFacelessGeneration, getPublicVoices, updateVideoMetadata, regenerateFacelessScene, regenerateFacelessClip, reassembleFacelessVideo } from '@/lib/api'
 import { useVideoStatus } from '@/hooks/use-video-status'
 import { useDraftSave } from '@/hooks/use-draft-save'
+// Audit 22/06/26 — cost estimator before Generate storyboard / images
+import { useCredits } from '@/hooks/use-credits'
 import type { FacelessStyle, VideoFormat, VideoDuration, AnimationMode } from '@clyro/shared'
 import {
   buildTemplateDescription,
@@ -686,6 +688,9 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
   loading?: boolean
 }) {
   const { t, lang } = useLanguage()
+  // Audit 22/06/26 — pull isUnlimited so the cost hint near « Generate
+  // storyboard » can switch to « Free » for test / unlimited accounts.
+  const { isUnlimited } = useCredits()
   const [voices, setVoices] = useState<VoiceItem[]>([])
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [showVoicePicker, setShowVoicePicker] = useState(false)
@@ -921,14 +926,22 @@ function SetupStep({ project, onChange, onNext, loading = false }: {
                   ? '→ Paste a script (min. 20 characters)'
                   : '→ Importe un fichier audio'}
             </p>
-            <button type="button" onClick={onNext} disabled={!canNext || loading}
-              aria-disabled={!canNext || loading}
-              className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all shrink-0',
-                canNext && !loading ? 'bg-primary text-white hover:bg-brand-hover shadow-sm hover:shadow-md' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
-              {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-              Generate storyboard
-              {!loading && <ArrowRight size={13} />}
-            </button>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <button type="button" onClick={onNext} disabled={!canNext || loading}
+                aria-disabled={!canNext || loading}
+                className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-display font-semibold text-sm transition-all',
+                  canNext && !loading ? 'bg-primary text-white hover:bg-brand-hover shadow-sm hover:shadow-md' : 'bg-card border border-border text-[--text-muted] cursor-not-allowed')}>
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                {t('fh_generateStoryboard')}
+                {!loading && <ArrowRight size={13} />}
+              </button>
+              {/* Audit 22/06/26 — cost predictability before generation.
+                  Was previously undocumented; hub Apps says ~10 credits/video.
+                  Switches to « Free » for Unlimited / Studio accounts. */}
+              <span className="font-mono text-[10px] text-[--text-muted] tracking-wide">
+                {isUnlimited ? t('fh_costFree') : t('fh_costStoryboard')}
+              </span>
+            </div>
           </div>
 
         </div>
@@ -972,6 +985,8 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
   onNext: () => void
 }) {
   const { t } = useLanguage()
+  // Audit 22/06/26 — cost estimator before « Generate images » CTA.
+  const { isUnlimited } = useCredits()
   const [generating,    setGenerating]    = useState(false)
   const [editingId,     setEditingId]     = useState<string | null>(null)
   const [dragIndex,     setDragIndex]     = useState<number | null>(null)
@@ -1203,9 +1218,18 @@ function StoryboardStep({ scenes, onScenesChange, onBack, onNext }: {
         <button type="button" onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-body text-[--text-muted] hover:text-foreground transition-all">
           <ArrowLeft size={14} /> {t('fh_back')}
         </button>
-        <button type="button" onClick={onNext} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white font-display font-semibold text-sm hover:bg-brand-hover transition-all">
-          Generate images <ArrowRight size={13} />
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button type="button" onClick={onNext} className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white font-display font-semibold text-sm hover:bg-brand-hover transition-all">
+            {t('fh_generateImages')} <ArrowRight size={13} />
+          </button>
+          {/* Audit 22/06/26 — per-image cost estimator (~3 credits × scene
+              count). Test account in « Unlimited » state shows « Free ». */}
+          <span className="font-mono text-[10px] text-[--text-muted] tracking-wide">
+            {isUnlimited
+              ? t('fh_costFree')
+              : t('fh_costImages').replace('{n}', String(scenes.length)).replace('{total}', String(scenes.length * 3))}
+          </span>
+        </div>
       </div>
     </div>
   )
