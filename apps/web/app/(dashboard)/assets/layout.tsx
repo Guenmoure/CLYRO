@@ -1,8 +1,17 @@
 'use client'
 
+/**
+ * Assets layout — editorial header + ed-tabs (Avatars / Voices).
+ * Templates lives on its own /templates route.
+ *
+ * Vague 2 — 23/06/26 :
+ *   • PageHeader : eyebrow « Library » + folio + h-display + lead + rule
+ *   • Tabs : mono uppercase underline (ed-tabs)
+ *   • Inner pages don't re-render the title — they just render their content.
+ */
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { User, Mic, Package } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
@@ -10,46 +19,36 @@ export default function AssetsLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname()
   const { t } = useLanguage()
 
-  // Audit 16/06/26 — was building "Assets — Avatar" / "Voices" mixed.
-  // Now consistent and short: just the section name on each tab. The
-  // top-of-page h1 already says « Assets ».
   const TABS = [
-    { href: '/assets/avatars', label: t('avatarsLabel'), icon: User },
-    { href: '/assets/voices',  label: t('voices'),      icon: Mic  },
+    { href: '/assets/avatars', label: t('avatarsLabel') },
+    { href: '/assets/voices',  label: t('voices')       },
   ]
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Section header */}
-      <div className="bg-card border-b border-border/50 px-6 pt-6 pb-0 shrink-0">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-8 h-8 rounded-xl bg-brand/10 flex items-center justify-center">
-            <Package size={16} className="text-primary" />
-          </div>
-          <h1 className="font-body text-2xl font-bold text-foreground">{t('assets')}</h1>
+    <div className="flex flex-col min-h-full bg-background">
+      {/* ── Editorial page header ───────────────────────────── */}
+      <div className="px-4 sm:px-6 lg:px-12 pt-12 pb-0 max-w-6xl mx-auto w-full">
+        <div className="divider-with-num">
+          <span className="eyebrow">{t('nav_sec_library')}</span>
+          <hr />
+          <span className="folio">№ 06 / 12</span>
         </div>
-        {/* Audit 16/06/26 — subtitle used to repeat the title verbatim. */}
-        <p className="font-body text-sm text-[--text-muted] mb-4">
-          {t('assets_subtitle')}
-        </p>
+        <h1 className="h-display">{t('assets')}</h1>
+        <p className="lead mt-5">{t('assets_subtitle')}</p>
+        <hr className="rule-thin mt-8" />
 
-        {/* Tab navigation */}
-        <div className="flex gap-1">
-          {TABS.map(({ href, label, icon: Icon }) => {
+        {/* ── Editorial tabs ────────────────────────────────── */}
+        <div className="ed-tabs mt-6" role="tablist">
+          {TABS.map(({ href, label }) => {
             const active = pathname === href || pathname.startsWith(href + '/')
             return (
               <Link
                 key={href}
                 href={href}
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2.5 font-body text-sm rounded-t-xl',
-                  'border-b-2 transition-all duration-150',
-                  active
-                    ? 'text-primary border-primary bg-brand/10'
-                    : 'text-[--text-secondary] border-transparent hover:text-foreground hover:bg-muted',
-                )}
+                role="tab"
+                aria-selected={active}
+                className={cn('ed-tab', active && 'active')}
               >
-                <Icon size={14} />
                 {label}
               </Link>
             )
@@ -58,7 +57,7 @@ export default function AssetsLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* Page content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 px-4 sm:px-6 lg:px-12 pb-12 max-w-6xl mx-auto w-full">
         {children}
       </div>
     </div>

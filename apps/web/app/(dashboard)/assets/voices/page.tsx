@@ -44,15 +44,18 @@ function VoiceSkeleton() {
   )
 }
 
-// ── Collection card (horizontal carousel) ─────────────────────────────────────
+// ── Collection card (horizontal carousel) — editorial tile ────────────────────
 
-function CollectionCard({ title, icon }: { title: string; icon: React.ReactNode }) {
+function CollectionCard({ title, icon, folio }: { title: string; icon: React.ReactNode; folio: string }) {
   return (
-    <div className="shrink-0 w-48 rounded-xl bg-muted border border-border p-4 cursor-pointer hover:border-brand/30 hover:bg-muted/80 transition-all">
-      <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center mb-3">
-        {icon}
+    <div className="shrink-0 w-56 rounded-md bg-card border border-border p-4 cursor-pointer hover:border-foreground transition-colors">
+      <div className="flex items-baseline justify-between mb-3">
+        <span className="w-7 h-7 rounded bg-muted border border-border flex items-center justify-center">
+          {icon}
+        </span>
+        <span className="folio">{folio}</span>
       </div>
-      <p className="font-body text-sm text-foreground leading-snug">{title}</p>
+      <p className="font-display text-base text-foreground leading-tight" style={{ letterSpacing: '-0.005em' }}>{title}</p>
     </div>
   )
 }
@@ -199,47 +202,45 @@ export default function VoicesAssetsPage() {
 
   return (
     <>
-      {/* Page heading */}
-      <div className="px-6 py-4 border-b border-border/30 bg-card/40">
-        <h1 className="font-body text-lg font-bold text-foreground">{t('pageVoices')}</h1>
-      </div>
-
-      {/* Sub-header: tabs + CTA */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border/30 bg-card/40">
-        <div className="flex gap-1">
+      {/* Vague 2 — 23/06/26 — editorial sub-header (title comes from layout). */}
+      <div className="flex flex-wrap items-center justify-between gap-4 py-6">
+        <div className="flex items-baseline gap-6">
           {TABS.map(({ key, label, count }) => (
             <button
               key={key}
               type="button"
               onClick={() => setActiveTab(key)}
               className={cn(
-                'flex items-center gap-2 px-3 py-1.5 rounded-lg font-body text-sm transition-all duration-150',
+                'flex items-baseline gap-2 font-mono uppercase tracking-[0.14em] transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded',
                 activeTab === key
-                  ? 'bg-brand/10 text-primary'
-                  : 'text-[--text-muted] hover:text-foreground hover:bg-muted',
+                  ? 'text-foreground'
+                  : 'text-[--text-muted] hover:text-foreground',
               )}
+              style={{ fontSize: 11 }}
             >
-              {label}
+              <span>{label}</span>
               {count !== undefined && (
-                <span className={cn(
-                  'font-body text-[11px] rounded-full px-1.5 py-0.5',
-                  activeTab === key ? 'bg-brand/15 text-primary' : 'bg-muted text-[--text-muted]',
-                )}>
-                  {loading ? '—' : count}
-                </span>
+                <span className="folio">{loading ? '—' : count.toString().padStart(2, '0')}</span>
               )}
             </button>
           ))}
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          leftIcon={<Plus size={13} />}
+        <button
+          type="button"
           onClick={() => setCloneOpen(true)}
+          className={cn(
+            'inline-flex items-center gap-2 px-4 py-2 rounded-full',
+            'bg-foreground text-background border border-foreground',
+            'font-mono text-[10px] uppercase tracking-[0.14em]',
+            'hover:bg-primary hover:border-primary transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+          )}
         >
+          <Plus size={12} />
           {t('createVoice')}
-        </Button>
+        </button>
       </div>
 
       {/* Filters */}
@@ -258,15 +259,15 @@ export default function VoicesAssetsPage() {
       />
 
       {/* Content */}
-      <div className="px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="py-8 space-y-10">
 
         {/* Trending voices — only on Explore tab */}
         {activeTab === 'explore' && !loading && trendingVoices.length > 0 && !search && !category && (
           <section>
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp size={16} className="text-primary" />
-              <h2 className="font-body text-base font-semibold text-foreground">{t('trendingVoices')}</h2>
-              <ChevronRight size={14} className="text-[--text-muted]" />
+            <div className="divider-with-num mb-5">
+              <span className="eyebrow">{t('trendingVoices')}</span>
+              <hr />
+              <span className="folio">{trendingVoices.length.toString().padStart(2, '0')}</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {trendingVoices.map((voice) => (
@@ -286,19 +287,20 @@ export default function VoicesAssetsPage() {
         {/* Collections carousel — only on Explore tab */}
         {activeTab === 'explore' && !loading && !search && !category && (
           <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={15} className="text-purple-400" />
-              <h2 className="font-body text-base font-semibold text-foreground">{t('handpicked')}</h2>
+            <div className="divider-with-num mb-5">
+              <span className="eyebrow">{t('handpicked')}</span>
+              <hr />
+              <span className="folio">№ 05</span>
             </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-2">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
               {[
-                { title: t('bestVoicesV3'),      icon: <Sparkles size={14} className="text-primary" /> },
-                { title: t('popularTikTok'),           icon: <TrendingUp size={14} className="text-pink-400" /> },
-                { title: t('studioConversational'),   icon: <Sparkles size={14} className="text-amber-400" /> },
-                { title: t('narrationVoices'),                icon: <Sparkles size={14} className="text-emerald-400" /> },
-                { title: t('podcastsYouTube'),              icon: <TrendingUp size={14} className="text-purple-400" /> },
+                { title: t('bestVoicesV3'),         folio: 'COL.01', icon: <Sparkles size={13} className="text-primary" /> },
+                { title: t('popularTikTok'),        folio: 'COL.02', icon: <TrendingUp size={13} className="text-foreground" /> },
+                { title: t('studioConversational'), folio: 'COL.03', icon: <Sparkles size={13} className="text-foreground" /> },
+                { title: t('narrationVoices'),      folio: 'COL.04', icon: <Sparkles size={13} className="text-foreground" /> },
+                { title: t('podcastsYouTube'),      folio: 'COL.05', icon: <TrendingUp size={13} className="text-foreground" /> },
               ].map((col) => (
-                <CollectionCard key={col.title} title={col.title} icon={col.icon} />
+                <CollectionCard key={col.title} title={col.title} icon={col.icon} folio={col.folio} />
               ))}
             </div>
           </section>
@@ -306,14 +308,13 @@ export default function VoicesAssetsPage() {
 
         {/* All voices list */}
         <section>
-          <h2 className="font-body text-base font-semibold text-foreground mb-4">
-            {activeTab === 'my_voices' ? t('myVoices') : activeTab === 'default' ? t('defaultVoices') : t('allVoices')}
-            {!loading && (
-              <span className="font-body text-sm text-[--text-muted] ml-2 font-normal">
-                ({filtered.length})
-              </span>
-            )}
-          </h2>
+          <div className="divider-with-num mb-5">
+            <span className="eyebrow">
+              {activeTab === 'my_voices' ? t('myVoices') : activeTab === 'default' ? t('defaultVoices') : t('allVoices')}
+            </span>
+            <hr />
+            <span className="folio">{loading ? '—' : filtered.length.toString().padStart(2, '0')}</span>
+          </div>
 
           {loading ? (
             <div className="space-y-2">

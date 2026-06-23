@@ -47,7 +47,8 @@ function AvatarGroupCard({
 }) {
   const { t } = useLanguage()
   return (
-    <div className="relative rounded-2xl border border-border bg-card overflow-hidden transition-all hover:border-brand/30 hover:shadow-md w-full group">
+    // Vague 2 — editorial tile : rounded-md, hover darkens border to foreground.
+    <div className="relative rounded-md border border-border bg-card overflow-hidden transition-all hover:border-foreground hover:-translate-y-px w-full group">
       <button
         type="button"
         onClick={onClick}
@@ -203,46 +204,49 @@ export default function AvatarsPage() {
 
   return (
     <>
-      {/* Sub-header: avatar tabs + CTA */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 border-b border-border/30 bg-card/40">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-          <h1 className="font-body text-lg font-bold text-foreground">{t('pageAvatars')}</h1>
-          <div className="flex gap-1">
+      {/* Vague 2 — 23/06/26 — editorial sub-header :
+          page title comes from the layout, so we only render the
+          public/my pills + the Create CTA here. */}
+      <div className="flex flex-wrap items-center justify-between gap-4 py-6">
+        <div className="flex items-baseline gap-6">
           {tabs.map(({ key, label, count }) => (
             <button
               key={key}
               type="button"
               onClick={() => setActiveTab(key)}
               className={cn(
-                'flex items-center gap-2 px-3 py-1.5 rounded-lg font-body text-sm transition-all duration-150',
+                'flex items-baseline gap-2 font-mono uppercase tracking-[0.14em] transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded',
                 activeTab === key
-                  ? 'bg-brand/10 text-primary'
-                  : 'text-[--text-muted] hover:text-foreground hover:bg-muted',
+                  ? 'text-foreground'
+                  : 'text-[--text-muted] hover:text-foreground',
               )}
+              style={{ fontSize: 11 }}
             >
-              {label}
-              <span className={cn(
-                'font-body text-[10px] rounded-full px-1.5 py-0.5',
-                activeTab === key ? 'bg-brand/15 text-primary' : 'bg-muted text-[--text-muted]',
-              )}>
-                {loading ? '—' : count}
-              </span>
+              <span>{label}</span>
+              <span className="folio">{loading ? '—' : count.toString().padStart(2, '0')}</span>
             </button>
           ))}
-          </div>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          leftIcon={<UserPlus size={13} />}
+        {/* Editorial primary pill */}
+        <button
+          type="button"
           onClick={() => setCreateOpen(true)}
+          className={cn(
+            'inline-flex items-center gap-2 px-4 py-2 rounded-full',
+            'bg-foreground text-background border border-foreground',
+            'font-mono text-[10px] uppercase tracking-[0.14em]',
+            'hover:bg-primary hover:border-primary transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+          )}
         >
+          <UserPlus size={12} />
           {t('createAvatar')}
-        </Button>
+        </button>
       </div>
 
-      {/* Filters */}
+      {/* Filters (existing component) */}
       <AvatarFilters
         search={search}
         activeFilter={activeFilter}
@@ -251,7 +255,7 @@ export default function AvatarsPage() {
       />
 
       {/* Grid — one card per persona name */}
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
+      <div className="py-8">
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array.from({ length: 12 }).map((_, i) => <AvatarSkeleton key={i} />)}
