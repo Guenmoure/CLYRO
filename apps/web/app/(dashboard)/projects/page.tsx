@@ -309,85 +309,70 @@ export default function ProjectsPage() {
 
   const activeNavLabelKey = SUB_NAV.find(n => n.id === activeNav)?.labelKey ?? 'proj_projects'
 
+  // Vague 1 — 23/06/26 — editorial Projects layout. The sub-nav becomes a
+  // horizontal mono-uppercase tab row instead of a vertical sidebar.
+  // navOpen is kept (still referenced lower down for the toggle that no
+  // longer renders) so the existing handlers stay functional during the
+  // transition. The next pass can remove it entirely.
+  void navOpen
+  void setNavOpen
+
   return (
     <div className="flex-1 overflow-y-auto bg-background">
-      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto">
+
+        {/* ── Editorial page header ───────────────────────────── */}
+        <header className="mb-8">
+          <div className="divider-with-num">
+            <span className="eyebrow">{t('nav_sec_library')}</span>
+            <hr />
+            <span className="folio">№ 05 / 12</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+            <h1 className="h-display">{t(activeNavLabelKey)}</h1>
+          </div>
+          <p className="lead mt-5">{t('proj_lead')}</p>
+          <hr className="rule-thin mt-8" />
+        </header>
 
         {/* ── Brouillons ───────────────────────────────────────── */}
         <DraftsSection />
 
-        {/* ── Two-column layout: sub-nav + content ─────────────── */}
-        <div className="mt-8 flex gap-6">
+        <div className="mt-8 space-y-6">
 
-          {/* ── Sub-nav column ──────────────────────────────────── */}
-          {navOpen && (
-            <aside className="w-56 shrink-0 hidden md:block" aria-label="Project categories">
-              <div className="flex items-center justify-between mb-3 px-1">
-                <p className="font-display text-sm font-semibold text-foreground">{t('proj_projects')}</p>
-                <button
-                  type="button"
-                  aria-label={t('proj_collapseNav')}
-                  onClick={() => setNavOpen(false)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                >
-                  <PanelLeft size={14} />
-                </button>
-              </div>
-              <nav className="space-y-0.5" role="tablist">
-                {SUB_NAV.map((item) => {
-                  const Icon = item.icon
-                  const active = activeNav === item.id
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => setActiveNav(item.id)}
-                      className={cn(
-                        'w-full flex items-center gap-3 px-3 py-2 rounded-xl font-body text-sm transition-colors',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-                        active
-                          ? 'bg-brand/10 text-foreground border border-brand/30'
-                          : 'text-[--text-muted] hover:text-foreground hover:bg-muted border border-transparent',
-                      )}
-                    >
-                      <Icon size={15} aria-hidden="true" className="shrink-0" />
-                      <span className="truncate">{t(item.labelKey)}</span>
-                    </button>
-                  )
-                })}
-              </nav>
-            </aside>
-          )}
+          {/* ── Editorial tabs (horizontal, mono uppercase) ───── */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="ed-tabs" role="tablist" aria-label={t('proj_projects')}>
+              {SUB_NAV.map((item) => {
+                const active = activeNav === item.id
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setActiveNav(item.id)}
+                    className={cn('ed-tab', active && 'active')}
+                  >
+                    {t(item.labelKey)}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-          {/* ── Content column ──────────────────────────────────── */}
-          <div className="flex-1 min-w-0 space-y-6">
-
-            {/* Header row */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              {!navOpen && (
-                <button
-                  type="button"
-                  aria-label={t('proj_openNav')}
-                  onClick={() => setNavOpen(true)}
-                  className="w-9 h-9 rounded-lg border border-border bg-card flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                >
-                  <PanelLeft size={15} />
-                </button>
-              )}
-              <h1 className="font-display text-2xl font-bold text-foreground shrink-0">{t(activeNavLabelKey)}</h1>
-
+          {/* ── Filter / search / sort row ──────────────────────── */}
+          <div className="flex items-center gap-3 flex-wrap">
               {/* Search */}
-              <div className="relative flex-1 min-w-[180px]">
-                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
+              <div className="relative flex-1 min-w-[200px]">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted] pointer-events-none" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t('proj_searchPlaceholder')}
                   aria-label={t('proj_searchPlaceholder')}
-                  className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-card text-sm font-body text-foreground placeholder:text-[--text-muted] focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-primary transition-all"
+                  className="w-full pl-9 pr-9 py-2 rounded-full border border-border bg-card font-mono text-[11px] text-foreground placeholder:text-[--text-muted] focus:outline-none focus:border-foreground transition-colors"
                 />
                 {search && (
                   <button
@@ -396,27 +381,27 @@ export default function ProjectsPage() {
                     aria-label="Clear search"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[--text-muted] hover:text-foreground"
                   >
-                    <X size={14} />
+                    <X size={13} />
                   </button>
                 )}
               </div>
 
-              {/* Sort */}
-              <label className={cn('rounded-xl border border-border bg-card px-4 py-2.5 font-body text-sm flex items-center gap-2 text-foreground shrink-0 cursor-pointer')}>
+              {/* Sort — editorial pill style */}
+              <label className="rounded-full border border-border bg-card px-4 py-2 font-mono text-[11px] flex items-center gap-2 text-foreground shrink-0 cursor-pointer hover:border-foreground transition-colors">
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value as SortOption)}
                   aria-label="Sort projects"
-                  className="bg-transparent text-foreground focus:outline-none cursor-pointer appearance-none"
+                  className="bg-transparent text-foreground focus:outline-none cursor-pointer appearance-none font-mono text-[11px] tracking-wide"
                 >
                   {SORT_OPTIONS.map((opt) => (
                     <option key={opt.id} value={opt.id}>{opt.labelKey ? t(opt.labelKey) : opt.literal}</option>
                   ))}
                 </select>
-                <ChevronDown size={14} className="text-[--text-muted] pointer-events-none shrink-0" />
+                <ChevronDown size={12} className="text-[--text-muted] pointer-events-none shrink-0" />
               </label>
 
-              {/* Filters */}
+              {/* Filters — editorial pill */}
               <div className="relative shrink-0">
                 <button
                   type="button"
@@ -425,12 +410,12 @@ export default function ProjectsPage() {
                   aria-expanded={filterMenuOpen}
                   onClick={() => setFilterMenuOpen(v => !v)}
                   className={cn(
-                    'rounded-xl border border-border bg-card w-11 h-11 flex items-center justify-center text-foreground transition-colors',
-                    'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-                    activeFiltersCount > 0 && 'ring-2 ring-brand/40',
+                    'rounded-full border border-border bg-card w-9 h-9 flex items-center justify-center text-foreground transition-colors',
+                    'hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                    activeFiltersCount > 0 && 'ring-2 ring-primary/30',
                   )}
                 >
-                  <SlidersHorizontal size={15} />
+                  <SlidersHorizontal size={13} />
                   {activeFiltersCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[10px] font-mono font-bold flex items-center justify-center">
                       {activeFiltersCount}
@@ -489,18 +474,24 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            {/* ── Folders section ───────────────────────────────── */}
-            <section aria-labelledby="folders-heading">
-              <div className="flex items-center gap-2 mb-3">
-                <h2 id="folders-heading" className="font-display text-base font-semibold text-foreground">{t('proj_folders')}</h2>
+            {/* ── Folders section — editorial section head ──────── */}
+            <section aria-labelledby="folders-heading" className="pt-2">
+              <div className="divider-with-num mb-5">
+                <span className="eyebrow" id="folders-heading">{t('proj_folders')}</span>
+                <hr />
+                <span className="folio">{folders.length.toString().padStart(2, '0')}</span>
+              </div>
+              <div className="flex items-baseline justify-between mb-4">
+                <h2 className="h-card">{t('proj_folders')}</h2>
                 <button
                   type="button"
                   aria-label={t('proj_newFolder')}
                   onClick={handleCreateFolder}
                   disabled={creatingFolder}
-                  className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-[--text-muted] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card hover:border-foreground font-mono text-[10px] uppercase tracking-[0.1em] text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <FolderPlus size={14} aria-hidden="true" />
+                  <FolderPlus size={11} aria-hidden="true" />
+                  {t('proj_newFolder')}
                 </button>
               </div>
 
@@ -607,27 +598,17 @@ export default function ProjectsPage() {
               )}
             </section>
 
-            {/* ── Videos section ────────────────────────────────── */}
-            <section aria-labelledby="videos-heading">
-              <div className="flex items-center justify-between mb-4">
-                <h2 id="videos-heading" className="font-display text-base font-semibold text-foreground">{t('proj_videos')}</h2>
-                {!loading && total > 0 && (
-                  // Audit 19/06/26 B3 — when an in-memory search filter is
-                  // active, show the result count, not the unfiltered total.
-                  // Previously the counter always read « 35 videos » even
-                  // when the visible grid had 3.
-                  <span className="text-xs text-[--text-muted] font-mono bg-muted border border-border rounded-full px-3 py-1">
-                    {search.trim() ? (
-                      <>
-                        {filtered.length} / {total} video{total > 1 ? 's' : ''}
-                      </>
-                    ) : (
-                      <>
-                        {total} video{total > 1 ? 's' : ''}
-                      </>
-                    )}
-                  </span>
-                )}
+            {/* ── Videos section — editorial section head ──────── */}
+            <section aria-labelledby="videos-heading" className="pt-4">
+              <div className="divider-with-num mb-5">
+                <span className="eyebrow" id="videos-heading">{t('proj_videos')}</span>
+                <hr />
+                <span className="folio">
+                  {/* Audit 19/06/26 B3 — counter reflects active search */}
+                  {search.trim()
+                    ? `${filtered.length} / ${total}`
+                    : total.toString().padStart(2, '0')}
+                </span>
               </div>
 
           {loading ? (
@@ -701,10 +682,8 @@ export default function ProjectsPage() {
           )}
             </section>
 
-          </div>
-          {/* /content column */}
         </div>
-        {/* /two-column layout */}
+        {/* /editorial content */}
 
       </div>
 

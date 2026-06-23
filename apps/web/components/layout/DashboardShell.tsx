@@ -19,7 +19,10 @@ import { TopBar } from '@/components/layout/TopBar'
 import { LanguageProvider } from '@/lib/i18n'
 import { CommandPalette } from '@/components/shared/command-palette'
 import { cn } from '@/lib/utils'
-import { resolveActiveEntry } from '@/components/layout/nav-model'
+// Audit 23/06/26 — editorial sidebar : single 268px column, no rail+panel
+// state to track. Vague-1 keeps DashboardShell minimal so layout.tsx and
+// downstream consumers don't have to change.
+import { SIDEBAR_W } from '@/components/layout/nav-model'
 
 // `collapsed` now means "contextual panel hidden". The icon rail is always
 // visible on desktop. Persisted across sessions.
@@ -49,28 +52,8 @@ export function DashboardShell({
   projectsCount,
   draftsCount,
 }: DashboardShellProps) {
-  const [collapsed,  setCollapsed]  = useState(false)  // default: panel open
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [hydrated,   setHydrated]   = useState(false)
-  const pathname = usePathname()
-
-  // Does the current section have a contextual panel?
-  const activeEntry = resolveActiveEntry(pathname)
-  const sectionHasPanel = (activeEntry?.children?.length ?? 0) > 0
-  // Desktop content offset: rail (72) + panel (210) when a panel is shown.
-  const panelShown = sectionHasPanel && !collapsed
-
-  // Read persisted state after mount to avoid SSR mismatch
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored !== null) setCollapsed(stored === 'true')
-    setHydrated(true)
-  }, [])
-
-  function handleToggle(val: boolean) {
-    setCollapsed(val)
-    localStorage.setItem(STORAGE_KEY, String(val))
-  }
+  const pathname = usePathname()  // eslint-disable-line @typescript-eslint/no-unused-vars
 
   // Auto-close mobile drawer on desktop resize
   useEffect(() => {
@@ -88,26 +71,23 @@ export function DashboardShell({
           user={user}
           projectsCount={projectsCount}
           draftsCount={draftsCount}
-          collapsed={collapsed}
-          onToggle={handleToggle}
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
         />
 
-        {/* Main content — offset by sidebar width on desktop */}
+        {/* Main content — fixed offset by the editorial sidebar width (268px) */}
         <div
           className={cn(
             'flex-1 flex flex-col overflow-hidden min-w-0',
-            'md:transition-[margin-left] md:duration-300 md:ease-in-out',
-            // Rail = 72px; rail + panel = 282px.
-            !hydrated && (sectionHasPanel ? 'md:ml-[282px]' : 'md:ml-[72px]'),
-            hydrated && (panelShown ? 'md:ml-[282px]' : 'md:ml-[72px]'),
           )}
+          style={{ marginLeft: undefined }}
         >
-          <TopBar user={user} onMobileMenuToggle={() => setMobileOpen(v => !v)} />
-          <main className="flex-1 overflow-y-auto overflow-x-hidden">
-            {children}
-          </main>
+          <div className="md:ml-[268px] flex flex-col h-full">
+            <TopBar user={user} onMobileMenuToggle={() => setMobileOpen(v => !v)} />
+            <main className="flex-1 overflow-y-auto overflow-x-hidden">
+              {children}
+            </main>
+          </div>
         </div>
 
         <CommandPalette />
@@ -115,3 +95,5 @@ export function DashboardShell({
     </LanguageProvider>
   )
 }
+// Reference SIDEBAR_W to satisfy unused-import linters until we wire it as a CSS var.
+void SIDEBAR_W

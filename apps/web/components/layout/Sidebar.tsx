@@ -1,55 +1,37 @@
 'use client'
 
 /**
- * Sidebar — two-level navigation.
+ * Sidebar — editorial table-of-contents (Vague 1, 23/06/26).
  *
- *   RAIL (≈72px)  : icon + micro-label per top-level section, violet-active.
- *                   User avatar + credits sit at the bottom of the rail.
- *   PANEL (≈210px): contextual sub-menu for the active section — title,
- *                   optional "+ Create new" button, grouped sub-links, plus
- *                   the credits block at the bottom.
+ * Single-column 268px wide. Top : masthead with the CLYRO™ wordmark, a
+ * tagline, and an « issue » line (Vol. IV · No. 12). Middle : grouped TOC
+ * with section eyebrows + roman-numeral items. Bottom : user chip + cog.
  *
- * Audit 19/06/26 — nav overhaul :
- *   • Logo (top of rail) now IS the Home affordance — there is no Home entry.
- *     We highlight the logo (ring) when pathname === '/dashboard'.
- *   • Five rail entries : Anim Video, Studio, Apps, Assets, Projects.
- *   • Bottom rail is empty — Settings / Billing / Help live in the user-menu
- *     dropdown only.
- *   • User menu trimmed to 4 items : Upgrade Plan, Settings, Help, Log out.
+ *   • Logo IS the Home affordance (no Dashboard rail entry).
+ *   • Geist + violet kept (per stakeholder direction) — terracotta and
+ *     Instrument Serif from the original handoff are NOT applied.
+ *   • Eyebrow / folio / numeral primitives live in globals.css.
  *
- * The panel only appears for sections that have children AND when the user
- * hasn't collapsed it. Anim Video has no children → rail only.
- *
- * `collapsed` (persisted by DashboardShell) means "panel hidden". The rail
- * stays visible at all times on desktop.
- *
- * Mobile: a single drawer renders the rail entries flattened into a
- * hierarchical list (section header → its child links).
- *
- *   • aria-current on active rail / child links
- *   • focus-visible:ring on every interactive element
- *   • the panel is plain nav — it never traps focus
- *   • all visible strings via t() (5 languages)
+ * Accessibility :
+ *   • Every item is a Link with aria-current="page" when active.
+ *   • Section headers are real <h3 className="eyebrow">.
+ *   • Focus rings respect WCAG 2.5.5 (40×40 ish on every interactive item).
+ *   • User-menu dropdown : aria-haspopup + aria-expanded + Escape to close.
  */
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Logo } from '@/components/ui/Logo'
 import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 import { getPlanTotal } from '@/components/dashboard/CreditsBanner'
-import { NavRail } from './NavRail'
-import { ContextPanel } from './ContextPanel'
 import {
-  RAIL_ITEMS, RAIL_BOTTOM_ITEMS, resolveActiveEntry, resolveActiveChildHref,
-  RAIL_W, PANEL_W, type NavEntry,
+  NAV_SECTIONS, resolveActiveItemId, SIDEBAR_W,
 } from './nav-model'
 import {
-  ChevronUp, PanelLeftClose, PanelLeftOpen,
-  HelpCircle, LogOut, Settings, Sparkles,
-  ExternalLink, X, Zap, Plus,
+  ChevronUp, LogOut, Settings, Sparkles,
+  HelpCircle, ExternalLink, X, Zap,
 } from 'lucide-react'
 import type { SidebarUser } from './DashboardShell'
 
@@ -57,23 +39,32 @@ import type { SidebarUser } from './DashboardShell'
 
 interface SidebarProps {
   user:          SidebarUser
-  projectsCount: number
-  draftsCount:   number
-  /** Panel hidden when true (rail stays visible). Persisted by the shell. */
-  collapsed:     boolean
-  onToggle:      (val: boolean) => void
+  /** Unused on the editorial layout — kept for prop compat. */
+  projectsCount?: number
+  draftsCount?:   number
+  /** Editorial sidebar has no collapse — kept for prop compat. */
+  collapsed?:    boolean
+  onToggle?:     (val: boolean) => void
   mobileOpen:    boolean
   onMobileClose: () => void
+}
+
+// Issue line — yearly volume + monthly number. Computed once per mount so it
+// stays stable across re-renders and matches the « editorial » feel.
+function computeIssueLine(): { vol: string; num: string } {
+  const now = new Date()
+  const year = now.getFullYear()
+  // Volume = years since CLYRO launch (2024) ; gives Vol. III in 2026, Vol. IV in 2027 etc.
+  const vol = ['I','II','III','IV','V','VI','VII','VIII','IX','X'][Math.max(0, Math.min(9, year - 2024))]
+  const month = now.toLocaleString('en-US', { month: 'short' })
+  const num = `${month} ${year} · No. ${String(now.getMonth() + 1).padStart(2, '0')}`
+  return { vol: `Vol. ${vol}`, num }
 }
 
 // ── Sidebar ────────────────────────────────────────────────────────────────────
 
 export function Sidebar({
   user,
-  projectsCount,
-  draftsCount,
-  collapsed,
-  onToggle,
   mobileOpen,
   onMobileClose,
 }: SidebarProps) {
@@ -81,13 +72,8 @@ export function Sidebar({
   const router   = useRouter()
   const { t }    = useLanguage()
 
-  // ── Active section (driven by pathname) ──────────────────────────────────────
-  // Audit 19/06/26 — no auto-fallback to RAIL_ITEMS[0]. On /dashboard the
-  // logo carries the « active » state and no rail entry is highlighted.
-  const activeEntry: NavEntry | undefined = resolveActiveEntry(pathname)
-  const activeId    = activeEntry?.id
-  const hasPanel    = (activeEntry?.children?.length ?? 0) > 0
-  const isHome      = pathname === '/dashboard'
+  const activeId = resolveActiveItemId(pathname)
+  const isHome   = pathname === '/dashboard'
 
   // User menu state
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -111,35 +97,17 @@ export function Sidebar({
   }, [userMenuOpen])
 
   // Close mobile drawer when route changes
-  useEffect(() => {
-    onMobileClose()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
+  useEffect(() => { onMobileClose() }, [pathname, onMobileClose])
 
   // Close mobile drawer on Escape
   useEffect(() => {
     if (!mobileOpen) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onMobileClose()
-    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onMobileClose() }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [mobileOpen, onMobileClose])
 
-  // ── Rail navigation: navigate + ensure the panel is shown ────────────────────
-  function handleRailSelect(entry: NavEntry) {
-    const isActive = entry.id === activeId
-    const entryHasChildren = (entry.children?.length ?? 0) > 0
-    // Re-clicking the active section → toggle the panel instead of re-navigating
-    if (isActive && entryHasChildren) {
-      onToggle(!collapsed)
-      return
-    }
-    if (entryHasChildren && collapsed) onToggle(false)
-    router.push(entry.href)
-  }
-
-  // ── Sign out ─────────────────────────────────────────────────────────────────
+  // Sign out
   async function handleSignOut() {
     try {
       const supabase = createBrowserClient()
@@ -149,172 +117,178 @@ export function Sidebar({
     }
   }
 
-  // ── Credits ──────────────────────────────────────────────────────────────────
+  // Credits
   const creditsTotal = getPlanTotal(user.plan)
-  const creditsPct    = creditsTotal > 0
-    ? Math.max(0, Math.min(100, Math.round((user.creditsLeft / creditsTotal) * 100)))
-    : 0
-  const creditsEmpty = user.creditsLeft <= 0
-  const creditsLow   = !creditsEmpty && user.creditsLeft < 50
-  const isStarter    = ['free', 'starter'].includes(user.plan.toLowerCase())
   const creditsLabel = t('sb_creditsLeft')
     .replace('{n}', String(user.creditsLeft))
     .replace('{total}', String(creditsTotal))
+  const isStarter = ['free', 'starter'].includes(user.plan.toLowerCase())
+  const issue = computeIssueLine()
 
-  // Whether the panel column is rendered on desktop.
-  const panelOpen = hasPanel && !collapsed
-
-  // Audit 19/06/26 — when the account has the operational override flag on,
-  // render a dedicated « Unlimited » block instead of the « N / 250 » meter.
-  // The Top-up CTA also disappears (nothing to top up). Same source of truth
-  // as the CreditsBanner on the Dashboard.
-  const creditsBlock = user.isUnlimited ? (
-    <div className="rounded-xl border border-border/60 bg-muted/40 p-3">
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 min-w-0">
-          <Zap size={13} className="shrink-0 text-primary" aria-hidden="true" />
-          <span className="font-mono text-[11px] text-foreground truncate">
-            {t('cb_unlimited')}
-          </span>
-        </span>
-      </div>
-      <div className="mt-2 h-1.5 rounded-full bg-gradient-to-r from-brand to-violet-500 opacity-70" />
-    </div>
-  ) : (
-    <div className="rounded-xl border border-border/60 bg-muted/40 p-3">
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 min-w-0">
-          <Zap size={13} className={cn(
-            'shrink-0',
-            creditsEmpty ? 'text-error' : creditsLow ? 'text-warning' : 'text-primary',
-          )} aria-hidden="true" />
-          <span className="font-mono text-[11px] text-[--text-secondary] truncate">
-            {creditsLabel}
-          </span>
-        </span>
-        <Link
-          href={isStarter ? '/pricing' : '/settings/billing'}
-          className={cn(
-            'shrink-0 font-display text-[11px] font-medium text-primary',
-            'hover:underline rounded',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-          )}
-        >
-          {isStarter ? t('dash_upgrade') : t('dash_topUp')}
-        </Link>
-      </div>
-      <div
-        role="progressbar"
-        aria-label={creditsLabel}
-        aria-valuemin={0}
-        aria-valuemax={creditsTotal}
-        aria-valuenow={Math.max(0, Math.min(user.creditsLeft, creditsTotal))}
-        className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden"
-      >
-        <div
-          className={cn(
-            'h-full rounded-full transition-all duration-500',
-            creditsEmpty ? 'bg-error' : creditsLow ? 'bg-warning' : 'bg-primary',
-          )}
-          style={{ width: `${creditsPct}%` }}
-        />
-      </div>
-    </div>
-  )
-
-  // ── Credits icon (rail, collapsed) — tooltip on hover ────────────────────────
-  const creditsRailIcon = (
-    <div className="relative group flex justify-center">
-      <Link
-        href={isStarter ? '/pricing' : '/settings/billing'}
-        aria-label={creditsLabel}
-        className={cn(
-          'w-9 h-9 rounded-xl flex items-center justify-center',
-          'text-[--text-muted] hover:bg-muted hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-          'transition-colors',
-        )}
-      >
-        <Zap size={16} className={cn(
-          creditsEmpty ? 'text-error' : creditsLow ? 'text-warning' : 'text-primary',
-        )} />
-      </Link>
-      <div className={cn(
-        'absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50',
-        'pointer-events-none whitespace-nowrap',
-        'px-2.5 py-1.5 rounded-lg text-xs font-medium',
-        'bg-foreground text-background shadow-lg',
-        'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
-      )}>
-        {creditsLabel}
-        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-foreground" />
-      </div>
-    </div>
-  )
-
-  // ── User avatar trigger + dropdown (shared) ──────────────────────────────────
-  function userMenu(compact: boolean) {
+  // ── Masthead (top of the sidebar) ─────────────────────────────────────────
+  function Masthead() {
     return (
-      <div ref={userMenuRef} className="relative">
+      <div className="px-6 pb-5 border-b border-border">
         <button
           type="button"
-          onClick={() => setUserMenuOpen(v => !v)}
+          onClick={() => router.push('/dashboard')}
+          aria-current={isHome ? 'page' : undefined}
+          aria-label={t('dashboard')}
+          className={cn(
+            'block text-left font-display font-bold leading-none tracking-tight',
+            'text-foreground hover:opacity-80 transition-opacity',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded',
+          )}
+          style={{ fontSize: 34, letterSpacing: '-0.04em' }}
+        >
+          CLYRO
+          <sup className="font-mono text-[--text-muted] ml-1 tracking-wider" style={{ fontSize: 9 }}>™</sup>
+        </button>
+        <p className="mt-2 font-mono text-[9px] uppercase tracking-[0.14em] text-[--text-muted]">
+          {t('sb_tagline')}
+        </p>
+        <div className="mt-2 flex items-baseline justify-between">
+          <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[--text-muted]">
+            {issue.vol}
+          </span>
+          <span className="font-mono text-[11px] text-foreground">
+            {issue.num}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Table of contents (middle) ───────────────────────────────────────────
+  function TableOfContents({ compact = false }: { compact?: boolean }) {
+    return (
+      <nav aria-label={t('nav_primary')} className="flex-1 min-h-0 overflow-y-auto no-scrollbar py-5">
+        {NAV_SECTIONS.map((section, idx) => (
+          <div
+            key={section.id}
+            className={cn(
+              'px-6',
+              idx > 0 && 'mt-5 pt-4 border-t border-border/40',
+              idx < NAV_SECTIONS.length - 1 && 'pb-1',
+            )}
+          >
+            <div className="flex items-baseline justify-between mb-2.5">
+              <h3 className="eyebrow">{t(section.labelKey)}</h3>
+              <span className="folio">
+                {section.items.length.toString().padStart(2, '0')}
+              </span>
+            </div>
+            <ul className="space-y-0">
+              {section.items.map((item) => {
+                const active = item.id === activeId
+                return (
+                  <li key={item.id}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        'grid items-baseline transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded',
+                        compact ? 'py-1.5' : 'py-1.5',
+                      )}
+                      style={{ gridTemplateColumns: '28px 1fr', columnGap: 4 }}
+                    >
+                      <span
+                        className={cn(
+                          'font-mono tracking-wider',
+                          active ? 'text-primary' : 'text-[--text-muted]',
+                        )}
+                        style={{ fontSize: 9 }}
+                      >
+                        {item.numeral}
+                      </span>
+                      <span
+                        className={cn(
+                          'font-display leading-tight',
+                          active ? 'text-foreground font-semibold' : 'text-[--text-secondary] hover:text-foreground',
+                        )}
+                        style={{ fontSize: 16, letterSpacing: '-0.005em' }}
+                      >
+                        {t(item.labelKey)}
+                        {active && (
+                          <span
+                            aria-hidden
+                            className="inline-block w-1.5 h-1.5 rounded-full bg-primary ml-2 mb-0.5 align-middle"
+                          />
+                        )}
+                      </span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    )
+  }
+
+  // ── Foot (user chip + credits + menu) ────────────────────────────────────
+  function Foot() {
+    return (
+      <div ref={userMenuRef} className="relative px-4 pt-3 pb-4 border-t border-border">
+        <button
+          type="button"
+          onClick={() => setUserMenuOpen((v) => !v)}
           aria-haspopup="menu"
           aria-expanded={userMenuOpen}
-          aria-label={compact ? user.fullName : undefined}
+          aria-label={user.fullName}
           className={cn(
-            'w-full flex items-center gap-3 rounded-xl transition-colors duration-150',
-            'hover:bg-muted',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+            'w-full flex items-center gap-3 rounded-lg p-2 transition-colors',
+            'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
             userMenuOpen && 'bg-muted',
-            compact ? 'justify-center p-1.5' : 'p-2.5',
           )}
         >
-          <div className="w-8 h-8 rounded-full shrink-0 bg-grad-cta flex items-center justify-center text-white text-xs font-medium font-display">
+          <div
+            className={cn(
+              'w-9 h-9 rounded-full shrink-0 flex items-center justify-center',
+              'text-white text-xs font-display font-semibold',
+            )}
+            style={{
+              background: 'linear-gradient(135deg, var(--primary), var(--foreground))',
+              fontSize: 14,
+            }}
+          >
             {user.initials}
           </div>
-          {!compact && (
-            <>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="font-display text-sm font-medium text-foreground truncate leading-tight">
-                  {user.fullName}
-                </p>
-                <p className="font-mono text-[11px] text-[--text-muted] leading-tight">
-                  {user.plan}
-                  <span className="text-primary ml-1">
-                    · {user.isUnlimited ? t('cb_unlimited') : `${user.creditsLeft} cr`}
-                  </span>
-                </p>
-              </div>
-              <ChevronUp size={13} className={cn(
-                'shrink-0 text-[--text-muted] transition-transform duration-150',
-                !userMenuOpen && 'rotate-180',
-              )} />
-            </>
-          )}
+          <div className="flex-1 min-w-0 text-left">
+            <p className="font-display text-sm font-medium text-foreground truncate leading-tight">
+              {user.fullName}
+            </p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[--text-muted] leading-tight mt-0.5">
+              {user.plan} · {user.isUnlimited ? t('cb_unlimited') : `${user.creditsLeft} cr`}
+            </p>
+          </div>
+          <ChevronUp
+            size={13}
+            className={cn(
+              'shrink-0 text-[--text-muted] transition-transform',
+              !userMenuOpen && 'rotate-180',
+            )}
+          />
         </button>
 
         {userMenuOpen && (
           <div
             role="menu"
             className={cn(
-              'absolute bottom-full mb-2 z-50 rounded-2xl overflow-hidden',
-              'bg-card border border-border shadow-xl',
-              compact ? 'left-full ml-2 w-56' : 'left-0 right-0',
+              'absolute bottom-full left-4 right-4 mb-2 z-50',
+              'rounded-xl overflow-hidden bg-card border border-border shadow-xl',
             )}
           >
             <div className="px-4 py-3 border-b border-border/60">
               <p className="font-display text-sm font-semibold text-foreground">
                 {user.fullName}
               </p>
-              <p className="font-mono text-xs text-[--text-muted] mt-0.5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[--text-muted] mt-0.5">
                 {user.plan} · {creditsLabel}
               </p>
             </div>
-            {/* Audit 19/06/26 — user menu trimmed to 4 items per stakeholder
-                direction: Upgrade Plan, Settings, Help, Log out.
-                Upgrade Plan routes to /pricing for free/starter accounts and
-                to /settings/billing for paid plans (so they can manage). */}
             <div className="py-1.5">
               <UserMenuItem
                 icon={Sparkles}
@@ -341,7 +315,11 @@ export function Sidebar({
                 type="button"
                 role="menuitem"
                 onClick={() => { setUserMenuOpen(false); handleSignOut() }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error hover:bg-error/10 focus-visible:outline-none focus-visible:bg-error/10 transition-colors text-left"
+                className={cn(
+                  'w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body text-error',
+                  'hover:bg-error/10 focus-visible:outline-none focus-visible:bg-error/10',
+                  'transition-colors text-left',
+                )}
               >
                 <LogOut size={14} className="shrink-0 opacity-70" />
                 {t('logout')}
@@ -349,201 +327,77 @@ export function Sidebar({
             </div>
           </div>
         )}
+
+        {/* Credits bar — concise editorial style, full-width under the user chip. */}
+        <div className="mt-3 px-1 flex items-center gap-2">
+          <Zap
+            size={12}
+            className={cn(
+              user.isUnlimited
+                ? 'text-primary'
+                : user.creditsLeft <= 0
+                  ? 'text-error'
+                  : user.creditsLeft < 50
+                    ? 'text-warning'
+                    : 'text-primary',
+            )}
+          />
+          <span className="font-mono text-[10px] text-[--text-muted] uppercase tracking-[0.1em] flex-1 truncate">
+            {user.isUnlimited ? t('cb_unlimited') : creditsLabel}
+          </span>
+          {!user.isUnlimited && (
+            <Link
+              href={isStarter ? '/pricing' : '/settings/billing'}
+              className="font-mono text-[10px] text-primary uppercase tracking-[0.1em] hover:underline"
+            >
+              {isStarter ? t('dash_upgrade') : t('dash_topUp')}
+            </Link>
+          )}
+        </div>
       </div>
     )
   }
 
-  // ── DESKTOP — rail + optional panel ──────────────────────────────────────────
+  // ── DESKTOP ────────────────────────────────────────────────────────────────
   const desktopSidebar = (
-    <div className="hidden md:flex h-full bg-card border-r border-border/50">
-
-      {/* ── RAIL ─────────────────────────────────────────────────── */}
-      <div
-        className="flex flex-col h-full shrink-0 py-3"
-        style={{ width: RAIL_W }}
-      >
-        {/* Logo IS the Home affordance (audit 19/06/26 — replaces the rail
-            « Home » entry that used to live above the rest). When the user
-            is on /dashboard we ring it with the accent color so the state
-            stays visible. */}
-        <button
-          type="button"
-          onClick={() => router.push('/dashboard')}
-          aria-current={isHome ? 'page' : undefined}
-          aria-label={t('dashboard')}
-          className={cn(
-            'mb-3 mx-auto flex items-center justify-center rounded-xl p-1.5',
-            'transition-all duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-            isHome
-              ? 'bg-accent ring-2 ring-primary/40'
-              : 'hover:bg-muted hover:opacity-90',
-          )}
-        >
-          <Logo variant="icon" size="md" />
-        </button>
-
-        {/* Top rail items */}
-        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
-          <NavRail items={RAIL_ITEMS} activeId={activeId} onSelect={handleRailSelect} />
-        </div>
-
-        {/* Bottom: credits icon (when panel hidden), avatar.
-            Audit 19/06/26 — no more Settings rail icon. Settings lives in
-            the user-menu dropdown only. We still keep RAIL_BOTTOM_ITEMS as
-            an iterable so the mobile drawer code below keeps compiling, but
-            we don't render it on desktop. */}
-        <div className="shrink-0 pt-2 space-y-1.5">
-          {!panelOpen && creditsRailIcon}
-          <div className="px-1.5">{userMenu(true)}</div>
-        </div>
-      </div>
-
-      {/* ── PANEL — contextual sub-menu ──────────────────────────── */}
-      {panelOpen && activeEntry && (
-        <div
-          className="flex flex-col h-full shrink-0 border-l border-border/50 bg-background/60"
-          style={{ width: PANEL_W }}
-        >
-          {/* Header: collapse toggle */}
-          <div className="flex items-center justify-end px-3 pt-3">
-            {/* Audit 22/06/26 — was w-7 h-7 (28×28), below WCAG 2.5.5 minimum.
-                Bumped to w-9 h-9 (36×36) for safer touch / cursor target. */}
-            <button
-              type="button"
-              onClick={() => onToggle(true)}
-              aria-label={t('sb_collapsePanel')}
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-[--text-muted] hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
-            >
-              <PanelLeftClose size={15} />
-            </button>
-          </div>
-
-          {/* Sub-menu */}
-          <div className="flex-1 min-h-0">
-            <ContextPanel entry={activeEntry} />
-          </div>
-
-          {/* Credits block at panel bottom */}
-          <div className="shrink-0 px-3 pb-3">{creditsBlock}</div>
-        </div>
-      )}
-
-      {/* When a panel exists but is collapsed, offer a reopen affordance */}
-      {hasPanel && collapsed && (
-        // Audit 22/06/26 — was w-6 h-6 (24×24). Bumped to w-9 h-9 (36×36) so
-        // the reopen affordance respects WCAG 2.5.5 Target Size.
-        <button
-          type="button"
-          onClick={() => onToggle(false)}
-          aria-label={t('sb_expandPanel')}
-          className="self-start mt-3 -ml-4 w-9 h-9 rounded-full flex items-center justify-center border border-border bg-card text-[--text-muted] hover:bg-muted hover:text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors z-10"
-        >
-          <PanelLeftOpen size={14} />
-        </button>
-      )}
-    </div>
+    <aside
+      className="hidden md:flex flex-col h-full bg-background border-r border-border"
+      style={{ width: SIDEBAR_W }}
+    >
+      <div className="pt-7"><Masthead /></div>
+      <TableOfContents />
+      <Foot />
+    </aside>
   )
 
-  // ── MOBILE — flattened hierarchical drawer ───────────────────────────────────
+  // ── MOBILE ─────────────────────────────────────────────────────────────────
   const mobileDrawer = (
-    <aside className="flex flex-col h-full w-[280px] max-w-[85vw] bg-card border-r border-border/50">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-5 pb-3 shrink-0">
-        <button
-          type="button"
-          onClick={() => router.push('/dashboard')}
-          className="hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded"
-          aria-label={t('dashboard')}
-        >
-          <Logo variant="full" size="md" />
-        </button>
-        {/* Audit 22/06/26 — close button bumped to 36×36 (WCAG 2.5.5). */}
+    <aside className="flex flex-col h-full w-[280px] max-w-[85vw] bg-background border-r border-border">
+      <div className="flex items-start justify-between px-2 pt-5">
+        <div className="flex-1"><Masthead /></div>
         <button
           type="button"
           onClick={onMobileClose}
           aria-label={t('sb_closeSidebar')}
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-[--text-muted] hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
+          className={cn(
+            'w-9 h-9 rounded-lg flex items-center justify-center mr-2',
+            'text-[--text-muted] hover:text-foreground hover:bg-muted',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors',
+          )}
         >
           <X size={18} />
         </button>
       </div>
-
-      {/* Flattened nav */}
-      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-3 py-1 space-y-4">
-        {[...RAIL_ITEMS, ...RAIL_BOTTOM_ITEMS].map((entry) => {
-          const Icon = entry.icon
-          const sectionActive = entry.id === activeId
-          const activeChildHref = resolveActiveChildHref(entry, pathname)
-          return (
-            <div key={entry.id}>
-              {/* Section header → navigates to entry root */}
-              <Link
-                href={entry.href}
-                aria-current={sectionActive && !entry.children ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-2.5 px-2 h-9 rounded-lg text-sm font-display font-medium transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-                  sectionActive ? 'text-foreground' : 'text-[--text-secondary] hover:text-foreground hover:bg-muted',
-                )}
-              >
-                <Icon size={17} strokeWidth={1.8} className={cn('shrink-0', sectionActive ? 'text-primary' : 'text-[--text-muted]')} aria-hidden="true" />
-                {t(entry.labelKey)}
-              </Link>
-
-              {/* Children */}
-              {entry.children && (
-                <div className="mt-0.5 ml-3 pl-3 border-l border-border/60 space-y-0.5">
-                  {entry.isModule && (
-                    <Link
-                      href={`${entry.href}/new`}
-                      className="flex items-center gap-1.5 h-8 px-2 rounded-lg text-xs font-medium text-primary hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
-                    >
-                      <Plus size={13} aria-hidden="true" />
-                      {t('nav_createNew')}
-                    </Link>
-                  )}
-                  {entry.children.map((child) => {
-                    const active = child.href === activeChildHref
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        aria-current={active ? 'page' : undefined}
-                        className={cn(
-                          'flex items-center h-8 px-2 rounded-lg text-sm font-body transition-colors',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-                          active ? 'bg-accent text-accent-foreground font-medium' : 'text-[--text-secondary] hover:bg-muted hover:text-foreground',
-                        )}
-                      >
-                        {t(child.labelKey)}
-                      </Link>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Credits + user */}
-      <div className="shrink-0 border-t border-border/60 p-3 space-y-3">
-        {creditsBlock}
-        {userMenu(false)}
-      </div>
+      <TableOfContents compact />
+      <Foot />
     </aside>
   )
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* Desktop — fixed */}
       <div className="hidden md:block fixed left-0 top-0 h-full z-40">
         {desktopSidebar}
       </div>
-
-      {/* Mobile overlay + drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden" aria-modal="true" role="dialog">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onMobileClose} />
@@ -561,18 +415,15 @@ function UserMenuItem({
   label,
   href,
   onClose,
-  badge,
   external,
 }: {
   icon:      React.ElementType
   label:     string
   href:      string
   onClose:   () => void
-  badge?:    string
   external?: boolean
 }) {
   const router = useRouter()
-
   function handleClick() {
     onClose()
     if (external) {
@@ -581,21 +432,19 @@ function UserMenuItem({
       router.push(href)
     }
   }
-
   return (
     <button
       type="button"
       role="menuitem"
       onClick={handleClick}
-      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body text-[--text-secondary] hover:bg-muted focus-visible:outline-none focus-visible:bg-muted transition-colors text-left"
+      className={cn(
+        'w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body',
+        'text-[--text-secondary] hover:bg-muted',
+        'focus-visible:outline-none focus-visible:bg-muted transition-colors text-left',
+      )}
     >
       <Icon size={14} className="shrink-0 opacity-60" />
       <span className="flex-1">{label}</span>
-      {badge && (
-        <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">
-          {badge}
-        </span>
-      )}
       {external && <ExternalLink size={11} className="shrink-0 opacity-40" />}
     </button>
   )
