@@ -31,28 +31,41 @@ export function LanguageSwitcher() {
 
   return (
     <div ref={ref} className="relative">
-      {/* Trigger button */}
+      {/* Audit 23/06/26 — editorial pill : rounded-full + mono uppercase
+          to match the new topbar / sidebar voice. */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 h-9 px-2.5 rounded-lg border border-border/50 bg-card/40 hover:bg-card/60 text-[--text-secondary] hover:text-foreground transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className={cn(
+          'flex items-center gap-1.5 h-8 px-3 rounded-full',
+          'border border-border bg-card hover:border-foreground',
+          'font-mono text-[10px] uppercase tracking-[0.14em] text-foreground',
+          'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+        )}
         aria-label="Language switcher"
+        aria-haspopup="menu"
         aria-expanded={open}
       >
-        <Globe size={16} className="group-hover:scale-110 transition-transform" />
-        <span className="text-sm font-medium hidden sm:inline">{currentLang?.code.toUpperCase()}</span>
+        <Globe size={12} className="text-[--text-muted]" />
+        <span className="hidden sm:inline">{currentLang?.code.toUpperCase()}</span>
       </button>
 
-      {/* Dropdown menu */}
       {open && (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 z-40"
             onClick={() => setOpen(false)}
           />
 
-          {/* Menu */}
-          <div className="absolute top-full right-0 mt-2 min-w-[180px] rounded-xl border border-border/50 bg-card/95 backdrop-blur-sm shadow-lg z-50 overflow-hidden">
+          <div
+            role="menu"
+            className={cn(
+              'absolute top-full right-0 mt-2 min-w-[200px] z-50 overflow-hidden',
+              'rounded-xl border border-border bg-card shadow-xl',
+            )}
+          >
+            <div className="px-4 py-2 border-b border-border">
+              <span className="eyebrow">Language</span>
+            </div>
             {LANGUAGES.map((lang_item) => (
               <button
                 key={lang_item.code}
@@ -60,18 +73,21 @@ export function LanguageSwitcher() {
                   setLang(lang_item.code)
                   setOpen(false)
                 }}
+                role="menuitemradio"
+                aria-checked={lang === lang_item.code}
                 className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-body transition-colors text-left border-b border-border/30 last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
+                  'w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body text-left transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
                   lang === lang_item.code
-                    ? 'bg-brand/10 text-primary font-semibold'
-                    : 'text-[--text-secondary] hover:text-foreground hover:bg-muted/50',
+                    ? 'text-foreground bg-muted'
+                    : 'text-[--text-secondary] hover:text-foreground hover:bg-muted/60',
                 )}
               >
-                <span>{lang_item.flag}</span>
-                <span>{lang_item.label}</span>
-                {lang === lang_item.code && (
-                  <span className="ml-auto text-xs font-bold">✓</span>
-                )}
+                <span className="text-base leading-none">{lang_item.flag}</span>
+                <span className="flex-1">{lang_item.label}</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[--text-muted]">
+                  {lang_item.code}
+                </span>
               </button>
             ))}
           </div>
