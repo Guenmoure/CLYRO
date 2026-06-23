@@ -260,7 +260,24 @@ function StudioNewPageInner() {
       toast.success(`${result.sceneCount} ${t('sceneSplit')}`)
       router.push(`/studio/${result.projectId}/editor`)
     } catch (err) {
-      toast.error(t('analysisError'))
+      // Audit 22/06/26 — was always the generic « Analysis failed » toast.
+      // The backend now propagates specific codes (UPSTREAM_*, YOUTUBE_*,
+      // VALIDATION_ERROR), so we can finally tell the user what to do.
+      if (err instanceof ApiError) {
+        if (err.code === 'INSUFFICIENT_CREDITS')         toast.error(t('analysisError_credits'))
+        else if (err.code === 'INVALID_URL')             toast.error(t('analysisError_invalidUrl'))
+        else if (err.code === 'YOUTUBE_TRANSCRIBE_ERROR') toast.error(t('analysisError_youtube'))
+        else if (err.code === 'UPSTREAM_TIMEOUT')        toast.error(t('analysisError_timeout'))
+        else if (err.code === 'TIMEOUT')                 toast.error(t('analysisError_timeout'))
+        else if (err.code === 'UPSTREAM_RATE_LIMIT')     toast.error(t('analysisError_rateLimit'))
+        else if (err.code === 'UPSTREAM_OVERLOADED')     toast.error(t('analysisError_overloaded'))
+        else if (err.code === 'UPSTREAM_AUTH')           toast.error(t('analysisError_upstream'))
+        else if (err.code === 'NETWORK_ERROR')           toast.error(t('analysisError_network'))
+        else if (err.status === 401)                     toast.error(t('analysisError_auth'))
+        else                                              toast.error(t('analysisError'))
+      } else {
+        toast.error(t('analysisError'))
+      }
     } finally {
       setAnalyzing(false)
       setStep('')

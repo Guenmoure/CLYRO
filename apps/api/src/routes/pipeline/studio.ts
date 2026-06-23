@@ -390,9 +390,54 @@ studioRouter.post('/analyze', authMiddleware, async (req, res) => {
       sceneCount: directed.scenes.length,
     })
   } catch (err) {
-    logger.error({ err, userId: req.userId }, 'studio.analyze failed')
-    const msg = err instanceof Error ? err.message : 'Analyze failed'
-    res.status(500).json({ error: msg, code: 'INTERNAL_ERROR' })
+    // Audit 22/06/26 — was leaking err.message + a single 'INTERNAL_ERROR'
+    // code. The frontend therefore always showed the generic « Analysis
+    // failed » toast and the user had no idea what went wrong. We now :
+    //   1. Log the full detail server-side (already done).
+    //   2. Map to specific codes the frontend can localise (UPSTREAM_*,
+    //      YOUTUBE_TRANSCRIBE_ERROR, VALIDATION_ERROR).
+    //   3. NEVER send err.message back — keeps internals (paths, model
+    //      names, stack info) off the wire (security.md « Stack traces
+    //      are NOT exposed in production »).
+    const e = err as { status?: number; error?: { type?: string; message?: string }; message?: string; name?: string }
+    const upstreamStatus  = typeof e?.status === 'number' ? e.status : undefined
+    const upstreamType    = e?.error?.type
+    const upstreamMessage = e?.error?.message ?? e?.message
+    logger.error(
+      { err, userId: req.userId, upstreamStatus, upstreamType, upstreamMessage },
+      'studio.analyze failed',
+    )
+
+    // Zod validation (rare here — parse() throws ZodError before reaching this branch)
+    if (e?.name === 'ZodError') {
+      res.status(400).json({ error: 'Invalid analyze payload', code: 'VALIDATION_ERROR' })
+      return
+    }
+    // yt-dlp / transcription errors raise generic Error('yt-dlp not installed' / similar)
+    if (e?.message && /yt-dlp|transcrib|youtube/i.test(e.message)) {
+      res.status(502).json({ error: 'Could not transcribe the YouTube video', code: 'YOUTUBE_TRANSCRIBE_ERROR' })
+      return
+    }
+    // Anthropic upstream — same taxonomy as brand-agent route
+    if (upstreamType === 'rate_limit_error' || upstreamStatus === 429) {
+      res.status(429).json({ error: 'Rate limited by the upstream model', code: 'UPSTREAM_RATE_LIMIT' })
+      return
+    }
+    if (upstreamType === 'overloaded_error' || upstreamStatus === 503) {
+      res.status(503).json({ error: 'Model temporarily overloaded', code: 'UPSTREAM_OVERLOADED' })
+      return
+    }
+    if (upstreamType === 'authentication_error' || upstreamStatus === 401) {
+      logger.error({ userId: req.userId }, 'studio.analyze: Anthropic auth failed — check ANTHROPIC_API_KEY')
+      res.status(502).json({ error: 'Upstream auth failed', code: 'UPSTREAM_AUTH' })
+      return
+    }
+    if (e?.message && /timeout|aborted|fetch failed/i.test(e.message)) {
+      res.status(504).json({ error: 'Upstream timeout', code: 'UPSTREAM_TIMEOUT' })
+      return
+    }
+    // Default — neutral message, no stack leak
+    res.status(500).json({ error: 'Analyze failed', code: 'INTERNAL_ERROR' })
   }
 })
 
