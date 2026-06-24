@@ -1,88 +1,105 @@
 'use client'
 
 /**
- * TopBar — minimal editorial header.
+ * TopBar — minimal header (HeyGen pattern).
  *
- * Audit 23/06/26 — simplified per stakeholder direction. The previous
- * « Ask AI » pill and NotificationPanel are removed ; the language
- * switcher stays (explicit ask). The page title is replaced by a thin
- * mono uppercase breadcrumb « CLYRO / SECTION / PAGE » matching the
- * editorial sidebar's voice.
+ *   Left  : hamburger (mobile only) + page title
+ *   Right : language switcher, Ask AI pill, notifications
  *
- *   Left  : hamburger (mobile only) + editorial breadcrumb
- *   Right : language switcher
- *
- * The command palette is still globally available via Cmd/Ctrl+K
- * (the listener lives in CommandPalette.tsx), so we don't need a
- * dedicated button here.
+ * Streamlined to match HeyGen's minimal top bar. The "+ Create" dropdown
+ * moved to the sidebar panels and dashboard tiles; theme toggle is in Settings.
  */
 
 import { usePathname } from 'next/navigation'
-import { Menu } from 'lucide-react'
+import { Menu, Sparkles } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
+import { NotificationPanel } from '@/components/shared/notification-panel'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
-import { NAV_SECTIONS } from './nav-model'
 import type { SidebarUser } from './DashboardShell'
+
+// ── Page title mapping — first path segment → translation key ──────────────────
+
+const SEGMENT_TITLE_KEYS: Record<string, string> = {
+  dashboard: 'dashboard',
+  faceless:  'facelessVideos',
+  motion:    'motionDesign',
+  studio:    'aiAvatarStudio',
+  brand:     'brandKit',
+  autopilot: 'npd_autopilot_title',
+  projects:  'projects',
+  drafts:    'dr_title',
+  templates: 'templates',
+  assets:    'assets',
+  voices:    'voices',
+  analytics: 'anal_title',
+  settings:  'settings',
+}
+
+// ── TopBar ─────────────────────────────────────────────────────────────────────
 
 interface TopBarProps {
   onMobileMenuToggle: () => void
   user?: SidebarUser
 }
 
-/**
- * Resolve the breadcrumb segments for the current pathname.
- * Returns null for /dashboard (just the brand mark on the masthead) so
- * the topbar stays empty on Home.
- */
-function resolveCrumb(pathname: string, t: (k: string) => string): { section: string; page: string } | null {
-  if (pathname === '/dashboard' || pathname === '/') return null
-  for (const section of NAV_SECTIONS) {
-    for (const item of section.items) {
-      if (pathname === item.href || pathname.startsWith(item.href + '/')) {
-        return { section: t(section.labelKey), page: t(item.labelKey) }
-      }
-    }
-  }
-  return null
+/** Open the existing CommandPalette (listens for Cmd+K / Ctrl+K on window). */
+function openCommandPalette() {
+  window.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }),
+  )
 }
 
-export function TopBar({ onMobileMenuToggle }: TopBarProps) {
+export function TopBar({ onMobileMenuToggle, user }: TopBarProps) {
   const { t } = useLanguage()
   const pathname = usePathname()
-  const crumb = resolveCrumb(pathname, t)
+
+  const segment  = pathname.split('/').filter(Boolean)[0] ?? 'dashboard'
+  const titleKey = SEGMENT_TITLE_KEYS[segment]
+  const pageTitle = titleKey ? t(titleKey) : ''
 
   return (
-    <header
-      className="h-12 shrink-0 bg-background border-b border-border px-4 sm:px-10 flex items-center justify-between gap-3 z-20"
-    >
-      {/* ── Left : hamburger (mobile) + editorial crumb ── */}
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="h-14 shrink-0 bg-card/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 flex items-center justify-between gap-3 z-20">
+      {/* ── Left: hamburger (mobile) + page title ── */}
+      <div className="flex items-center gap-2 min-w-0">
         <button
           type="button"
           onClick={onMobileMenuToggle}
-          className="md:hidden flex items-center justify-center w-9 h-9 -ml-1.5 rounded-lg hover:bg-muted text-[--text-muted] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
+          className="md:hidden flex items-center justify-center w-10 h-10 -ml-2 rounded-lg hover:bg-muted text-[--text-muted] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
           aria-label={t('tb_openMenu')}
         >
-          <Menu size={17} />
+          <Menu size={18} />
         </button>
 
-        {crumb && (
-          <nav
-            aria-label="Breadcrumb"
-            className="hidden sm:flex items-baseline gap-3 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-[--text-muted]"
-          >
-            <span>CLYRO</span>
-            <span className="text-[--text-muted]/60">/</span>
-            <span className="truncate">{crumb.section}</span>
-            <span className="text-[--text-muted]/60">/</span>
-            <span className="text-foreground font-medium truncate">{crumb.page}</span>
-          </nav>
+        {pageTitle && (
+          <p className="font-display text-sm font-semibold text-foreground truncate">
+            {pageTitle}
+          </p>
         )}
       </div>
 
-      {/* ── Right : language switcher (kept per stakeholder direction) ── */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* ── Right: language + Ask AI + notifications ── */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <LanguageSwitcher />
+
+        {/* Ask AI — HeyGen-style pill */}
+        <button
+          type="button"
+          onClick={openCommandPalette}
+          aria-label={t('tb_askAI')}
+          aria-keyshortcuts="Meta+K Control+K"
+          className={cn(
+            'flex items-center gap-1.5 h-9 px-3 rounded-full',
+            'bg-card border border-border text-sm font-medium font-display text-foreground',
+            'hover:border-[--border-hover] hover:bg-muted transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+          )}
+        >
+          <Sparkles size={14} className="shrink-0 text-primary" aria-hidden="true" />
+          <span className="hidden sm:inline">{t('tb_askAI')}</span>
+        </button>
+
+        <NotificationPanel />
       </div>
     </header>
   )

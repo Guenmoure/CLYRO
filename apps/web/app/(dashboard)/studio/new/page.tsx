@@ -7,6 +7,7 @@ import {
   Globe, Wand2, Info, Check, Search, ChevronDown, ChevronUp, Mic, RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { toast } from '@/components/ui/toast'
@@ -298,29 +299,32 @@ function StudioNewPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="px-4 sm:px-6 lg:px-12 py-12 max-w-3xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background px-6 py-10">
+      <div className="max-w-3xl mx-auto space-y-8">
 
         {/* Back link */}
         <Link
           href="/studio"
-          className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[--text-muted] hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-1.5 font-body text-sm text-[--text-secondary] hover:text-foreground transition-colors"
         >
-          <ArrowLeft size={11} />
+          <ArrowLeft size={14} />
           {t('sn_backToStudio')}
         </Link>
 
-        {/* Vague 3 — editorial page header */}
-        <header>
-          <div className="divider-with-num">
-            <span className="eyebrow">{t('nav_sec_create')}</span>
-            <hr />
-            <span className="folio">№ 02 / 12</span>
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <div className="flex justify-center">
+            <Badge variant="info" dot>
+              <Sparkles size={10} className="mr-1" /> {t('studioBadge')}
+            </Badge>
           </div>
-          <h1 className="h-display">{t('studioHeading')}</h1>
-          <p className="lead mt-5">{t('studioSubtitle')}</p>
-          <hr className="rule-thin mt-8" />
-        </header>
+          <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+            {t('studioHeading')}
+          </h1>
+          <p className="font-body text-sm text-[--text-secondary] max-w-xl mx-auto">
+            {t('studioSubtitle')}
+          </p>
+        </div>
 
         {/* Mode selector — 2 big cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
