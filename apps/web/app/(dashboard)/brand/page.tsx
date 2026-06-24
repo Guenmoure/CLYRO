@@ -1,11 +1,15 @@
 'use client'
 
+/**
+ * Brand entry — same editorial pattern as /faceless and /motion (Vague 3).
+ *
+ * The hover preview panel from the previous design is preserved (real UX
+ * value for comparing kits without opening each one).
+ */
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Palette, Sparkles, Clapperboard, Star, AlertCircle } from 'lucide-react'
-import { Loader2 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Plus, Palette, Star, AlertCircle, Loader2 } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase'
 import { useLanguage } from '@/lib/i18n'
 import { InferFromUrlPanel } from '@/components/brand/InferFromUrlPanel'
@@ -18,8 +22,6 @@ type BrandKit = {
   is_default: boolean | null
   logo_url: string | null
   created_at: string
-  // Audit 16/06/26 — extended fields surfaced in the hover preview so the
-  // user can compare kits at a glance without opening each one.
   tagline:             string | null
   font_family:         string | null
   brand_values:        string[] | null
@@ -55,91 +57,97 @@ export default function BrandIndexPage() {
     void load()
   }, [])
 
+  function Header() {
+    return (
+      <header className="mb-10">
+        <div className="divider-with-num">
+          <span className="eyebrow">{t('nav_sec_create')}</span>
+          <hr />
+          <span className="folio">№ 04 / 12</span>
+        </div>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h1 className="h-display">{t('bl_heading')}</h1>
+          <Link
+            href="/brand/hub"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background border border-foreground font-mono text-[10px] uppercase tracking-[0.14em] hover:bg-primary hover:border-primary transition-colors"
+          >
+            <Plus size={12} />
+            {t('bl_newProject')}
+          </Link>
+        </div>
+        <p className="lead mt-5">{t('bl_subtitle')}</p>
+        <hr className="rule-thin mt-8" />
+      </header>
+    )
+  }
+
   if (loading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
-        <Loader2 size={24} className="animate-spin text-[--text-muted]" />
+      <div className="flex-1 overflow-y-auto bg-background">
+        <div className="px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto">
+          <Header />
+          <div className="flex items-center justify-center py-24">
+            <Loader2 size={20} className="animate-spin text-[--text-muted]" />
+          </div>
+        </div>
       </div>
     )
   }
 
   if (loadError) {
     return (
-      <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <AlertCircle size={28} className="mx-auto text-error" />
-          <p className="font-display text-sm font-semibold text-foreground">{t('loadError')}</p>
-          <button type="button" onClick={() => window.location.reload()} className="font-body text-xs text-primary hover:underline">
-            {t('retry')}
-          </button>
+      <div className="flex-1 overflow-y-auto bg-background">
+        <div className="px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto">
+          <Header />
+          <div className="py-24 text-center">
+            <AlertCircle size={24} className="mx-auto text-[--text-muted] mb-3" />
+            <p className="h-card">{t('loadError')}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-primary hover:underline"
+            >
+              {t('retry')}
+            </button>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="flex-1 overflow-y-auto bg-background">
+      <div className="px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto">
+        <Header />
 
-        {/* Header */}
-        <div className="flex items-end justify-between flex-wrap gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Palette size={14} className="text-teal-500" />
-              <p className="font-mono text-[11px] uppercase tracking-widest text-[--text-secondary] font-semibold">{t('bl_moduleLabel')}</p>
-            </div>
-            <h1 className="font-display text-3xl font-bold text-foreground">{t('bl_heading')}</h1>
-            <p className="font-body text-sm text-[--text-secondary] mt-1 max-w-xl">
-              {t('bl_subtitle')}
-            </p>
-          </div>
-
-          <Link href="/brand/hub" className="group relative">
-            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-grad-cta text-white font-body text-sm font-semibold shadow-lg">
-              <Plus size={16} className="group-hover:rotate-90 transition-transform duration-200" />
-              {t('bl_newProject')}
-            </div>
-          </Link>
+        {/* « Infer brand DNA from URL » shortcut. Kept functional, just sits
+            in the editorial flow below the header. */}
+        <div className="mb-8">
+          <InferFromUrlPanel onKitCreated={() => { void window.location.reload() }} />
         </div>
 
-        {/* Audit 16/06/26 P3.2 — « Infer brand DNA from URL » shortcut.
-            Collapsed by default; opens to surface the URL input + Claude
-            inference. Successful inferences POST a new brand_kit and
-            navigate to /brand/:id/dna for review. */}
-        <InferFromUrlPanel onKitCreated={() => { void window.location.reload() }} />
-
-        {/* Kits grid */}
         {kits.length === 0 ? (
-          <Card variant="elevated" padding="xl" className="flex flex-col items-center text-center gap-5 py-20">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-3xl bg-primary/10 blur-2xl" />
-              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-teal-500/15 to-teal-500/10 border border-border flex items-center justify-center">
-                <Palette size={32} className="text-teal-500" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <h2 className="font-display text-xl font-bold text-foreground">{t('bl_emptyTitle')}</h2>
-              <p className="font-body text-sm text-[--text-secondary] max-w-md">
-                {t('bl_emptyDesc')}
-              </p>
-            </div>
-            <Link href="/brand/hub" className="group relative mt-2">
-              <div className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-grad-cta text-white font-body text-base font-semibold shadow-xl">
-                <Clapperboard size={18} />
-                {t('bl_createFirst')}
-                <Sparkles size={14} className="opacity-80" />
-              </div>
+          <div className="border border-border rounded-md bg-card p-12 text-center">
+            <div className="folio mb-4">BR.00</div>
+            <h2 className="h-card mb-3">{t('bl_emptyTitle')}</h2>
+            <p className="lead mx-auto mb-8">{t('bl_emptyDesc')}</p>
+            <Link
+              href="/brand/hub"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-foreground text-background border border-foreground font-mono text-[11px] uppercase tracking-[0.14em] hover:bg-primary hover:border-primary transition-colors"
+            >
+              <Palette size={13} />
+              {t('bl_createFirst')}
             </Link>
-          </Card>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <NewKitCard
-              newProjectLabel={t('bl_cardNewProject')}
-              colorsLogoVoiceLabel={t('bl_cardColorsLogoVoice')}
-              badgeLabel={t('bl_cardBadge')}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <NewKitTile
+              label={t('bl_cardNewProject')}
+              hint={t('bl_cardColorsLogoVoice')}
+              badge={t('bl_cardBadge')}
             />
             {kits.map((k) => (
-              <BrandKitCard
+              <BrandKitTile
                 key={k.id}
                 kit={k}
                 untitledKitLabel={t('bl_untitledKit')}
@@ -154,45 +162,31 @@ export default function BrandIndexPage() {
   )
 }
 
-function NewKitCard({
-  newProjectLabel,
-  colorsLogoVoiceLabel,
-  badgeLabel,
-}: {
-  newProjectLabel: string
-  colorsLogoVoiceLabel: string
-  badgeLabel: string
-}) {
+function NewKitTile({ label, hint, badge }: { label: string; hint: string; badge: string }) {
   return (
-    <Link href="/brand/hub" className="group relative block rounded-2xl overflow-hidden aspect-[4/3]">
-      <div className="absolute inset-0 bg-primary opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className="absolute inset-[1.5px] rounded-2xl bg-card group-hover:bg-card/90 transition-colors duration-300" />
-      <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-primary blur-lg opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
-          <div className="relative w-14 h-14 rounded-full bg-grad-cta flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-            <Plus size={24} className="text-white group-hover:rotate-90 transition-transform duration-300" />
-          </div>
+    <Link
+      href="/brand/hub"
+      className="tile block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 group"
+      aria-label={label}
+    >
+      <div className="ph relative flex items-center justify-center" style={{ aspectRatio: '4 / 3' }}>
+        <div className="ph-folio">BR.NEW</div>
+        <div className="flex flex-col items-center gap-3">
+          <span className="w-12 h-12 rounded-full bg-foreground text-background flex items-center justify-center group-hover:bg-primary transition-colors">
+            <Plus size={20} />
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground">{badge}</span>
         </div>
-        <div className="text-center">
-          <p className="font-display text-base font-bold text-foreground group-hover:text-white transition-colors duration-200">
-            {newProjectLabel}
-          </p>
-          <p className="font-body text-xs text-[--text-muted] mt-0.5 group-hover:text-white/60 transition-colors duration-200">
-            {colorsLogoVoiceLabel}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 group-hover:bg-teal-500/25 transition-all duration-200">
-          <Sparkles size={10} className="text-teal-500" />
-          <span className="font-mono text-[10px] text-teal-500 tracking-wider uppercase">{badgeLabel}</span>
-        </div>
+      </div>
+      <div className="tile-body">
+        <h3 className="h-card">{label}</h3>
+        <p className="font-body text-sm text-[--text-secondary] mt-1">{hint}</p>
       </div>
     </Link>
   )
 }
 
-function BrandKitCard({
+function BrandKitTile({
   kit,
   untitledKitLabel,
   brandLabel,
@@ -203,11 +197,8 @@ function BrandKitCard({
   brandLabel: string
   defaultLabel: string
 }) {
-  const primary = kit.primary_color ?? '#0891b2'
-  const secondary = kit.secondary_color ?? '#0d9488'
-  // Audit 16/06/26 — hover preview state. Pure CSS-only would work via
-  // group-hover, but we want the preview to be a real, focusable panel
-  // so keyboard users can also see it.
+  const primary = kit.primary_color ?? '#6D4AFF'
+  const secondary = kit.secondary_color ?? '#8B5CF6'
   const [previewOpen, setPreviewOpen] = useState(false)
 
   const hasPreviewContent = !!(
@@ -228,49 +219,48 @@ function BrandKitCard({
     >
       <Link
         href="/brand/hub"
-        className="card-interactive rounded-2xl border border-border bg-card overflow-hidden block"
+        className="tile block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <div
-          className="aspect-video relative flex items-center justify-center"
-          style={{ background: `linear-gradient(135deg, ${primary}33, ${secondary}33)` }}
+          className="relative flex items-center justify-center"
+          style={{ aspectRatio: '16 / 9', background: `linear-gradient(135deg, ${primary}22, ${secondary}22)` }}
         >
-          <div className="absolute inset-0 grid-bg opacity-[0.04]" />
           {kit.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={kit.logo_url} alt={kit.name ?? untitledKitLabel} className="max-w-[60%] max-h-[60%] object-contain relative" />
           ) : (
-            <Palette size={32} className="text-white/60 relative" />
+            <Palette size={28} className="text-foreground/40 relative" />
           )}
+          {/* Palette swatches */}
           <div className="absolute bottom-2 left-2 flex items-center gap-1">
-            <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: primary }} />
-            <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: secondary }} />
+            <span className="w-4 h-4 rounded-full border border-white/40 shadow-sm" style={{ background: primary }} />
+            <span className="w-4 h-4 rounded-full border border-white/40 shadow-sm" style={{ background: secondary }} />
           </div>
+          {/* Folio top-left */}
+          <span className="absolute top-2 left-2 font-mono text-[9px] uppercase tracking-[0.1em] text-foreground/60 bg-card/80 border border-border px-1.5 py-0.5 rounded">
+            BR.{kit.id.slice(0, 6).toUpperCase()}
+          </span>
+          {/* Default badge top-right */}
           {kit.is_default && (
-            <Badge className="absolute top-2 right-2 bg-amber-500/90 text-white border-0" variant="neutral">
-              <Star size={10} className="mr-1 fill-current" />
+            <span className="absolute top-2 right-2 inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.1em] text-background bg-foreground px-2 py-0.5 rounded-full">
+              <Star size={9} className="fill-current" />
               {defaultLabel}
-            </Badge>
+            </span>
           )}
         </div>
 
-        <div className="p-4 space-y-1">
-          <p className="font-display font-semibold text-foreground truncate">
-            {kit.name ?? untitledKitLabel}
+        <div className="tile-body">
+          <h3 className="h-card truncate">{kit.name ?? untitledKitLabel}</h3>
+          <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-[--text-muted] mt-2">
+            {brandLabel} · {formatRelative(kit.created_at)}
           </p>
-          <div className="flex items-center gap-2 text-xs font-mono text-[--text-muted]">
-            <span>{brandLabel}</span>
-            <span>·</span>
-            <span>{formatRelative(kit.created_at)}</span>
-          </div>
         </div>
       </Link>
 
-      {/* Hover preview — surfaced over the card. Audit 16/06/26 — shows
-          tagline, palette swatches, typography sample, and value chips
-          so the user can compare kits without opening each one. */}
+      {/* Hover preview — kept from the previous design (real UX value). */}
       {previewOpen && hasPreviewContent && (
         <div
-          className="absolute left-0 right-0 top-full mt-2 z-30 rounded-2xl border border-border bg-card shadow-xl p-4 space-y-3 pointer-events-none animate-fade-in"
+          className="absolute left-0 right-0 top-full mt-2 z-30 rounded-md border border-border bg-card shadow-xl p-4 space-y-3 pointer-events-none animate-fade-in"
           role="tooltip"
           aria-hidden={!previewOpen}
         >
@@ -280,26 +270,22 @@ function BrandKitCard({
             </p>
           )}
 
-          {/* Palette swatches with hex labels */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-md border border-border" style={{ background: primary }} />
+              <span className="w-5 h-5 rounded border border-border" style={{ background: primary }} />
               <span className="font-mono text-[10px] text-[--text-muted]">{primary}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-md border border-border" style={{ background: secondary }} />
+              <span className="w-5 h-5 rounded border border-border" style={{ background: secondary }} />
               <span className="font-mono text-[10px] text-[--text-muted]">{secondary}</span>
             </div>
           </div>
 
-          {/* Typography sample */}
           {kit.font_family && (
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-0.5">
-                Typography
-              </p>
+              <p className="eyebrow">Typography</p>
               <p
-                className="text-base font-semibold text-foreground"
+                className="text-base font-semibold text-foreground mt-1"
                 style={{ fontFamily: kit.font_family }}
               >
                 {kit.font_family} — Aa
@@ -307,7 +293,6 @@ function BrandKitCard({
             </div>
           )}
 
-          {/* Values / aesthetic / tone chips — 3 rows max, 4 items each, ellipsised */}
           {[
             { label: 'Values',    items: kit.brand_values },
             { label: 'Aesthetic', items: kit.brand_aesthetic },
@@ -316,20 +301,18 @@ function BrandKitCard({
             .filter((row) => row.items && row.items.length > 0)
             .map((row) => (
               <div key={row.label}>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-[--text-muted] mb-1">
-                  {row.label}
-                </p>
+                <p className="eyebrow mb-1">{row.label}</p>
                 <div className="flex flex-wrap gap-1">
                   {row.items!.slice(0, 4).map((item) => (
                     <span
                       key={item}
-                      className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-foreground/80"
+                      className="ed-tag"
                     >
                       {item}
                     </span>
                   ))}
                   {row.items!.length > 4 && (
-                    <span className="font-mono text-[10px] text-[--text-muted]">
+                    <span className="font-mono text-[10px] text-[--text-muted] self-center">
                       +{row.items!.length - 4}
                     </span>
                   )}
